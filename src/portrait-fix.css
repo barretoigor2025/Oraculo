@@ -1,0 +1,139 @@
+/* Ajuste fino da criação de personagem: portrait como foco visual */
+
+#char-preview {
+  grid-template-columns: minmax(360px, 1.42fr) minmax(210px, .58fr);
+  gap: 16px;
+}
+
+#sprite-col {
+  min-height: 445px;
+  padding: 8px 10px 10px;
+  justify-content: flex-end;
+}
+
+#char-sprite {
+  height: 382px;
+  max-height: 382px;
+  max-width: 365px;
+  width: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+#stats-col {
+  gap: 8px;
+}
+
+.dnd-attrs {
+  padding: 9px 7px;
+}
+
+.attr-box {
+  padding: 3px 1px;
+}
+
+.attr-lbl {
+  font-size: 8px;
+}
+
+.attr-val {
+  font-size: 20px;
+}
+
+.attr-mod {
+  font-size: 10px;
+}
+
+.dnd-derived,
+.dnd-saves {
+  gap: 7px;
+}
+
+.dnd-derived span {
+  font-size: 14px;
+}
+
+.dnd-saves span {
+  font-size: 12px;
+}
+
+.feat-tag,
+#class-feature-lbl {
+  padding: 10px 8px;
+  font-size: 14px;
+}
+
+.class-description {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+  #char-preview {
+    grid-template-columns: minmax(0, 1.38fr) minmax(0, .62fr);
+    gap: 12px;
+  }
+
+  #sprite-col {
+    min-height: 408px;
+    padding: 8px 8px 10px;
+  }
+
+  #char-sprite {
+    height: 345px;
+    max-height: 345px;
+    max-width: 320px;
+  }
+}
+
+@media (max-width: 600px) {
+  #char-preview {
+    grid-template-columns: minmax(0, 1.42fr) minmax(0, .58fr);
+    gap: 10px;
+  }
+
+  #sprite-col {
+    min-height: 382px;
+    padding: 6px 7px 9px;
+  }
+
+  #char-sprite {
+    height: 322px;
+    max-height: 322px;
+    max-width: 300px;
+  }
+
+  .dnd-attrs {
+    padding: 7px 5px;
+  }
+
+  .attr-lbl {
+    font-size: 7px;
+  }
+
+  .attr-val {
+    font-size: 18px;
+  }
+
+  .attr-mod {
+    font-size: 9px;
+  }
+
+  .dnd-derived span {
+    font-size: 13px;
+  }
+
+  .dnd-saves span {
+    font-size: 11px;
+  }
+
+  .feat-tag,
+  #class-feature-lbl {
+    padding: 9px 6px;
+    font-size: 13px;
+  }
+
+  .class-description {
+    font-size: 11px;
+  }
+}
