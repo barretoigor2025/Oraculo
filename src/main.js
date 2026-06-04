@@ -20,13 +20,7 @@ localStorage.setItem('oraculo.playerId', session.playerId);
 
 function render() {
   app.innerHTML = `
-    <main class="shell">
-      <section class="hero">
-        <p class="eyebrow">Nova base</p>
-        <h1>Oraculo</h1>
-        <p>Reconstrucao limpa do RPG: sala, grid, jogadores, movimento e turno sincronizados no Firebase.</p>
-      </section>
-
+    <main class="shell ${session.room ? 'game-shell' : 'intro-shell'}">
       ${session.room ? renderGame() : renderLobby()}
     </main>
   `;
@@ -35,34 +29,77 @@ function render() {
 }
 
 function renderLobby() {
-  const classOptions = Object.values(CLASSES)
-    .map(
-      (klass) => `
-        <option value="${klass.id}" ${session.classId === klass.id ? 'selected' : ''}>
-          ${klass.icon} ${klass.name} - HP ${klass.maxHp}, MOV ${klass.movement}, ATQ ${klass.attack}
-        </option>
-      `,
-    )
+  const classCards = Object.values(CLASSES)
+    .map((klass) => renderClassCard(klass))
     .join('');
 
   return `
-    <section class="card lobby">
-      <h2>Entrar na sala</h2>
-      <label>
-        Nome do jogador
-        <input id="playerName" value="${escapeHtml(session.playerName)}" placeholder="Ex: Igor" />
-      </label>
-      <label>
-        Codigo da sala
-        <input id="roomId" value="${escapeHtml(session.roomId)}" placeholder="Ex: teste01" />
-      </label>
-      <label>
-        Classe
-        <select id="classId">${classOptions}</select>
-      </label>
-      <button id="joinRoom">Entrar / Criar sala</button>
-      <p class="hint">Use o mesmo codigo de sala em outro navegador/celular para testar multiplayer.</p>
+    <section class="entrance-screen">
+      <div class="entrance-bg entrance-bg-left"></div>
+      <div class="entrance-bg entrance-bg-right"></div>
+
+      <section class="title-panel">
+        <p class="eyebrow">Campanha online</p>
+        <div class="sigil" aria-hidden="true">◈</div>
+        <h1>Oráculo</h1>
+        <p class="subtitle">Entre no salão de pedra, escolha seu destino e reúna a mesa antes que a névoa atravesse os portões.</p>
+        <div class="lore-box">
+          <strong>Base reconstruída</strong>
+          <span>Firebase, salas em tempo real e combate por turnos. Primeiro a fundação. Depois o mundo respira.</span>
+        </div>
+      </section>
+
+      <section class="entry-card">
+        <div class="entry-card-header">
+          <span class="rune">✦</span>
+          <div>
+            <h2>Entrar no Oráculo</h2>
+            <p>Crie uma sala ou entre com o mesmo código dos outros jogadores.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            Nome do viajante
+            <input id="playerName" value="${escapeHtml(session.playerName)}" placeholder="Ex: Igor" />
+          </label>
+          <label>
+            Código da sala
+            <input id="roomId" value="${escapeHtml(session.roomId)}" placeholder="Ex: castelo01" />
+          </label>
+        </div>
+
+        <div class="class-section">
+          <div class="section-title">
+            <span>Escolha sua classe</span>
+            <small>A classe define vida, movimento e ataque inicial.</small>
+          </div>
+          <input type="hidden" id="classId" value="${escapeHtml(session.classId)}" />
+          <div class="class-grid">${classCards}</div>
+        </div>
+
+        <button id="joinRoom" class="main-cta">Abrir os portões</button>
+        <p class="hint center">Para testar multiplayer, abra o mesmo link em outro celular/aba e use o mesmo código de sala.</p>
+      </section>
     </section>
+  `;
+}
+
+function renderClassCard(klass) {
+  const isSelected = session.classId === klass.id;
+  const descriptions = {
+    barbaro: 'Avança na linha de frente e aguenta pancada sem pedir licença.',
+    ladino: 'Rápido, leve e perfeito para cruzar o mapa antes dos outros.',
+    mago: 'Frágil no corpo, perigoso quando a magia começa a falar.',
+  };
+
+  return `
+    <button class="class-card ${isSelected ? 'selected' : ''}" data-class-id="${klass.id}" type="button">
+      <span class="class-icon">${klass.icon}</span>
+      <strong>${klass.name}</strong>
+      <small>${descriptions[klass.id] ?? 'Classe inicial do Oráculo.'}</small>
+      <span class="stats">HP ${klass.maxHp} · MOV ${klass.movement} · ATQ ${klass.attack}</span>
+    </button>
   `;
 }
 
@@ -73,11 +110,19 @@ function renderGame() {
   const isMyTurn = room.currentTurnPlayerId === session.playerId;
 
   return `
+    <section class="game-header">
+      <div>
+        <p class="eyebrow">Mesa ativa</p>
+        <h1>Oráculo</h1>
+      </div>
+      <div class="room-badge">Sala ${escapeHtml(room.id)}</div>
+    </section>
+
     <section class="layout">
       <aside class="card panel">
-        <h2>Sala ${room.id}</h2>
+        <h2>Sala ${escapeHtml(room.id)}</h2>
         <p>Status: <strong>${room.status}</strong></p>
-        <p>Turno: <strong>${turnPlayer ? turnPlayer.name : 'Ainda nao iniciado'}</strong></p>
+        <p>Turno: <strong>${turnPlayer ? escapeHtml(turnPlayer.name) : 'Ainda nao iniciado'}</strong></p>
         <p>Rodada: <strong>${room.turnNumber ?? 0}</strong></p>
         ${currentPlayer ? renderPlayerCard(currentPlayer, isMyTurn) : '<p>Jogador local nao encontrado.</p>'}
         <div class="actions">
@@ -111,7 +156,7 @@ function renderPlayerCard(player, isMyTurn) {
       <div class="avatar">${player.icon}</div>
       <div>
         <strong>${escapeHtml(player.name)}</strong>
-        <span>${player.classId}</span>
+        <span>${escapeHtml(player.classId)}</span>
         <span>HP ${player.hp}/${player.maxHp} | MOV ${player.movement} | ATQ ${player.attack}</span>
         <span>${isMyTurn ? 'Seu turno' : 'Aguardando turno'}</span>
       </div>
@@ -149,6 +194,14 @@ function bindEvents() {
   document.querySelector('#leaveRoom')?.addEventListener('click', handleLeaveRoom);
   document.querySelector('#startGame')?.addEventListener('click', handleStartGame);
   document.querySelector('#endTurn')?.addEventListener('click', handleEndTurn);
+
+  document.querySelectorAll('.class-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      session.classId = card.dataset.classId;
+      localStorage.setItem('oraculo.classId', session.classId);
+      render();
+    });
+  });
 
   document.querySelectorAll('.tile').forEach((tile) => {
     tile.addEventListener('click', () => {
