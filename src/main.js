@@ -1,5 +1,5 @@
 import './styles.css';
-import { CLASSES } from './data/classes.js';
+import { CLASSES, formatModifier, getClassById } from './data/classes.js';
 import { MAP_HEIGHT, MAP_WIDTH } from './game/state.js';
 import { movePlayer } from './game/movementSystem.js';
 import { endTurn, startGame } from './game/turnSystem.js';
@@ -9,13 +9,16 @@ const app = document.querySelector('#app');
 let homeParticlesStarted = false;
 let homeAnimationFrame = null;
 
+const SPRITE_BASE_URL = 'https://raw.githubusercontent.com/barretoigor2025/Rpg-Online/main/sprites';
+
 const session = {
   screen: 'start',
   mode: null,
   roomId: localStorage.getItem('oraculo.roomId') ?? '',
   playerId: localStorage.getItem('oraculo.playerId') ?? crypto.randomUUID(),
   playerName: localStorage.getItem('oraculo.playerName') ?? '',
-  classId: localStorage.getItem('oraculo.classId') ?? 'barbaro',
+  classId: localStorage.getItem('oraculo.classId') ?? 'guerreiro',
+  gender: localStorage.getItem('oraculo.gender') ?? 'm',
   room: null,
   unsubscribe: null,
 };
@@ -65,6 +68,7 @@ function renderStartMenu() {
 }
 
 function renderCharacterCreation() {
+  const selectedClass = getClassById(session.classId);
   const classCards = Object.values(CLASSES)
     .map((klass) => renderClassCard(klass))
     .join('');
@@ -81,17 +85,64 @@ function renderCharacterCreation() {
         <label class="field-lbl">Nome</label>
         <input id="playerName" type="text" value="${escapeHtml(session.playerName)}" placeholder="Nome do personagem" maxlength="24" />
 
-        <label class="field-lbl">Código da sala</label>
-        <input id="roomId" type="text" value="${escapeHtml(session.roomId)}" placeholder="Código da sala" maxlength="18" />
-
         <label class="field-lbl">Classe</label>
         <input type="hidden" id="classId" value="${escapeHtml(session.classId)}" />
+        <input type="hidden" id="gender" value="${escapeHtml(session.gender)}" />
         <div id="class-grid" class="class-grid">${classCards}</div>
 
-        <button id="joinRoom" class="btn-primary">Entrar na sala</button>
+        <div id="char-preview">
+          <div id="sprite-col">
+            <img id="char-sprite" src="${getSpriteUrl(selectedClass.id, session.gender)}" alt="${escapeHtml(selectedClass.name)}" onerror="this.style.opacity='.25'" />
+            <div id="gender-toggle">
+              <button class="gender-btn ${session.gender === 'm' ? 'active' : ''}" data-gender="m" type="button">♂</button>
+              <button class="gender-btn ${session.gender === 'f' ? 'active' : ''}" data-gender="f" type="button">♀</button>
+            </div>
+          </div>
+
+          <div id="stats-col">
+            <div class="dnd-attrs">
+              ${renderAttribute('FOR', selectedClass.STR)}
+              ${renderAttribute('DES', selectedClass.DEX)}
+              ${renderAttribute('CON', selectedClass.CON)}
+              ${renderAttribute('INT', selectedClass.INT)}
+              ${renderAttribute('SAB', selectedClass.WIS)}
+              ${renderAttribute('CAR', selectedClass.CHA)}
+            </div>
+            <div class="dnd-derived">
+              <span>❤️ PV <strong>${selectedClass.maxHp}</strong></span>
+              <span>🛡️ CA <strong>${selectedClass.armorClass}</strong></span>
+              <span>⚡ Init <strong>${formatModifier(selectedClass.DEX)}</strong></span>
+            </div>
+            <div class="dnd-saves">
+              <span>Fort <strong>${formatSigned(selectedClass.fort)}</strong></span>
+              <span>Ref <strong>${formatSigned(selectedClass.ref)}</strong></span>
+              <span>Von <strong>${formatSigned(selectedClass.will)}</strong></span>
+            </div>
+            <div id="class-feature-lbl" class="feat-tag">${escapeHtml(selectedClass.feature)}</div>
+            <p class="class-description">${escapeHtml(selectedClass.description)}</p>
+          </div>
+        </div>
+
+        <label class="field-lbl">Código da sala</label>
+        <div class="row-input">
+          <input id="roomId" type="text" value="${escapeHtml(session.roomId)}" placeholder="Código da sala" maxlength="18" />
+          <button id="joinRoom" class="btn-sm" type="button">Entrar</button>
+        </div>
+
+        <button id="joinRoomPrimary" class="btn-primary">Entrar na sala</button>
         <p class="hint center">Use o mesmo código em outro celular ou aba para testar o multiplayer.</p>
       </section>
     </section>
+  `;
+}
+
+function renderAttribute(label, value) {
+  return `
+    <div class="attr-box">
+      <span class="attr-lbl">${label}</span>
+      <span class="attr-val">${value}</span>
+      <span class="attr-mod">${formatModifier(value)}</span>
+    </div>
   `;
 }
 
@@ -156,7 +207,7 @@ function renderGame() {
 function renderPlayerCard(player, isMyTurn) {
   return `
     <div class="player-card ${isMyTurn ? 'active' : ''}">
-      <div class="avatar">${player.icon}</div>
+      <div class="avatar"><img src="${getSpriteUrl(player.classId, player.gender ?? 'm')}" alt="" onerror="this.replaceWith(document.createTextNode('${player.icon}'))" /></div>
       <div>
         <strong>${escapeHtml(player.name)}</strong>
         <span>${escapeHtml(player.classId)}</span>
@@ -209,6 +260,7 @@ function bindEvents() {
   });
 
   document.querySelector('#joinRoom')?.addEventListener('click', handleJoinRoom);
+  document.querySelector('#joinRoomPrimary')?.addEventListener('click', handleJoinRoom);
   document.querySelector('#leaveRoom')?.addEventListener('click', handleLeaveRoom);
   document.querySelector('#startGame')?.addEventListener('click', handleStartGame);
   document.querySelector('#endTurn')?.addEventListener('click', handleEndTurn);
@@ -217,6 +269,14 @@ function bindEvents() {
     card.addEventListener('click', () => {
       session.classId = card.dataset.classId;
       localStorage.setItem('oraculo.classId', session.classId);
+      render();
+    });
+  });
+
+  document.querySelectorAll('.gender-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      session.gender = button.dataset.gender;
+      localStorage.setItem('oraculo.gender', session.gender);
       render();
     });
   });
@@ -305,6 +365,7 @@ async function handleJoinRoom() {
   const roomId = document.querySelector('#roomId').value.trim();
   const playerName = document.querySelector('#playerName').value.trim();
   const classId = document.querySelector('#classId').value;
+  const gender = document.querySelector('#gender')?.value ?? session.gender;
 
   if (!roomId) {
     alert('Coloque um codigo de sala.');
@@ -314,13 +375,15 @@ async function handleJoinRoom() {
   session.roomId = roomId;
   session.playerName = playerName || 'Viajante';
   session.classId = classId;
+  session.gender = gender;
 
   localStorage.setItem('oraculo.roomId', session.roomId);
   localStorage.setItem('oraculo.playerName', session.playerName);
   localStorage.setItem('oraculo.classId', session.classId);
+  localStorage.setItem('oraculo.gender', session.gender);
 
   try {
-    await joinRoom(session.roomId, session.playerId, session.playerName, session.classId);
+    await joinRoom(session.roomId, session.playerId, session.playerName, session.classId, session.gender);
     session.unsubscribe?.();
     session.unsubscribe = listenRoom(session.roomId, (room) => {
       session.room = room;
@@ -382,6 +445,14 @@ async function handleMove(x, y) {
     alert(`Erro ao mover: ${err.message}`);
     console.error(err);
   }
+}
+
+function getSpriteUrl(classId, gender = 'm') {
+  return `${SPRITE_BASE_URL}/${classId}_${gender}.png`;
+}
+
+function formatSigned(value) {
+  return value >= 0 ? `+${value}` : `${value}`;
 }
 
 function escapeHtml(value) {
