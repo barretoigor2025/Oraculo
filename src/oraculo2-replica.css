@@ -67,38 +67,12 @@
 .slot-class-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; border-radius: 0 0 10px 10px; }
 
 .lobby-box,
-.create-box {
-  width: min(760px, 100%);
-  margin: 0 auto;
-}
+.create-box { width: min(760px, 100%); margin: 0 auto; }
+#create-error,.error-msg { color: #d06050; font-size: 12px; min-height: 16px; margin-top: 4px; }
 
-#create-error,
-.error-msg {
-  color: #d06050;
-  font-size: 12px;
-  min-height: 16px;
-  margin-top: 4px;
-}
-
-#class-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.class-btn {
-  min-height: 108px;
-  padding: 12px 8px;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 14px;
-}
-
-.class-btn .class-icon,
-.class-btn span:first-child {
-  font-size: 28px !important;
-  line-height: 1;
-}
+#class-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.class-btn { min-height: 108px; padding: 12px 8px; flex-direction: column; gap: 8px; font-size: 14px; }
+.class-btn .class-icon,.class-btn span:first-child { font-size: 28px !important; line-height: 1; }
 
 #char-preview {
   display: grid;
@@ -134,21 +108,8 @@
   filter: drop-shadow(0 3px 10px rgba(0,0,0,.85));
 }
 
-#gender-toggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.gender-btn {
-  height: 56px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text2);
-  border-radius: 9px;
-  font-size: 16px;
-}
-
+#gender-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gender-btn { height: 56px; background: var(--surface); border: 1px solid var(--border); color: var(--text2); border-radius: 9px; font-size: 16px; }
 .gender-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(200,160,80,.08); }
 
 #class-feature-lbl {
@@ -164,83 +125,32 @@
   font-weight: 400;
 }
 
-#stats-col {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.dnd-attrs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-  background: rgba(255,255,255,.025);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 8px;
-}
-
+#stats-col { display: flex; flex-direction: column; gap: 10px; }
+.dnd-attrs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; background: rgba(255,255,255,.025); border: 1px solid var(--border); border-radius: 10px; padding: 12px 8px; }
 .attr-box { background: transparent; border: 0; padding: 4px 2px; text-align: center; }
 .attr-lbl { display: block; font-size: 10px; letter-spacing: 1px; color: var(--text3); line-height: 1; }
 .attr-val { display: block; font-size: 24px; color: var(--gold); font-weight: 700; line-height: 1.05; margin-top: 3px; }
 .attr-mod { display: block; font-size: 12px; color: var(--text2); line-height: 1; margin-top: 2px; }
-
 .dnd-derived { display: flex; gap: 12px; flex-wrap: wrap; color: var(--text2); font-size: 17px; }
 .dnd-saves { display: flex; gap: 10px; flex-wrap: wrap; color: var(--text2); font-size: 14px; }
-.dnd-derived span,
-.dnd-saves span { background: transparent; border: 0; padding: 0; min-width: auto; }
-.dnd-derived strong,
-.dnd-saves strong { color: var(--gold); }
+.dnd-derived span,.dnd-saves span { background: transparent; border: 0; padding: 0; min-width: auto; }
+.dnd-derived strong,.dnd-saves strong { color: var(--gold); }
 
-#poderes-panel {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: rgba(255,255,255,.025);
-  overflow: hidden;
-}
-
+#poderes-panel { border: 1px solid var(--border); border-radius: 10px; background: rgba(255,255,255,.025); overflow: hidden; }
 .poderes-title { color: var(--text3); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 10px 12px 6px; }
 .poder-card { padding: 8px 12px; border-top: 1px solid rgba(180,150,80,.12); }
 .poder-card-top { display: flex; gap: 8px; align-items: center; color: var(--gold); font-size: 13px; }
 .poder-card-desc { color: var(--text3); font-size: 12px; line-height: 1.45; margin-top: 2px; padding-left: 26px; }
-
 .spaced { margin-top: 10px; }
 .inline-hint { text-transform: none; letter-spacing: 0; }
-
-.poderes-chips,
-.adv-chips { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-
-.adv-chip,
-.poder-chip {
-  width: 100%;
-  background: rgba(255,255,255,.025);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text2);
-  padding: 10px 12px;
-  text-align: left;
-}
-
-.adv-chip.selected,
-.poder-chip.selected { border-color: var(--gold); background: rgba(200,160,80,.08); }
-
-.adv-chip-top,
-.poder-chip-top { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 13px; }
+.poderes-chips,.adv-chips { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.adv-chip,.poder-chip { width: 100%; background: rgba(255,255,255,.025); border: 1px solid var(--border); border-radius: 8px; color: var(--text2); padding: 10px 12px; text-align: left; }
+.adv-chip.selected,.poder-chip.selected { border-color: var(--gold); background: rgba(200,160,80,.08); }
+.adv-chip-top,.poder-chip-top { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 13px; }
 .chip-attr { margin-left: auto; color: var(--text3); font-size: 10px; background: rgba(200,160,80,.08); padding: 2px 6px; border-radius: 4px; }
-.adv-chip-desc,
-.poder-chip-desc { color: var(--text3); font-size: 12px; line-height: 1.45; margin-top: 4px; padding-left: 26px; }
+.adv-chip-desc,.poder-chip-desc { color: var(--text3); font-size: 12px; line-height: 1.45; margin-top: 4px; padding-left: 26px; }
 
-#lobby-char-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin-bottom: 12px;
-}
-
+#lobby-char-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
 #lobby-char-sprite { width: 70px; height: 84px; object-fit: contain; object-position: center bottom; image-rendering: pixelated; flex-shrink: 0; filter: drop-shadow(0 2px 6px rgba(0,0,0,.8)); }
 #lobby-char-info { flex: 1; }
 #lobby-char-nome { font-size: 15px; font-weight: 700; color: var(--text); }
@@ -249,128 +159,58 @@
 #btn-trocar-char { background: none; border: 1px solid var(--border); color: var(--text2); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 5px 10px; border-radius: 4px; flex-shrink: 0; }
 
 @media (max-width: 620px) {
-  .screen-panel {
-    padding: 18px 14px 28px;
-  }
+  .screen-panel { padding: 18px 14px 28px; }
+  #chars-topbar,.create-topbar { margin-bottom: 18px; }
+  #chars-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .slot-card { min-height: 178px; padding: 10px; }
+  .slot-sprite-wrap { width: 62px; height: 78px; }
 
-  #chars-topbar,
-  .create-topbar {
-    margin-bottom: 20px;
-  }
-
-  #chars-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .slot-card {
-    min-height: 178px;
-    padding: 10px;
-  }
-
-  .slot-sprite-wrap {
-    width: 62px;
-    height: 78px;
-  }
-
-  #class-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .class-btn {
-    min-height: 72px;
-    font-size: 11px;
-    padding: 8px 4px;
-    gap: 5px;
-  }
-
-  .class-btn .class-icon,
-  .class-btn span:first-child {
-    font-size: 20px !important;
-  }
+  #class-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .class-btn { min-height: 66px; font-size: 10px; padding: 7px 3px; gap: 4px; }
+  .class-btn .class-icon,.class-btn span:first-child { font-size: 18px !important; }
 
   #char-preview {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 14px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.18fr) minmax(0, .82fr);
+    gap: 10px;
+    margin-top: 12px;
+    align-items: start;
   }
 
   #sprite-col {
     min-height: 0;
-    padding: 10px;
-    gap: 10px;
+    padding: 8px;
+    gap: 8px;
   }
 
   #char-sprite {
-    height: min(54vh, 330px);
-    max-height: 330px;
-    min-height: 250px;
+    height: min(44vh, 310px);
+    max-height: 310px;
+    min-height: 230px;
     width: 100%;
     object-fit: contain;
     object-position: center bottom;
   }
 
-  .gender-btn {
-    height: 46px;
-    font-size: 15px;
-  }
+  .gender-btn { height: 42px; font-size: 13px; }
+  #class-feature-lbl { font-size: 11px; line-height: 1.35; padding: 6px 8px; }
 
-  #class-feature-lbl {
-    font-size: 12px;
-    line-height: 1.45;
-  }
+  #stats-col { gap: 7px; min-width: 0; }
+  .dnd-attrs { padding: 8px 5px; }
+  .attr-box { padding: 3px 1px; }
+  .attr-lbl { font-size: 7px; letter-spacing: .8px; }
+  .attr-val { font-size: 18px; }
+  .attr-mod { font-size: 9px; }
 
-  #stats-col {
-    gap: 8px;
-  }
+  .dnd-derived { font-size: 13px; gap: 7px; }
+  .dnd-saves { font-size: 11px; gap: 6px; }
 
-  .dnd-attrs {
-    padding: 9px 6px;
-  }
+  .poderes-title { padding: 8px 9px 4px; font-size: 9px; letter-spacing: 1.5px; }
+  .poder-card { padding: 7px 9px; }
+  .poder-card-top { font-size: 12px; gap: 6px; }
+  .poder-card-desc { font-size: 10px; line-height: 1.3; padding-left: 20px; }
 
-  .attr-lbl {
-    font-size: 8px;
-  }
-
-  .attr-val {
-    font-size: 20px;
-  }
-
-  .attr-mod {
-    font-size: 10px;
-  }
-
-  .dnd-derived {
-    font-size: 15px;
-    gap: 10px;
-  }
-
-  .dnd-saves {
-    font-size: 13px;
-    gap: 10px;
-  }
-
-  .poderes-title {
-    padding: 9px 10px 5px;
-  }
-
-  .poder-card {
-    padding: 8px 10px;
-  }
-
-  .poder-card-top,
-  .adv-chip-top,
-  .poder-chip-top {
-    font-size: 13px;
-  }
-
-  .poder-card-desc,
-  .adv-chip-desc,
-  .poder-chip-desc {
-    font-size: 12px;
-    line-height: 1.4;
-    padding-left: 24px;
-  }
+  .adv-chip,.poder-chip { padding: 9px 10px; }
+  .adv-chip-top,.poder-chip-top { font-size: 12px; }
+  .adv-chip-desc,.poder-chip-desc { font-size: 11px; line-height: 1.35; padding-left: 22px; }
 }
