@@ -8,6 +8,8 @@ import { joinRoom, listenRoom, saveRoom } from './firebase/roomService.js';
 const app = document.querySelector('#app');
 
 const session = {
+  screen: 'start',
+  mode: null,
   roomId: localStorage.getItem('oraculo.roomId') ?? '',
   playerId: localStorage.getItem('oraculo.playerId') ?? crypto.randomUUID(),
   playerName: localStorage.getItem('oraculo.playerName') ?? '',
@@ -21,40 +23,69 @@ localStorage.setItem('oraculo.playerId', session.playerId);
 function render() {
   app.innerHTML = `
     <main class="shell ${session.room ? 'game-shell' : 'intro-shell'}">
-      ${session.room ? renderGame() : renderLobby()}
+      ${renderCurrentScreen()}
     </main>
   `;
 
   bindEvents();
 }
 
-function renderLobby() {
+function renderCurrentScreen() {
+  if (session.room) return renderGame();
+  if (session.screen === 'character') return renderCharacterCreation();
+  return renderStartMenu();
+}
+
+function renderFireflies() {
+  return Array.from({ length: 26 })
+    .map((_, index) => `<span class="firefly firefly-${index + 1}" aria-hidden="true"></span>`)
+    .join('');
+}
+
+function renderStartMenu() {
+  return `
+    <section class="start-screen">
+      <div class="oraculo-mist"></div>
+      <div class="fireflies">${renderFireflies()}</div>
+
+      <section class="main-menu-card">
+        <p class="eyebrow">RPG de mesa online</p>
+        <h1 class="logo-title">Oráculo</h1>
+        <p class="menu-subtitle">As fagulhas guiam o caminho. Escolha como deseja atravessar o portal.</p>
+
+        <div class="menu-actions">
+          <button id="playSolo" class="menu-button solo" type="button">
+            <span>Jogar Solo</span>
+            <small>Em breve: aventura individual e testes de sistema.</small>
+          </button>
+          <button id="playOnline" class="menu-button online" type="button">
+            <span>Jogar Online</span>
+            <small>Criar ou entrar em uma sala com outros jogadores.</small>
+          </button>
+        </div>
+      </section>
+    </section>
+  `;
+}
+
+function renderCharacterCreation() {
   const classCards = Object.values(CLASSES)
     .map((klass) => renderClassCard(klass))
     .join('');
 
   return `
-    <section class="entrance-screen">
-      <div class="entrance-bg entrance-bg-left"></div>
-      <div class="entrance-bg entrance-bg-right"></div>
+    <section class="creation-screen">
+      <div class="fireflies subtle">${renderFireflies()}</div>
 
-      <section class="title-panel">
-        <p class="eyebrow">Campanha online</p>
-        <div class="sigil" aria-hidden="true">◈</div>
-        <h1>Oráculo</h1>
-        <p class="subtitle">Entre no salão de pedra, escolha seu destino e reúna a mesa antes que a névoa atravesse os portões.</p>
-        <div class="lore-box">
-          <strong>Base reconstruída</strong>
-          <span>Firebase, salas em tempo real e combate por turnos. Primeiro a fundação. Depois o mundo respira.</span>
-        </div>
-      </section>
+      <section class="entry-card character-card">
+        <button id="backToMenu" class="ghost-button" type="button">← Voltar</button>
 
-      <section class="entry-card">
         <div class="entry-card-header">
           <span class="rune">✦</span>
           <div>
-            <h2>Entrar no Oráculo</h2>
-            <p>Crie uma sala ou entre com o mesmo código dos outros jogadores.</p>
+            <p class="eyebrow">Jogar Online</p>
+            <h2>Criação de personagem</h2>
+            <p>Informe seu nome, escolha uma classe e entre em uma sala do Oráculo.</p>
           </div>
         </div>
 
@@ -78,7 +109,7 @@ function renderLobby() {
           <div class="class-grid">${classCards}</div>
         </div>
 
-        <button id="joinRoom" class="main-cta">Abrir os portões</button>
+        <button id="joinRoom" class="main-cta">Entrar na sala</button>
         <p class="hint center">Para testar multiplayer, abra o mesmo link em outro celular/aba e use o mesmo código de sala.</p>
       </section>
     </section>
@@ -190,6 +221,21 @@ function renderPlayers(room) {
 }
 
 function bindEvents() {
+  document.querySelector('#playOnline')?.addEventListener('click', () => {
+    session.mode = 'online';
+    session.screen = 'character';
+    render();
+  });
+
+  document.querySelector('#playSolo')?.addEventListener('click', () => {
+    alert('Modo solo ainda nao foi liberado. Vamos construir depois do online ficar firme.');
+  });
+
+  document.querySelector('#backToMenu')?.addEventListener('click', () => {
+    session.screen = 'start';
+    render();
+  });
+
   document.querySelector('#joinRoom')?.addEventListener('click', handleJoinRoom);
   document.querySelector('#leaveRoom')?.addEventListener('click', handleLeaveRoom);
   document.querySelector('#startGame')?.addEventListener('click', handleStartGame);
@@ -245,6 +291,7 @@ function handleLeaveRoom() {
   session.unsubscribe?.();
   session.unsubscribe = null;
   session.room = null;
+  session.screen = 'start';
   render();
 }
 
