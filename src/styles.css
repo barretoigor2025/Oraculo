@@ -186,16 +186,16 @@ select option { color: #1b1209; }
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 20px;
+  padding: 28px;
 }
 
 .entry-card,
 .character-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 760px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   background: transparent;
   border: none;
   box-shadow: none;
@@ -217,7 +217,7 @@ select option { color: #1b1209; }
   margin: 0;
   font-weight: 600;
   flex: 1;
-  text-align: center;
+  text-align: left;
 }
 
 .btn-back {
@@ -243,8 +243,8 @@ select option { color: #1b1209; }
 #class-grid,
 .class-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 6px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
 }
 
 .class-btn {
@@ -252,78 +252,81 @@ select option { color: #1b1209; }
   border: 1px solid var(--border);
   color: var(--text2);
   font-family: inherit;
-  font-size: 11px;
-  padding: 8px 4px;
-  border-radius: 8px;
+  font-size: 12px;
+  padding: 16px 8px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all .12s;
   text-align: center;
   display: flex;
+  min-height: 92px;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  min-height: 36px;
+  gap: 7px;
   line-height: 1.2;
 }
+.class-btn span:first-child { font-size: 30px; line-height: 1; }
 .class-btn:hover { border-color: rgba(200,160,60,.5); color: var(--text); }
 .class-btn.active,
 .class-btn.selected { border-color: var(--gold); color: var(--gold); background: rgba(200,160,80,.08); }
 
 #char-preview {
-  display: flex;
-  gap: 12px;
-  align-items: stretch;
-  background: rgba(255,255,255,.03);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px;
-  margin-top: 4px;
-  min-height: 178px;
+  display: grid;
+  grid-template-columns: minmax(330px, 1.18fr) minmax(250px, .82fr);
+  gap: 18px;
+  align-items: start;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin-top: 10px;
+  min-height: 0;
 }
 
 #sprite-col {
-  width: 112px;
-  flex: 0 0 112px;
+  width: 100%;
+  min-height: 390px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  background: rgba(8,10,20,.35);
-  border: 1px solid rgba(100,130,200,.12);
-  border-radius: 8px;
-  padding: 8px 6px;
+  gap: 12px;
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 14px 12px;
   overflow: hidden;
 }
 
 #char-sprite {
-  width: 86px;
-  height: 108px;
-  max-width: 86px;
-  max-height: 108px;
+  width: 100%;
+  height: 320px;
+  max-width: 315px;
+  max-height: 320px;
   object-fit: contain;
   object-position: center bottom;
-  image-rendering: pixelated;
+  image-rendering: auto;
   display: block;
-  flex-shrink: 0;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,.8));
+  flex-shrink: 1;
+  filter: drop-shadow(0 3px 10px rgba(0,0,0,.85));
 }
 
 #gender-toggle {
-  display: flex;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   justify-content: center;
   width: 100%;
 }
 
 .gender-btn {
-  width: 32px;
-  height: 26px;
+  height: 52px;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text2);
-  border-radius: 5px;
-  font-size: 14px;
+  border-radius: 9px;
+  font-size: 20px;
   cursor: pointer;
   transition: all .12s;
 }
@@ -331,31 +334,34 @@ select option { color: #1b1209; }
 .gender-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(200,160,80,.08); }
 
 #stats-col {
-  flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 9px;
 }
 
 .dnd-attrs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
+  gap: 0;
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 10px;
 }
 
 .attr-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 5px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 4px 2px;
   text-align: center;
   min-width: 0;
 }
 
 .attr-lbl {
   display: block;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 1px;
   color: var(--text3);
   line-height: 1;
@@ -363,17 +369,17 @@ select option { color: #1b1209; }
 
 .attr-val {
   display: block;
-  font-size: 15px;
-  color: var(--text);
+  font-size: 24px;
+  color: var(--gold);
   font-weight: 700;
-  line-height: 1.1;
-  margin-top: 2px;
+  line-height: 1.05;
+  margin-top: 3px;
 }
 
 .attr-mod {
   display: block;
-  font-size: 9px;
-  color: var(--gold);
+  font-size: 12px;
+  color: var(--text2);
   line-height: 1;
   margin-top: 2px;
 }
@@ -381,35 +387,37 @@ select option { color: #1b1209; }
 .dnd-derived,
 .dnd-saves {
   display: flex;
-  gap: 5px;
+  gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .dnd-derived span,
 .dnd-saves span {
-  flex: 1;
-  min-width: 54px;
-  background: rgba(200,160,80,.06);
-  border: 1px solid rgba(200,160,80,.14);
-  border-radius: 5px;
-  padding: 5px 4px;
+  flex: 0 0 auto;
+  min-width: auto;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   color: var(--text2);
-  font-size: 10px;
-  text-align: center;
+  font-size: 17px;
+  text-align: left;
   white-space: nowrap;
 }
 
+.dnd-saves span { font-size: 14px; }
 .dnd-derived strong,
-.dnd-saves strong { color: var(--text); }
+.dnd-saves strong { color: var(--gold); }
 
 .feat-tag,
 #class-feature-lbl {
-  background: rgba(200,160,80,.07);
-  border: 1px solid rgba(200,160,80,.2);
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--border);
   color: var(--gold);
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 11px;
+  border-radius: 10px;
+  padding: 14px 12px;
+  font-size: 16px;
   letter-spacing: .5px;
   text-align: center;
   font-weight: 700;
@@ -417,26 +425,26 @@ select option { color: #1b1209; }
 
 .class-description {
   color: var(--text3);
-  font-size: 11px;
-  line-height: 1.45;
+  font-size: 15px;
+  line-height: 1.55;
   font-style: italic;
 }
 
 .row-input {
   display: flex;
-  gap: 8px;
+  gap: 12px;
 }
 .row-input input { flex: 1; }
 
 .btn-primary {
   width: 100%;
-  padding: 12px;
+  padding: 16px;
   background: #1c1a14;
   color: var(--gold);
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: bold;
   cursor: pointer;
   letter-spacing: .5px;
@@ -446,13 +454,13 @@ select option { color: #1b1209; }
 .btn-primary:hover { background: #2e2b1e; }
 
 .btn-sm {
-  padding: 8px 14px;
+  padding: 8px 18px;
   background: var(--surface2);
   border: 1px solid var(--border);
   color: var(--text2);
   border-radius: 8px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15px;
   cursor: pointer;
   white-space: nowrap;
   transition: all .12s;
@@ -461,7 +469,7 @@ select option { color: #1b1209; }
 .btn-sm:hover { border-color: rgba(200,160,60,.5); color: var(--text); }
 
 .center { text-align: center; }
-.hint { font-size: 11px; color: var(--text3); }
+.hint { font-size: 13px; color: var(--text3); }
 
 .card {
   border: 1px solid var(--border);
@@ -576,21 +584,33 @@ select option { color: #1b1209; }
 .player-card span { display: block; color: var(--text2); font-size: 0.9rem; }
 .log { display: grid; gap: 0.4rem; margin: 0; padding-left: 1.25rem; color: var(--text2); }
 
-@media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
-  .game-header { align-items: start; flex-direction: column; }
+@media (max-width: 760px) {
+  #screen-create, .creation-screen { padding: 28px; }
+  .entry-card, .character-card { max-width: 100%; }
+  #char-preview { grid-template-columns: 1.2fr .9fr; gap: 14px; }
+  #sprite-col { min-height: 360px; }
+  #char-sprite { height: 290px; max-height: 290px; }
 }
 
 @media (max-width: 600px) {
   .shell { width: 100%; padding: 0; }
   .game-shell { width: min(100% - 1rem, 1280px); padding: 1rem 0; }
-  #screen-create, .creation-screen { padding: 16px; }
-  #class-grid { grid-template-columns: repeat(2, 1fr); }
-  #char-preview { gap: 8px; padding: 8px; }
-  #sprite-col { width: 96px; flex-basis: 96px; }
-  #char-sprite { width: 78px; height: 100px; max-width: 78px; max-height: 100px; }
-  .dnd-attrs { grid-template-columns: repeat(3, 1fr); gap: 4px; }
-  .dnd-derived span, .dnd-saves span { min-width: 46px; font-size: 9px; }
+  #screen-create, .creation-screen { padding: 28px; }
+  #class-grid { grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  .class-btn { min-height: 82px; padding: 12px 4px; }
+  #char-preview { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 12px; }
+  #sprite-col { min-height: 338px; padding: 12px 10px 10px; }
+  #char-sprite { height: 268px; max-height: 268px; max-width: 240px; }
+  #gender-toggle { gap: 8px; }
+  .gender-btn { height: 46px; }
+  .dnd-attrs { padding: 10px 8px; }
+  .attr-lbl { font-size: 9px; }
+  .attr-val { font-size: 22px; }
+  .attr-mod { font-size: 11px; }
+  .dnd-derived span { font-size: 15px; }
+  .dnd-saves span { font-size: 13px; }
+  .feat-tag, #class-feature-lbl { font-size: 14px; padding: 12px 8px; }
+  .class-description { font-size: 13px; }
   #home-oraculo { letter-spacing: 5px; }
   #home-rpg { letter-spacing: 10px; }
 }
