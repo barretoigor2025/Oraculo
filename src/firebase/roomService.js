@@ -5,10 +5,17 @@ import {
   setDoc,
   updateDoc,
 } from 'firebase/firestore';
-import { db } from './config.js';
+import { db, isFirebaseConfigured } from './config.js';
 import { createInitialRoom, createPlayer, placePlayer } from '../game/state.js';
 
+function assertFirebaseReady() {
+  if (!isFirebaseConfigured || !db) {
+    throw new Error('Firebase ainda nao configurado. Preencha as variaveis VITE_FIREBASE_* no .env ou no deploy.');
+  }
+}
+
 function roomRef(roomId) {
+  assertFirebaseReady();
   return doc(db, 'rooms', roomId);
 }
 
