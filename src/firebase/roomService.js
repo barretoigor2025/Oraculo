@@ -36,9 +36,9 @@ export async function ensureRoom(roomId) {
   return createRoom(roomId);
 }
 
-export async function joinRoom(roomId, playerId, playerName, classId) {
+export async function joinRoom(roomId, playerId, playerName, classId, gender = 'm') {
   const room = await ensureRoom(roomId);
-  const player = placePlayer(room, createPlayer(playerId, playerName, classId));
+  const player = placePlayer(room, createPlayer(playerId, playerName, classId, gender));
   const nextRoom = {
     ...room,
     updatedAt: Date.now(),
