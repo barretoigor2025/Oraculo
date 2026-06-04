@@ -1,4 +1,5 @@
 import './styles.css';
+import './portrait-fix.css';
 import { CLASSES, formatModifier, getClassById } from './data/classes.js';
 import { MAP_HEIGHT, MAP_WIDTH } from './game/state.js';
 import { movePlayer } from './game/movementSystem.js';
