@@ -1,4 +1,4 @@
-import { getClassById } from '../data/classes.js';
+import { getClassById, getDerivedStats } from '../data/classes.js';
 
 export const MAP_WIDTH = 8;
 export const MAP_HEIGHT = 6;
@@ -16,23 +16,32 @@ export function createInitialRoom(roomId) {
   };
 }
 
-export function createPlayer(playerId, name, classId, gender = 'm') {
-  const playerClass = getClassById(classId);
+export function createPlayer(playerId, character) {
+  const playerClass = getClassById(character?.classId || character?.classe || 'guerreiro');
+  const derived = getDerivedStats(playerClass);
+  const gender = character?.gender || character?.sexo || 'm';
 
   return {
     id: playerId,
-    name: name || 'Viajante',
+    name: character?.name || character?.nome || 'Viajante',
     classId: playerClass.id,
     gender,
     icon: playerClass.icon,
-    hp: playerClass.maxHp,
-    maxHp: playerClass.maxHp,
+    hp: character?.hp ?? derived.hp,
+    maxHp: character?.maxHp ?? character?.maxHp ?? derived.hp,
+    mana: character?.mana ?? derived.mana,
+    maxMana: character?.maxMana ?? derived.maxMana,
+    stamina: character?.stamina ?? derived.stamina,
+    maxStamina: character?.maxStamina ?? derived.maxStamina,
     attack: playerClass.attack,
     movement: playerClass.movement,
-    armorClass: playerClass.armorClass,
-    fort: playerClass.fort,
-    ref: playerClass.ref,
-    will: playerClass.will,
+    armorClass: character?.armorClass ?? character?.ac ?? derived.ac,
+    init: character?.init ?? derived.init,
+    fort: character?.fort ?? derived.fort,
+    ref: character?.ref ?? derived.ref,
+    will: character?.will ?? derived.will,
+    pericias: character?.pericias ?? [],
+    poderesEscolhidos: character?.poderesEscolhidos ?? character?.poderes_escolhidos ?? [],
     attributes: {
       STR: playerClass.STR,
       DEX: playerClass.DEX,
