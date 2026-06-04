@@ -1,7 +1,7 @@
 import { getClassById, getDerivedStats } from '../data/classes.js';
 
-export const MAP_WIDTH = 8;
-export const MAP_HEIGHT = 6;
+export const MAP_WIDTH = 12;
+export const MAP_HEIGHT = 9;
 
 export function createInitialRoom(roomId) {
   return {
@@ -60,10 +60,20 @@ export function createPlayer(playerId, character) {
 
 export function placePlayer(room, player) {
   const playersCount = Object.keys(room.players ?? {}).length;
+  const startPositions = [
+    { x: 4, y: 7 },
+    { x: 5, y: 7 },
+    { x: 6, y: 7 },
+    { x: 7, y: 7 },
+  ];
+  const start = startPositions[playersCount] ?? {
+    x: playersCount % MAP_WIDTH,
+    y: Math.floor(playersCount / MAP_WIDTH),
+  };
 
   return {
     ...player,
-    x: playersCount % MAP_WIDTH,
-    y: Math.floor(playersCount / MAP_WIDTH),
+    x: start.x,
+    y: start.y,
   };
 }
