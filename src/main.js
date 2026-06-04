@@ -175,13 +175,17 @@ async function handleJoinRoom() {
   localStorage.setItem('oraculo.playerName', session.playerName);
   localStorage.setItem('oraculo.classId', session.classId);
 
-  await joinRoom(session.roomId, session.playerId, session.playerName, session.classId);
-
-  session.unsubscribe?.();
-  session.unsubscribe = listenRoom(session.roomId, (room) => {
-    session.room = room;
-    render();
-  });
+  try {
+    await joinRoom(session.roomId, session.playerId, session.playerName, session.classId);
+    session.unsubscribe?.();
+    session.unsubscribe = listenRoom(session.roomId, (room) => {
+      session.room = room;
+      render();
+    });
+  } catch (err) {
+    alert(`Erro ao entrar na sala: ${err.message}`);
+    console.error(err);
+  }
 }
 
 function handleLeaveRoom() {
@@ -197,7 +201,12 @@ async function handleStartGame() {
     alert(result.error);
     return;
   }
-  await saveRoom(result.room);
+  try {
+    await saveRoom(result.room);
+  } catch (err) {
+    alert(`Erro ao iniciar jogo: ${err.message}`);
+    console.error(err);
+  }
 }
 
 async function handleEndTurn() {
@@ -206,7 +215,12 @@ async function handleEndTurn() {
     alert(result.error);
     return;
   }
-  await saveRoom(result.room);
+  try {
+    await saveRoom(result.room);
+  } catch (err) {
+    alert(`Erro ao encerrar turno: ${err.message}`);
+    console.error(err);
+  }
 }
 
 async function handleMove(x, y) {
@@ -217,7 +231,12 @@ async function handleMove(x, y) {
     alert(result.error);
     return;
   }
-  await saveRoom(result.room);
+  try {
+    await saveRoom(result.room);
+  } catch (err) {
+    alert(`Erro ao mover: ${err.message}`);
+    console.error(err);
+  }
 }
 
 function escapeHtml(value) {
