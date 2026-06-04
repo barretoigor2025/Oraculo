@@ -29,6 +29,16 @@ npm run dev
 
 Crie um arquivo `.env` baseado no `.env.example` e preencha as chaves do Firebase.
 
+## Deploy
+
+O projeto está preparado para publicar no GitHub Pages usando GitHub Actions.
+
+Link esperado depois do deploy:
+
+```txt
+https://barretoigor2025.github.io/Oraculo/
+```
+
 ## Filosofia da reconstrução
 
 Este repositório não tenta remendar versões antigas. A ideia é reconstruir o Oraculo com uma base limpa:
