@@ -16,18 +16,31 @@ export function createInitialRoom(roomId) {
   };
 }
 
-export function createPlayer(playerId, name, classId) {
+export function createPlayer(playerId, name, classId, gender = 'm') {
   const playerClass = getClassById(classId);
 
   return {
     id: playerId,
     name: name || 'Viajante',
     classId: playerClass.id,
+    gender,
     icon: playerClass.icon,
     hp: playerClass.maxHp,
     maxHp: playerClass.maxHp,
     attack: playerClass.attack,
     movement: playerClass.movement,
+    armorClass: playerClass.armorClass,
+    fort: playerClass.fort,
+    ref: playerClass.ref,
+    will: playerClass.will,
+    attributes: {
+      STR: playerClass.STR,
+      DEX: playerClass.DEX,
+      CON: playerClass.CON,
+      INT: playerClass.INT,
+      WIS: playerClass.WIS,
+      CHA: playerClass.CHA,
+    },
     x: 0,
     y: 0,
     hasMoved: false,
