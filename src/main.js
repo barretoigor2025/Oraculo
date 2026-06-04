@@ -6,6 +6,8 @@ import { endTurn, startGame } from './game/turnSystem.js';
 import { joinRoom, listenRoom, saveRoom } from './firebase/roomService.js';
 
 const app = document.querySelector('#app');
+let homeParticlesStarted = false;
+let homeAnimationFrame = null;
 
 const session = {
   screen: 'start',
@@ -28,6 +30,12 @@ function render() {
   `;
 
   bindEvents();
+
+  if (!session.room && session.screen === 'start') {
+    startHomeCanvas();
+  } else {
+    stopHomeCanvas();
+  }
 }
 
 function renderCurrentScreen() {
@@ -36,34 +44,22 @@ function renderCurrentScreen() {
   return renderStartMenu();
 }
 
-function renderFireflies() {
-  return Array.from({ length: 26 })
-    .map((_, index) => `<span class="firefly firefly-${index + 1}" aria-hidden="true"></span>`)
-    .join('');
-}
-
 function renderStartMenu() {
   return `
-    <section class="start-screen">
-      <div class="oraculo-mist"></div>
-      <div class="fireflies">${renderFireflies()}</div>
-
-      <section class="main-menu-card">
-        <p class="eyebrow">RPG de mesa online</p>
-        <h1 class="logo-title">Oráculo</h1>
-        <p class="menu-subtitle">As fagulhas guiam o caminho. Escolha como deseja atravessar o portal.</p>
-
-        <div class="menu-actions">
-          <button id="playSolo" class="menu-button solo" type="button">
-            <span>Jogar Solo</span>
-            <small>Em breve: aventura individual e testes de sistema.</small>
-          </button>
-          <button id="playOnline" class="menu-button online" type="button">
-            <span>Jogar Online</span>
-            <small>Criar ou entrar em uma sala com outros jogadores.</small>
-          </button>
+    <section id="screen-home" class="start-screen">
+      <canvas id="home-canvas"></canvas>
+      <div id="home-content">
+        <div id="home-logo-wrap">
+          <div id="home-oraculo">ORÁCULO</div>
+          <div id="home-rpg">RPG</div>
         </div>
-      </section>
+        <p id="home-tagline">Sistema de RPG Generativo com Mestre de IA</p>
+        <p id="home-desc">A inteligência artificial conduz a narrativa, interpreta NPCs, controla inimigos e adapta a campanha em tempo real conforme suas escolhas.</p>
+        <div class="home-mode-actions">
+          <button id="playSolo" class="home-mode-btn" type="button">Jogar Solo</button>
+          <button id="playOnline" class="home-mode-btn primary" type="button">Jogar Online</button>
+        </div>
+      </div>
     </section>
   `;
 }
@@ -74,43 +70,26 @@ function renderCharacterCreation() {
     .join('');
 
   return `
-    <section class="creation-screen">
-      <div class="fireflies subtle">${renderFireflies()}</div>
-
+    <section id="screen-create" class="creation-screen">
       <section class="entry-card character-card">
-        <button id="backToMenu" class="ghost-button" type="button">← Voltar</button>
-
-        <div class="entry-card-header">
-          <span class="rune">✦</span>
-          <div>
-            <p class="eyebrow">Jogar Online</p>
-            <h2>Criação de personagem</h2>
-            <p>Informe seu nome, escolha uma classe e entre em uma sala do Oráculo.</p>
-          </div>
+        <div class="create-topbar">
+          <button id="backToMenu" class="btn-back" type="button">← Início</button>
+          <h2 class="create-title">Novo Aventureiro</h2>
+          <span></span>
         </div>
 
-        <div class="form-grid">
-          <label>
-            Nome do viajante
-            <input id="playerName" value="${escapeHtml(session.playerName)}" placeholder="Ex: Igor" />
-          </label>
-          <label>
-            Código da sala
-            <input id="roomId" value="${escapeHtml(session.roomId)}" placeholder="Ex: castelo01" />
-          </label>
-        </div>
+        <label class="field-lbl">Nome</label>
+        <input id="playerName" type="text" value="${escapeHtml(session.playerName)}" placeholder="Nome do personagem" maxlength="24" />
 
-        <div class="class-section">
-          <div class="section-title">
-            <span>Escolha sua classe</span>
-            <small>A classe define vida, movimento e ataque inicial.</small>
-          </div>
-          <input type="hidden" id="classId" value="${escapeHtml(session.classId)}" />
-          <div class="class-grid">${classCards}</div>
-        </div>
+        <label class="field-lbl">Código da sala</label>
+        <input id="roomId" type="text" value="${escapeHtml(session.roomId)}" placeholder="Código da sala" maxlength="18" />
 
-        <button id="joinRoom" class="main-cta">Entrar na sala</button>
-        <p class="hint center">Para testar multiplayer, abra o mesmo link em outro celular/aba e use o mesmo código de sala.</p>
+        <label class="field-lbl">Classe</label>
+        <input type="hidden" id="classId" value="${escapeHtml(session.classId)}" />
+        <div id="class-grid" class="class-grid">${classCards}</div>
+
+        <button id="joinRoom" class="btn-primary">Entrar na sala</button>
+        <p class="hint center">Use o mesmo código em outro celular ou aba para testar o multiplayer.</p>
       </section>
     </section>
   `;
@@ -118,18 +97,11 @@ function renderCharacterCreation() {
 
 function renderClassCard(klass) {
   const isSelected = session.classId === klass.id;
-  const descriptions = {
-    barbaro: 'Avança na linha de frente e aguenta pancada sem pedir licença.',
-    ladino: 'Rápido, leve e perfeito para cruzar o mapa antes dos outros.',
-    mago: 'Frágil no corpo, perigoso quando a magia começa a falar.',
-  };
 
   return `
-    <button class="class-card ${isSelected ? 'selected' : ''}" data-class-id="${klass.id}" type="button">
-      <span class="class-icon">${klass.icon}</span>
-      <strong>${klass.name}</strong>
-      <small>${descriptions[klass.id] ?? 'Classe inicial do Oráculo.'}</small>
-      <span class="stats">HP ${klass.maxHp} · MOV ${klass.movement} · ATQ ${klass.attack}</span>
+    <button class="class-btn class-card ${isSelected ? 'active selected' : ''}" data-class-id="${klass.id}" type="button">
+      <span>${klass.icon}</span>
+      <span>${klass.name}</span>
     </button>
   `;
 }
@@ -228,7 +200,7 @@ function bindEvents() {
   });
 
   document.querySelector('#playSolo')?.addEventListener('click', () => {
-    alert('Modo solo ainda nao foi liberado. Vamos construir depois do online ficar firme.');
+    alert('Modo solo ainda nao foi liberado. Primeiro vamos firmar o online.');
   });
 
   document.querySelector('#backToMenu')?.addEventListener('click', () => {
@@ -254,6 +226,79 @@ function bindEvents() {
       handleMove(Number(tile.dataset.x), Number(tile.dataset.y));
     });
   });
+}
+
+function startHomeCanvas() {
+  const canvas = document.querySelector('#home-canvas');
+  if (!canvas || homeParticlesStarted) return;
+
+  const ctx = canvas.getContext('2d');
+  const particles = Array.from({ length: 72 }, () => createParticle(canvas));
+  homeParticlesStarted = true;
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(1, Math.floor(rect.width * window.devicePixelRatio));
+    canvas.height = Math.max(1, Math.floor(rect.height * window.devicePixelRatio));
+    ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+  }
+
+  function draw() {
+    if (!document.querySelector('#home-canvas')) {
+      stopHomeCanvas();
+      return;
+    }
+
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    ctx.clearRect(0, 0, width, height);
+
+    particles.forEach((particle) => {
+      particle.x += particle.vx;
+      particle.y += particle.vy;
+      particle.life += particle.speed;
+
+      if (particle.x < -20 || particle.x > width + 20 || particle.y < -20 || particle.y > height + 20) {
+        Object.assign(particle, createParticle(canvas));
+        particle.y = height + Math.random() * 40;
+      }
+
+      const pulse = 0.35 + Math.sin(particle.life) * 0.35;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(122, 192, 240, ${0.12 + pulse * 0.55})`;
+      ctx.shadowColor = 'rgba(122, 192, 240, .85)';
+      ctx.shadowBlur = 16 + pulse * 14;
+      ctx.arc(particle.x, particle.y, particle.size + pulse * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    homeAnimationFrame = requestAnimationFrame(draw);
+  }
+
+  resize();
+  window.addEventListener('resize', resize, { passive: true });
+  draw();
+}
+
+function stopHomeCanvas() {
+  if (homeAnimationFrame) cancelAnimationFrame(homeAnimationFrame);
+  homeAnimationFrame = null;
+  homeParticlesStarted = false;
+}
+
+function createParticle(canvas) {
+  const width = canvas.clientWidth || window.innerWidth;
+  const height = canvas.clientHeight || window.innerHeight;
+  return {
+    x: Math.random() * width,
+    y: Math.random() * height,
+    vx: (Math.random() - 0.5) * 0.18,
+    vy: -0.15 - Math.random() * 0.45,
+    size: 1 + Math.random() * 2.2,
+    speed: 0.025 + Math.random() * 0.04,
+    life: Math.random() * Math.PI * 2,
+  };
 }
 
 async function handleJoinRoom() {
