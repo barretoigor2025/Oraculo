@@ -1,0 +1,332 @@
+/* Réplica estrutural do fluxo Oráculo 2: slots → criação → lobby */
+
+.screen-panel {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  overflow-y: auto;
+  z-index: 1;
+  padding: 28px;
+}
+
+#chars-topbar,
+.create-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+#chars-title,
+.create-title {
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  margin: 0;
+  font-weight: 700;
+  text-transform: none;
+  text-align: left;
+}
+
+#chars-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: min(760px, 100%);
+  margin: 0 auto;
+}
+
+.slot-card {
+  position: relative;
+  min-height: 220px;
+  border: 1px solid rgba(80,110,180,.2);
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
+  color: var(--text2);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  overflow: hidden;
+  transition: border-color .15s, background .15s;
+}
+
+.slot-card:hover { border-color: rgba(80,140,220,.45); background: rgba(40,80,160,.07); }
+.slot-card.empty { border-style: dashed; border-color: rgba(80,110,180,.2); }
+.slot-empty-icon { font-size: 28px; color: rgba(100,140,220,.25); line-height: 1; }
+.slot-empty-label { font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-top: 8px; text-align: center; }
+.slot-card.occupied { justify-content: flex-start; }
+.slot-sprite-wrap { width: 72px; height: 88px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 4px; flex-shrink: 0; }
+.slot-sprite-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 2px 8px rgba(0,0,0,.8)); }
+.slot-nome { font-size: 13px; font-weight: 700; color: var(--text); text-align: center; line-height: 1.2; word-break: break-word; }
+.slot-classe { font-size: 10px; color: #7aaedd; letter-spacing: .5px; text-align: center; }
+.slot-nivel { font-size: 10px; color: var(--text3); text-align: center; }
+.slot-delete { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; background: rgba(120,20,20,.5); border: 1px solid rgba(255,80,80,.3); color: rgba(255,120,120,.8); border-radius: 4px; font-size: 12px; display: flex; align-items: center; justify-content: center; z-index: 2; }
+.slot-class-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; border-radius: 0 0 10px 10px; }
+
+.lobby-box,
+.create-box {
+  width: min(760px, 100%);
+  margin: 0 auto;
+}
+
+#create-error,
+.error-msg {
+  color: #d06050;
+  font-size: 12px;
+  min-height: 16px;
+  margin-top: 4px;
+}
+
+#create-box { max-width: 760px; }
+
+#class-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.class-btn {
+  min-height: 108px;
+  padding: 12px 8px;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.class-btn .class-icon,
+.class-btn span:first-child {
+  font-size: 28px !important;
+  line-height: 1;
+}
+
+#char-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.28fr) minmax(260px, .72fr);
+  gap: 18px;
+  margin-top: 20px;
+  align-items: start;
+}
+
+#sprite-col {
+  min-height: 420px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,.025);
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 12px;
+  overflow: hidden;
+}
+
+#char-sprite {
+  width: 100%;
+  height: 320px;
+  max-height: 320px;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  image-rendering: auto;
+  display: block;
+  filter: drop-shadow(0 3px 10px rgba(0,0,0,.85));
+}
+
+#gender-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.gender-btn {
+  height: 56px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 9px;
+  font-size: 16px;
+}
+
+.gender-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(200,160,80,.08); }
+
+#class-feature-lbl {
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.5;
+  font-style: italic;
+  border-left: 3px solid rgba(200,160,80,.35);
+  padding: 7px 10px;
+  background: transparent;
+  border-radius: 0;
+  text-align: left;
+  font-weight: 400;
+}
+
+#stats-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dnd-attrs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 8px;
+}
+
+.attr-box {
+  background: transparent;
+  border: 0;
+  padding: 4px 2px;
+  text-align: center;
+}
+
+.attr-lbl { display: block; font-size: 10px; letter-spacing: 1px; color: var(--text3); line-height: 1; }
+.attr-val { display: block; font-size: 24px; color: var(--gold); font-weight: 700; line-height: 1.05; margin-top: 3px; }
+.attr-mod { display: block; font-size: 12px; color: var(--text2); line-height: 1; margin-top: 2px; }
+
+.dnd-derived { display: flex; gap: 12px; flex-wrap: wrap; color: var(--text2); font-size: 17px; }
+.dnd-saves { display: flex; gap: 10px; flex-wrap: wrap; color: var(--text2); font-size: 14px; }
+.dnd-derived span,
+.dnd-saves span { background: transparent; border: 0; padding: 0; min-width: auto; }
+.dnd-derived strong,
+.dnd-saves strong { color: var(--gold); }
+
+#poderes-panel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255,255,255,.025);
+  overflow: hidden;
+}
+
+.poderes-title {
+  color: var(--text3);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 10px 12px 6px;
+}
+
+.poder-card {
+  padding: 8px 12px;
+  border-top: 1px solid rgba(180,150,80,.12);
+}
+
+.poder-card-top {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--gold);
+  font-size: 13px;
+}
+
+.poder-card-desc {
+  color: var(--text3);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 2px;
+  padding-left: 26px;
+}
+
+.spaced { margin-top: 10px; }
+.inline-hint { text-transform: none; letter-spacing: 0; }
+
+.poderes-chips,
+.adv-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.adv-chip,
+.poder-chip {
+  width: 100%;
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text2);
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.adv-chip.selected,
+.poder-chip.selected {
+  border-color: var(--gold);
+  background: rgba(200,160,80,.08);
+}
+
+.adv-chip-top,
+.poder-chip-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.chip-attr {
+  margin-left: auto;
+  color: var(--text3);
+  font-size: 10px;
+  background: rgba(200,160,80,.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.adv-chip-desc,
+.poder-chip-desc {
+  color: var(--text3);
+  font-size: 12px;
+  line-height: 1.45;
+  margin-top: 4px;
+  padding-left: 26px;
+}
+
+#lobby-char-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+#lobby-char-sprite {
+  width: 70px;
+  height: 84px;
+  object-fit: contain;
+  object-position: center bottom;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.8));
+}
+
+#lobby-char-info { flex: 1; }
+#lobby-char-nome { font-size: 15px; font-weight: 700; color: var(--text); }
+#lobby-char-classe { font-size: 11px; color: #7aaedd; letter-spacing: .5px; }
+#lobby-char-stats { font-size: 10px; color: var(--text3); margin-top: 2px; }
+#btn-trocar-char { background: none; border: 1px solid var(--border); color: var(--text2); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 5px 10px; border-radius: 4px; flex-shrink: 0; }
+
+@media (max-width: 620px) {
+  .screen-panel { padding: 28px; }
+  #chars-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #char-preview { grid-template-columns: minmax(0, 1fr) minmax(0, .78fr); gap: 16px; }
+  #sprite-col { min-height: 360px; }
+  #char-sprite { height: 270px; max-height: 270px; }
+  .class-btn { min-height: 86px; font-size: 12px; padding: 10px 4px; }
+  .class-btn .class-icon, .class-btn span:first-child { font-size: 24px !important; }
+  .attr-val { font-size: 22px; }
+  .dnd-derived { font-size: 15px; gap: 8px; }
+  .dnd-saves { font-size: 13px; gap: 8px; }
+}
