@@ -1,13 +1,121 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Oraculo</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-    <script type="module" src="/src/map-token-patch.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Oráculo RPG</title>
+</head>
+<body>
+
+  <!-- ══ INTRO OVERLAY ══ -->
+  <div id="intro-overlay">
+
+    <!-- Landing -->
+    <div id="isc-landing" class="intro-screen active">
+      <canvas id="isc-canvas"></canvas>
+      <div class="isc-logo-wrap">
+        <div class="isc-oraculo">ORÁCULO</div>
+        <div class="isc-rpg">RPG · Tático</div>
+      </div>
+      <p class="isc-tagline">Mapa tático · Multiplayer · Turno sincronizado</p>
+      <div class="isc-btns">
+        <button class="isc-btn-primary" id="btn-solo">⚔ Jogar Solo</button>
+        <button class="isc-btn-secondary" id="btn-online">👥 Jogar Online</button>
+      </div>
+      <div id="lnd-continuar-wrap" style="display:none;position:absolute;bottom:max(28px,calc(20px + env(safe-area-inset-bottom)));left:0;right:0;align-items:center;justify-content:center;z-index:2">
+        <button class="isc-btn-continue" id="btn-continuar">
+          <span>↩ Continuar Aventura</span>
+          <span class="isc-btn-continue-sub" id="lnd-continuar-lbl">sala …</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Slots de personagem -->
+    <div id="isc-slots" class="intro-screen isc-slots-screen">
+      <div class="isc-topbar" style="padding:14px 16px 0;flex-shrink:0">
+        <button class="isc-back" id="slots-back">←</button>
+        <span class="isc-section-title">Seus Aventureiros</span>
+      </div>
+      <div class="isc-slots-grid" id="isc-slots-grid"></div>
+    </div>
+
+    <!-- Criação de personagem -->
+    <div id="isc-create" class="intro-screen">
+      <div class="isc-topbar">
+        <button class="isc-back" id="create-back">←</button>
+        <span class="isc-section-title">Criar Aventureiro</span>
+      </div>
+      <div class="isc-create-body">
+        <span class="isc-field-lbl">Nome</span>
+        <input class="isc-nome-input" id="isc-nome" type="text" placeholder="Nome do personagem" maxlength="24">
+        <span class="isc-field-lbl">Classe</span>
+        <div class="isc-class-grid" id="isc-class-grid"></div>
+        <div class="isc-preview-row">
+          <div class="isc-sprite-col">
+            <div class="isc-sprite-placeholder" id="isc-sprite-icon"></div>
+            <div class="isc-class-feat" id="isc-class-feat"></div>
+          </div>
+          <div class="isc-stats-col">
+            <div class="isc-attrs-grid">
+              <div class="isc-stat-box"><span class="isc-stat-lbl">FOR</span><span class="isc-stat-val" id="isp-STR">—</span></div>
+              <div class="isc-stat-box"><span class="isc-stat-lbl">DES</span><span class="isc-stat-val" id="isp-DEX">—</span></div>
+              <div class="isc-stat-box"><span class="isc-stat-lbl">CON</span><span class="isc-stat-val" id="isp-CON">—</span></div>
+              <div class="isc-stat-box"><span class="isc-stat-lbl">INT</span><span class="isc-stat-val" id="isp-INT">—</span></div>
+              <div class="isc-stat-box"><span class="isc-stat-lbl">SAB</span><span class="isc-stat-val" id="isp-WIS">—</span></div>
+              <div class="isc-stat-box"><span class="isc-stat-lbl">CAR</span><span class="isc-stat-val" id="isp-CHA">—</span></div>
+            </div>
+            <div class="isc-derived-row">
+              <span class="isc-derived-item">❤️ PV <strong id="isp-HP">—</strong></span>
+              <span class="isc-derived-item">⚡ MOV <strong id="isp-MOV">—</strong></span>
+              <span class="isc-derived-item">⚔️ ATQ <strong id="isp-ATQ">—</strong></span>
+            </div>
+          </div>
+        </div>
+        <button class="isc-create-btn" id="btn-criar-personagem">Criar e Jogar →</button>
+      </div>
+    </div>
+
+    <!-- Lobby -->
+    <div id="isc-lobby" class="intro-screen">
+      <div class="isc-topbar">
+        <button class="isc-back" id="lobby-back">←</button>
+        <span class="isc-section-title">Jogar Online</span>
+      </div>
+      <div class="lob-body">
+        <div class="lob-inner">
+          <div class="lob-info">Crie uma sala e compartilhe o código com seus companheiros de aventura.</div>
+          <button class="isc-btn-primary" id="btn-criar-sala">✦ Criar Nova Sala</button>
+          <div class="lob-divider"><span>ou entre numa sala existente</span></div>
+          <input class="lob-code-input" id="lob-code-input" type="text" placeholder="CÓDIGO" maxlength="6">
+          <button class="lob-enter-btn" id="btn-entrar-sala">→ Entrar na Sala</button>
+          <div class="lob-err" id="lob-err"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room: sala de espera -->
+    <div id="isc-room" class="intro-screen">
+      <div class="isc-topbar">
+        <button class="isc-back" id="room-back">←</button>
+        <span class="isc-section-title">Sala de Aventureiros</span>
+      </div>
+      <div class="room-body">
+        <div class="room-inner">
+          <div class="room-code-display" id="room-code-display">
+            <div class="room-code-lbl">Código da Sala</div>
+            <div class="room-code-val" id="room-code-val">-----</div>
+            <div class="room-code-hint">Toque para copiar · compartilhe com seu companheiro</div>
+          </div>
+          <div class="room-player-list" id="room-player-list"></div>
+          <div class="room-wait-msg" id="room-wait-msg">Aguardando jogadores…</div>
+          <button class="isc-btn-primary" id="btn-iniciar" style="display:none">⚔ Iniciar Aventura!</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="app" style="display:none"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
 </html>

@@ -8,66 +8,570 @@ import { endTurn, startGame } from './game/turnSystem.js';
 import { joinRoom, listenRoom, saveRoom } from './firebase/roomService.js';
 
 const app = document.querySelector('#app');
-const SPRITE_BASE_URL = 'https://raw.githubusercontent.com/barretoigor2025/Rpg-Online/main/sprites';
-const MAP_IMAGE_URL = 'https://raw.githubusercontent.com/barretoigor2025/Rpg-Online/main/maps/feira-limpa.png';
-const SLOT_KEY = 'oraculo.charSlots';
-const HEX = { x0: 130, y0: 116, col: 72, row: 62, off: 31 };
-let homeParticlesStarted = false;
-let homeAnimationFrame = null;
+const introOverlay = document.querySelector('#intro-overlay');
 
 const session = {
-  screen: 'start', roomId: localStorage.getItem('oraculo.roomId') ?? '', playerId: localStorage.getItem('oraculo.playerId') ?? crypto.randomUUID(), activeSlot: Number(localStorage.getItem('oraculo.activeSlot') ?? 0), classId: 'guerreiro', gender: 'm', selectedPericias: new Set(), selectedPoderes: new Set(), room: null, unsubscribe: null,
-  planMode: 'idle', plannedMove: null, plannedAttack: null,
+  playerId: localStorage.getItem('oraculo.playerId') ?? crypto.randomUUID(),
+  playerName: '',
+  classId: 'barbaro',
+  roomId: '',
+  room: null,
+  unsubscribe: null,
+  isHost: false,
+  onlineMode: false,
 };
 localStorage.setItem('oraculo.playerId', session.playerId);
 
-function loadSlots() { try { return Array.from({ length: 4 }, (_, i) => JSON.parse(localStorage.getItem(SLOT_KEY) || '[]')[i] ?? null); } catch { return new Array(4).fill(null); } }
-function saveSlots(slots) { localStorage.setItem(SLOT_KEY, JSON.stringify(slots)); }
-function render() { app.innerHTML = `<main class="shell ${session.room ? 'game-shell' : 'intro-shell'}">${renderCurrentScreen()}</main>`; bindEvents(); if (!session.room && session.screen === 'start') startHomeCanvas(); else stopHomeCanvas(); }
-function renderCurrentScreen() { if (session.room) return renderGame(); if (session.screen === 'slots') return renderCharacterSlots(); if (session.screen === 'character') return renderCharacterCreation(); if (session.screen === 'lobby') return renderLobbyScreen(); return renderStartMenu(); }
-function renderStartMenu() { return `<section id="screen-home" class="start-screen"><canvas id="home-canvas"></canvas><div id="home-content"><div id="home-logo-wrap"><div id="home-oraculo">ORÁCULO</div><div id="home-rpg">RPG</div></div><p id="home-tagline">Sistema de RPG Generativo com Mestre de IA</p><p id="home-desc">A inteligência artificial conduz a narrativa, interpreta NPCs, controla inimigos e adapta a campanha em tempo real conforme suas escolhas.</p><button id="playSolo" class="home-mode-btn" type="button">Jogar Solo</button><button id="playOnline" class="home-mode-btn primary" type="button">Jogar Online</button></div></section>`; }
-function renderCharacterSlots() { const slots = loadSlots(); return `<section id="screen-chars" class="screen-panel"><div id="chars-topbar"><button class="btn-back" id="backHome" type="button">← Início</button><h2 id="chars-title">Seus Aventureiros</h2><span></span></div><div id="chars-grid">${slots.map((s, i) => renderSlot(s, i)).join('')}</div></section>`; }
-function renderSlot(slot, index) { if (!slot) return `<button class="slot-card empty" data-create-slot="${index}" type="button"><div class="slot-empty-icon">+</div><div class="slot-empty-label">Criar Aventureiro</div></button>`; const cls = getClassById(slot.classId); const color = CLASS_COLORS[slot.classId] || '#4a5a70'; return `<button class="slot-card occupied" data-select-slot="${index}" type="button" style="background:linear-gradient(160deg,${color}22 0%,rgba(6,8,15,.95) 60%)"><span class="slot-delete" data-delete-slot="${index}">✕</span><div class="slot-sprite-wrap"><img src="${getSpriteUrl(slot.classId, slot.gender)}" alt="" onerror="this.style.display='none'"></div><div class="slot-nome">${escapeHtml(slot.name)}</div><div class="slot-classe">${cls.icon} ${cls.name}</div><div class="slot-nivel">Nível ${slot.level || 1} &nbsp;·&nbsp; ★ ${slot.xp || 0} XP</div><div class="slot-class-bar" style="background:${color}88"></div></button>`; }
-function renderCharacterCreation() { const c = getClassById(session.classId); const d = getDerivedStats(c); const powers = getVisiblePowers(c); return `<section id="screen-create" class="screen-panel"><div class="lobby-box create-box"><div class="create-topbar"><button id="backToSlots" class="btn-back" type="button">← Voltar</button><h2 class="create-title">Novo Aventureiro</h2></div><label class="field-lbl">Nome</label><input id="playerName" type="text" placeholder="Nome do personagem" maxlength="24" value=""><label class="field-lbl spaced">Classe</label><div id="class-grid">${Object.values(CLASSES).map(renderClassCard).join('')}</div><div id="char-preview"><div id="sprite-col"><img id="char-sprite" src="${getSpriteUrl(c.id, session.gender)}" alt="${escapeHtml(c.name)}" onerror="this.style.opacity='.3'"><div id="gender-toggle"><button class="gender-btn ${session.gender === 'm' ? 'active' : ''}" data-gender="m" type="button">♂ Masc</button><button class="gender-btn ${session.gender === 'f' ? 'active' : ''}" data-gender="f" type="button">♀ Fem</button></div><div id="class-feature-lbl">${c.habilidade.icon || '⚔️'} ${escapeHtml(c.habilidade.nome)} — ${escapeHtml(c.habilidade.desc)}</div></div><div id="stats-col"><div class="dnd-attrs">${renderAttribute('FOR', c.STR)}${renderAttribute('DES', c.DEX)}${renderAttribute('CON', c.CON)}${renderAttribute('INT', c.INT)}${renderAttribute('SAB', c.WIS)}${renderAttribute('CAR', c.CHA)}</div><div class="dnd-derived"><span>❤️ PV <strong>${d.hp}</strong></span><span>🛡️ CA <strong>${d.ac}</strong></span><span>⚡ <strong>${formatSigned(d.init)}</strong></span></div><div class="dnd-saves"><span>Fort <strong>${formatSigned(d.fort)}</strong></span> <span>Ref <strong>${formatSigned(d.ref)}</strong></span> <span>Von <strong>${formatSigned(d.will)}</strong></span></div><div id="poderes-panel"><div class="poderes-title">Poderes da Classe</div>${powers.map((p) => renderPowerChip(p, c)).join('')}</div></div></div>${c.poderes_pool?.length ? `<div id="poderes-section"><label class="field-lbl poderes-section-lbl">Magias <span class="hint inline-hint">(escolha ${c.poderes_qtd})</span></label><div id="poderes-grid" class="poderes-chips">${c.poderes_pool.map(renderSelectablePower).join('')}</div></div>` : ''}<label class="field-lbl spaced">Perícias <span class="hint inline-hint">(escolha 2)</span></label><div id="adv-grid" class="adv-chips">${Object.entries(PERICIAS).map(([id, s]) => renderSkillChip(id, s)).join('')}</div><button id="createCharacter" class="btn-primary" type="button">Criar Aventureiro</button><div id="create-error" class="error-msg"></div></div></section>`; }
-function renderClassCard(klass) { return `<button class="class-btn ${session.classId === klass.id ? 'active' : ''}" data-class-id="${klass.id}" type="button"><span class="class-icon">${klass.icon}</span><span>${klass.name}</span></button>`; }
-function renderAttribute(label, value) { return `<div class="attr-box"><span class="attr-lbl">${label}</span><span class="attr-val">${value}</span><span class="attr-mod">${formatModifier(value)}</span></div>`; }
-function getVisiblePowers(c) { return c.poderes_pool?.length ? [c.habilidade, ...c.poderes_pool.slice(0, 3)] : (c.poderes || [c.habilidade]); }
-function renderPowerChip(power, c) { return `<div class="poder-card"><div class="poder-card-top"><span>${power.icon || c.icon}</span><strong>${escapeHtml(power.nome)}</strong></div><div class="poder-card-desc">${escapeHtml(power.desc)}</div></div>`; }
-function renderSelectablePower(power) { return `<button class="poder-chip ${session.selectedPoderes.has(power.id) ? 'selected' : ''}" data-power-id="${power.id}" type="button"><div class="poder-chip-top">${power.icon} <strong>${escapeHtml(power.nome)}</strong></div><div class="poder-chip-desc">${escapeHtml(power.desc)}</div></button>`; }
-function renderSkillChip(id, skill) { return `<button class="adv-chip ${session.selectedPericias.has(id) ? 'selected' : ''}" data-skill-id="${id}" type="button"><div class="adv-chip-top">${skill.icon} <strong>${escapeHtml(skill.nome)}</strong> <span class="chip-attr">${skill.attr}</span></div><div class="adv-chip-desc">${escapeHtml(skill.desc)}</div></button>`; }
-function renderLobbyScreen() { const slot = getActiveCharacter(); const cls = getClassById(slot.classId); const d = getDerivedStats(cls); return `<section id="screen-lobby" class="screen-panel"><div class="lobby-box"><div id="lobby-char-card"><img id="lobby-char-sprite" src="${getSpriteUrl(slot.classId, slot.gender)}" alt="" onerror="this.style.opacity='.3'"><div id="lobby-char-info"><div id="lobby-char-nome">${escapeHtml(slot.name)}</div><div id="lobby-char-classe">${cls.icon} ${cls.name} · Nível ${slot.level || 1}</div><div id="lobby-char-stats">❤️ ${d.hp} PV &nbsp; 🛡️ ${d.ac} CA &nbsp; ★ ${slot.xp || 0} XP</div></div><button id="btn-trocar-char" type="button">Trocar</button></div><label class="field-lbl">Código da sala</label><div class="row-input"><input id="roomId" type="text" value="${escapeHtml(session.roomId)}" placeholder="Código da sala" maxlength="18"><button id="joinRoom" class="btn-sm" type="button">Entrar</button></div><button id="joinRoomPrimary" class="btn-primary" type="button">Entrar na sala</button><div id="lobby-error" class="error-msg"></div></div></section>`; }
+// ── Screen management ────────────────────────────────────────────────
 
-function renderGame() { const room = session.room; const currentPlayer = getCurrentPlayer(room); const cls = currentPlayer ? getClassById(currentPlayer.classId) : null; return `<section id="combat-screen"><div id="combat-topbar"><button class="combat-menu-btn" type="button">☰</button><div class="combat-room">${escapeHtml(room.id)}</div><div class="combat-round">• Rodada ${room.turnNumber || 1}</div><div class="combat-spacer"></div><button class="combat-mini-btn" type="button">🗺</button><button class="combat-mini-btn" type="button">🔒</button><button class="combat-mini-btn" id="leaveRoom" type="button">↻</button></div><div id="combat-statusbar">${currentPlayer ? `<img class="portrait" src="${getSpriteUrl(currentPlayer.classId, currentPlayer.gender ?? 'm')}" alt=""><div class="status-name"><strong>${escapeHtml(currentPlayer.name)}</strong><span>${cls.icon} ${cls.name}</span></div><div class="status-pill">PV<strong>${currentPlayer.hp}/${currentPlayer.maxHp}</strong></div><div class="status-pill">DEF<strong>${currentPlayer.armorClass}</strong></div><div class="status-pill">MOV<strong>${currentPlayer.movement}</strong></div>` : ''}</div><div id="map-area"><div id="map-vp"><img id="map-img" src="${MAP_IMAGE_URL}" draggable="false" alt=""><div id="hex-layer">${renderHexLayer(room)}</div>${renderUnits(room)}${renderEnemies()}</div><button id="grid-toggle-mini" type="button">⬡</button></div>${renderTurnPlan(currentPlayer)}</section>`; }
-function renderTurnPlan(player) { const step = getPlanStep(); const title = step === 'movement' ? 'Etapa 1/3 · Movimento' : step === 'action' ? 'Etapa 2/3 · Ação' : 'Etapa 3/3 · Revisão'; const help = step === 'movement' ? `Toque em “Escolher movimento” e depois selecione um hexágono azul no mapa. Alcance: ${player?.movement ?? '?'} hex.` : step === 'action' ? 'Escolha o ataque. Os hexágonos vermelhos indicam alvos/alcance.' : 'Confira o plano. O botão verde confirma o turno preparado.'; const moveTxt = session.plannedMove ? `🦶 Movimento: <b>${hexLabel(session.plannedMove.x, session.plannedMove.y)}</b>` : '🦶 Movimento ainda não escolhido.'; const atkTxt = session.plannedAttack ? `⚔ Ação: <b>${session.plannedAttack.name}</b>` : '⚔ Ação ainda não escolhida.'; let buttons = ''; if (step === 'movement') buttons = session.plannedMove ? `<button class="plan-btn move active" id="chooseMove" type="button"><span>↺</span>Trocar destino</button><button class="plan-btn gold" id="skipMove" type="button"><span>✓</span>Confirmar movimento</button>` : `<button class="plan-btn move ${session.planMode === 'move' ? 'active' : ''}" id="chooseMove" type="button"><span>🦵</span>Escolher movimento</button><button class="plan-btn gold" id="skipMove" type="button"><span>○</span>Não mover</button>`; else if (step === 'action') buttons = `<button class="plan-btn attack ${session.planMode === 'attack' ? 'active' : ''}" id="chooseAttack" type="button"><span>⚔️</span>Atacar</button><button class="plan-btn gold" id="skipAttack" type="button"><span>⏭</span>Não agir</button>`; else buttons = `<button class="plan-btn move" id="editMove" type="button"><span>↺</span>Movimento</button><button class="plan-btn attack" id="editAttack" type="button"><span>↺</span>Ação</button><button class="plan-btn confirm" id="endTurn" type="button"><span>✅</span>Confirmar</button>`; return `<div id="turn-plan-panel"><div class="plan-title-row"><div class="plan-title">Sua vez — ${escapeHtml(player?.name ?? 'Herói')}</div><div class="plan-status">${title}</div></div><p class="plan-help">${help}</p><div class="plan-summary"><div class="plan-chip ${session.plannedMove ? '' : 'pending'}">${moveTxt}</div><div class="plan-chip ${session.plannedAttack ? '' : 'pending'}">${atkTxt}</div></div><div class="plan-actions ${step === 'review' ? 'review' : ''}">${buttons}</div></div>`; }
-function renderHexLayer(room) { const player = getCurrentPlayer(room); let html = ''; for (let r = 0; r < MAP_HEIGHT; r += 1) for (let c = 0; c < MAP_WIDTH; c += 1) { const p = hexCenter(c, r); const dist = player ? hexDist(player.x, player.y, c, r) : 99; const reachable = session.planMode === 'move' && player && dist > 0 && dist <= player.movement; const attackable = session.planMode === 'attack' && r < 4 && c > 2 && c < 10; const selected = session.plannedMove?.x === c && session.plannedMove?.y === r; const dim = session.planMode === 'move' && !reachable && !selected; const cls = `${reachable ? 'reachable' : ''} ${attackable ? 'attackable' : ''} ${selected ? 'selected' : ''} ${dim ? 'dim' : ''}`; html += `<button class="hex-cell ${cls}" data-x="${c}" data-y="${r}" style="left:${p.x}px;top:${p.y}px" type="button"></button>`; } return html; }
-function renderUnits(room) { return Object.values(room.players ?? {}).map((p) => { const h = hexCenter(p.x, p.y); return `<div class="unit-token" style="left:${h.x + 84}px;top:${h.y + 74}px"><img src="${getSpriteUrl(p.classId, p.gender ?? 'm')}" alt=""></div><div class="unit-label" style="left:${h.x + 84}px;top:${h.y + 74}px">${escapeHtml(p.name)}</div>`; }).join(''); }
-function renderEnemies() { return getEnemies().map((e) => { const h = hexCenter(e.x, e.y); return `<div class="enemy-token" style="left:${h.x + 84}px;top:${h.y + 74}px">👹</div><div class="enemy-label" style="left:${h.x + 84}px;top:${h.y + 74}px">${e.n}</div>`; }).join(''); }
-function getEnemies() { return [{ x: 4, y: 2, n: 'Espantalho 1' }, { x: 6, y: 2, n: 'Barktescher' }, { x: 8, y: 2, n: 'Espantalho 2' }]; }
-function getCurrentPlayer(room = session.room) { return room?.players?.[session.playerId] ?? Object.values(room?.players ?? {})[0] ?? null; }
-function getPlanStep() { if (!session.plannedMove && session.planMode !== 'action' && !session.plannedAttack) return 'movement'; if (!session.plannedAttack && session.planMode !== 'review') return 'action'; return 'review'; }
-function hexCenter(col, row) { return { x: HEX.x0 + col * HEX.col, y: HEX.y0 + row * HEX.row + (col % 2 ? HEX.off : 0) }; }
-function hexDist(c1, r1, c2, r2) { const a = toCube(c1, r1), b = toCube(c2, r2); return Math.max(Math.abs(a.q - b.q), Math.abs(a.r - b.r), Math.abs(a.s - b.s)); }
-function toCube(c, r) { const q = c, rv = r - (c + (c & 1)) / 2; return { q, r: rv, s: -q - rv }; }
-function hexLabel(x, y) { return `${String.fromCharCode(65 + x)}${String(y + 1).padStart(2, '0')}`; }
+function showScreen(id) {
+  document.querySelectorAll('.intro-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
 
-function bindEvents() { document.querySelector('#playOnline')?.addEventListener('click', () => { session.screen = 'slots'; render(); }); document.querySelector('#playSolo')?.addEventListener('click', () => alert('Modo solo ainda nao foi liberado. Primeiro vamos firmar o online.')); document.querySelector('#backHome')?.addEventListener('click', () => { session.screen = 'start'; render(); }); document.querySelector('#backToSlots')?.addEventListener('click', () => { session.screen = 'slots'; render(); }); document.querySelector('#btn-trocar-char')?.addEventListener('click', () => { session.screen = 'slots'; render(); }); document.querySelectorAll('[data-create-slot]').forEach((b) => b.addEventListener('click', () => startCreate(Number(b.dataset.createSlot)))); document.querySelectorAll('[data-select-slot]').forEach((b) => b.addEventListener('click', () => selectSlot(Number(b.dataset.selectSlot)))); document.querySelectorAll('[data-delete-slot]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); deleteSlot(Number(b.dataset.deleteSlot)); })); document.querySelectorAll('.class-btn').forEach((b) => b.addEventListener('click', () => { session.classId = b.dataset.classId; session.selectedPericias = new Set(); session.selectedPoderes = new Set(); render(); })); document.querySelectorAll('.gender-btn').forEach((b) => b.addEventListener('click', () => { session.gender = b.dataset.gender; render(); })); document.querySelectorAll('[data-skill-id]').forEach((b) => b.addEventListener('click', () => toggleSkill(b.dataset.skillId))); document.querySelectorAll('[data-power-id]').forEach((b) => b.addEventListener('click', () => togglePower(b.dataset.powerId))); document.querySelector('#createCharacter')?.addEventListener('click', createCharacter); document.querySelector('#joinRoom')?.addEventListener('click', handleJoinRoom); document.querySelector('#joinRoomPrimary')?.addEventListener('click', handleJoinRoom); document.querySelector('#leaveRoom')?.addEventListener('click', handleLeaveRoom); document.querySelector('#chooseMove')?.addEventListener('click', () => { session.planMode = 'move'; render(); }); document.querySelector('#skipMove')?.addEventListener('click', () => { session.planMode = 'action'; render(); }); document.querySelector('#chooseAttack')?.addEventListener('click', () => { session.planMode = 'attack'; render(); }); document.querySelector('#skipAttack')?.addEventListener('click', () => { session.plannedAttack = { type: 'none', name: 'Não agir' }; session.planMode = 'review'; render(); }); document.querySelector('#editMove')?.addEventListener('click', () => { session.plannedMove = null; session.planMode = 'move'; render(); }); document.querySelector('#editAttack')?.addEventListener('click', () => { session.plannedAttack = null; session.planMode = 'attack'; render(); }); document.querySelector('#endTurn')?.addEventListener('click', handleEndTurn); document.querySelectorAll('.hex-cell').forEach((tile) => tile.addEventListener('click', () => handleHexClick(Number(tile.dataset.x), Number(tile.dataset.y)))); }
-function startCreate(slotIndex) { session.activeSlot = slotIndex; session.classId = 'guerreiro'; session.gender = 'm'; session.selectedPericias = new Set(); session.selectedPoderes = new Set(); localStorage.setItem('oraculo.activeSlot', String(slotIndex)); session.screen = 'character'; render(); }
-function selectSlot(slotIndex) { session.activeSlot = slotIndex; localStorage.setItem('oraculo.activeSlot', String(slotIndex)); const character = loadSlots()[slotIndex]; if (character) { session.classId = character.classId; session.gender = character.gender; session.selectedPericias = new Set(character.pericias || []); session.selectedPoderes = new Set(character.poderesEscolhidos || []); session.screen = 'lobby'; render(); } }
-function deleteSlot(slotIndex) { const slots = loadSlots(); slots[slotIndex] = null; saveSlots(slots); render(); }
-function toggleSkill(skillId) { if (session.selectedPericias.has(skillId)) session.selectedPericias.delete(skillId); else { if (session.selectedPericias.size >= 2) return; session.selectedPericias.add(skillId); } render(); }
-function togglePower(powerId) { const cls = getClassById(session.classId); const limit = cls.poderes_qtd || 0; if (session.selectedPoderes.has(powerId)) session.selectedPoderes.delete(powerId); else { if (session.selectedPoderes.size >= limit) return; session.selectedPoderes.add(powerId); } render(); }
-function createCharacter() { const name = document.querySelector('#playerName')?.value.trim(); const error = document.querySelector('#create-error'); const cls = getClassById(session.classId); if (!name) { if (error) error.textContent = 'Digite o nome do personagem.'; return; } if (cls.poderes_pool?.length && session.selectedPoderes.size < cls.poderes_qtd) { if (error) error.textContent = `Escolha ${cls.poderes_qtd} magias antes de continuar.`; return; } const d = getDerivedStats(cls); const slots = loadSlots(); slots[session.activeSlot] = { name, classId: cls.id, gender: session.gender, hp: d.hp, maxHp: d.hp, ac: d.ac, init: d.init, fort: d.fort, ref: d.ref, will: d.will, pericias: [...session.selectedPericias], poderesEscolhidos: [...session.selectedPoderes], xp: 0, level: 1, createdAt: Date.now() }; saveSlots(slots); session.screen = 'lobby'; render(); }
-function getActiveCharacter() { return loadSlots()[session.activeSlot] || null; }
-async function handleJoinRoom() { const roomId = document.querySelector('#roomId')?.value.trim(); const character = getActiveCharacter(); if (!character) return alert('Escolha ou crie um aventureiro primeiro.'); if (!roomId) return alert('Coloque um codigo de sala.'); session.roomId = roomId; localStorage.setItem('oraculo.roomId', session.roomId); try { await joinRoom(session.roomId, session.playerId, character); session.unsubscribe?.(); session.unsubscribe = listenRoom(session.roomId, (room) => { session.room = room; render(); }); } catch (err) { alert(`Erro ao entrar na sala: ${err.message}`); console.error(err); } }
-function handleLeaveRoom() { session.unsubscribe?.(); session.unsubscribe = null; session.room = null; session.screen = 'slots'; resetPlan(); render(); }
-async function handleHexClick(x, y) { const player = getCurrentPlayer(); if (!player) return; if (session.planMode === 'move') { const dist = hexDist(player.x, player.y, x, y); if (dist > player.movement || dist === 0) return; session.plannedMove = { x, y }; session.planMode = 'movement'; render(); return; } if (session.planMode === 'attack') { const enemy = getEnemies().find((e) => e.x === x && e.y === y) ?? { n: `hex ${hexLabel(x, y)}` }; session.plannedAttack = { type: 'attack', name: `Ataque em ${enemy.n}` }; session.planMode = 'review'; render(); } }
-async function handleEndTurn() { if (session.plannedMove) await applyPlannedMove(); resetPlan(); const result = endTurn(session.room, session.playerId); if (result.error) { render(); return; } await saveRoom(result.room); }
-async function applyPlannedMove() { const player = getCurrentPlayer(); if (!player) return; const nextRoom = { ...session.room, players: { ...(session.room.players ?? {}), [player.id]: { ...player, x: session.plannedMove.x, y: session.plannedMove.y, hasMoved: true } }, updatedAt: Date.now(), log: [`${player.name} moveu para ${hexLabel(session.plannedMove.x, session.plannedMove.y)}.`, ...(session.room.log ?? [])].slice(0, 20) }; await saveRoom(nextRoom); }
-function resetPlan() { session.planMode = 'idle'; session.plannedMove = null; session.plannedAttack = null; }
-function startHomeCanvas() { const canvas = document.querySelector('#home-canvas'); if (!canvas || homeParticlesStarted) return; const ctx = canvas.getContext('2d'); const particles = Array.from({ length: 72 }, () => createParticle(canvas)); homeParticlesStarted = true; function resize() { const r = canvas.getBoundingClientRect(); canvas.width = Math.max(1, Math.floor(r.width * window.devicePixelRatio)); canvas.height = Math.max(1, Math.floor(r.height * window.devicePixelRatio)); ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0); } function draw() { if (!document.querySelector('#home-canvas')) return stopHomeCanvas(); const w = canvas.clientWidth; const h = canvas.clientHeight; ctx.clearRect(0, 0, w, h); particles.forEach((p) => { p.x += p.vx; p.y += p.vy; p.life += p.speed; if (p.x < -20 || p.x > w + 20 || p.y < -20 || p.y > h + 20) Object.assign(p, createParticle(canvas), { y: h + Math.random() * 40 }); const pulse = 0.35 + Math.sin(p.life) * 0.35; ctx.beginPath(); ctx.fillStyle = `rgba(122, 192, 240, ${0.12 + pulse * 0.55})`; ctx.shadowColor = 'rgba(122, 192, 240, .85)'; ctx.shadowBlur = 16 + pulse * 14; ctx.arc(p.x, p.y, p.size + pulse * 1.5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; }); homeAnimationFrame = requestAnimationFrame(draw); } resize(); window.addEventListener('resize', resize, { passive: true }); draw(); }
-function stopHomeCanvas() { if (homeAnimationFrame) cancelAnimationFrame(homeAnimationFrame); homeAnimationFrame = null; homeParticlesStarted = false; }
-function createParticle(canvas) { const width = canvas.clientWidth || window.innerWidth; const height = canvas.clientHeight || window.innerHeight; return { x: Math.random() * width, y: Math.random() * height, vx: (Math.random() - 0.5) * 0.18, vy: -0.15 - Math.random() * 0.45, size: 1 + Math.random() * 2.2, speed: 0.025 + Math.random() * 0.04, life: Math.random() * Math.PI * 2 }; }
-function getSpriteUrl(classId, gender = 'm') { return `${SPRITE_BASE_URL}/${classId}_${gender}.png`; }
-function formatSigned(value) { return value >= 0 ? `+${value}` : `${value}`; }
-function escapeHtml(value) { return String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;'); }
-render();
+function showGame() {
+  introOverlay.classList.add('fadeout');
+  setTimeout(() => {
+    introOverlay.style.display = 'none';
+    app.style.display = '';
+    renderGame();
+    bindGameEvents();
+  }, 400);
+}
+
+// ── Landing canvas ───────────────────────────────────────────────────
+
+function initLandingCanvas() {
+  const canvas = document.getElementById('isc-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width = canvas.offsetWidth || window.innerWidth;
+    canvas.height = canvas.offsetHeight || window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const dots = Array.from({ length: 60 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.5 + 0.4,
+    vx: (Math.random() - 0.5) * 0.35,
+    vy: (Math.random() - 0.5) * 0.35,
+    t: Math.random() * Math.PI * 2,
+  }));
+
+  function frame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    dots.forEach(d => {
+      d.x = (d.x + d.vx + canvas.width) % canvas.width;
+      d.y = (d.y + d.vy + canvas.height) % canvas.height;
+      d.t += 0.018;
+      const alpha = 0.2 + 0.35 * Math.sin(d.t);
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,160,48,${alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+// ── Landing init ─────────────────────────────────────────────────────
+
+function initLanding() {
+  initLandingCanvas();
+
+  const savedRoom = localStorage.getItem('oraculo.roomId');
+  const savedName = localStorage.getItem('oraculo.playerName');
+  if (savedRoom && savedName) {
+    const wrap = document.getElementById('lnd-continuar-wrap');
+    const lbl = document.getElementById('lnd-continuar-lbl');
+    if (wrap) wrap.style.display = 'flex';
+    if (lbl) lbl.textContent = `sala ${savedRoom}`;
+    document.getElementById('btn-continuar')?.addEventListener('click', async () => {
+      session.playerName = savedName;
+      session.classId = localStorage.getItem('oraculo.classId') ?? 'barbaro';
+      await enterRoom(savedRoom, false);
+    });
+  }
+
+  document.getElementById('btn-solo')?.addEventListener('click', () => {
+    session.onlineMode = false;
+    showScreen('isc-slots');
+    renderSlots();
+  });
+
+  document.getElementById('btn-online')?.addEventListener('click', () => {
+    session.onlineMode = true;
+    showScreen('isc-slots');
+    renderSlots();
+  });
+
+  document.getElementById('slots-back')?.addEventListener('click', () => showScreen('isc-landing'));
+
+  document.getElementById('create-back')?.addEventListener('click', () => {
+    showScreen('isc-slots');
+    renderSlots();
+  });
+
+  document.getElementById('lobby-back')?.addEventListener('click', () => showScreen('isc-landing'));
+
+  document.getElementById('room-back')?.addEventListener('click', handleLeaveRoom);
+}
+
+// ── Character slots ──────────────────────────────────────────────────
+
+function getCharacters() {
+  try { return JSON.parse(localStorage.getItem('oraculo.characters') ?? '[]'); }
+  catch { return []; }
+}
+
+function saveCharacters(chars) {
+  localStorage.setItem('oraculo.characters', JSON.stringify(chars));
+}
+
+function renderSlots() {
+  const grid = document.getElementById('isc-slots-grid');
+  if (!grid) return;
+
+  const chars = getCharacters();
+  let html = '';
+  for (let i = 0; i < 4; i++) {
+    const c = chars[i];
+    if (c) {
+      html += `
+        <div class="isc-slot-card occupied" data-slot="${i}">
+          <div class="isc-slot-icon">${c.icon}</div>
+          <div class="isc-slot-name">${escapeHtml(c.name)}</div>
+          <div class="isc-slot-class">${escapeHtml(c.className)}</div>
+          <div class="isc-slot-stats">❤️ ${c.maxHp} &nbsp;⚡ ${c.movement} &nbsp;⚔️ ${c.attack}</div>
+          <button class="isc-slot-del" data-del="${i}" title="Excluir">✕</button>
+        </div>`;
+    } else {
+      html += `
+        <div class="isc-slot-card empty" data-slot="${i}">
+          <div class="isc-slot-add">+</div>
+          <div class="isc-slot-add-lbl">Novo Aventureiro</div>
+        </div>`;
+    }
+  }
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.isc-slot-card.occupied').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('[data-del]')) return;
+      const c = chars[Number(card.dataset.slot)];
+      session.playerName = c.name;
+      session.classId = c.classId;
+      localStorage.setItem('oraculo.playerName', c.name);
+      localStorage.setItem('oraculo.classId', c.classId);
+      if (session.onlineMode) {
+        showScreen('isc-lobby');
+        bindLobbyButtons();
+      } else {
+        handleSoloPlay();
+      }
+    });
+  });
+
+  grid.querySelectorAll('.isc-slot-card.empty').forEach(card => {
+    card.addEventListener('click', () => {
+      showScreen('isc-create');
+      initCreateScreen();
+    });
+  });
+
+  grid.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const updated = getCharacters();
+      updated.splice(Number(btn.dataset.del), 1);
+      saveCharacters(updated);
+      renderSlots();
+    });
+  });
+}
+
+// ── Character creation ───────────────────────────────────────────────
+
+let selectedClassId = 'barbaro';
+
+function initCreateScreen() {
+  selectedClassId = 'barbaro';
+  renderClassGrid();
+  updateStatsPreview();
+
+  const btn = document.getElementById('btn-criar-personagem');
+  if (btn) {
+    const clone = btn.cloneNode(true);
+    btn.replaceWith(clone);
+    clone.addEventListener('click', confirmarPersonagem);
+  }
+}
+
+function renderClassGrid() {
+  const grid = document.getElementById('isc-class-grid');
+  if (!grid) return;
+  grid.innerHTML = Object.values(CLASSES).map(cls => `
+    <button class="isc-class-btn ${cls.id === selectedClassId ? 'selected' : ''}" data-class="${cls.id}">
+      <span class="isc-class-icon">${cls.icon}</span>
+      <span class="isc-class-name">${cls.name}</span>
+    </button>
+  `).join('');
+  grid.querySelectorAll('.isc-class-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedClassId = btn.dataset.class;
+      renderClassGrid();
+      updateStatsPreview();
+    });
+  });
+}
+
+function updateStatsPreview() {
+  const cls = CLASSES[selectedClassId];
+  if (!cls) return;
+
+  const icon = document.getElementById('isc-sprite-icon');
+  const feat = document.getElementById('isc-class-feat');
+  if (icon) icon.textContent = cls.icon;
+  if (feat) feat.textContent = cls.feat;
+
+  ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].forEach(attr => {
+    const el = document.getElementById(`isp-${attr}`);
+    if (el) el.textContent = cls.attrs?.[attr] ?? '—';
+  });
+  const hp = document.getElementById('isp-HP');
+  const mov = document.getElementById('isp-MOV');
+  const atq = document.getElementById('isp-ATQ');
+  if (hp) hp.textContent = cls.maxHp;
+  if (mov) mov.textContent = cls.movement;
+  if (atq) atq.textContent = cls.attack;
+}
+
+function confirmarPersonagem() {
+  const nameInput = document.getElementById('isc-nome');
+  const name = nameInput?.value.trim();
+  if (!name) { nameInput?.focus(); return; }
+
+  const chars = getCharacters();
+  if (chars.length >= 4) {
+    alert('Você já tem 4 aventureiros. Exclua um para criar outro.');
+    return;
+  }
+
+  const cls = CLASSES[selectedClassId];
+  const character = {
+    name, classId: selectedClassId, className: cls.name,
+    icon: cls.icon, maxHp: cls.maxHp, movement: cls.movement, attack: cls.attack,
+  };
+  chars.push(character);
+  saveCharacters(chars);
+
+  session.playerName = name;
+  session.classId = selectedClassId;
+  localStorage.setItem('oraculo.playerName', name);
+  localStorage.setItem('oraculo.classId', selectedClassId);
+
+  if (session.onlineMode) {
+    showScreen('isc-lobby');
+    bindLobbyButtons();
+  } else {
+    handleSoloPlay();
+  }
+}
+
+// ── Solo play ────────────────────────────────────────────────────────
+
+async function handleSoloPlay() {
+  const roomId = 'solo_' + session.playerId.slice(0, 8);
+  await enterRoom(roomId, true);
+}
+
+// ── Lobby ─────────────────────────────────────────────────────────────
+
+function bindLobbyButtons() {
+  const btnCriar = document.getElementById('btn-criar-sala');
+  if (btnCriar) {
+    const c = btnCriar.cloneNode(true);
+    btnCriar.replaceWith(c);
+    c.addEventListener('click', handleCriarSala);
+  }
+  const btnEntrar = document.getElementById('btn-entrar-sala');
+  if (btnEntrar) {
+    const c = btnEntrar.cloneNode(true);
+    btnEntrar.replaceWith(c);
+    c.addEventListener('click', handleEntrarSala);
+  }
+}
+
+function generateRoomCode() {
+  const pool = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  return Array.from({ length: 5 }, () => pool[Math.floor(Math.random() * pool.length)]).join('');
+}
+
+async function handleCriarSala() {
+  await enterRoom(generateRoomCode(), true);
+}
+
+async function handleEntrarSala() {
+  const input = document.getElementById('lob-code-input');
+  const err = document.getElementById('lob-err');
+  const code = input?.value.trim().toUpperCase();
+  if (!code || code.length < 3) {
+    if (err) err.textContent = 'Digite o código da sala.';
+    return;
+  }
+  if (err) err.textContent = '';
+  await enterRoom(code, false);
+}
+
+// ── Room ──────────────────────────────────────────────────────────────
+
+async function enterRoom(roomId, isHost) {
+  session.roomId = roomId;
+  session.isHost = isHost;
+  localStorage.setItem('oraculo.roomId', roomId);
+  localStorage.setItem('oraculo.playerName', session.playerName);
+  localStorage.setItem('oraculo.classId', session.classId);
+
+  const codeVal = document.getElementById('room-code-val');
+  if (codeVal) codeVal.textContent = roomId;
+
+  showScreen('isc-room');
+
+  try {
+    await joinRoom(session.roomId, session.playerId, session.playerName || 'Viajante', session.classId);
+  } catch (err) {
+    alert(`Erro ao entrar na sala: ${err.message}`);
+    showScreen(session.onlineMode ? 'isc-lobby' : 'isc-slots');
+    return;
+  }
+
+  session.unsubscribe?.();
+  session.unsubscribe = listenRoom(session.roomId, room => {
+    if (!room) return;
+    session.room = room;
+    if (room.status === 'battle' && app.style.display === 'none') {
+      showGame();
+    } else if (room.status === 'battle') {
+      renderGame();
+      bindGameEvents();
+    } else {
+      renderRoomPlayers(room);
+    }
+  });
+
+  const codeDisplay = document.getElementById('room-code-display');
+  if (codeDisplay) {
+    const clone = codeDisplay.cloneNode(true);
+    codeDisplay.replaceWith(clone);
+    clone.querySelector('#room-code-val').textContent = roomId;
+    clone.addEventListener('click', () => navigator.clipboard?.writeText(roomId).catch(() => {}));
+  }
+
+  const btnIniciar = document.getElementById('btn-iniciar');
+  if (btnIniciar) {
+    const clone = btnIniciar.cloneNode(true);
+    btnIniciar.replaceWith(clone);
+    clone.addEventListener('click', handleStartGame);
+  }
+}
+
+function renderRoomPlayers(room) {
+  const list = document.getElementById('room-player-list');
+  const waitMsg = document.getElementById('room-wait-msg');
+  const btnIniciar = document.getElementById('btn-iniciar');
+  if (!list) return;
+
+  const players = Object.values(room.players ?? {});
+  list.innerHTML = players.map(p => `
+    <div class="room-player-card">
+      <div class="room-player-icon">${p.icon}</div>
+      <div class="room-player-info">
+        <div class="room-player-name">${escapeHtml(p.name)}</div>
+        <div class="room-player-class">${p.classId}</div>
+      </div>
+      ${p.id === session.playerId && session.isHost ? '<span class="room-host-badge">Host</span>' : ''}
+    </div>
+  `).join('');
+
+  if (waitMsg) {
+    waitMsg.textContent = players.length >= 2
+      ? 'Todos prontos! O host pode iniciar.'
+      : 'Aguardando jogadores…';
+  }
+
+  if (btnIniciar) {
+    btnIniciar.style.display = session.isHost && players.length >= 1 ? '' : 'none';
+  }
+}
+
+// ── Game screen ───────────────────────────────────────────────────────
+
+function renderGame() {
+  const room = session.room;
+  if (!room) return;
+
+  const me = room.players?.[session.playerId];
+  const turnPlayer = room.players?.[room.currentTurnPlayerId];
+  const isMyTurn = room.currentTurnPlayerId === session.playerId;
+
+  app.innerHTML = `
+    <main class="shell">
+      <header class="topbar">
+        <div class="topbar-left">
+          <span class="topbar-room">Sala <strong>${escapeHtml(room.id)}</strong></span>
+          <span class="topbar-status">${room.status === 'battle' ? '⚔️ Batalha' : '⏳ Aguardando'}</span>
+        </div>
+        <div class="topbar-center">
+          <span class="topbar-turn">${
+            isMyTurn ? '✦ Seu Turno'
+            : turnPlayer ? `Turno: ${escapeHtml(turnPlayer.name)}`
+            : 'Aguardando início'
+          }</span>
+        </div>
+        <div class="topbar-right">
+          <button id="endTurn" class="btn-turn${isMyTurn && room.status === 'battle' ? ' active' : ''}"
+            ${!isMyTurn || room.status !== 'battle' ? 'disabled' : ''}>Encerrar Turno</button>
+          <button id="leaveRoom" class="btn-leave">Sair</button>
+        </div>
+      </header>
+
+      <div class="players-bar">
+        ${Object.values(room.players ?? {}).map(p => `
+          <div class="player-chip${p.id === room.currentTurnPlayerId ? ' active' : ''}${p.id === session.playerId ? ' me' : ''}">
+            <span class="chip-icon">${p.icon}</span>
+            <span class="chip-name">${escapeHtml(p.name)}</span>
+            <span class="chip-hp">❤️ ${p.hp}/${p.maxHp}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="game-area">
+        <aside class="side-panel left-panel">
+          ${me ? `
+            <div class="my-card${isMyTurn ? ' active' : ''}">
+              <div class="my-card-icon">${me.icon}</div>
+              <div class="my-card-name">${escapeHtml(me.name)}</div>
+              <div class="my-card-class">${me.classId}</div>
+              <div class="my-card-stats">
+                <span>❤️ ${me.hp}/${me.maxHp}</span>
+                <span>⚡ ${me.movement}</span>
+                <span>⚔️ ${me.attack}</span>
+              </div>
+              ${isMyTurn ? '<div class="turn-badge">Seu Turno</div>' : ''}
+            </div>
+          ` : ''}
+          ${room.status === 'lobby' ? '<button id="startGame" class="btn-start">⚔ Iniciar Combate</button>' : ''}
+          <p>Rodada <strong>${room.turnNumber ?? 0}</strong></p>
+        </aside>
+
+        <section class="board-section">
+          <div class="board" style="--cols: ${MAP_WIDTH}; --rows: ${MAP_HEIGHT};">
+            ${renderBoard(room)}
+          </div>
+          ${isMyTurn ? '<p class="board-hint">Clique num quadrado dentro do seu alcance.</p>' : ''}
+        </section>
+
+        <aside class="side-panel right-panel">
+          <h3 class="panel-title">Jogadores</h3>
+          ${Object.values(room.players ?? {}).map(p => `
+            <div class="player-row${p.id === room.currentTurnPlayerId ? ' active' : ''}">
+              <span>${p.icon}</span>
+              <span>${escapeHtml(p.name)}</span>
+              <span>❤️ ${p.hp}/${p.maxHp}</span>
+            </div>
+          `).join('')}
+          <h3 class="panel-title" style="margin-top:1rem">Log</h3>
+          <ol class="log">${(room.log ?? []).map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ol>
+        </aside>
+      </div>
+    </main>
+  `;
+}
+
+function renderBoard(room) {
+  const players = Object.values(room.players ?? {});
+  let html = '';
+  for (let y = 0; y < MAP_HEIGHT; y++) {
+    for (let x = 0; x < MAP_WIDTH; x++) {
+      const p = players.find(pl => pl.x === x && pl.y === y);
+      const isMe = p?.id === session.playerId;
+      html += `<button class="tile${p ? ' occupied' : ''}${isMe ? ' me' : ''}" data-x="${x}" data-y="${y}">${
+        p ? `<span>${p.icon}</span><small>${escapeHtml(p.name)}</small>` : ''
+      }</button>`;
+    }
+  }
+  return html;
+}
+
+function bindGameEvents() {
+  document.getElementById('leaveRoom')?.addEventListener('click', handleLeaveRoom);
+  document.getElementById('startGame')?.addEventListener('click', handleStartGame);
+  document.getElementById('endTurn')?.addEventListener('click', handleEndTurn);
+  document.querySelectorAll('.tile').forEach(tile => {
+    tile.addEventListener('click', () => handleMove(Number(tile.dataset.x), Number(tile.dataset.y)));
+  });
+}
+
+// ── Game actions ──────────────────────────────────────────────────────
+
+function handleLeaveRoom() {
+  session.unsubscribe?.();
+  session.unsubscribe = null;
+  session.room = null;
+  session.roomId = '';
+  localStorage.removeItem('oraculo.roomId');
+  app.style.display = 'none';
+  introOverlay.style.display = '';
+  introOverlay.classList.remove('fadeout');
+  showScreen('isc-landing');
+}
+
+async function handleStartGame() {
+  const result = startGame(session.room);
+  if (result.error) { alert(result.error); return; }
+  try {
+    await saveRoom(result.room);
+  } catch (err) {
+    alert(`Erro ao iniciar jogo: ${err.message}`);
+  }
+}
+
+async function handleEndTurn() {
+  const result = endTurn(session.room, session.playerId);
+  if (result.error) { alert(result.error); return; }
+  try {
+    await saveRoom(result.room);
+  } catch (err) {
+    alert(`Erro ao encerrar turno: ${err.message}`);
+  }
+}
+
+async function handleMove(x, y) {
+  if (!session.room || session.room.status !== 'battle') return;
+  const result = movePlayer(session.room, session.playerId, x, y);
+  if (result.error) { alert(result.error); return; }
+  try {
+    await saveRoom(result.room);
+  } catch (err) {
+    alert(`Erro ao mover: ${err.message}`);
+  }
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────
+
+function escapeHtml(v) {
+  return String(v)
+    .replaceAll('&', '&amp;').replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────
+
+showScreen('isc-landing');
+initLanding();
