@@ -1,6 +1,7 @@
 import './styles.css';
 import { CLASSES } from './data/classes.js';
 import { joinRoom, listenRoom, saveRoom } from './firebase/roomService.js';
+import { firebaseApp } from './firebase/config.js';
 import { startGame } from './game/turnSystem.js';
 
 const introOverlay = document.querySelector('#intro-overlay');
@@ -29,6 +30,7 @@ function goToArena() {
   localStorage.setItem('oraculo.playerId', session.playerId);
   localStorage.setItem('oraculo.playerName', session.playerName);
   localStorage.setItem('oraculo.classId', session.classId);
+  if (firebaseApp) localStorage.setItem('oraculo.fbConfig', JSON.stringify(firebaseApp.options));
   introOverlay.classList.add('fadeout');
   setTimeout(() => { window.location.href = 'arena.html'; }, 400);
 }

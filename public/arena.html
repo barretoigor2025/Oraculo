@@ -5,6 +5,26 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Arena v2</title>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script type="module">
+import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import{getFirestore,doc,onSnapshot,updateDoc}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+const _cfg=JSON.parse(localStorage.getItem('oraculo.fbConfig')||'null');
+const _rid=localStorage.getItem('oraculo.roomId');
+const _pid=localStorage.getItem('oraculo.playerId');
+if(_cfg&&_rid&&_pid){
+  try{
+    const app=getApps().find(a=>a.name==='arena')||initializeApp(_cfg,'arena');
+    const db=getFirestore(app);
+    const rd=doc(db,'rooms',_rid);
+    window._fbUpdatePos=async(col,row)=>{
+      try{await updateDoc(rd,{[`players.${_pid}.x`]:col,[`players.${_pid}.y`]:row});}catch{}
+    };
+    window._fbListenRoom=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
+  }catch(e){console.warn('Arena Firebase init:',e);}
+}
+window._fbReady=true;
+window.dispatchEvent(new Event('fbReady'));
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{
@@ -518,6 +538,8 @@ function getPortraitAtaque(name){
   return {src:null,cor:'#888',icon:'⚔️'};
 }
 
+let _mapScale=1, _mapOffsetX=0;
+
 // ── DiceOverlay (Three.js) — dado vermelho sólido sobre o mapa ──
 const DiceOverlay=(function(){
   'use strict';
@@ -639,7 +661,7 @@ const DiceOverlay=(function(){
     if(!ov){afterCb(rolls);return;}
     const cv=document.getElementById('dado-canvas-jogo');
     if(cv&&(!_rend||_rend.domElement!==cv))_rend=null;
-    const mapH=Math.round(MAP_H*(window.innerWidth/MAP_W));
+    const mapH=Math.round(MAP_H*_mapScale);
     ov.style.height=mapH+'px';
     ov.style.display='flex';
     const label=document.getElementById('dado-label-atual');
@@ -897,8 +919,7 @@ function hexesInRange(col,row,range){
 }
 
 function screenToHex(sx,sy){
-  const scale=window.innerWidth/MAP_W;
-  const mx=sx/scale,my=sy/scale;
+  const mx=(sx-_mapOffsetX)/_mapScale,my=sy/_mapScale;
   let best=null,bestD2=Infinity;
   for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
     const{x,y}=hexCentro(c,r);
@@ -1574,8 +1595,7 @@ function renderActionRow(){
 // ══════════════════════════════════════════
 function mostrarLetreiro(nome, sub, punicao, duracao, cb){
   const el=document.getElementById('turno-letreiro');
-  const mapScreenH=MAP_H*(window.innerWidth/MAP_W);
-  el.style.top=(mapScreenH/2)+'px';
+  el.style.top=(Math.round(MAP_H*_mapScale)/2)+'px';
   document.getElementById('turno-nome').textContent=nome;
   document.getElementById('turno-sub').textContent=sub||'';
   document.getElementById('turno-punicao').textContent=punicao||'';
@@ -1691,9 +1711,9 @@ function resolverMovimento(cb){
       mostrarLetreiro('TROPEÇOU!','perdeu o ataque','💀 Catástrofe — sem ação neste turno',1800,()=>cb(false));
     } else if(!r.sucesso){
       const metade=path.slice(0,Math.max(1,Math.ceil(path.length/2)));
-      animarMovimento(unit,metade,()=>{ render(); cb(true); });
+      animarMovimento(unit,metade,()=>{ if(!unit._fbId&&window._fbUpdatePos) window._fbUpdatePos(unit.col,unit.row); render(); cb(true); });
     } else {
-      animarMovimento(unit,path,()=>{ render(); cb(true); });
+      animarMovimento(unit,path,()=>{ if(!unit._fbId&&window._fbUpdatePos) window._fbUpdatePos(unit.col,unit.row); render(); cb(true); });
     }
   });
 }
@@ -2109,20 +2129,73 @@ function toggleCoords(){
 }
 
 // ══════════════════════════════════════════
+//  MULTIPLAYER: SINCRONIZAÇÃO FIREBASE
+// ══════════════════════════════════════════
+function onRoomUpdate(room){
+  if(!room||!room.players) return;
+  const myId=localStorage.getItem('oraculo.playerId');
+  const others=Object.values(room.players).filter(p=>p.id!==myId&&p.x!=null&&p.y!=null);
+
+  // Remove unidades de jogadores que saíram
+  const otherIds=new Set(others.map(p=>p.id));
+  for(let i=unidades.length-1;i>=0;i--){
+    if(unidades[i]._fbId&&!otherIds.has(unidades[i]._fbId)) unidades.splice(i,1);
+  }
+
+  for(const p of others){
+    let u=unidades.find(u=>u._fbId===p.id);
+    if(!u){
+      const cd=_HERO_CLASS_DATA[p.classId]||_HERO_CLASS_DATA.mago;
+      const g=p.gender||'m';
+      u={
+        nome:p.name||cd.nome, col:p.x, row:p.y,
+        emoji:cd.emoji, cor:cd.cor,
+        imgSrc:`sprites/${p.classId}_${g}_costas.png`,
+        img:null, tipo:'heroi', mov:cd.mov,
+        hp:p.hp||cd.hp, maxHp:p.maxHp||cd.hp,
+        sp:p.mana||cd.sp, maxSp:p.maxMana||cd.sp,
+        portrait:`portraits/${p.classId}_${g}.png`,
+        itens:[], _fbId:p.id,
+      };
+      const img=new Image();
+      img.onload=()=>{u.img=img;renderUnits();};
+      img.src=u.imgSrc;
+      unidades.push(u);
+    } else if(u.col!==p.x||u.row!==p.y){
+      u.col=p.x; u.row=p.y; u._ax=null; u._ay=null;
+    }
+  }
+  renderUnits();
+}
+
+// ══════════════════════════════════════════
 //  ESCALA + INIT
 // ══════════════════════════════════════════
 function initScale(){
-  const scale=window.innerWidth/MAP_W;
-  document.getElementById('world').style.transform=`scale(${scale})`;
-
-  const mapScreenH=Math.round(MAP_H*scale);
   const minPanelH=130;
-  const panelH=Math.max(window.innerHeight-mapScreenH,minPanelH);
-  const panelTop=window.innerHeight-panelH;
+  const scaleByW=window.innerWidth/MAP_W;
+  const scaleByH=(window.innerHeight-minPanelH)/MAP_H;
+  _mapScale=Math.min(scaleByW,scaleByH);
 
+  const mapScreenW=Math.round(MAP_W*_mapScale);
+  const mapScreenH=Math.round(MAP_H*_mapScale);
+  _mapOffsetX=Math.max(0,Math.floor((window.innerWidth-mapScreenW)/2));
+
+  const world=document.getElementById('world');
+  world.style.transform=`scale(${_mapScale})`;
+  world.style.left=_mapOffsetX+'px';
+
+  const panelH=window.innerHeight-mapScreenH;
   const bp=document.getElementById('bottom-panel');
-  bp.style.top=panelTop+'px';
+  bp.style.top=mapScreenH+'px';
   bp.style.height=panelH+'px';
+
+  // portrait responsivo ao painel
+  const infoH=panelH-72;
+  const ph=Math.max(50,Math.min(100,infoH-12));
+  const pp=document.getElementById('panel-portrait');
+  pp.style.height=ph+'px';
+  pp.style.width=Math.round(ph*0.68)+'px';
 
   document.getElementById('atk-panel').style.bottom=(panelH+8)+'px';
 }
@@ -2133,8 +2206,13 @@ function init(){
     .then(r=>r.ok?r.json():null)
     .then(d=>{ if(d?.hexes) terrenoData=d.hexes; render(); })
     .catch(()=>render());
+  function startFbListener(){
+    if(window._fbListenRoom) window._fbListenRoom(onRoomUpdate);
+  }
+  if(window._fbReady) startFbListener();
+  else window.addEventListener('fbReady',startFbListener,{once:true});
   setTimeout(()=>{
-    const heroi=unidades.find(u=>u.tipo==='heroi');
+    const heroi=unidades.find(u=>u.tipo==='heroi'&&!u._fbId);
     if(heroi) iniciarTurno(heroi);
   }, 500);
 }
@@ -2148,7 +2226,8 @@ for(const u of unidades){
 const mapaEl=document.getElementById('mapa');
 mapaEl.onload=init; mapaEl.onerror=init;
 if(mapaEl.complete&&mapaEl.naturalWidth>0) init();
-window.addEventListener('resize',initScale);
+let _resizeTimer;
+window.addEventListener('resize',()=>{ clearTimeout(_resizeTimer); _resizeTimer=setTimeout(initScale,80); });
 </script>
 </body>
 </html>
