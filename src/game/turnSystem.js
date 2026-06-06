@@ -10,6 +10,7 @@ export function startGame(room) {
 
   const nextRoom = structuredClone(room);
   nextRoom.status = 'battle';
+  nextRoom.turnOrder = [...players.map(p => p.id), 'enemy'];
   nextRoom.currentTurnPlayerId = players[0].id;
   nextRoom.turnNumber = 1;
   nextRoom.updatedAt = Date.now();
