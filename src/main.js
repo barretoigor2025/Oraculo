@@ -1,13 +1,8 @@
 import './styles.css';
-import './oraculo2-replica.css';
-import './oraculo2-combat.css';
-import { CLASSES, PERICIAS, CLASS_COLORS, formatModifier, getClassById, getDerivedStats } from './data/classes.js';
-import { MAP_HEIGHT, MAP_WIDTH } from './game/state.js';
-import { movePlayer } from './game/movementSystem.js';
-import { endTurn, startGame } from './game/turnSystem.js';
+import { CLASSES } from './data/classes.js';
 import { joinRoom, listenRoom, saveRoom } from './firebase/roomService.js';
+import { startGame } from './game/turnSystem.js';
 
-const app = document.querySelector('#app');
 const introOverlay = document.querySelector('#intro-overlay');
 
 const session = {
@@ -22,24 +17,23 @@ const session = {
 };
 localStorage.setItem('oraculo.playerId', session.playerId);
 
-// ── Screen management ────────────────────────────────────────────────
+// ── Telas ────────────────────────────────────────────────────────────
 
 function showScreen(id) {
   document.querySelectorAll('.intro-screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
 }
 
-function showGame() {
+function goToArena() {
+  localStorage.setItem('oraculo.roomId', session.roomId);
+  localStorage.setItem('oraculo.playerId', session.playerId);
+  localStorage.setItem('oraculo.playerName', session.playerName);
+  localStorage.setItem('oraculo.classId', session.classId);
   introOverlay.classList.add('fadeout');
-  setTimeout(() => {
-    introOverlay.style.display = 'none';
-    app.style.display = '';
-    renderGame();
-    bindGameEvents();
-  }, 400);
+  setTimeout(() => { window.location.href = 'arena.html'; }, 400);
 }
 
-// ── Landing canvas ───────────────────────────────────────────────────
+// ── Canvas da landing ────────────────────────────────────────────────
 
 function initLandingCanvas() {
   const canvas = document.getElementById('isc-canvas');
@@ -68,10 +62,9 @@ function initLandingCanvas() {
       d.x = (d.x + d.vx + canvas.width) % canvas.width;
       d.y = (d.y + d.vy + canvas.height) % canvas.height;
       d.t += 0.018;
-      const alpha = 0.2 + 0.35 * Math.sin(d.t);
       ctx.beginPath();
       ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(200,160,48,${alpha})`;
+      ctx.fillStyle = `rgba(200,160,48,${0.2 + 0.35 * Math.sin(d.t)})`;
       ctx.fill();
     });
     requestAnimationFrame(frame);
@@ -79,7 +72,7 @@ function initLandingCanvas() {
   frame();
 }
 
-// ── Landing init ─────────────────────────────────────────────────────
+// ── Landing ──────────────────────────────────────────────────────────
 
 function initLanding() {
   initLandingCanvas();
@@ -111,18 +104,15 @@ function initLanding() {
   });
 
   document.getElementById('slots-back')?.addEventListener('click', () => showScreen('isc-landing'));
-
   document.getElementById('create-back')?.addEventListener('click', () => {
     showScreen('isc-slots');
     renderSlots();
   });
-
   document.getElementById('lobby-back')?.addEventListener('click', () => showScreen('isc-landing'));
-
   document.getElementById('room-back')?.addEventListener('click', handleLeaveRoom);
 }
 
-// ── Character slots ──────────────────────────────────────────────────
+// ── Slots de personagem ──────────────────────────────────────────────
 
 function getCharacters() {
   try { return JSON.parse(localStorage.getItem('oraculo.characters') ?? '[]'); }
@@ -195,7 +185,7 @@ function renderSlots() {
   });
 }
 
-// ── Character creation ───────────────────────────────────────────────
+// ── Criação de personagem ────────────────────────────────────────────
 
 let selectedClassId = 'barbaro';
 
@@ -233,20 +223,18 @@ function renderClassGrid() {
 function updateStatsPreview() {
   const cls = CLASSES[selectedClassId];
   if (!cls) return;
-
   const icon = document.getElementById('isc-sprite-icon');
   const feat = document.getElementById('isc-class-feat');
   if (icon) icon.textContent = cls.icon;
   if (feat) feat.textContent = cls.feat;
-
   ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].forEach(attr => {
     const el = document.getElementById(`isp-${attr}`);
     if (el) el.textContent = cls.attrs?.[attr] ?? '—';
   });
-  const hp = document.getElementById('isp-HP');
+  const hp  = document.getElementById('isp-HP');
   const mov = document.getElementById('isp-MOV');
   const atq = document.getElementById('isp-ATQ');
-  if (hp) hp.textContent = cls.maxHp;
+  if (hp)  hp.textContent  = cls.maxHp;
   if (mov) mov.textContent = cls.movement;
   if (atq) atq.textContent = cls.attack;
 }
@@ -283,7 +271,7 @@ function confirmarPersonagem() {
   }
 }
 
-// ── Solo play ────────────────────────────────────────────────────────
+// ── Solo ─────────────────────────────────────────────────────────────
 
 async function handleSoloPlay() {
   const roomId = 'solo_' + session.playerId.slice(0, 8);
@@ -318,8 +306,8 @@ async function handleCriarSala() {
 
 async function handleEntrarSala() {
   const input = document.getElementById('lob-code-input');
-  const err = document.getElementById('lob-err');
-  const code = input?.value.trim().toUpperCase();
+  const err   = document.getElementById('lob-err');
+  const code  = input?.value.trim().toUpperCase();
   if (!code || code.length < 3) {
     if (err) err.textContent = 'Digite o código da sala.';
     return;
@@ -328,7 +316,7 @@ async function handleEntrarSala() {
   await enterRoom(code, false);
 }
 
-// ── Room ──────────────────────────────────────────────────────────────
+// ── Sala de espera ────────────────────────────────────────────────────
 
 async function enterRoom(roomId, isHost) {
   session.roomId = roomId;
@@ -339,7 +327,6 @@ async function enterRoom(roomId, isHost) {
 
   const codeVal = document.getElementById('room-code-val');
   if (codeVal) codeVal.textContent = roomId;
-
   showScreen('isc-room');
 
   try {
@@ -354,16 +341,14 @@ async function enterRoom(roomId, isHost) {
   session.unsubscribe = listenRoom(session.roomId, room => {
     if (!room) return;
     session.room = room;
-    if (room.status === 'battle' && app.style.display === 'none') {
-      showGame();
-    } else if (room.status === 'battle') {
-      renderGame();
-      bindGameEvents();
+    if (room.status === 'battle') {
+      goToArena();
     } else {
       renderRoomPlayers(room);
     }
   });
 
+  // Tap no código copia pra clipboard
   const codeDisplay = document.getElementById('room-code-display');
   if (codeDisplay) {
     const clone = codeDisplay.cloneNode(true);
@@ -372,6 +357,7 @@ async function enterRoom(roomId, isHost) {
     clone.addEventListener('click', () => navigator.clipboard?.writeText(roomId).catch(() => {}));
   }
 
+  // Botão iniciar (só host vê)
   const btnIniciar = document.getElementById('btn-iniciar');
   if (btnIniciar) {
     const clone = btnIniciar.cloneNode(true);
@@ -381,8 +367,8 @@ async function enterRoom(roomId, isHost) {
 }
 
 function renderRoomPlayers(room) {
-  const list = document.getElementById('room-player-list');
-  const waitMsg = document.getElementById('room-wait-msg');
+  const list      = document.getElementById('room-player-list');
+  const waitMsg   = document.getElementById('room-wait-msg');
   const btnIniciar = document.getElementById('btn-iniciar');
   if (!list) return;
 
@@ -409,115 +395,7 @@ function renderRoomPlayers(room) {
   }
 }
 
-// ── Game screen ───────────────────────────────────────────────────────
-
-function renderGame() {
-  const room = session.room;
-  if (!room) return;
-
-  const me = room.players?.[session.playerId];
-  const turnPlayer = room.players?.[room.currentTurnPlayerId];
-  const isMyTurn = room.currentTurnPlayerId === session.playerId;
-
-  app.innerHTML = `
-    <main class="shell">
-      <header class="topbar">
-        <div class="topbar-left">
-          <span class="topbar-room">Sala <strong>${escapeHtml(room.id)}</strong></span>
-          <span class="topbar-status">${room.status === 'battle' ? '⚔️ Batalha' : '⏳ Aguardando'}</span>
-        </div>
-        <div class="topbar-center">
-          <span class="topbar-turn">${
-            isMyTurn ? '✦ Seu Turno'
-            : turnPlayer ? `Turno: ${escapeHtml(turnPlayer.name)}`
-            : 'Aguardando início'
-          }</span>
-        </div>
-        <div class="topbar-right">
-          <button id="endTurn" class="btn-turn${isMyTurn && room.status === 'battle' ? ' active' : ''}"
-            ${!isMyTurn || room.status !== 'battle' ? 'disabled' : ''}>Encerrar Turno</button>
-          <button id="leaveRoom" class="btn-leave">Sair</button>
-        </div>
-      </header>
-
-      <div class="players-bar">
-        ${Object.values(room.players ?? {}).map(p => `
-          <div class="player-chip${p.id === room.currentTurnPlayerId ? ' active' : ''}${p.id === session.playerId ? ' me' : ''}">
-            <span class="chip-icon">${p.icon}</span>
-            <span class="chip-name">${escapeHtml(p.name)}</span>
-            <span class="chip-hp">❤️ ${p.hp}/${p.maxHp}</span>
-          </div>
-        `).join('')}
-      </div>
-
-      <div class="game-area">
-        <aside class="side-panel left-panel">
-          ${me ? `
-            <div class="my-card${isMyTurn ? ' active' : ''}">
-              <div class="my-card-icon">${me.icon}</div>
-              <div class="my-card-name">${escapeHtml(me.name)}</div>
-              <div class="my-card-class">${me.classId}</div>
-              <div class="my-card-stats">
-                <span>❤️ ${me.hp}/${me.maxHp}</span>
-                <span>⚡ ${me.movement}</span>
-                <span>⚔️ ${me.attack}</span>
-              </div>
-              ${isMyTurn ? '<div class="turn-badge">Seu Turno</div>' : ''}
-            </div>
-          ` : ''}
-          ${room.status === 'lobby' ? '<button id="startGame" class="btn-start">⚔ Iniciar Combate</button>' : ''}
-          <p>Rodada <strong>${room.turnNumber ?? 0}</strong></p>
-        </aside>
-
-        <section class="board-section">
-          <div class="board" style="--cols: ${MAP_WIDTH}; --rows: ${MAP_HEIGHT};">
-            ${renderBoard(room)}
-          </div>
-          ${isMyTurn ? '<p class="board-hint">Clique num quadrado dentro do seu alcance.</p>' : ''}
-        </section>
-
-        <aside class="side-panel right-panel">
-          <h3 class="panel-title">Jogadores</h3>
-          ${Object.values(room.players ?? {}).map(p => `
-            <div class="player-row${p.id === room.currentTurnPlayerId ? ' active' : ''}">
-              <span>${p.icon}</span>
-              <span>${escapeHtml(p.name)}</span>
-              <span>❤️ ${p.hp}/${p.maxHp}</span>
-            </div>
-          `).join('')}
-          <h3 class="panel-title" style="margin-top:1rem">Log</h3>
-          <ol class="log">${(room.log ?? []).map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ol>
-        </aside>
-      </div>
-    </main>
-  `;
-}
-
-function renderBoard(room) {
-  const players = Object.values(room.players ?? {});
-  let html = '';
-  for (let y = 0; y < MAP_HEIGHT; y++) {
-    for (let x = 0; x < MAP_WIDTH; x++) {
-      const p = players.find(pl => pl.x === x && pl.y === y);
-      const isMe = p?.id === session.playerId;
-      html += `<button class="tile${p ? ' occupied' : ''}${isMe ? ' me' : ''}" data-x="${x}" data-y="${y}">${
-        p ? `<span>${p.icon}</span><small>${escapeHtml(p.name)}</small>` : ''
-      }</button>`;
-    }
-  }
-  return html;
-}
-
-function bindGameEvents() {
-  document.getElementById('leaveRoom')?.addEventListener('click', handleLeaveRoom);
-  document.getElementById('startGame')?.addEventListener('click', handleStartGame);
-  document.getElementById('endTurn')?.addEventListener('click', handleEndTurn);
-  document.querySelectorAll('.tile').forEach(tile => {
-    tile.addEventListener('click', () => handleMove(Number(tile.dataset.x), Number(tile.dataset.y)));
-  });
-}
-
-// ── Game actions ──────────────────────────────────────────────────────
+// ── Ações ─────────────────────────────────────────────────────────────
 
 function handleLeaveRoom() {
   session.unsubscribe?.();
@@ -525,9 +403,6 @@ function handleLeaveRoom() {
   session.room = null;
   session.roomId = '';
   localStorage.removeItem('oraculo.roomId');
-  app.style.display = 'none';
-  introOverlay.style.display = '';
-  introOverlay.classList.remove('fadeout');
   showScreen('isc-landing');
 }
 
@@ -537,28 +412,7 @@ async function handleStartGame() {
   try {
     await saveRoom(result.room);
   } catch (err) {
-    alert(`Erro ao iniciar jogo: ${err.message}`);
-  }
-}
-
-async function handleEndTurn() {
-  const result = endTurn(session.room, session.playerId);
-  if (result.error) { alert(result.error); return; }
-  try {
-    await saveRoom(result.room);
-  } catch (err) {
-    alert(`Erro ao encerrar turno: ${err.message}`);
-  }
-}
-
-async function handleMove(x, y) {
-  if (!session.room || session.room.status !== 'battle') return;
-  const result = movePlayer(session.room, session.playerId, x, y);
-  if (result.error) { alert(result.error); return; }
-  try {
-    await saveRoom(result.room);
-  } catch (err) {
-    alert(`Erro ao mover: ${err.message}`);
+    alert(`Erro ao iniciar: ${err.message}`);
   }
 }
 
