@@ -47,19 +47,21 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 /* ── Portrait ── */
 #panel-portrait{
   flex-shrink:0;
-  align-self:stretch;
-  aspect-ratio:927/1377;
-  max-width:75px;
+  align-self:flex-start;
+  width:68px; height:100px;
   overflow:hidden;
   margin-right:10px;
+  border-radius:6px;
   position:relative;
   display:flex; align-items:center; justify-content:center;
   font-size:26px;
+  background:rgba(0,0,0,.4);
 }
 #panel-portrait img{
   position:absolute; inset:0;
   width:100%; height:100%;
-  object-fit:fill;
+  object-fit:cover;
+  object-position:top center;
 }
 
 /* ── Stats ── */
