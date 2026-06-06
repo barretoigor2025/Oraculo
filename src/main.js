@@ -132,12 +132,15 @@ function renderSlots() {
   for (let i = 0; i < 4; i++) {
     const c = chars[i];
     if (c) {
+      const portraitSrc = `portraits/${c.classId}_m.png`;
       html += `
         <div class="isc-slot-card occupied" data-slot="${i}">
-          <div class="isc-slot-icon">${c.icon}</div>
-          <div class="isc-slot-name">${escapeHtml(c.name)}</div>
-          <div class="isc-slot-class">${escapeHtml(c.className)}</div>
-          <div class="isc-slot-stats">❤️ ${c.maxHp} &nbsp;⚡ ${c.movement} &nbsp;⚔️ ${c.attack}</div>
+          <div class="isc-slot-portrait">
+            <img src="${portraitSrc}" alt="" onerror="this.style.display='none'">
+            <span>${c.icon}</span>
+          </div>
+          <div class="isc-slot-nome">${escapeHtml(c.name)}</div>
+          <div class="isc-slot-classe">${escapeHtml(c.className)}</div>
           <button class="isc-slot-del" data-del="${i}" title="Excluir">✕</button>
         </div>`;
     } else {
@@ -373,16 +376,20 @@ function renderRoomPlayers(room) {
   if (!list) return;
 
   const players = Object.values(room.players ?? {});
-  list.innerHTML = players.map(p => `
-    <div class="room-player-card">
-      <div class="room-player-icon">${p.icon}</div>
-      <div class="room-player-info">
-        <div class="room-player-name">${escapeHtml(p.name)}</div>
-        <div class="room-player-class">${p.classId}</div>
-      </div>
+  list.innerHTML = players.map(p => {
+    const gender = p.gender || 'm';
+    const portraitSrc = `portraits/${p.classId}_${gender}.png`;
+    return `
+    <div class="room-player-card${p.id === session.playerId && session.isHost ? ' is-host' : ''}">
       ${p.id === session.playerId && session.isHost ? '<span class="room-host-badge">Host</span>' : ''}
-    </div>
-  `).join('');
+      <div class="room-portrait">
+        <img src="${portraitSrc}" alt="" onerror="this.style.display='none'">
+        <span>${p.icon}</span>
+      </div>
+      <div class="room-player-nome">${escapeHtml(p.name)}</div>
+      <div class="room-player-classe">${escapeHtml(p.classId)}</div>
+    </div>`
+  }).join('');
 
   if (waitMsg) {
     waitMsg.textContent = players.length >= 2
