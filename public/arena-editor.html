@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Arena — Editor de Cenário</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0a0806;
+  font-family:'Segoe UI',system-ui,sans-serif;user-select:none;-webkit-user-select:none;}
+
+/* ── Layout: toolbar → mapa scrollável → barra inferior ── */
+#layout{display:flex;flex-direction:column;height:100%;}
+
+/* ── Toolbar de terrenos ── */
+#toolbar{
+  flex-shrink:0;
+  background:#1a1410;
+  border-bottom:1px solid #3a2e20;
+  padding:6px 8px;
+  padding-top:max(6px, calc(4px + env(safe-area-inset-top)));
+  display:flex;gap:6px;overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+#toolbar::-webkit-scrollbar{display:none;}
+
+.t-btn{
+  flex-shrink:0;
+  min-width:44px;height:44px;
+  border-radius:8px;border:2px solid transparent;
+  background:rgba(255,255,255,.07);
+  color:#ccc;font-size:10px;font-weight:700;
+  letter-spacing:.2px;line-height:1.2;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  padding:0 6px;gap:1px;
+}
+.t-btn .t-icon{font-size:16px;line-height:1;}
+.t-btn.ativo{border-color:#ffd028;background:rgba(255,210,40,.15);color:#fff;}
+
+/* ── Área de scroll do mapa ── */
+#scroll-area{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  position:relative;
+}
+#world{position:relative;cursor:crosshair;}
+#world img,#world canvas{
+  position:absolute;top:0;left:0;
+  width:100%;height:100%;
+  pointer-events:none;
+}
+
+/* ── Barra inferior ── */
+#bottombar{
+  flex-shrink:0;
+  background:#1a1410;
+  border-top:1px solid #3a2e20;
+  padding:6px 10px;
+  padding-bottom:max(6px, calc(4px + env(safe-area-inset-bottom)));
+  display:flex;align-items:center;gap:8px;
+}
+#status{flex:1;font-size:11px;color:#a89060;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-btn{
+  flex-shrink:0;height:36px;padding:0 14px;
+  border-radius:7px;border:1px solid #3a2e20;
+  background:#241c12;color:#d4a844;
+  font-size:11px;font-weight:700;
+  cursor:pointer;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  display:flex;align-items:center;gap:5px;
+}
+.bar-btn:active{background:#3a2e18;}
+#import-input{display:none;}
+</style>
+</head>
+<body>
+
+<div id="layout">
+
+  <!-- ── Paleta de terrenos ── -->
+  <div id="toolbar">
+    <button class="t-btn ativo" data-tipo="livre"           ><span class="t-icon">🟢</span>Livre</button>
+    <button class="t-btn"       data-tipo="bloqueado"       ><span class="t-icon">🔴</span>Bloqueado</button>
+    <button class="t-btn"       data-tipo="cobertura_baixa" ><span class="t-icon">🟡</span>Cob.Baixa</button>
+    <button class="t-btn"       data-tipo="cobertura_alta"  ><span class="t-icon">🟠</span>Cob.Alta</button>
+    <button class="t-btn"       data-tipo="elevado"         ><span class="t-icon">🔵</span>Elevado</button>
+    <button class="t-btn"       data-tipo="dificil"         ><span class="t-icon">🟤</span>Difícil</button>
+    <button class="t-btn"       data-tipo="abismo"          ><span class="t-icon">⚫</span>Abismo</button>
+  </div>
+
+  <!-- ── Mapa ── -->
+  <div id="scroll-area">
+    <div id="world">
+      <img id="mapa" src="maps/feira-limpa.png" alt="">
+      <canvas id="cv-terrain"></canvas>
+      <canvas id="cv-hex"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Barra inferior ── -->
+  <div id="bottombar">
+    <span id="status">Toque um hexágono para editar</span>
+    <button class="bar-btn" onclick="document.getElementById('import-input').click()">
+      📂 Importar
+    </button>
+    <input type="file" id="import-input" accept=".json" onchange="importJSON(event)">
+    <button class="bar-btn" onclick="exportJSON()">💾 Exportar</button>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════
+//  CONSTANTES (mesmas do arena.html — lei canônica)
+// ══════════════════════════════════════════
+const MAP_W  = 1086;
+const MAP_H  = 1448;
+const HR     = 55;
+const CS     = 82;
+const RS     = 95;
+const OOFF   = 48;
+const GX0    = 47;
+const GY0    = 80;
+const COLS   = 13;
+const ROWS   = 13;
+const LETRAS = 'ABCDEFGHIJKLM';
+const MAPA_ID = 'feira-limpa';
+
+// ══════════════════════════════════════════
+//  CONFIGURAÇÃO DE TERRENOS
+// ══════════════════════════════════════════
+const TERRENOS = {
+  livre:           { label:'Livre',          cor: null },
+  bloqueado:       { label:'Bloqueado',       cor:'rgba(200,40,40,0.60)'   },
+  cobertura_baixa: { label:'Cobertura Baixa', cor:'rgba(220,185,0,0.55)'   },
+  cobertura_alta:  { label:'Cobertura Alta',  cor:'rgba(220,110,0,0.58)'   },
+  elevado:         { label:'Elevado',          cor:'rgba(50,100,230,0.55)'  },
+  dificil:         { label:'Difícil',          cor:'rgba(130,80,25,0.58)'   },
+  abismo:          { label:'Abismo',           cor:'rgba(5,5,10,0.82)'      },
+};
+
+// ══════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════
+let terreno     = {};         // "col,row" → tipo string
+let tipoAtual   = 'livre';
+let lastPainted = '';         // evita repintar o mesmo hex no drag
+let isPainting  = false;
+
+// ══════════════════════════════════════════
+//  CANVASES
+// ══════════════════════════════════════════
+const cvTerrain = document.getElementById('cv-terrain');
+const cvHex     = document.getElementById('cv-hex');
+const ctxT      = cvTerrain.getContext('2d');
+const ctxH      = cvHex.getContext('2d');
+cvTerrain.width = cvHex.width  = MAP_W;
+cvTerrain.height= cvHex.height = MAP_H;
+
+// ══════════════════════════════════════════
+//  HEX MATH
+// ══════════════════════════════════════════
+function hexCentro(col, row){
+  return {
+    x: GX0 + col * CS,
+    y: GY0 + row * RS + (col % 2 === 1 ? OOFF : 0),
+  };
+}
+function hexLabel(col, row){
+  return LETRAS[col] + String(row + 1).padStart(2,'0');
+}
+
+// Converte coordenada de cliente (tela) → {col, row} do hex
+function clientToHex(clientX, clientY){
+  const rect = cvHex.getBoundingClientRect();
+  if (rect.width === 0) return null;
+  const scaleX = MAP_W / rect.width;
+  const scaleY = MAP_H / rect.height;
+  const mx = (clientX - rect.left)  * scaleX;
+  const my = (clientY - rect.top)   * scaleY;
+
+  let best = null, bestD2 = Infinity;
+  for (let c = 0; c < COLS; c++){
+    for (let r = 0; r < ROWS; r++){
+      const {x, y} = hexCentro(c, r);
+      const d2 = (mx-x)**2 + (my-y)**2;
+      if (d2 < bestD2){ bestD2 = d2; best = {col:c, row:r}; }
+    }
+  }
+  return Math.sqrt(bestD2) < HR ? best : null;
+}
+
+// ══════════════════════════════════════════
+//  DESENHO
+// ══════════════════════════════════════════
+function hexPath(ctx, x, y){
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++){
+    const ang = Math.PI / 3 * i;
+    i === 0
+      ? ctx.moveTo(x + HR * Math.cos(ang), y + HR * Math.sin(ang))
+      : ctx.lineTo(x + HR * Math.cos(ang), y + HR * Math.sin(ang));
+  }
+  ctx.closePath();
+}
+
+function renderTerrain(){
+  ctxT.clearRect(0, 0, MAP_W, MAP_H);
+  for (const [key, tipo] of Object.entries(terreno)){
+    const cfg = TERRENOS[tipo];
+    if (!cfg || !cfg.cor) continue;
+    const [c, r] = key.split(',').map(Number);
+    const {x, y} = hexCentro(c, r);
+    hexPath(ctxT, x, y);
+    ctxT.fillStyle = cfg.cor;
+    ctxT.fill();
+  }
+}
+
+function renderGrid(){
+  ctxH.clearRect(0, 0, MAP_W, MAP_H);
+  for (let c = 0; c < COLS; c++){
+    for (let r = 0; r < ROWS; r++){
+      const {x, y} = hexCentro(c, r);
+      hexPath(ctxH, x, y);
+      ctxH.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctxH.lineWidth   = 1.0;
+      ctxH.stroke();
+
+      // Labels sempre visíveis no editor
+      const lbl = hexLabel(c, r);
+      ctxH.font = 'bold 10px Segoe UI,sans-serif';
+      ctxH.textAlign = 'center'; ctxH.textBaseline = 'middle';
+      const tw = ctxH.measureText(lbl).width;
+      ctxH.fillStyle = 'rgba(0,0,0,0.55)';
+      ctxH.beginPath(); ctxH.roundRect(x - tw/2 - 2, y - 7, tw + 4, 14, 2); ctxH.fill();
+      ctxH.fillStyle = 'rgba(255,255,255,0.70)';
+      ctxH.fillText(lbl, x, y);
+    }
+  }
+}
+
+function render(){ renderTerrain(); renderGrid(); }
+
+// ══════════════════════════════════════════
+//  PINTAR HEX
+// ══════════════════════════════════════════
+function paintAt(clientX, clientY){
+  const hex = clientToHex(clientX, clientY);
+  if (!hex) return;
+  const key = `${hex.col},${hex.row}`;
+  if (key === lastPainted) return;
+  lastPainted = key;
+
+  if (tipoAtual === 'livre'){
+    delete terreno[key];
+  } else {
+    terreno[key] = tipoAtual;
+  }
+
+  const tipo    = terreno[key] ?? 'livre';
+  const label   = hexLabel(hex.col, hex.row);
+  const nomeT   = TERRENOS[tipo]?.label ?? tipo;
+  document.getElementById('status').textContent = `${label} — ${nomeT}  |  ${Object.keys(terreno).length} hexes marcados`;
+
+  renderTerrain();
+}
+
+// ══════════════════════════════════════════
+//  EVENTOS DE TOQUE / MOUSE (scroll-area)
+// ══════════════════════════════════════════
+const scrollArea = document.getElementById('scroll-area');
+
+scrollArea.addEventListener('pointerdown', e => {
+  // Só 1 dedo = pintar; 2+ dedos = scroll nativo
+  if (e.isPrimary === false) return;
+  isPainting = true;
+  lastPainted = '';
+  paintAt(e.clientX, e.clientY);
+}, { passive: true });
+
+scrollArea.addEventListener('pointermove', e => {
+  if (!isPainting || e.isPrimary === false) return;
+  paintAt(e.clientX, e.clientY);
+}, { passive: true });
+
+scrollArea.addEventListener('pointerup',     () => { isPainting = false; lastPainted = ''; });
+scrollArea.addEventListener('pointercancel', () => { isPainting = false; lastPainted = ''; });
+
+// ══════════════════════════════════════════
+//  PALETA — seleção de tipo
+// ══════════════════════════════════════════
+document.querySelectorAll('.t-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    tipoAtual = btn.dataset.tipo;
+    document.querySelectorAll('.t-btn').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    const nomeT = TERRENOS[tipoAtual]?.label ?? tipoAtual;
+    document.getElementById('status').textContent = `Tipo ativo: ${nomeT}`;
+  });
+});
+
+// ══════════════════════════════════════════
+//  EXPORTAR JSON
+// ══════════════════════════════════════════
+function exportJSON(){
+  const payload = {
+    mapa: MAPA_ID,
+    largura: COLS,
+    altura:  ROWS,
+    hexes: terreno,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `${MAPA_ID}-terreno.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════
+//  IMPORTAR JSON
+// ══════════════════════════════════════════
+function importJSON(e){
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      terreno = data.hexes ?? {};
+      render();
+      document.getElementById('status').textContent =
+        `Importado: ${file.name}  |  ${Object.keys(terreno).length} hexes marcados`;
+    } catch(err) {
+      document.getElementById('status').textContent = `Erro ao importar: ${err.message}`;
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ══════════════════════════════════════════
+//  ESCALA — mapa preenche largura da tela
+// ══════════════════════════════════════════
+function initScale(){
+  const scale = window.innerWidth / MAP_W;
+  const world = document.getElementById('world');
+  world.style.width  = Math.round(MAP_W * scale) + 'px';
+  world.style.height = Math.round(MAP_H * scale) + 'px';
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+const mapaEl = document.getElementById('mapa');
+mapaEl.onload  = () => { initScale(); render(); };
+mapaEl.onerror = () => { initScale(); render(); };
+if (mapaEl.complete && mapaEl.naturalWidth > 0){ initScale(); render(); }
+
+window.addEventListener('resize', () => { initScale(); render(); });
+</script>
+</body>
+</html>
