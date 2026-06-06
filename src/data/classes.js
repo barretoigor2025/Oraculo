@@ -67,24 +67,20 @@ export function formatModifier(value) {
 }
 
 export function getDerivedStats(playerClass) {
-  const conMod = getModifier(playerClass.CON);
-  const dexMod = getModifier(playerClass.DEX);
-  const wisMod = getModifier(playerClass.WIS);
-  const strMod = getModifier(playerClass.STR);
-  const intMod = getModifier(playerClass.INT);
-  const hasMana = playerClass.will_base >= 2;
-  const maxMana = hasMana ? Math.max(3, Math.max(intMod, wisMod) + 2) : 0;
-  const maxStamina = !hasMana ? Math.max(3, Math.max(strMod, dexMod) + 2) : 0;
+  const a = playerClass.attrs ?? {};
+  const conMod = getModifier(a.CON ?? 10);
+  const dexMod = getModifier(a.DEX ?? 10);
+  const wisMod = getModifier(a.WIS ?? 10);
   return {
-    hp: Math.max(1, playerClass.dado_vida + conMod),
-    ac: 10 + dexMod + playerClass.ca_armor,
+    hp: playerClass.maxHp ?? Math.max(1, 8 + conMod),
+    ac: 10 + dexMod,
     init: dexMod,
-    fort: conMod + playerClass.fort_base,
-    ref: dexMod + playerClass.ref_base,
-    will: wisMod + playerClass.will_base,
-    mana: maxMana,
-    maxMana,
-    stamina: maxStamina,
-    maxStamina,
+    fort: conMod,
+    ref: dexMod,
+    will: wisMod,
+    mana: 0,
+    maxMana: 0,
+    stamina: 0,
+    maxStamina: 0,
   };
 }

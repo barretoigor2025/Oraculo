@@ -330,7 +330,7 @@ async function enterRoom(roomId, isHost) {
   showScreen('isc-room');
 
   try {
-    await joinRoom(session.roomId, session.playerId, session.playerName || 'Viajante', session.classId);
+    await joinRoom(session.roomId, session.playerId, { name: session.playerName || 'Viajante', classId: session.classId });
   } catch (err) {
     alert(`Erro ao entrar na sala: ${err.message}`);
     showScreen(session.onlineMode ? 'isc-lobby' : 'isc-slots');
