@@ -270,8 +270,8 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 .hab-btn .hab-icon{ font-size:18px; }
 .hab-btn .hab-info{ display:flex; flex-direction:column; gap:1px; }
 .hab-btn .hab-nome{ font-size:12px; font-weight:800; color:#ffe8c0; }
-.hab-btn .hab-desc{ font-size:10px; color:rgba(255,200,150,.6); }
-.hab-badges{ display:flex; gap:4px; margin-top:3px; flex-wrap:wrap; align-items:center; }
+.hab-badges{ display:flex; gap:4px; margin-top:2px; flex-wrap:wrap; align-items:center; }
+.hab-dano  { font-size:8px; color:rgba(255,220,120,.7); font-weight:700; letter-spacing:.2px; }
 .hab-tag{
   font-size:8px; font-weight:800; padding:1px 5px; border-radius:3px;
   text-transform:uppercase; letter-spacing:.4px;
@@ -1435,7 +1435,10 @@ function renderSel(){
     hexPath(ctxS,tx,ty); ctxS.fillStyle='rgba(255,60,0,0.22)'; ctxS.fill();
     ctxS.save(); ctxS.shadowColor='#ff4400'; ctxS.shadowBlur=16;
     ctxS.strokeStyle='#ff6622'; ctxS.lineWidth=2.5; hexPath(ctxS,tx,ty); ctxS.stroke(); ctxS.restore();
-    const from=hexCentro(planoAtaque.atacante.col,planoAtaque.atacante.row);
+    const fromPos=(planoMovimento&&planoMovimento.unit===planoAtaque.atacante&&planoMovimento.path.length>0)
+      ?planoMovimento.path[planoMovimento.path.length-1]
+      :planoAtaque.atacante;
+    const from=hexCentro(fromPos.col,fromPos.row);
     drawAttackArrow(ctxS,from.x,from.y,tx,ty);
   }
 }
@@ -1822,13 +1825,12 @@ function _abrirPainelHabilidades(filtro){
     if(cat==='magia')  badges+=`<span class="hab-tag magia">Magia</span>`;
     else if(cat==='skill') badges+=`<span class="hab-tag skill">Skill</span>`;
     else if(cat==='buff')  badges+=`<span class="hab-tag buff">Buff</span>`;
-    if(h.alcance>0)   badges+=`<span class="hab-alcance">🎯 ${h.alcance}</span>`;
     if(h.custoSP>0)   badges+=`<span class="hab-sp">⚡${h.custoSP} SP${semSP?' ✕':''}</span>`;
+    if(h.dano)        badges+=`<span class="hab-dano">${h.dano}</span>`;
 
     btn.innerHTML=`<span class="hab-icon">${h.icone}</span>
       <span class="hab-info">
         <span class="hab-nome">${h.nome}</span>
-        <span class="hab-desc">${h.desc}${h.dano?'  <em style="opacity:.6">'+h.dano+'</em>':''}</span>
         ${badges?`<span class="hab-badges">${badges}</span>`:''}
       </span>`;
     btn.addEventListener('click',()=>selecionarHabilidade(h));
