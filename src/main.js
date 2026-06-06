@@ -132,7 +132,7 @@ function renderSlots() {
   for (let i = 0; i < 4; i++) {
     const c = chars[i];
     if (c) {
-      const portraitSrc = `portraits/${c.classId}_m.png`;
+      const portraitSrc = `portraits/${c.classId}_${c.gender || 'm'}.png`;
       html += `
         <div class="isc-slot-card occupied" data-slot="${i}">
           <div class="isc-slot-portrait">
@@ -192,10 +192,13 @@ function renderSlots() {
 // ── Criação de personagem ────────────────────────────────────────────
 
 let selectedClassId = 'barbaro';
+let selectedGender = 'm';
 
 function initCreateScreen() {
   selectedClassId = 'barbaro';
+  selectedGender = 'm';
   renderClassGrid();
+  renderGenderButtons();
   updateStatsPreview();
 
   const btn = document.getElementById('btn-criar-personagem');
@@ -204,6 +207,17 @@ function initCreateScreen() {
     btn.replaceWith(clone);
     clone.addEventListener('click', confirmarPersonagem);
   }
+}
+
+function renderGenderButtons() {
+  document.querySelectorAll('.isc-gender-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.gender === selectedGender);
+    btn.onclick = () => {
+      selectedGender = btn.dataset.gender;
+      renderGenderButtons();
+      updateStatsPreview();
+    };
+  });
 }
 
 function renderClassGrid() {
@@ -231,7 +245,7 @@ function updateStatsPreview() {
   const feat = document.getElementById('isc-class-feat');
   if (icon) {
     const img = document.createElement('img');
-    img.src = `portraits/${selectedClassId}_m.png`;
+    img.src = `portraits/${selectedClassId}_${selectedGender}.png`;
     img.alt = cls.name;
     img.style.cssText = 'width:100%;height:auto;display:block;border-radius:10px;';
     img.onerror = () => { icon.innerHTML = cls.icon; };
@@ -266,7 +280,7 @@ function confirmarPersonagem() {
   const character = {
     name, classId: selectedClassId, className: cls.name,
     icon: cls.icon, maxHp: cls.maxHp, movement: cls.movement, attack: cls.attack,
-    gender: 'm',
+    gender: selectedGender,
   };
   chars.push(character);
   saveCharacters(chars);
@@ -275,7 +289,7 @@ function confirmarPersonagem() {
   session.classId = selectedClassId;
   localStorage.setItem('oraculo.playerName', name);
   localStorage.setItem('oraculo.classId', selectedClassId);
-  localStorage.setItem('oraculo.gender', 'm');
+  localStorage.setItem('oraculo.gender', selectedGender);
 
   if (session.onlineMode) {
     showScreen('isc-lobby');

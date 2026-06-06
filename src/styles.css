@@ -209,6 +209,20 @@ body {
 .isc-class-icon { font-size: 22px; }
 .isc-class-name { font-size: 9px; color: #9a8860; text-align: center; letter-spacing: .3px; }
 
+.isc-gender-row { display: flex; gap: 8px; width: 100%; }
+.isc-gender-btn {
+  flex: 1; padding: 9px 8px;
+  background: #12100c; border: 1px solid rgba(200,160,48,.2);
+  border-radius: 8px; color: #7a6a40; font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all .18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.isc-gender-btn:hover { border-color: rgba(200,160,48,.45); background: #1a1810; color: #c8a030; }
+.isc-gender-btn.selected {
+  border-color: rgba(200,160,48,.7); background: rgba(200,160,48,.12);
+  color: #c8a030;
+}
+
 .isc-preview-row { display: flex; gap: 10px; width: 100%; align-items: flex-start; }
 .isc-sprite-col { flex: 0 0 38%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .isc-sprite-placeholder {
