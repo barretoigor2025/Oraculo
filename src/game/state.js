@@ -60,11 +60,12 @@ export function createPlayer(playerId, character) {
 
 export function placePlayer(room, player) {
   const playersCount = Object.keys(room.players ?? {}).length;
+  // x matches _fbIsHost ? 4 : 6 logic in arena.html so initial Firebase pos = arena spawn pos
   const startPositions = [
-    { x: 4, y: 7 },
-    { x: 5, y: 7 },
-    { x: 6, y: 7 },
-    { x: 7, y: 7 },
+    { x: 4, y: 11 },
+    { x: 6, y: 11 },
+    { x: 3, y: 11 },
+    { x: 7, y: 11 },
   ];
   const start = startPositions[playersCount] ?? {
     x: playersCount % MAP_WIDTH,

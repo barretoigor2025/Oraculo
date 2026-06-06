@@ -19,6 +19,12 @@ if(_cfg&&_rid&&_pid){
     window._fbUpdatePos=async(col,row)=>{
       try{await updateDoc(rd,{[`players.${_pid}.x`]:col,[`players.${_pid}.y`]:row});}catch{}
     };
+    window._fbSetIntent=async(data)=>{
+      try{await updateDoc(rd,{[`intents.${_pid}`]:data});}catch{}
+    };
+    window._fbBroadcastDice=async(rolls)=>{
+      try{await updateDoc(rd,{diceRoll:{rolls,ts:Date.now(),pid:_pid}});}catch{}
+    };
     window._fbSetEnemies=async(enemies)=>{
       try{
         const data=enemies.map(u=>({nome:u.nome,x:u.col,y:u.row,hp:u.hp,maxHp:u.maxHp}));
@@ -849,7 +855,8 @@ let atkTargets    = [];     // hexes de alvos válidos
 
 // ── estado de turno ──
 let faseDoTurno   = 'idle';
-let _lastEnemyTurnTs = null, _firstRoomUpdate = true;   // idle|planejar_mover|mover_ativo|planejar_acao|acao_ativa|acao_pronta|resolvendo|turno_inimigo
+let _lastEnemyTurnTs = null, _lastDiceTs = null, _firstRoomUpdate = true;
+let remoteIntents = {};   // idle|planejar_mover|mover_ativo|planejar_acao|acao_ativa|acao_pronta|resolvendo|turno_inimigo
 let turnoIdx      = 0;        // 0=herói, 1=inimigo
 let planoMovimento= null;     // {unit, path} | null
 let planoAtaque   = null;     // {hab, atacante, alvo} | null
@@ -1435,6 +1442,7 @@ function renderTerrain(){
 // ══════════════════════════════════════════
 function renderSel(){
   ctxS.clearRect(0,0,MAP_W,MAP_H);
+  renderRemoteIntents();
   if(!selUnit) return;
 
   if(modoAtaque){
@@ -1537,10 +1545,7 @@ function renderUnits(){
     } else {
       ctxU.beginPath(); ctxU.arc(x,y,HR*.45,0,Math.PI*2);
       ctxU.fillStyle=u.cor; ctxU.fill();
-      ctxU.strokeStyle='rgba(255,255,255,.7)'; ctxU.lineWidth=1.5; ctxU.stroke();
-      ctxU.font=`${Math.round(HR*.7)}px serif`;
-      ctxU.textAlign='center'; ctxU.textBaseline='middle';
-      ctxU.fillStyle='#fff'; ctxU.fillText(u.emoji,x,y);
+      ctxU.strokeStyle='rgba(255,255,255,.7)'; ctxU.lineWidth=2; ctxU.stroke();
     }
     ctxU.font='bold 10px Segoe UI,sans-serif';
     const lw=ctxU.measureText(u.nome).width+10;
@@ -1621,6 +1626,7 @@ function iniciarTurno(unit){
   planoMovimento=null; planoAtaque=null; movBloqueado=false;
   selUnit=unit; moveHexes=[]; targetHex=null; hexPreview=null;
   modoAtaque=false; habAtual=null; atkTargets=[];
+  _broadcastIntent();
   faseDoTurno='planejar_mover';
   const sub = unit.tipo==='heroi' ? 'escolha sua ação' : 'turno do inimigo';
   mostrarLetreiro('TURNO DO '+unit.nome.toUpperCase(), sub, '', 2000, ()=>{
@@ -1647,13 +1653,15 @@ function clicarNaoMover(){
 function cancelarMover(){
   faseDoTurno='planejar_mover';
   targetHex=null; moveHexes=[]; hexPreview=null;
+  _broadcastIntent();
   ctxS.clearRect(0,0,MAP_W,MAP_H);
   render(); renderActionRow();
 }
 
 function cancelarAtaqueAtual(){
   faseDoTurno='planejar_acao';
-  modoAtaque=false; habAtual=null; atkTargets=[];
+  modoAtaque=false; habAtual=null; atkTargets=[]; planoAtaque=null;
+  _broadcastIntent();
   fecharAtkPanel();
   ctxS.clearRect(0,0,MAP_W,MAP_H);
   render(); renderActionRow();
@@ -1672,12 +1680,17 @@ function confirmarHexMover(){
 function confirmarMovimento(){
   document.getElementById('mov-confirm-modal').classList.remove('visivel');
   if(!hexPreview) return;
+  // Guard against race condition: another unit may have moved here after moveHexes was calculated
+  if(unidades.some(u=>u!==selUnit&&u.col===hexPreview.col&&u.row===hexPreview.row)){
+    hexPreview=null; cancelarMover(); return;
+  }
   const path=bfsPath(selUnit.col,selUnit.row,hexPreview.col,hexPreview.row);
   planoMovimento={unit:selUnit, path};
   targetHex=hexPreview;
   hexPreview=null;
   faseDoTurno='planejar_acao';
   moveHexes=[];
+  _broadcastIntent();
   ctxS.clearRect(0,0,MAP_W,MAP_H);
   render(); renderActionRow(); renderBottomPanel();
 }
@@ -1710,12 +1723,14 @@ function resolverMovimento(cb){
   const cd=8;
   const critico=d20v===20, catastrofe=d20v===1;
   const sucesso=(total>=cd||critico)&&!catastrofe;
-  DiceOverlay.mostrar([{
+  const _mvRolls=[{
     tipo:'testar', label:'Teste de Movimento',
     nomeJog:unit.nome, alvo:null,
     d20:d20v, modStr:mod>=0?`+${mod}`:`${mod}`, total, dc:cd,
     sucesso, critico, catastrofe
-  }], results=>{
+  }];
+  if(window._fbBroadcastDice) window._fbBroadcastDice(_mvRolls);
+  DiceOverlay.mostrar(_mvRolls, results=>{
     const r=results[0];
     if(r.catastrofe){
       movBloqueado=true;
@@ -1786,6 +1801,7 @@ function executarAtaquePlano(hab, atacante, alvo){
     });
   }
 
+  if(window._fbBroadcastDice) window._fbBroadcastDice(playlist);
   DiceOverlay.mostrar(playlist, results=>{
     const atk=results[0];
     if((atk.sucesso||atk.critico)&&!atk.catastrofe){
@@ -1808,6 +1824,7 @@ function proximoTurno(){
   const inimigo=unidades.find(u=>u.tipo==='inimigo');
   const ordem=[heroi,inimigo].filter(Boolean);
   const proximo=ordem[turnoIdx%ordem.length];
+  _broadcastIntent(); // limpa intent no fim do turno
   // Host sinaliza que o turno do inimigo terminou para os outros clientes avançarem
   if(_fbIsHost&&proximo&&proximo.tipo==='heroi'&&window._fbEnemyTurnDone) window._fbEnemyTurnDone();
   setTimeout(()=>{
@@ -2016,9 +2033,9 @@ function selecionarHabilidade(hab){
   fecharAtkPanel();
 
   if(hab.alcance===0||hab.tipo==='buff'){
-    // Buff self-cast: plano imediato, vai direto para acao_pronta
     planoAtaque={hab, atacante:selUnit, alvo:selUnit};
     faseDoTurno='acao_pronta';
+    _broadcastIntent();
     renderActionRow(); renderBottomPanel();
     return;
   }
@@ -2038,6 +2055,7 @@ function selecionarHabilidade(hab){
     planoAtaque={hab, atacante:selUnit, alvo:inimigosAlvo[0]};
     modoAtaque=false; habAtual=null; atkTargets=[];
     faseDoTurno='acao_pronta';
+    _broadcastIntent();
     renderActionRow(); renderBottomPanel(); renderSel();
     return;
   }
@@ -2113,6 +2131,7 @@ document.getElementById('world').addEventListener('pointerdown',e=>{
       planoAtaque={hab:habAtual, atacante:selUnit, alvo};
       modoAtaque=false; habAtual=null; atkTargets=[];
       faseDoTurno='acao_pronta';
+      _broadcastIntent();
       renderActionRow(); renderSel(); renderBottomPanel();
       return;
     }
@@ -2123,11 +2142,13 @@ document.getElementById('world').addEventListener('pointerdown',e=>{
   if(faseDoTurno==='mover_ativo' && hex){
     if(moveHexes.some(h=>h.col===hex.col&&h.row===hex.row)){
       hexPreview=hex;
+      _broadcastIntent();
       render(); renderActionRow(); renderBottomPanel();
       return;
     }
     // clique fora do alcance: limpa preview mas mantém modo ativo
     hexPreview=null;
+    _broadcastIntent();
     render(); renderActionRow(); renderBottomPanel();
     return;
   }
@@ -2151,6 +2172,46 @@ function toggleCoords(){
 function _fbSyncUnit(unit){
   if(unit.tipo==='heroi'&&!unit._fbId&&window._fbUpdatePos) window._fbUpdatePos(unit.col,unit.row);
   else if(unit.tipo==='inimigo'&&_fbIsHost&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
+}
+
+function _broadcastIntent(){
+  if(!window._fbSetIntent) return;
+  window._fbSetIntent({
+    movePreview: hexPreview?{col:hexPreview.col,row:hexPreview.row}:null,
+    moveTarget:  targetHex?{col:targetHex.col,row:targetHex.row}:null,
+    attackTarget:(planoAtaque&&planoAtaque.alvo&&planoAtaque.alvo!==planoAtaque.atacante)
+      ?{col:planoAtaque.alvo.col,row:planoAtaque.alvo.row}:null,
+  });
+}
+
+function renderRemoteIntents(){
+  for(const[pid,intent] of Object.entries(remoteIntents)){
+    if(!intent) continue;
+    const ru=unidades.find(u=>u._fbId===pid);
+    if(!ru) continue;
+    const from=hexCentro(ru.col,ru.row);
+    if(intent.movePreview){
+      const{x,y}=hexCentro(intent.movePreview.col,intent.movePreview.row);
+      hexPath(ctxS,x,y); ctxS.fillStyle='rgba(40,210,200,0.22)'; ctxS.fill();
+      ctxS.save(); ctxS.shadowColor='#40d4c8'; ctxS.shadowBlur=14;
+      ctxS.strokeStyle='#50e8d8'; ctxS.lineWidth=2; hexPath(ctxS,x,y); ctxS.stroke(); ctxS.restore();
+      drawArrow(ctxS,from.x,from.y,x,y);
+    }
+    if(intent.moveTarget){
+      const{x,y}=hexCentro(intent.moveTarget.col,intent.moveTarget.row);
+      hexPath(ctxS,x,y); ctxS.fillStyle='rgba(0,200,180,0.30)'; ctxS.fill();
+      ctxS.save(); ctxS.shadowColor='#00c8b4'; ctxS.shadowBlur=12;
+      ctxS.strokeStyle='#20d8c0'; ctxS.lineWidth=2; hexPath(ctxS,x,y); ctxS.stroke(); ctxS.restore();
+      drawArrow(ctxS,from.x,from.y,x,y);
+    }
+    if(intent.attackTarget){
+      const{x,y}=hexCentro(intent.attackTarget.col,intent.attackTarget.row);
+      hexPath(ctxS,x,y); ctxS.fillStyle='rgba(255,150,0,0.22)'; ctxS.fill();
+      ctxS.save(); ctxS.shadowColor='#ff9600'; ctxS.shadowBlur=16;
+      ctxS.strokeStyle='#ffb020'; ctxS.lineWidth=2; hexPath(ctxS,x,y); ctxS.stroke(); ctxS.restore();
+      drawAttackArrow(ctxS,from.x,from.y,x,y);
+    }
+  }
 }
 
 function onRoomUpdate(room){
@@ -2178,9 +2239,16 @@ function onRoomUpdate(room){
         portrait:`portraits/${p.classId}_${g}.png`,
         itens:[], _fbId:p.id,
       };
-      const img=new Image();
-      img.onload=()=>{u.img=img;renderUnits();};
-      img.src=u.imgSrc;
+      function _loadSprite(src,fallbackSrc){
+        const img=new Image();
+        img.onload=()=>{u.img=img;renderUnits();};
+        img.onerror=()=>{
+          if(fallbackSrc){_loadSprite(fallbackSrc,null);}
+          else{renderUnits();}  // coloured circle, no emoji
+        };
+        img.src=src;
+      }
+      _loadSprite(u.imgSrc, g!=='m'?`sprites/${p.classId}_m_costas.png`:null);
       unidades.push(u);
     } else if(u.col!==p.x||u.row!==p.y){
       u.col=p.x; u.row=p.y; u._ax=null; u._ay=null;
@@ -2198,6 +2266,14 @@ function onRoomUpdate(room){
     }
   }
 
+  // ── Intents de planejamento de outros jogadores ──
+  if(room.intents){
+    const myId=localStorage.getItem('oraculo.playerId');
+    for(const[pid,intent] of Object.entries(room.intents)){
+      if(pid!==myId) remoteIntents[pid]=intent;
+    }
+  }
+
   // ── Sinal de turno do inimigo concluído (para não-host) ──
   if(room.enemyTurnTs!=null){
     if(_firstRoomUpdate){
@@ -2207,9 +2283,31 @@ function onRoomUpdate(room){
       if(!_fbIsHost&&faseDoTurno==='turno_inimigo') setTimeout(proximoTurno,800);
     }
   }
+
+  // ── Broadcast de dados de outro jogador ──
+  if(room.diceRoll!=null){
+    const myId=localStorage.getItem('oraculo.playerId');
+    if(_firstRoomUpdate){
+      _lastDiceTs=room.diceRoll.ts;
+    } else if(room.diceRoll.pid!==myId&&room.diceRoll.ts!==_lastDiceTs){
+      _lastDiceTs=room.diceRoll.ts;
+      DiceOverlay.mostrar(room.diceRoll.rolls,()=>{});
+    }
+  }
+
   _firstRoomUpdate=false;
 
+  // Atualiza hexes de movimento disponíveis se alguém se moveu enquanto planejávamos
+  if(selUnit&&faseDoTurno==='mover_ativo'){
+    moveHexes=hexesInRange(selUnit.col,selUnit.row,selUnit.mov);
+    // Cancela preview se o hex foi ocupado
+    if(hexPreview&&unidades.some(u=>u!==selUnit&&u.col===hexPreview.col&&u.row===hexPreview.row)){
+      hexPreview=null;
+    }
+  }
+
   renderUnits();
+  renderSel();
   renderBottomPanel();
 }
 
