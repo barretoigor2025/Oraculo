@@ -307,37 +307,43 @@ body {
 .room-code-hint { font-size: 9px; color: #5a4a28; margin-top: 4px; }
 
 .room-player-list {
-  display: grid; grid-template-columns: repeat(2, minmax(130px, 1fr));
+  display: grid; grid-template-columns: repeat(2, minmax(120px, 1fr));
   gap: 12px; width: 100%;
 }
 .room-player-card {
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
   background:
     radial-gradient(circle at 50% 0%, rgba(200,160,48,.16), transparent 46%),
     linear-gradient(180deg, rgba(24,18,10,.96), rgba(8,7,4,.96));
   border: 1px solid rgba(200,160,48,.24);
-  border-radius: 16px; padding: 10px 8px 12px; position: relative;
+  border-radius: 16px; padding: 0 0 10px; position: relative;
   box-shadow: 0 10px 26px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.03);
   overflow: hidden;
 }
 .room-player-card.is-host { border-color: rgba(220,170,55,.46); box-shadow: 0 0 22px rgba(200,160,48,.12), 0 10px 26px rgba(0,0,0,.55); }
 .room-portrait {
-  width: 80px; height: 112px;
-  border-radius: 8px; overflow: hidden;
-  background: rgba(0,0,0,.4); position: relative;
-  display: flex; align-items: center; justify-content: center; font-size: 40px;
+  width: 100%;
+  border-radius: 16px 16px 0 0; overflow: hidden;
+  background: rgba(0,0,0,.4);
+  display: grid; flex-shrink: 0;
 }
 .room-portrait img {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover; object-position: top center;
+  grid-area: 1 / 1;
+  width: 100%; height: auto; display: block;
+  z-index: 1;
 }
-.room-player-nome { font-size: 12px; font-weight: 900; color: #ead8a0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-shadow: 0 1px 2px #000; }
+.room-portrait span {
+  grid-area: 1 / 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; min-height: 70px;
+}
+.room-player-nome { font-size: 12px; font-weight: 900; color: #ead8a0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-shadow: 0 1px 2px #000; margin-top: 8px; padding: 0 6px; }
 .room-player-classe { font-size: 9px; color: #8fb080; text-align: center; letter-spacing: .3px; }
 .room-host-badge {
   position: absolute; top: 7px; right: 8px; font-size: 9px; color: #ffd070;
   background: rgba(200,160,48,.18); border: 1px solid rgba(200,160,48,.32);
   border-radius: 5px; padding: 2px 6px; font-weight: 800;
+  z-index: 2;
 }
 .room-wait-msg { font-size: 11px; color: #6a5838; text-align: center; font-style: italic; }
 
