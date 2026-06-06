@@ -161,6 +161,7 @@ function renderSlots() {
       session.classId = c.classId;
       localStorage.setItem('oraculo.playerName', c.name);
       localStorage.setItem('oraculo.classId', c.classId);
+      localStorage.setItem('oraculo.gender', c.gender || 'm');
       if (session.onlineMode) {
         showScreen('isc-lobby');
         bindLobbyButtons();
@@ -265,6 +266,7 @@ function confirmarPersonagem() {
   const character = {
     name, classId: selectedClassId, className: cls.name,
     icon: cls.icon, maxHp: cls.maxHp, movement: cls.movement, attack: cls.attack,
+    gender: 'm',
   };
   chars.push(character);
   saveCharacters(chars);
@@ -273,6 +275,7 @@ function confirmarPersonagem() {
   session.classId = selectedClassId;
   localStorage.setItem('oraculo.playerName', name);
   localStorage.setItem('oraculo.classId', selectedClassId);
+  localStorage.setItem('oraculo.gender', 'm');
 
   if (session.onlineMode) {
     showScreen('isc-lobby');
