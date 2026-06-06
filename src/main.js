@@ -228,7 +228,15 @@ function updateStatsPreview() {
   if (!cls) return;
   const icon = document.getElementById('isc-sprite-icon');
   const feat = document.getElementById('isc-class-feat');
-  if (icon) icon.textContent = cls.icon;
+  if (icon) {
+    const img = document.createElement('img');
+    img.src = `portraits/${selectedClassId}_m.png`;
+    img.alt = cls.name;
+    img.style.cssText = 'width:100%;height:auto;display:block;border-radius:10px;';
+    img.onerror = () => { icon.innerHTML = cls.icon; };
+    icon.innerHTML = '';
+    icon.appendChild(img);
+  }
   if (feat) feat.textContent = cls.feat;
   ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].forEach(attr => {
     const el = document.getElementById(`isp-${attr}`);

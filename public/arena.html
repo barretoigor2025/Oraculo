@@ -769,13 +769,31 @@ const HABILIDADES = {
 };
 
 // ══════════════════════════════════════════
+//  HERÓI DINÂMICO (localStorage)
+// ══════════════════════════════════════════
+const _heroClassId = localStorage.getItem('oraculo.classId') || 'mago';
+const _heroGender  = localStorage.getItem('oraculo.gender')  || 'm';
+const _HERO_CLASS_DATA = {
+  guerreiro: { nome:'Guerreiro', emoji:'⚔️', cor:'#8a4a20', hp:90,  sp:80,  mov:5, itens:[{icon:'⚔️',nome:'Espada Longa',qtd:1},{icon:'🛡️',nome:'Escudo de Ferro',qtd:1},{icon:'🧪',nome:'Poção de Cura',qtd:2}] },
+  mago:      { nome:'Mago',      emoji:'🔮', cor:'#6644cc', hp:60,  sp:120, mov:4, itens:[{icon:'📖',nome:'Grimório Arcano',qtd:1},{icon:'🪄',nome:'Cajado do Crepúsculo',qtd:1},{icon:'🧪',nome:'Poção de Mana',qtd:3}] },
+  ladino:    { nome:'Ladino',    emoji:'🗡️', cor:'#336655', hp:70,  sp:90,  mov:6, itens:[{icon:'🗡️',nome:'Adaga',qtd:2},{icon:'🪤',nome:'Armadilha',qtd:1},{icon:'🧪',nome:'Poção de Fuga',qtd:2}] },
+  clerigo:   { nome:'Clérigo',   emoji:'✨', cor:'#aa8822', hp:80,  sp:100, mov:4, itens:[{icon:'✨',nome:'Cajado Sagrado',qtd:1},{icon:'📿',nome:'Amuleto Divino',qtd:1},{icon:'🧪',nome:'Poção de Cura',qtd:3}] },
+  barbaro:   { nome:'Bárbaro',   emoji:'🪓', cor:'#9b2222', hp:110, sp:60,  mov:5, itens:[{icon:'🪓',nome:'Machado de Guerra',qtd:1},{icon:'🧪',nome:'Poção de Força',qtd:2}] },
+  arqueiro:  { nome:'Arqueiro',  emoji:'🏹', cor:'#4a6a2a', hp:75,  sp:85,  mov:5, itens:[{icon:'🏹',nome:'Arco Longo',qtd:1},{icon:'🗝️',nome:'Aljava',qtd:1},{icon:'🧪',nome:'Poção de Precisão',qtd:2}] },
+};
+const _hcd = _HERO_CLASS_DATA[_heroClassId] || _HERO_CLASS_DATA.mago;
+
+// ══════════════════════════════════════════
 //  UNIDADES
 // ══════════════════════════════════════════
 const unidades = [
-  { nome:'Mago', col:5, row:11, emoji:'🔮', cor:'#6644cc',
-    imgSrc:'sprites/mago_m_costas.png', img:null, tipo:'heroi', mov:5,
-    hp:70, maxHp:70, sp:100, maxSp:100, portrait:'portraits/mago.png',
-    itens:[{icon:'📖',nome:'Grimório Arcano',qtd:1},{icon:'🪄',nome:'Cajado do Crepúsculo',qtd:1},{icon:'🧪',nome:'Poção de Mana',qtd:3}] },
+  { nome:_hcd.nome, col:5, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
+    imgSrc:`sprites/${_heroClassId}_${_heroGender}_costas.png`,
+    imgSrcAtaque:`sprites/${_heroClassId}_${_heroGender}.png`,
+    img:null, tipo:'heroi', mov:_hcd.mov,
+    hp:_hcd.hp, maxHp:_hcd.hp, sp:_hcd.sp, maxSp:_hcd.sp,
+    portrait:`portraits/${_heroClassId}_${_heroGender}.png`,
+    itens:_hcd.itens },
   { nome:'Espantalho', col:5, row:7, emoji:'🌾', cor:'#8b4513',
     imgSrc:'sprites/inimigo_espantalho_assombrado.png', img:null, tipo:'inimigo', mov:3,
     hp:60, maxHp:60, sp:0, maxSp:1, portrait:null, ac:12 },
