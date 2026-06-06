@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script type="module">
 import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import{getFirestore,doc,onSnapshot,updateDoc}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import{getFirestore,doc,onSnapshot,updateDoc,increment}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 const _cfg=JSON.parse(localStorage.getItem('oraculo.fbConfig')||'null');
 const _rid=localStorage.getItem('oraculo.roomId');
 const _pid=localStorage.getItem('oraculo.playerId');
@@ -18,6 +18,15 @@ if(_cfg&&_rid&&_pid){
     const rd=doc(db,'rooms',_rid);
     window._fbUpdatePos=async(col,row)=>{
       try{await updateDoc(rd,{[`players.${_pid}.x`]:col,[`players.${_pid}.y`]:row});}catch{}
+    };
+    window._fbSetEnemies=async(enemies)=>{
+      try{
+        const data=enemies.map(u=>({nome:u.nome,x:u.col,y:u.row,hp:u.hp,maxHp:u.maxHp}));
+        await updateDoc(rd,{enemies:data});
+      }catch{}
+    };
+    window._fbEnemyTurnDone=async()=>{
+      try{await updateDoc(rd,{enemyTurnTs:increment(1)});}catch{}
     };
     window._fbListenRoom=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
   }catch(e){console.warn('Arena Firebase init:',e);}
@@ -539,6 +548,7 @@ function getPortraitAtaque(name){
 }
 
 let _mapScale=1, _mapOffsetX=0;
+const _fbIsHost = localStorage.getItem('oraculo.isHost') !== '0'; // true in solo/host, false for guest
 
 // ── DiceOverlay (Three.js) — dado vermelho sólido sobre o mapa ──
 const DiceOverlay=(function(){
@@ -809,7 +819,7 @@ const _hcd = _HERO_CLASS_DATA[_heroClassId] || _HERO_CLASS_DATA.mago;
 //  UNIDADES
 // ══════════════════════════════════════════
 const unidades = [
-  { nome:_hcd.nome, col:5, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
+  { nome:_hcd.nome, col:_fbIsHost?4:6, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
     imgSrc:`sprites/${_heroClassId}_${_heroGender}_costas.png`,
     imgSrcAtaque:`sprites/${_heroClassId}_${_heroGender}.png`,
     img:null, tipo:'heroi', mov:_hcd.mov,
@@ -838,7 +848,8 @@ let habAtual      = null;   // habilidade selecionada
 let atkTargets    = [];     // hexes de alvos válidos
 
 // ── estado de turno ──
-let faseDoTurno   = 'idle';   // idle|planejar_mover|mover_ativo|planejar_acao|acao_ativa|acao_pronta|resolvendo|turno_inimigo
+let faseDoTurno   = 'idle';
+let _lastEnemyTurnTs = null, _firstRoomUpdate = true;   // idle|planejar_mover|mover_ativo|planejar_acao|acao_ativa|acao_pronta|resolvendo|turno_inimigo
 let turnoIdx      = 0;        // 0=herói, 1=inimigo
 let planoMovimento= null;     // {unit, path} | null
 let planoAtaque   = null;     // {hab, atacante, alvo} | null
@@ -1711,9 +1722,9 @@ function resolverMovimento(cb){
       mostrarLetreiro('TROPEÇOU!','perdeu o ataque','💀 Catástrofe — sem ação neste turno',1800,()=>cb(false));
     } else if(!r.sucesso){
       const metade=path.slice(0,Math.max(1,Math.ceil(path.length/2)));
-      animarMovimento(unit,metade,()=>{ if(!unit._fbId&&window._fbUpdatePos) window._fbUpdatePos(unit.col,unit.row); render(); cb(true); });
+      animarMovimento(unit,metade,()=>{ _fbSyncUnit(unit); render(); cb(true); });
     } else {
-      animarMovimento(unit,path,()=>{ if(!unit._fbId&&window._fbUpdatePos) window._fbUpdatePos(unit.col,unit.row); render(); cb(true); });
+      animarMovimento(unit,path,()=>{ _fbSyncUnit(unit); render(); cb(true); });
     }
   });
 }
@@ -1778,7 +1789,7 @@ function executarAtaquePlano(hab, atacante, alvo){
   DiceOverlay.mostrar(playlist, results=>{
     const atk=results[0];
     if((atk.sucesso||atk.critico)&&!atk.catastrofe){
-      if(results[1]) alvo.hp=Math.max(0,alvo.hp-results[1].resultado);
+      if(results[1]){ alvo.hp=Math.max(0,alvo.hp-results[1].resultado); if(alvo.tipo==='inimigo'&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo')); }
       lancarAtaque(hab,atacante,alvo,()=>{ render(); renderBottomPanel(); proximoTurno(); });
     } else {
       render(); renderBottomPanel(); proximoTurno();
@@ -1793,11 +1804,12 @@ function proximoTurno(){
   render(); renderBottomPanel();
   if(verificarVitoria()) return;
   turnoIdx=(turnoIdx+1)%2;
-  const ordem=[
-    unidades.find(u=>u.tipo==='heroi'),
-    unidades.find(u=>u.tipo==='inimigo')
-  ].filter(Boolean);
+  const heroi=unidades.find(u=>u.tipo==='heroi'&&!u._fbId);
+  const inimigo=unidades.find(u=>u.tipo==='inimigo');
+  const ordem=[heroi,inimigo].filter(Boolean);
   const proximo=ordem[turnoIdx%ordem.length];
+  // Host sinaliza que o turno do inimigo terminou para os outros clientes avançarem
+  if(_fbIsHost&&proximo&&proximo.tipo==='heroi'&&window._fbEnemyTurnDone) window._fbEnemyTurnDone();
   setTimeout(()=>{
     if(proximo.tipo==='heroi') iniciarTurno(proximo);
     else turnoInimigo();
@@ -1805,10 +1817,15 @@ function proximoTurno(){
 }
 
 function turnoInimigo(){
-  const esp=unidades.find(u=>u.tipo==='inimigo');
-  const mago=unidades.find(u=>u.tipo==='heroi');
-  if(!esp||!mago){proximoTurno();return;}
   faseDoTurno='turno_inimigo'; renderActionRow();
+  const esp=unidades.find(u=>u.tipo==='inimigo');
+  const mago=unidades.find(u=>u.tipo==='heroi'&&!u._fbId);
+  if(!esp||!mago){if(_fbIsHost)proximoTurno();return;}
+  // Non-host aguarda sinal do Firebase (onRoomUpdate/enemyTurnTs)
+  if(!_fbIsHost){
+    mostrarLetreiro(esp.nome.toUpperCase(),'turno do inimigo','',1800,()=>{});
+    return;
+  }
   mostrarLetreiro(esp.nome.toUpperCase(),'turno do inimigo','',1800,()=>{
     const dist=hexDist(esp.col,esp.row,mago.col,mago.row);
     // Decide movimento
@@ -2131,17 +2148,21 @@ function toggleCoords(){
 // ══════════════════════════════════════════
 //  MULTIPLAYER: SINCRONIZAÇÃO FIREBASE
 // ══════════════════════════════════════════
+function _fbSyncUnit(unit){
+  if(unit.tipo==='heroi'&&!unit._fbId&&window._fbUpdatePos) window._fbUpdatePos(unit.col,unit.row);
+  else if(unit.tipo==='inimigo'&&_fbIsHost&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
+}
+
 function onRoomUpdate(room){
   if(!room||!room.players) return;
   const myId=localStorage.getItem('oraculo.playerId');
-  const others=Object.values(room.players).filter(p=>p.id!==myId&&p.x!=null&&p.y!=null);
 
-  // Remove unidades de jogadores que saíram
+  // ── Sync outros jogadores ──
+  const others=Object.values(room.players).filter(p=>p.id!==myId&&p.x!=null&&p.y!=null);
   const otherIds=new Set(others.map(p=>p.id));
   for(let i=unidades.length-1;i>=0;i--){
     if(unidades[i]._fbId&&!otherIds.has(unidades[i]._fbId)) unidades.splice(i,1);
   }
-
   for(const p of others){
     let u=unidades.find(u=>u._fbId===p.id);
     if(!u){
@@ -2165,7 +2186,31 @@ function onRoomUpdate(room){
       u.col=p.x; u.row=p.y; u._ax=null; u._ay=null;
     }
   }
+
+  // ── Sync inimigos ──
+  if(room.enemies){
+    for(const fbE of room.enemies){
+      const u=unidades.find(u=>u.tipo==='inimigo'&&u.nome===fbE.nome);
+      if(u){
+        if(u.col!==fbE.x||u.row!==fbE.y){ u.col=fbE.x; u.row=fbE.y; u._ax=null; u._ay=null; }
+        if(fbE.hp!=null) u.hp=fbE.hp;
+      }
+    }
+  }
+
+  // ── Sinal de turno do inimigo concluído (para não-host) ──
+  if(room.enemyTurnTs!=null){
+    if(_firstRoomUpdate){
+      _lastEnemyTurnTs=room.enemyTurnTs;
+    } else if(room.enemyTurnTs!==_lastEnemyTurnTs){
+      _lastEnemyTurnTs=room.enemyTurnTs;
+      if(!_fbIsHost&&faseDoTurno==='turno_inimigo') setTimeout(proximoTurno,800);
+    }
+  }
+  _firstRoomUpdate=false;
+
   renderUnits();
+  renderBottomPanel();
 }
 
 // ══════════════════════════════════════════
@@ -2208,6 +2253,11 @@ function init(){
     .catch(()=>render());
   function startFbListener(){
     if(window._fbListenRoom) window._fbListenRoom(onRoomUpdate);
+    // Registra posição inicial do herói local no Firebase
+    const localHero=unidades.find(u=>u.tipo==='heroi'&&!u._fbId);
+    if(localHero&&window._fbUpdatePos) window._fbUpdatePos(localHero.col,localHero.row);
+    // Host escreve estado inicial dos inimigos no Firebase
+    if(_fbIsHost&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
   }
   if(window._fbReady) startFbListener();
   else window.addEventListener('fbReady',startFbListener,{once:true});

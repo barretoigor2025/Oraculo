@@ -31,6 +31,7 @@ function goToArena() {
   localStorage.setItem('oraculo.playerName', session.playerName);
   localStorage.setItem('oraculo.classId', session.classId);
   if (firebaseApp) localStorage.setItem('oraculo.fbConfig', JSON.stringify(firebaseApp.options));
+  localStorage.setItem('oraculo.isHost', session.isHost ? '1' : '0');
   introOverlay.classList.add('fadeout');
   setTimeout(() => { window.location.href = 'arena.html'; }, 400);
 }
