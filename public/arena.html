@@ -905,10 +905,11 @@ function hexVizinhos(col,row){
   ]).filter(([c,r])=>c>=0&&c<COLS&&r>=0&&r<ROWS);
 }
 
-function bfsPath(c0,r0,c1,r1){
+function bfsPath(c0,r0,c1,r1,mover){
   if(c0===c1&&r0===r1) return [];
+  const mv=mover??selUnit;
   const key=(c,r)=>`${c},${r}`;
-  const bloq=new Set(unidades.filter(u=>u!==selUnit).map(u=>key(u.col,u.row)));
+  const bloq=new Set(unidades.filter(u=>u!==mv).map(u=>key(u.col,u.row)));
   const INTRANSP=new Set(['bloqueado','abismo']);
   const visited=new Set([key(c0,r0)]);
   const queue=[{col:c0,row:r0,path:[]}];
@@ -918,7 +919,7 @@ function bfsPath(c0,r0,c1,r1){
       const k=key(nc,nr);
       if(visited.has(k)) continue;
       if(INTRANSP.has(terrenoData[k])) continue;
-      if(bloq.has(k)&&!(nc===c1&&nr===r1)) continue;
+      if(bloq.has(k)) continue;  // bloqueado: não pode passar nem pousar
       visited.add(k);
       const p=[...path,{col:nc,row:nr}];
       if(nc===c1&&nr===r1) return p;
@@ -928,15 +929,25 @@ function bfsPath(c0,r0,c1,r1){
   return null;
 }
 
-function hexesInRange(col,row,range){
-  const bloq=new Set(unidades.filter(u=>u!==selUnit).map(u=>`${u.col},${u.row}`));
+function hexesInRange(col,row,range,mover){
+  const mv=mover??selUnit;
+  const bloq=new Set(unidades.filter(u=>u!==mv).map(u=>`${u.col},${u.row}`));
   const INTRANSP=new Set(['bloqueado','abismo']);
+  const visited=new Map([[`${col},${row}`,0]]);
+  const queue=[{col,row,steps:0}];
   const result=[];
-  for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
-    if(c===col&&r===row) continue;
-    if(bloq.has(`${c},${r}`)) continue;
-    if(INTRANSP.has(terrenoData[`${c},${r}`])) continue;
-    if(hexDist(col,row,c,r)<=range) result.push({col:c,row:r});
+  while(queue.length){
+    const{col:c,row:r,steps}=queue.shift();
+    if(steps>=range) continue;
+    for(const[nc,nr] of hexVizinhos(c,r)){
+      const k=`${nc},${nr}`;
+      if(visited.has(k)) continue;
+      if(INTRANSP.has(terrenoData[k])) continue;
+      if(bloq.has(k)) continue; // bloqueado: não pode passar nem pousar
+      visited.set(k,steps+1);
+      result.push({col:nc,row:nr});
+      queue.push({col:nc,row:nr,steps:steps+1});
+    }
   }
   return result;
 }
@@ -1849,9 +1860,13 @@ function turnoInimigo(){
 
   const dist=hexDist(esp.col,esp.row,alvo.col,alvo.row);
   if(dist>1){
-    const path=bfsPath(esp.col,esp.row,alvo.col,alvo.row);
-    if(path&&path.length>1){
-      planoMovimento={unit:esp, path:path.slice(1,Math.min(esp.mov+1,path.length))};
+    // Pathing to an adjacent FREE hex next to the target (never onto occupied hex)
+    const adjFree=hexVizinhos(alvo.col,alvo.row)
+      .filter(([c,r])=>!unidades.some(u=>u!==esp&&u.col===c&&u.row===r))
+      .sort((a,b)=>hexDist(esp.col,esp.row,a[0],a[1])-hexDist(esp.col,esp.row,b[0],b[1]));
+    for(const[tc,tr] of adjFree){
+      const p=bfsPath(esp.col,esp.row,tc,tr,esp);
+      if(p&&p.length){ planoMovimento={unit:esp,path:p.slice(0,Math.min(esp.mov,p.length))}; break; }
     }
   }
   const destCol=planoMovimento?planoMovimento.path[planoMovimento.path.length-1].col:esp.col;
