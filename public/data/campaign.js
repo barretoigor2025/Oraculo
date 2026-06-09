@@ -226,6 +226,18 @@ export const NPCS = {
 // ─────────────────────────────────────────────────────────────────
 export const CENAS = {
 
+  prologo: {
+    id: 'prologo',
+    titulo: 'Prólogo — O Mundo de Ygdis',
+    subtitulo: 'Megalos · Reino de Mhoried',
+    textoIntro: `No mundo de Ygdis, onde a magia antiga ainda respira nas pedras das montanhas e nas raízes das florestas milenares, o Reino de Mhoried ergue-se como bastião de ordem entre terras cada vez mais sombrias. A Duquesa Catherine Laskaris governa com mão firme e coração preocupado: seu irmão Oswald desapareceu nas profundezas dos Blackwoods após buscar um mago chamado Dendybar — e o que voltou não era mais o homem que todos conheciam. Vocês são aventureiros que chegaram à Feira da Colheita de St. Phanourios, atraídos por promessas de trabalho, glória ou simplesmente por acaso. O que encontrarão aqui mudará o destino de todo o reino.`,
+    imgExterior: 'locations/mhoried_castelo_ext.png',
+    imgInterior: 'locations/mhoried_market_int.png',
+    npcsPresentes: [],
+    temBatalha: false,
+    ordemNarrativa: 0,
+  },
+
   mhoried_market: {
     id: 'mhoried_market',
     titulo: 'A Feira de St. Phanourios',

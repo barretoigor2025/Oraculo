@@ -413,7 +413,7 @@ html,body{
 <!-- Config IA -->
 <div id="cfg-overlay" class="oculto">
   <div id="cfg-box">
-    <div id="cfg-titulo">Chave da API Anthropic</div>
+    <div id="cfg-titulo">Chave da API Groq</div>
     <div id="cfg-descr">A chave é guardada apenas neste dispositivo (localStorage). Necessária para o recurso "Gerar com IA".</div>
     <input id="cfg-input" type="password" placeholder="sk-ant-..." autocomplete="off" autocorrect="off" spellcheck="false">
     <div id="cfg-row">
@@ -695,7 +695,7 @@ async function gerarFalaIA() {
     alert('Selecione um NPC para gerar fala com IA.');
     return;
   }
-  const apiKey = localStorage.getItem('oraculo.claudeKey');
+  const apiKey = localStorage.getItem('oraculo.groqKey');
   if (!apiKey) { abrirCfgIA(); return; }
 
   const npc = NPCS[npcId];
@@ -712,26 +712,20 @@ async function gerarFalaIA() {
   btnGer.classList.add('carregando');
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${apiKey}`,
         'content-type': 'application/json',
-        'anthropic-dangerous-allow-browser': 'true',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'llama-3.3-70b-versatile',
         max_tokens: 220,
-        system: `Você é o personagem "${npc.nome}" em uma campanha de RPG de fantasia medieval.
-
-PERSONALIDADE: ${npc.personalidade}
-CONHECIMENTOS: ${npc.conhecimentos}
-COMO FALA: ${npc.formaDeFalar}
-CENA ATUAL: ${cena?.titulo ?? ''} — ${cena?.textoIntro?.slice(0, 180) ?? ''}
-
-Responda SEMPRE em português brasileiro, em primeira pessoa como este personagem. Entre 1 e 3 frases curtas. Totalmente no personagem. Nunca use asteriscos para ações. Nunca quebre o personagem.`,
         messages: [
+          {
+            role: 'system',
+            content: `Você é o personagem "${npc.nome}" em uma campanha de RPG de fantasia medieval.\n\nPERSONALIDADE: ${npc.personalidade}\nCONHECIMENTOS: ${npc.conhecimentos}\nCOMO FALA: ${npc.formaDeFalar}\nCENA ATUAL: ${cena?.titulo ?? ''} — ${cena?.textoIntro?.slice(0, 180) ?? ''}\n\nResponda SEMPRE em português brasileiro, em primeira pessoa como este personagem. Entre 1 e 3 frases curtas. Totalmente no personagem. Nunca use asteriscos para ações. Nunca quebre o personagem.`,
+          },
           {
             role: 'user',
             content: `${ultimasLinhas ? `Contexto da conversa:\n${ultimasLinhas}\n\n` : ''}${diretiva || 'Reaja naturalmente ao que foi dito ou à situação atual.'}`,
@@ -740,7 +734,7 @@ Responda SEMPRE em português brasileiro, em primeira pessoa como este personage
       }),
     });
     const data = await resp.json();
-    const texto = data.content?.[0]?.text?.trim();
+    const texto = data.choices?.[0]?.message?.content?.trim();
     if (texto) {
       elInputTexto.value = texto;
       onSelNpc();
@@ -779,7 +773,7 @@ function voltarLobby() {
 // ── Config IA ─────────────────────────────────────────────────────
 function abrirCfgIA() {
   const input = document.getElementById('cfg-input');
-  input.value = localStorage.getItem('oraculo.claudeKey') || '';
+  input.value = localStorage.getItem('oraculo.groqKey') || '';
   document.getElementById('cfg-overlay').classList.remove('oculto');
   input.focus();
 }
@@ -788,7 +782,7 @@ function fecharCfgIA() {
 }
 function salvarCfgIA() {
   const v = document.getElementById('cfg-input').value.trim();
-  if (v) localStorage.setItem('oraculo.claudeKey', v);
+  if (v) localStorage.setItem('oraculo.groqKey', v);
   fecharCfgIA();
 }
 
