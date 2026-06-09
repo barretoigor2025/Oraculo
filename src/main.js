@@ -379,12 +379,19 @@ async function enterRoom(roomId, isHost) {
   }
 
   session.unsubscribe?.();
+  let _firstSnapshot = true;
   session.unsubscribe = listenRoom(session.roomId, room => {
     if (!room) return;
     session.room = room;
-    if (room.status === 'battle') {
+    // Skip auto-redirect on the first snapshot for the host — avoids stale
+    // 'battle'/'narration' state from a previous session sending them away
+    // before they see the waiting room. Non-hosts still redirect immediately
+    // so they can catch up to an in-progress narration or battle.
+    const skipRedirect = _firstSnapshot && isHost;
+    _firstSnapshot = false;
+    if (!skipRedirect && room.status === 'battle') {
       goToArena();
-    } else if (room.status === 'narration') {
+    } else if (!skipRedirect && room.status === 'narration') {
       goToNarration();
     } else {
       renderRoomPlayers(room);
@@ -477,7 +484,7 @@ async function handleStartGame() {
 
 async function handleStartNarration() {
   try {
-    await startNarration(session.roomId, 'mhoried_market');
+    await startNarration(session.roomId, 'prologo');
   } catch (err) {
     alert(`Erro ao iniciar narração: ${err.message}`);
   }
