@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Oráculo Battle System</title>
+<link rel="stylesheet" href="./battle-system.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="title">Feira de Outono</div>
+  <div class="pill blue">Rodada 1</div>
+  <div class="pill red">Turno: Mago</div>
+</header>
+<main id="view" class="view">
+  <section id="map" class="map">
+    <div class="decor stall s1"></div><div class="decor stall s2"></div><div class="decor stall s3"></div>
+    <div class="decor lamp l1"></div><div class="decor lamp l2"></div><div class="decor lamp l3"></div>
+    <div id="grid" class="grid"></div>
+    <div id="hero" class="unit hero"><div class="base"></div><img id="heroImg"><div id="heroFallback" class="fallback">🧙</div><div class="name">Mago<span>18/18</span></div></div>
+  </section>
+</main>
+<section class="panel">
+  <div class="portrait"><div class="face">🧙</div><div class="seal">✦</div></div>
+  <div class="status"><strong>Mago</strong><small>arcano · planejamento</small><div class="stats">❤️18/18 · 💧4/4 · ⚡5</div></div>
+  <div class="commands">
+    <button id="btnMove" class="cmd move active">🥾<span>Mover</span></button>
+    <button id="btnAttack" class="cmd attack">⚔️<span>Atacar</span></button>
+    <button id="btnAction" class="cmd action">✋<span>Ação</span></button>
+    <button id="btnEnd" class="cmd end">⌛<span>Finalizar</span></button>
+  </div>
+  <div id="plan" class="box"><b>Plano:</b> escolha um hex azul para mover.</div>
+  <div class="box log"><span id="log">Mapa largo com deslize horizontal travado.</span><b id="dice">🎲 —</b></div>
+</section>
+<script src="./battle-system.js"></script>
+</body>
+</html>
