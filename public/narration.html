@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,viewport-fit=cover">
+<title>Oráculo — Narração</title>
+<script type="module">
+import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import{getFirestore,doc,onSnapshot,updateDoc,getDoc}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+const _cfg=JSON.parse(localStorage.getItem('oraculo.fbConfig')||'null');
+const _rid=localStorage.getItem('oraculo.roomId');
+if(_cfg&&_rid){
+  try{
+    const app=getApps().find(a=>a.name==='narracao')||initializeApp(_cfg,'narracao');
+    const db=getFirestore(app);
+    const rd=doc(db,'rooms',_rid);
+    window._fbUpdateNarration=async(fields)=>{
+      try{
+        const update={};
+        for(const[k,v]of Object.entries(fields)) update[`narration.${k}`]=v;
+        update['narration.ts']=Date.now();
+        await updateDoc(rd,update);
+      }catch(e){console.warn('fbUpdateNarration:',e);}
+    };
+    window._fbAddDialogue=async(linha)=>{
+      try{
+        const snap=await getDoc(rd);
+        if(!snap.exists())return;
+        const dialogo=[...(snap.data().narration?.dialogo??[]),linha].slice(-60);
+        await updateDoc(rd,{'narration.dialogo':dialogo,'narration.ts':Date.now()});
+      }catch(e){console.warn('fbAddDialogue:',e);}
+    };
+    window._fbSetStatus=async(status)=>{
+      try{await updateDoc(rd,{status,updatedAt:Date.now()});}catch(e){console.warn('fbSetStatus:',e);}
+    };
+    window._fbListenRoom=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
+  }catch(e){console.warn('Narração Firebase init:',e);}
+}
+window._fbReady=true;
+window.dispatchEvent(new Event('fbReady'));
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  height:100%;overflow:hidden;
+  background:#0a0806;
+  color:#e8d5a8;
+  font-family:'Georgia',serif;
+  user-select:none;-webkit-user-select:none;
+}
+
+/* ── LAYOUT PRINCIPAL ── */
+#narracao-wrap{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+
+/* ── HEADER ── */
+#narr-header{
+  flex-shrink:0;
+  display:flex;align-items:center;gap:8px;
+  padding:max(8px,calc(4px+env(safe-area-inset-top))) 12px 8px;
+  background:linear-gradient(180deg,#0d0b08 0%,rgba(13,11,8,0) 100%);
+  border-bottom:1px solid rgba(190,135,35,0.2);
+  min-height:48px;
+}
+#narr-titulo-wrap{flex:1;min-width:0;}
+#narr-titulo{
+  font-size:clamp(13px,3.5vw,17px);font-weight:700;
+  color:#f5d878;letter-spacing:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#narr-subtitulo{
+  font-size:10px;color:rgba(220,190,100,0.5);
+  letter-spacing:1.5px;text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#btn-voltar-lobby{
+  flex-shrink:0;background:rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.15);border-radius:6px;
+  color:rgba(255,255,255,.6);font-size:12px;
+  padding:6px 10px;cursor:pointer;font-family:inherit;
+  -webkit-tap-highlight-color:transparent;
+}
+#modo-imagem-btns{
+  flex-shrink:0;display:flex;gap:4px;
+}
+.btn-modo{
+  background:rgba(0,0,0,.4);border:1px solid rgba(190,135,35,.3);
+  border-radius:6px;color:rgba(220,190,100,.55);
+  font-size:11px;font-family:inherit;font-weight:600;
+  padding:5px 9px;cursor:pointer;letter-spacing:.5px;
+  -webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;
+}
+.btn-modo.ativo{
+  background:rgba(190,135,35,.2);border-color:rgba(190,135,35,.7);
+  color:#f5d878;
+}
+
+/* ── IMAGEM DA CENA ── */
+#cena-imagem-wrap{
+  flex-shrink:0;
+  position:relative;width:100%;
+  background:#0d0a07;
+  max-height:clamp(130px,30vh,240px);
+  overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+#cena-imagem{
+  width:100%;height:100%;
+  object-fit:cover;
+  transition:opacity .4s;
+}
+#cena-imagem.oculto{opacity:0;}
+#cena-placeholder{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;
+  background:linear-gradient(135deg,#0f0c09 0%,#1a1208 50%,#0a0806 100%);
+}
+#cena-placeholder-icone{font-size:32px;opacity:.4;}
+#cena-placeholder-texto{
+  font-size:12px;color:rgba(200,160,48,.4);
+  letter-spacing:2px;text-transform:uppercase;
+}
+#cena-intro-overlay{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(0deg,rgba(10,8,6,.95) 0%,rgba(10,8,6,.0) 100%);
+  padding:20px 14px 10px;
+}
+#cena-intro-texto{
+  font-size:clamp(10px,2.5vw,12px);
+  color:rgba(220,190,130,.7);
+  font-style:italic;
+  line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+
+/* ── LOG DE DIÁLOGO ── */
+#dialogo-log{
+  flex:1;min-height:0;
+  overflow-y:auto;
+  padding:10px 12px;
+  display:flex;flex-direction:column;gap:10px;
+  scroll-behavior:smooth;
+}
+#dialogo-log::-webkit-scrollbar{width:3px;}
+#dialogo-log::-webkit-scrollbar-track{background:transparent;}
+#dialogo-log::-webkit-scrollbar-thumb{background:rgba(190,135,35,.3);border-radius:2px;}
+
+/* linha de narrador */
+.dialogo-narrador{
+  align-self:center;
+  text-align:center;
+  font-size:11px;color:rgba(220,190,100,.5);
+  font-style:italic;letter-spacing:.5px;
+  padding:4px 16px;
+  border-top:1px solid rgba(190,135,35,.12);
+  border-bottom:1px solid rgba(190,135,35,.12);
+  max-width:340px;
+}
+
+/* linha de NPC */
+.dialogo-npc{
+  display:flex;align-items:flex-end;gap:8px;
+  align-self:flex-start;max-width:88%;
+}
+.dialogo-npc-portrait{
+  flex-shrink:0;
+  border-radius:6px;overflow:hidden;
+  background:rgba(0,0,0,.3);
+  border:1px solid rgba(190,135,35,.25);
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.dialogo-npc-portrait img{
+  height:56px;width:auto;display:block;
+  image-rendering:auto;
+}
+.dialogo-npc-balao{
+  background:rgba(20,16,10,.85);
+  border:1px solid rgba(190,135,35,.25);
+  border-radius:0 10px 10px 10px;
+  padding:8px 11px;
+}
+.dialogo-npc-nome{
+  font-size:10px;color:#f5d878;
+  font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;margin-bottom:4px;
+}
+.dialogo-npc-texto{
+  font-size:clamp(12px,3vw,14px);
+  color:#e8d5a8;line-height:1.5;
+  font-style:italic;
+}
+
+/* linha de jogador */
+.dialogo-jogador{
+  display:flex;flex-direction:column;
+  align-items:flex-end;
+  align-self:flex-end;max-width:78%;
+}
+.dialogo-jogador-nome{
+  font-size:10px;color:rgba(140,200,255,.7);
+  letter-spacing:.5px;text-transform:uppercase;
+  margin-bottom:3px;
+}
+.dialogo-jogador-balao{
+  background:rgba(10,20,40,.85);
+  border:1px solid rgba(100,160,255,.2);
+  border-radius:10px 10px 0 10px;
+  padding:8px 11px;
+  font-size:clamp(12px,3vw,14px);
+  color:#c8dcf5;line-height:1.5;
+}
+
+/* linha de sistema */
+.dialogo-sistema{
+  align-self:center;
+  font-size:10px;color:rgba(200,190,160,.35);
+  text-align:center;letter-spacing:.5px;
+  font-style:italic;
+}
+
+/* ── PAINEL DE CONTROLES (host) ── */
+#controles-host{
+  flex-shrink:0;
+  background:linear-gradient(0deg,#0f0c09 0%,rgba(15,12,9,0) 100%);
+  border-top:1px solid rgba(190,135,35,.2);
+  padding:8px 10px max(10px,calc(6px+env(safe-area-inset-bottom)));
+  display:flex;flex-direction:column;gap:6px;
+}
+#controles-row1{display:flex;gap:6px;align-items:center;}
+#sel-npc{
+  flex:1;min-width:0;
+  background:rgba(0,0,0,.55);
+  border:1px solid rgba(190,135,35,.3);
+  border-radius:6px;
+  color:#e8d5a8;font-family:'Georgia',serif;font-size:12px;
+  padding:7px 8px;cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+}
+#sel-npc option{background:#1a1208;color:#e8d5a8;}
+#btn-gerar-ia{
+  flex-shrink:0;
+  background:rgba(90,40,130,.35);
+  border:1px solid rgba(180,100,255,.4);
+  border-radius:6px;color:rgba(220,160,255,.85);
+  font-size:11px;font-family:inherit;font-weight:600;
+  padding:7px 10px;cursor:pointer;letter-spacing:.3px;
+  -webkit-tap-highlight-color:transparent;transition:background .15s;
+  white-space:nowrap;
+}
+#btn-gerar-ia:hover{background:rgba(90,40,130,.55);}
+#btn-gerar-ia.carregando{opacity:.5;pointer-events:none;}
+#controles-row2{display:flex;gap:6px;align-items:flex-end;}
+#input-texto{
+  flex:1;min-width:0;resize:none;height:48px;
+  background:rgba(0,0,0,.45);
+  border:1px solid rgba(190,135,35,.25);
+  border-radius:6px;
+  color:#e8d5a8;font-family:'Georgia',serif;font-size:13px;
+  padding:7px 9px;outline:none;
+  -webkit-tap-highlight-color:transparent;
+}
+#input-texto::placeholder{color:rgba(200,160,48,.3);}
+#btn-enviar{
+  flex-shrink:0;
+  background:rgba(190,135,35,.2);
+  border:1px solid rgba(190,135,35,.5);
+  border-radius:6px;color:#f5d878;
+  font-size:12px;font-family:inherit;font-weight:700;
+  padding:7px 12px;cursor:pointer;height:48px;
+  -webkit-tap-highlight-color:transparent;transition:background .15s;
+  white-space:nowrap;
+}
+#btn-enviar:hover{background:rgba(190,135,35,.35);}
+#controles-row3{display:flex;gap:6px;}
+.btn-cena{
+  flex:1;background:rgba(0,0,0,.35);
+  border:1px solid rgba(190,135,35,.2);
+  border-radius:6px;color:rgba(200,160,48,.6);
+  font-size:11px;font-family:inherit;
+  padding:7px 8px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background .15s;
+}
+.btn-cena:hover{background:rgba(190,135,35,.1);}
+.btn-cena:disabled{opacity:.3;cursor:not-allowed;}
+#btn-iniciar-batalha{
+  flex:2;
+  background:rgba(140,40,20,.35);
+  border:1px solid rgba(220,80,40,.5);
+  border-radius:6px;color:#ff8060;
+  font-size:12px;font-family:inherit;font-weight:700;
+  padding:7px 10px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background .15s;
+  letter-spacing:.5px;
+}
+#btn-iniciar-batalha:hover{background:rgba(180,50,20,.5);}
+
+/* ── CONFIG (chave de API) ── */
+#cfg-overlay{
+  position:fixed;inset:0;z-index:800;
+  background:rgba(0,0,0,.85);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+#cfg-overlay.oculto{display:none;}
+#cfg-box{
+  background:#14100a;border:1px solid rgba(190,135,35,.4);
+  border-radius:12px;padding:20px;width:100%;max-width:360px;
+  display:flex;flex-direction:column;gap:12px;
+}
+#cfg-titulo{font-size:14px;font-weight:700;color:#f5d878;letter-spacing:.5px;}
+#cfg-descr{font-size:11px;color:rgba(200,180,120,.6);line-height:1.5;}
+#cfg-input{
+  width:100%;background:rgba(0,0,0,.5);
+  border:1px solid rgba(190,135,35,.3);border-radius:6px;
+  color:#e8d5a8;font-family:monospace;font-size:12px;
+  padding:8px 10px;outline:none;
+}
+#cfg-row{display:flex;gap:8px;}
+#cfg-salvar,#cfg-fechar{
+  flex:1;border-radius:6px;font-family:inherit;font-size:13px;
+  padding:9px;cursor:pointer;font-weight:600;
+  -webkit-tap-highlight-color:transparent;
+}
+#cfg-salvar{background:rgba(190,135,35,.25);border:1px solid rgba(190,135,35,.5);color:#f5d878;}
+#cfg-fechar{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);}
+
+/* ── INDICADOR DE CARREGAMENTO IA ── */
+#ia-loading{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:rgba(90,40,130,.9);border:1px solid rgba(180,100,255,.5);
+  border-radius:20px;padding:8px 18px;
+  color:rgba(220,160,255,.9);font-size:12px;letter-spacing:.5px;
+  z-index:600;transition:opacity .3s;
+}
+#ia-loading.oculto{opacity:0;pointer-events:none;}
+
+/* ── INDICADOR DE CENA SEM IMAGEM ── */
+.sem-imagem #cena-imagem{display:none;}
+.sem-imagem #cena-placeholder{display:flex;}
+
+/* ── STATUS BADGE ── */
+#narr-status{
+  position:fixed;top:max(8px,calc(4px+env(safe-area-inset-top)));right:10px;
+  z-index:200;
+  background:rgba(0,0,0,.6);border:1px solid rgba(190,135,35,.3);
+  border-radius:6px;padding:4px 8px;
+  font-size:10px;color:rgba(190,135,35,.6);letter-spacing:.5px;
+}
+
+@media(max-width:380px){
+  .dialogo-npc-portrait img{height:44px;}
+}
+</style>
+</head>
+<body>
+
+<div id="narracao-wrap">
+
+  <!-- Header -->
+  <div id="narr-header">
+    <button id="btn-voltar-lobby" onclick="voltarLobby()">← Lobby</button>
+    <div id="narr-titulo-wrap">
+      <div id="narr-titulo">Carregando…</div>
+      <div id="narr-subtitulo">Modo Narração</div>
+    </div>
+    <div id="modo-imagem-btns">
+      <button class="btn-modo ativo" id="btn-ext" onclick="setModoImagem('exterior')">Ext.</button>
+      <button class="btn-modo" id="btn-int" onclick="setModoImagem('interior')">Int.</button>
+    </div>
+  </div>
+
+  <!-- Imagem da cena -->
+  <div id="cena-imagem-wrap" class="sem-imagem">
+    <img id="cena-imagem" src="" alt="" onload="onImagemCarregada()" onerror="onImagemErro()">
+    <div id="cena-placeholder">
+      <div id="cena-placeholder-icone">🏰</div>
+      <div id="cena-placeholder-texto">arte em breve</div>
+    </div>
+    <div id="cena-intro-overlay">
+      <div id="cena-intro-texto"></div>
+    </div>
+  </div>
+
+  <!-- Log de diálogo -->
+  <div id="dialogo-log">
+    <div class="dialogo-sistema">Aguardando a história começar…</div>
+  </div>
+
+  <!-- Controles do host -->
+  <div id="controles-host" style="display:none">
+    <div id="controles-row1">
+      <select id="sel-npc" onchange="onSelNpc()"></select>
+      <button id="btn-gerar-ia" onclick="gerarFalaIA()">✨ Gerar com IA</button>
+    </div>
+    <div id="controles-row2">
+      <textarea id="input-texto" placeholder="O que este personagem diz…" onkeydown="onKeydownInput(event)"></textarea>
+      <button id="btn-enviar" onclick="enviarFala()">Enviar</button>
+    </div>
+    <div id="controles-row3">
+      <button class="btn-cena" id="btn-cena-ant" onclick="navegarCena(-1)">← Cena Ant.</button>
+      <button class="btn-cena" id="btn-cfg-ia" onclick="abrirCfgIA()">⚙ IA</button>
+      <button class="btn-cena" id="btn-cena-prox" onclick="navegarCena(1)">Próx. Cena →</button>
+      <button id="btn-iniciar-batalha" onclick="iniciarBatalha()">⚔ Batalha!</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Config IA -->
+<div id="cfg-overlay" class="oculto">
+  <div id="cfg-box">
+    <div id="cfg-titulo">Chave da API Anthropic</div>
+    <div id="cfg-descr">A chave é guardada apenas neste dispositivo (localStorage). Necessária para o recurso "Gerar com IA".</div>
+    <input id="cfg-input" type="password" placeholder="sk-ant-..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <div id="cfg-row">
+      <button id="cfg-salvar" onclick="salvarCfgIA()">Salvar</button>
+      <button id="cfg-fechar" onclick="fecharCfgIA()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Indicador de geração IA -->
+<div id="ia-loading" class="oculto">✨ A IA está pensando…</div>
+
+<!-- Badge de status -->
+<div id="narr-status">Narração</div>
+
+<script type="module">
+import { NPCS, CENAS, CENAS_ORDEM } from './data/campaign.js';
+
+// ── Estado local ─────────────────────────────────────────────────
+const _pid = localStorage.getItem('oraculo.playerId') || '';
+const _pname = localStorage.getItem('oraculo.playerName') || 'Aventureiro';
+const _isHost = localStorage.getItem('oraculo.isHost') !== '0';
+let _cenaAtual = 'mhoried_market';
+let _modoImagem = 'exterior';
+let _dialogoLog = [];
+let _unsubRoom = null;
+
+// ── Referências DOM ──────────────────────────────────────────────
+const elTitulo = document.getElementById('narr-titulo');
+const elSubtitulo = document.getElementById('narr-subtitulo');
+const elImgWrap = document.getElementById('cena-imagem-wrap');
+const elImagem = document.getElementById('cena-imagem');
+const elPlaceholderIcone = document.getElementById('cena-placeholder-icone');
+const elPlaceholderTexto = document.getElementById('cena-placeholder-texto');
+const elIntroTexto = document.getElementById('cena-intro-texto');
+const elLog = document.getElementById('dialogo-log');
+const elControles = document.getElementById('controles-host');
+const elSelNpc = document.getElementById('sel-npc');
+const elInputTexto = document.getElementById('input-texto');
+const elBtnExt = document.getElementById('btn-ext');
+const elBtnInt = document.getElementById('btn-int');
+const elIaLoading = document.getElementById('ia-loading');
+const elBtnGerAnt = document.getElementById('btn-cena-ant');
+const elBtnGerProx = document.getElementById('btn-cena-prox');
+
+// ── Expõe funções ao window (usadas por onclick nos botões) ──────
+window.voltarLobby = voltarLobby;
+window.setModoImagem = setModoImagem;
+window.onImagemCarregada = onImagemCarregada;
+window.onImagemErro = onImagemErro;
+window.onSelNpc = onSelNpc;
+window.gerarFalaIA = gerarFalaIA;
+window.enviarFala = enviarFala;
+window.onKeydownInput = onKeydownInput;
+window.navegarCena = navegarCena;
+window.iniciarBatalha = iniciarBatalha;
+window.abrirCfgIA = abrirCfgIA;
+window.fecharCfgIA = fecharCfgIA;
+window.salvarCfgIA = salvarCfgIA;
+
+// ── Init ─────────────────────────────────────────────────────────
+function init() {
+  if (_isHost) {
+    elControles.style.display = 'flex';
+    preencherSelNpc();
+  }
+
+  const conectar = () => {
+    if (!window._fbListenRoom) { setTimeout(conectar, 100); return; }
+    _unsubRoom = window._fbListenRoom(onRoomUpdate);
+  };
+
+  if (window._fbReady) conectar();
+  else window.addEventListener('fbReady', conectar, { once: true });
+}
+
+// ── Room listener ────────────────────────────────────────────────
+function onRoomUpdate(room) {
+  if (!room) return;
+
+  // Redirecionar quando batalha começa
+  if (room.status === 'battle') {
+    window.location.href = 'arena.html';
+    return;
+  }
+
+  const narr = room.narration ?? {};
+  const novaCena = narr.cenaId ?? 'mhoried_market';
+  const novoModo = narr.modoImagem ?? 'exterior';
+  const novoDialogo = narr.dialogo ?? [];
+
+  let mudouCena = novaCena !== _cenaAtual;
+  let mudouModo = novoModo !== _modoImagem;
+
+  _cenaAtual = novaCena;
+  _modoImagem = novoModo;
+  _dialogoLog = novoDialogo;
+
+  if (mudouCena || mudouModo) atualizarCena();
+  if (mudouCena && _isHost) preencherSelNpc();
+  atualizarBotoesModo();
+  renderDialogo();
+  atualizarBotoesCena();
+}
+
+// ── Cena ─────────────────────────────────────────────────────────
+function atualizarCena() {
+  const cena = CENAS[_cenaAtual];
+  if (!cena) return;
+
+  elTitulo.textContent = cena.titulo;
+  elSubtitulo.textContent = cena.subtitulo || 'Modo Narração';
+  elIntroTexto.textContent = cena.textoIntro || '';
+
+  const imgSrc = _modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior;
+  elImgWrap.classList.add('sem-imagem');
+  elImagem.classList.add('oculto');
+  elPlaceholderIcone.textContent = _modoImagem === 'exterior' ? '🏰' : '🕯';
+  elPlaceholderTexto.textContent = 'arte em breve';
+  if (imgSrc) {
+    elImagem.src = imgSrc;
+    elImagem.classList.remove('oculto');
+  }
+}
+
+function onImagemCarregada() {
+  elImgWrap.classList.remove('sem-imagem');
+  elImagem.classList.remove('oculto');
+}
+
+function onImagemErro() {
+  elImgWrap.classList.add('sem-imagem');
+  elImagem.classList.add('oculto');
+}
+
+function atualizarBotoesModo() {
+  elBtnExt.classList.toggle('ativo', _modoImagem === 'exterior');
+  elBtnInt.classList.toggle('ativo', _modoImagem === 'interior');
+}
+
+function atualizarBotoesCena() {
+  const idx = CENAS_ORDEM.indexOf(_cenaAtual);
+  if (elBtnGerAnt) elBtnGerAnt.disabled = idx <= 0;
+  if (elBtnGerProx) elBtnGerProx.disabled = idx >= CENAS_ORDEM.length - 1;
+}
+
+function setModoImagem(modo) {
+  if (!_isHost) return;
+  if (window._fbUpdateNarration) window._fbUpdateNarration({ modoImagem: modo });
+  else { _modoImagem = modo; atualizarCena(); atualizarBotoesModo(); }
+}
+
+function navegarCena(delta) {
+  if (!_isHost) return;
+  const idx = CENAS_ORDEM.indexOf(_cenaAtual);
+  const novoIdx = idx + delta;
+  if (novoIdx < 0 || novoIdx >= CENAS_ORDEM.length) return;
+  const novaCena = CENAS_ORDEM[novoIdx];
+  if (window._fbUpdateNarration) {
+    window._fbUpdateNarration({ cenaId: novaCena, modoImagem: 'exterior' });
+  } else {
+    _cenaAtual = novaCena; _modoImagem = 'exterior';
+    atualizarCena(); atualizarBotoesModo(); atualizarBotoesCena();
+  }
+}
+
+// ── Diálogo ──────────────────────────────────────────────────────
+function renderDialogo() {
+  elLog.innerHTML = '';
+  if (_dialogoLog.length === 0) {
+    elLog.innerHTML = '<div class="dialogo-sistema">Aguardando a história começar…</div>';
+    return;
+  }
+  for (const linha of _dialogoLog) {
+    elLog.appendChild(criarElementoLinha(linha));
+  }
+  setTimeout(() => { elLog.scrollTop = elLog.scrollHeight; }, 60);
+}
+
+function criarElementoLinha(linha) {
+  const tipo = linha.tipo || 'npc';
+  if (tipo === 'narrador') {
+    const d = document.createElement('div');
+    d.className = 'dialogo-narrador';
+    d.textContent = linha.texto;
+    return d;
+  }
+  if (tipo === 'jogador') {
+    const d = document.createElement('div');
+    d.className = 'dialogo-jogador';
+    d.innerHTML = `<div class="dialogo-jogador-nome">${esc(linha.oradorNome)}</div><div class="dialogo-jogador-balao">${esc(linha.texto)}</div>`;
+    return d;
+  }
+  if (tipo === 'sistema') {
+    const d = document.createElement('div');
+    d.className = 'dialogo-sistema';
+    d.textContent = linha.texto;
+    return d;
+  }
+  // NPC (padrão)
+  const npc = NPCS[linha.oradorId] || null;
+  const spriteSrc = npc ? npc.sprite : '';
+  const d = document.createElement('div');
+  d.className = 'dialogo-npc';
+  d.innerHTML = `
+    <div class="dialogo-npc-portrait">
+      ${spriteSrc ? `<img src="${esc(spriteSrc)}" alt="${esc(linha.oradorNome)}" onerror="this.style.display='none'">` : ''}
+    </div>
+    <div class="dialogo-npc-balao">
+      <div class="dialogo-npc-nome">${esc(linha.oradorNome)}</div>
+      <div class="dialogo-npc-texto">${esc(linha.texto)}</div>
+    </div>`;
+  return d;
+}
+
+// ── Controles do host ────────────────────────────────────────────
+function preencherSelNpc() {
+  const cena = CENAS[_cenaAtual];
+  const npcsPresentes = cena?.npcsPresentes ?? [];
+
+  // Opções: narrador, jogador, depois os NPCs da cena e todos os demais
+  const opts = [
+    { value: '__narrador__', label: '📖 Narrador' },
+    { value: '__jogador__', label: '💬 Jogador (eu)' },
+    { value: '__sep__', label: '── NPCs da cena ──', disabled: true },
+    ...npcsPresentes.map(id => ({ value: id, label: NPCS[id]?.nome || id })),
+    { value: '__sep2__', label: '── Outros NPCs ──', disabled: true },
+    ...Object.values(NPCS).filter(n => !npcsPresentes.includes(n.id)).map(n => ({ value: n.id, label: n.nome })),
+  ];
+
+  elSelNpc.innerHTML = opts.map(o =>
+    o.disabled
+      ? `<option disabled>${o.label}</option>`
+      : `<option value="${esc(o.value)}">${o.label}</option>`
+  ).join('');
+}
+
+function onSelNpc() {
+  const v = elSelNpc.value;
+  if (v === '__narrador__') elInputTexto.placeholder = 'Texto de narração (ambiência)…';
+  else if (v === '__jogador__') elInputTexto.placeholder = 'O que seu personagem diz…';
+  else {
+    const npc = NPCS[v];
+    elInputTexto.placeholder = npc ? `${npc.nome} diz…` : 'Fala do personagem…';
+  }
+}
+
+function onKeydownInput(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarFala(); }
+}
+
+async function enviarFala() {
+  const texto = elInputTexto.value.trim();
+  if (!texto) return;
+  const npcId = elSelNpc.value;
+
+  let linha;
+  if (npcId === '__narrador__') {
+    linha = { tipo: 'narrador', oradorId: 'narrador', oradorNome: 'Narrador', texto, ts: Date.now() };
+  } else if (npcId === '__jogador__') {
+    linha = { tipo: 'jogador', oradorId: _pid, oradorNome: _pname, texto, ts: Date.now() };
+  } else {
+    const npc = NPCS[npcId];
+    linha = { tipo: 'npc', oradorId: npcId, oradorNome: npc?.nome || npcId, texto, ts: Date.now() };
+  }
+
+  elInputTexto.value = '';
+  if (window._fbAddDialogue) await window._fbAddDialogue(linha);
+  else {
+    _dialogoLog = [..._dialogoLog, linha].slice(-60);
+    renderDialogo();
+  }
+}
+
+// ── Geração com IA ────────────────────────────────────────────────
+async function gerarFalaIA() {
+  const npcId = elSelNpc.value;
+  if (npcId === '__narrador__' || npcId === '__jogador__') {
+    alert('Selecione um NPC para gerar fala com IA.');
+    return;
+  }
+  const apiKey = localStorage.getItem('oraculo.claudeKey');
+  if (!apiKey) { abrirCfgIA(); return; }
+
+  const npc = NPCS[npcId];
+  const cena = CENAS[_cenaAtual];
+  if (!npc) return;
+
+  const diretiva = elInputTexto.value.trim();
+  const ultimasLinhas = _dialogoLog.slice(-6)
+    .map(l => `${l.oradorNome}: ${l.texto}`)
+    .join('\n');
+
+  elIaLoading.classList.remove('oculto');
+  const btnGer = document.getElementById('btn-gerar-ia');
+  btnGer.classList.add('carregando');
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-allow-browser': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 220,
+        system: `Você é o personagem "${npc.nome}" em uma campanha de RPG de fantasia medieval.
+
+PERSONALIDADE: ${npc.personalidade}
+CONHECIMENTOS: ${npc.conhecimentos}
+COMO FALA: ${npc.formaDeFalar}
+CENA ATUAL: ${cena?.titulo ?? ''} — ${cena?.textoIntro?.slice(0, 180) ?? ''}
+
+Responda SEMPRE em português brasileiro, em primeira pessoa como este personagem. Entre 1 e 3 frases curtas. Totalmente no personagem. Nunca use asteriscos para ações. Nunca quebre o personagem.`,
+        messages: [
+          {
+            role: 'user',
+            content: `${ultimasLinhas ? `Contexto da conversa:\n${ultimasLinhas}\n\n` : ''}${diretiva || 'Reaja naturalmente ao que foi dito ou à situação atual.'}`,
+          },
+        ],
+      }),
+    });
+    const data = await resp.json();
+    const texto = data.content?.[0]?.text?.trim();
+    if (texto) {
+      elInputTexto.value = texto;
+      onSelNpc();
+    } else if (data.error) {
+      alert(`Erro da API: ${data.error.message}`);
+    }
+  } catch (e) {
+    alert(`Erro de conexão com a API: ${e.message}`);
+  } finally {
+    elIaLoading.classList.add('oculto');
+    btnGer.classList.remove('carregando');
+  }
+}
+
+// ── Iniciar batalha ───────────────────────────────────────────────
+async function iniciarBatalha() {
+  if (!_isHost) return;
+  const cena = CENAS[_cenaAtual];
+  if (!cena?.temBatalha) {
+    const ok = confirm(`Esta cena não tem batalha mapeada.\n\nIniciar batalha mesmo assim?`);
+    if (!ok) return;
+  }
+  if (window._fbSetStatus) {
+    await window._fbSetStatus('battle');
+  } else {
+    window.location.href = 'arena.html';
+  }
+}
+
+// ── Voltar ao lobby ───────────────────────────────────────────────
+function voltarLobby() {
+  if (_unsubRoom) { _unsubRoom(); _unsubRoom = null; }
+  window.location.href = '../index.html';
+}
+
+// ── Config IA ─────────────────────────────────────────────────────
+function abrirCfgIA() {
+  const input = document.getElementById('cfg-input');
+  input.value = localStorage.getItem('oraculo.claudeKey') || '';
+  document.getElementById('cfg-overlay').classList.remove('oculto');
+  input.focus();
+}
+function fecharCfgIA() {
+  document.getElementById('cfg-overlay').classList.add('oculto');
+}
+function salvarCfgIA() {
+  const v = document.getElementById('cfg-input').value.trim();
+  if (v) localStorage.setItem('oraculo.claudeKey', v);
+  fecharCfgIA();
+}
+
+// ── Utilitários ───────────────────────────────────────────────────
+function esc(v) {
+  return String(v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

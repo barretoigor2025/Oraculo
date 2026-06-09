@@ -57,6 +57,19 @@ export async function saveRoom(room) {
   await updateDoc(roomRef(room.id), room);
 }
 
+export async function startNarration(roomId, cenaId = 'mhoried_market') {
+  await updateDoc(roomRef(roomId), {
+    status: 'narration',
+    updatedAt: Date.now(),
+    narration: {
+      cenaId,
+      modoImagem: 'exterior',
+      dialogo: [],
+      ts: Date.now(),
+    },
+  });
+}
+
 export function listenRoom(roomId, callback) {
   return onSnapshot(roomRef(roomId), (snapshot) => {
     callback(snapshot.exists() ? snapshot.data() : null);
