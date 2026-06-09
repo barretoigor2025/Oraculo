@@ -1,6 +1,6 @@
 import './styles.css';
 import { CLASSES } from './data/classes.js';
-import { joinRoom, listenRoom, saveRoom } from './firebase/roomService.js';
+import { joinRoom, listenRoom, saveRoom, startNarration } from './firebase/roomService.js';
 import { firebaseApp } from './firebase/config.js';
 import { startGame } from './game/turnSystem.js';
 
@@ -25,15 +25,25 @@ function showScreen(id) {
   document.getElementById(id)?.classList.add('active');
 }
 
-function goToArena() {
+function _persistSession() {
   localStorage.setItem('oraculo.roomId', session.roomId);
   localStorage.setItem('oraculo.playerId', session.playerId);
   localStorage.setItem('oraculo.playerName', session.playerName);
   localStorage.setItem('oraculo.classId', session.classId);
   if (firebaseApp) localStorage.setItem('oraculo.fbConfig', JSON.stringify(firebaseApp.options));
   localStorage.setItem('oraculo.isHost', session.isHost ? '1' : '0');
+}
+
+function goToArena() {
+  _persistSession();
   introOverlay.classList.add('fadeout');
   setTimeout(() => { window.location.href = 'arena.html'; }, 400);
+}
+
+function goToNarration() {
+  _persistSession();
+  introOverlay.classList.add('fadeout');
+  setTimeout(() => { window.location.href = 'narration.html'; }, 400);
 }
 
 // ── Canvas da landing ────────────────────────────────────────────────
@@ -369,11 +379,20 @@ async function enterRoom(roomId, isHost) {
   }
 
   session.unsubscribe?.();
+  let _firstSnapshot = true;
   session.unsubscribe = listenRoom(session.roomId, room => {
     if (!room) return;
     session.room = room;
-    if (room.status === 'battle') {
+    // Skip auto-redirect on the first snapshot for the host — avoids stale
+    // 'battle'/'narration' state from a previous session sending them away
+    // before they see the waiting room. Non-hosts still redirect immediately
+    // so they can catch up to an in-progress narration or battle.
+    const skipRedirect = _firstSnapshot && isHost;
+    _firstSnapshot = false;
+    if (!skipRedirect && room.status === 'battle') {
       goToArena();
+    } else if (!skipRedirect && room.status === 'narration') {
+      goToNarration();
     } else {
       renderRoomPlayers(room);
     }
@@ -388,12 +407,20 @@ async function enterRoom(roomId, isHost) {
     clone.addEventListener('click', () => navigator.clipboard?.writeText(roomId).catch(() => {}));
   }
 
-  // Botão iniciar (só host vê)
+  // Botão iniciar batalha (só host vê)
   const btnIniciar = document.getElementById('btn-iniciar');
   if (btnIniciar) {
     const clone = btnIniciar.cloneNode(true);
     btnIniciar.replaceWith(clone);
     clone.addEventListener('click', handleStartGame);
+  }
+
+  // Botão iniciar narração (só host vê)
+  const btnNarracao = document.getElementById('btn-iniciar-narracao');
+  if (btnNarracao) {
+    const clone = btnNarracao.cloneNode(true);
+    btnNarracao.replaceWith(clone);
+    clone.addEventListener('click', handleStartNarration);
   }
 }
 
@@ -428,6 +455,10 @@ function renderRoomPlayers(room) {
   if (btnIniciar) {
     btnIniciar.style.display = session.isHost && players.length >= 1 ? '' : 'none';
   }
+  const btnNarr = document.getElementById('btn-iniciar-narracao');
+  if (btnNarr) {
+    btnNarr.style.display = session.isHost && players.length >= 1 ? '' : 'none';
+  }
 }
 
 // ── Ações ─────────────────────────────────────────────────────────────
@@ -448,6 +479,14 @@ async function handleStartGame() {
     await saveRoom(result.room);
   } catch (err) {
     alert(`Erro ao iniciar: ${err.message}`);
+  }
+}
+
+async function handleStartNarration() {
+  try {
+    await startNarration(session.roomId, 'prologo');
+  } catch (err) {
+    alert(`Erro ao iniciar narração: ${err.message}`);
   }
 }
 

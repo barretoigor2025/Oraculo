@@ -1717,15 +1717,32 @@ function cancelarConfirmacao(){
   // fica em mover_ativo, preview verde ainda visível, pode mudar de hex
 }
 
+function _mostrarOverlayFimBatalha(vitoria){
+  // Remove overlay anterior se existir
+  document.getElementById('overlay-fim-batalha')?.remove();
+  const div=document.createElement('div');
+  div.id='overlay-fim-batalha';
+  div.style.cssText='position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.72);z-index:900;gap:18px;pointer-events:all;';
+  const msg=vitoria?'A batalha terminou — os heróis venceram!':'Os heróis caíram em batalha…';
+  const cor=vitoria?'#f5d878':'#e06060';
+  div.innerHTML=`
+    <div style="color:${cor};font-size:clamp(16px,5vw,22px);font-weight:700;letter-spacing:2px;text-align:center;padding:0 20px;">${msg}</div>
+    <button id="btn-voltar-narracao" style="padding:13px 30px;font-size:15px;font-family:inherit;background:rgba(190,135,35,.25);color:#f5d878;border:1px solid rgba(190,135,35,.55);border-radius:8px;cursor:pointer;letter-spacing:1px;font-weight:600;-webkit-tap-highlight-color:transparent;">📖 Voltar à Narração</button>`;
+  document.body.appendChild(div);
+  document.getElementById('btn-voltar-narracao').addEventListener('click',()=>{
+    window.location.href='narration.html';
+  });
+}
+
 function verificarVitoria(){
   const inimigos=unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0);
   const herois=unidades.filter(u=>u.tipo==='heroi'&&u.hp>0);
   if(inimigos.length===0){
-    mostrarLetreiro('VITÓRIA!','o inimigo foi derrotado','',3000,()=>{});
+    mostrarLetreiro('VITÓRIA!','o inimigo foi derrotado','',3000,()=>{_mostrarOverlayFimBatalha(true);});
     return true;
   }
   if(herois.length===0){
-    mostrarLetreiro('DERROTA','o mago caiu...','',3000,()=>{});
+    mostrarLetreiro('DERROTA','os heróis caíram...','',3000,()=>{_mostrarOverlayFimBatalha(false);});
     return true;
   }
   return false;
