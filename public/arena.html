@@ -867,6 +867,16 @@ let planoMovimento       = null;
 let planoAtaque          = null;
 let movBloqueado         = false;
 
+// Returns the effective attacker position: the confirmed movement destination
+// if the player has already locked in a move this turn, else current hex.
+// This lets melee units check attack range from where they *will be* after
+// moving, so move + attack can happen in the same turn.
+function posEfetiva(unit){
+  if(planoMovimento && planoMovimento.unit===unit && targetHex)
+    return {col:targetHex.col, row:targetHex.row};
+  return {col:unit.col, row:unit.row};
+}
+
 // ══════════════════════════════════════════
 //  CANVASES
 // ══════════════════════════════════════════
@@ -1962,9 +1972,10 @@ function clicarAtacar(){
   const basicos=(HABILIDADES[selUnit.nome]||[]).filter(h=>h.categoria==='basico');
   if(!basicos.length){ abrirSkillPanel(); return; } // fallback: unit has no basic attack
 
+  const _pos=posEfetiva(selUnit);
   const inimigosAlvo=unidades.filter(u=>{
     if(u.tipo!=='inimigo'||u.hp<=0) return false;
-    return basicos.some(h=>hexDist(selUnit.col,selUnit.row,u.col,u.row)<=h.alcance);
+    return basicos.some(h=>hexDist(_pos.col,_pos.row,u.col,u.row)<=h.alcance);
   });
 
   if(!inimigosAlvo.length) return; // no targets in range — do nothing visible
@@ -2089,10 +2100,11 @@ function selecionarHabilidade(hab){
   habAtual=hab; modoAtaque=true;
   faseDoTurno='acao_ativa';
 
+  const _pos=posEfetiva(selUnit);
   const inimigosAlvo=unidades.filter(u=>{
     if(u===selUnit) return false;
     if(u.tipo!=='inimigo') return false;
-    return hexDist(selUnit.col,selUnit.row,u.col,u.row)<=hab.alcance;
+    return hexDist(_pos.col,_pos.row,u.col,u.row)<=hab.alcance;
   });
   atkTargets=inimigosAlvo.map(u=>({col:u.col,row:u.row}));
 
