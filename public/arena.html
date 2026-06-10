@@ -803,8 +803,8 @@ const HABILIDADES = {
   ],
   'Mago': [
     { id:'cajadada',    nome:'Cajadada',           icone:'🪄', tipo:'melee',    categoria:'basico', alcance:1,  anim:'melee',    cor:'#9988dd', desc:'Golpe com o cajado',          dano:'1d4+1',  custoSP:0  },
-    { id:'bola_fogo',   nome:'Bola de Fogo',       icone:'🔥', tipo:'projétil', categoria:'magia',  alcance:8,  anim:'fireball', cor:'#ff4400', desc:'Projétil de fogo explosivo',  dano:'1d8+3',  custoSP:20 },
-    { id:'confusao',    nome:'Confusão',           icone:'🌀', tipo:'projétil', categoria:'magia',  alcance:6,  anim:'magic',    cor:'#aa22ff', desc:'Magia que confunde a mente',  dano:'1d6+2',  custoSP:15 },
+    { id:'bola_fogo',   nome:'Bola de Fogo',       icone:'🔥', tipo:'projétil', categoria:'magia',  alcance:8,  anim:'fireball', cor:'#ff4400', desc:'Explosão de fogo — dano em área (raio 2)',  dano:'2d6+2',  areaRaio:2, custoSP:20 },
+    { id:'confusao',    nome:'Confusão',           icone:'🌀', tipo:'projétil', categoria:'magia',  alcance:6,  anim:'magic',    cor:'#aa22ff', desc:'Magia mental — dano em área (raio 1)',     dano:'1d6+2',  areaRaio:1, custoSP:15 },
     { id:'escudo',      nome:'Escudo Arcano',      icone:'🛡️', tipo:'buff',     categoria:'buff',   alcance:0,  anim:'shield',   cor:'#4488ff', desc:'Escudo mágico (self-cast)',   dano:null,     custoSP:10 },
   ],
   'Arqueiro': [
@@ -889,6 +889,7 @@ let turnoIdx             = 0;   // offline/solo fallback
 let planoMovimento       = null;
 let planoAtaque          = null;
 let movBloqueado         = false;
+let areaPreview          = null;   // hex center preview during AoE targeting
 
 // Returns the effective attacker position: the confirmed movement destination
 // if the player has already locked in a move this turn, else current hex.
@@ -1495,12 +1496,37 @@ function renderSel(){
   if(!selUnit) return;
 
   if(modoAtaque){
-    // range de ataque em vermelho/laranja
-    for(const h of atkTargets){
-      const{x,y}=hexCentro(h.col,h.row);
-      hexPath(ctxS,x,y);
-      ctxS.fillStyle='rgba(255,60,0,0.18)'; ctxS.fill();
-      ctxS.strokeStyle='rgba(255,100,0,0.55)'; ctxS.lineWidth=1.5; ctxS.stroke();
+    if(habAtual?.areaRaio>0){
+      // AoE: zona de lançamento em roxo suave
+      for(const h of atkTargets){
+        const{x,y}=hexCentro(h.col,h.row);
+        hexPath(ctxS,x,y);
+        ctxS.fillStyle='rgba(180,60,255,0.08)'; ctxS.fill();
+      }
+      // Preview da explosão ao redor do hex selecionado
+      if(areaPreview){
+        for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
+          if(hexDist(areaPreview.col,areaPreview.row,c,r)<=habAtual.areaRaio){
+            const{x,y}=hexCentro(c,r);
+            hexPath(ctxS,x,y);
+            ctxS.fillStyle='rgba(255,110,0,0.32)'; ctxS.fill();
+            ctxS.save(); ctxS.shadowColor='#ff6600'; ctxS.shadowBlur=12;
+            ctxS.strokeStyle='rgba(255,170,0,0.85)'; ctxS.lineWidth=2; hexPath(ctxS,x,y); ctxS.stroke(); ctxS.restore();
+          }
+        }
+        const fp=posEfetiva(selUnit);
+        const from=hexCentro(fp.col,fp.row);
+        const{x,y}=hexCentro(areaPreview.col,areaPreview.row);
+        drawArrow(ctxS,from.x,from.y,x,y);
+      }
+    } else {
+      // single-target: range em vermelho/laranja
+      for(const h of atkTargets){
+        const{x,y}=hexCentro(h.col,h.row);
+        hexPath(ctxS,x,y);
+        ctxS.fillStyle='rgba(255,60,0,0.18)'; ctxS.fill();
+        ctxS.strokeStyle='rgba(255,100,0,0.55)'; ctxS.lineWidth=1.5; ctxS.stroke();
+      }
     }
   } else {
     // range de movimento em azul
@@ -1538,8 +1564,25 @@ function renderSel(){
     drawArrow(ctxS,from.x,from.y,x,y);
   }
 
-  // seta de intenção de ataque (laranja) quando planoAtaque está definido
-  if(planoAtaque && planoAtaque.alvo && planoAtaque.alvo!==planoAtaque.atacante){
+  // AoE confirmado: mostra raio de explosão + seta
+  if(planoAtaque?.alvoHex){
+    const ctr=planoAtaque.alvoHex;
+    for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
+      if(hexDist(ctr.col,ctr.row,c,r)<=planoAtaque.hab.areaRaio){
+        const{x,y}=hexCentro(c,r);
+        hexPath(ctxS,x,y);
+        ctxS.fillStyle='rgba(255,100,0,0.28)'; ctxS.fill();
+        ctxS.save(); ctxS.shadowColor='#ff6600'; ctxS.shadowBlur=12;
+        ctxS.strokeStyle='rgba(255,150,0,0.75)'; ctxS.lineWidth=2; hexPath(ctxS,x,y); ctxS.stroke(); ctxS.restore();
+      }
+    }
+    const fromPos=(planoMovimento&&planoMovimento.unit===planoAtaque.atacante&&planoMovimento.path.length>0)
+      ?planoMovimento.path[planoMovimento.path.length-1]:planoAtaque.atacante;
+    const from=hexCentro(fromPos.col,fromPos.row);
+    const{x:tx,y:ty}=hexCentro(ctr.col,ctr.row);
+    drawAttackArrow(ctxS,from.x,from.y,tx,ty);
+  // seta de intenção de ataque single-target (laranja)
+  } else if(planoAtaque && planoAtaque.alvo && planoAtaque.alvo!==planoAtaque.atacante){
     const{x:tx,y:ty}=hexCentro(planoAtaque.alvo.col,planoAtaque.alvo.row);
     hexPath(ctxS,tx,ty); ctxS.fillStyle='rgba(255,60,0,0.22)'; ctxS.fill();
     ctxS.save(); ctxS.shadowColor='#ff4400'; ctxS.shadowBlur=16;
@@ -1647,9 +1690,15 @@ function renderActionRow(){
     ],
     'acao_ativa': [
       {id:'btn-cancelar', icon:'✕', label:'CANCELAR',   fn:'cancelarAtaqueAtual()', ativo:true},
+      ...(habAtual?.areaRaio>0 && areaPreview
+        ? [{id:'btn-lançar', icon:'💥', label:'LANÇAR', fn:'confirmarAoeAlvo()', ativo:true}]
+        : []),
     ],
     'acao_pronta': [
       {id:'btn-finalizar',icon:'✓', label:'FINALIZAR TURNO', fn:'finalizarTurno()', ativo:true, extra:'destaque'},
+      ...(planoAtaque&&!planoAtaque.hab?.tipo?.match(/buff/)&&planoAtaque.alvo!==planoAtaque?.atacante
+        ? [{id:'btn-mudar-alvo',icon:'🔄', label:'MUDAR ALVO', fn:'voltarParaAlvo()', ativo:true}]
+        : []),
     ],
     'resolvendo':    [],
     'turno_inimigo': [],
@@ -1685,7 +1734,7 @@ function mostrarLetreiro(nome, sub, punicao, duracao, cb){
 function iniciarTurno(unit){
   planoMovimento=null; planoAtaque=null; movBloqueado=false;
   selUnit=unit; moveHexes=[]; targetHex=null; hexPreview=null;
-  modoAtaque=false; habAtual=null; atkTargets=[];
+  modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null;
   _broadcastIntent();
   faseDoTurno='planejar_mover';
   const sub = unit.tipo==='heroi' ? 'escolha sua ação' : 'turno do inimigo';
@@ -1720,11 +1769,51 @@ function cancelarMover(){
 
 function cancelarAtaqueAtual(){
   faseDoTurno='planejar_acao';
-  modoAtaque=false; habAtual=null; atkTargets=[]; planoAtaque=null;
+  modoAtaque=false; habAtual=null; atkTargets=[]; planoAtaque=null; areaPreview=null;
   _broadcastIntent();
   fecharAtkPanel();
   ctxS.clearRect(0,0,MAP_W,MAP_H);
   render(); renderActionRow();
+}
+
+function confirmarAoeAlvo(){
+  if(!areaPreview||!habAtual||!selUnit) return;
+  const areaAlvos=unidades.filter(u=>
+    u.tipo==='inimigo'&&u.hp>0&&
+    hexDist(areaPreview.col,areaPreview.row,u.col,u.row)<=habAtual.areaRaio
+  );
+  planoAtaque={
+    hab:habAtual, atacante:selUnit,
+    alvoHex:{col:areaPreview.col,row:areaPreview.row},
+    alvo:{col:areaPreview.col,row:areaPreview.row},
+    areaAlvos
+  };
+  modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null;
+  faseDoTurno='acao_pronta';
+  _broadcastIntent();
+  renderActionRow(); renderBottomPanel(); renderSel();
+}
+
+function voltarParaAlvo(){
+  if(!planoAtaque) return;
+  const hab=planoAtaque.hab;
+  if(!hab||hab.alcance===0||hab.tipo==='buff') return;
+  planoAtaque=null; areaPreview=null;
+  habAtual=hab; modoAtaque=true;
+  const _pos=posEfetiva(selUnit);
+  if(hab.areaRaio>0){
+    const allHexes=[];
+    for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
+      if(hexDist(_pos.col,_pos.row,c,r)<=hab.alcance) allHexes.push({col:c,row:r});
+    }
+    atkTargets=allHexes;
+  } else {
+    atkTargets=unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0&&
+      hexDist(_pos.col,_pos.row,u.col,u.row)<=hab.alcance).map(u=>({col:u.col,row:u.row}));
+  }
+  faseDoTurno='acao_ativa';
+  _broadcastIntent();
+  renderActionRow(); renderSel(); renderBottomPanel();
 }
 
 function confirmarHexMover(){
@@ -1842,6 +1931,38 @@ function finalizarTurno(){
 
 function executarAtaquePlano(hab, atacante, alvo, onDone){
   const cb = onDone || proximoTurno;
+
+  // AoE: lança projétil no hex central, depois rola 1 dado de dano para todos na área
+  if(hab.areaRaio>0 && planoAtaque?.areaAlvos){
+    if((hab.custoSP||0)>0 && atacante.sp>=hab.custoSP){
+      atacante.sp=Math.max(0,atacante.sp-hab.custoSP); renderBottomPanel();
+    }
+    const areaAlvos=planoAtaque.areaAlvos;
+    const alvoHex=planoAtaque.alvoHex||alvo;
+    lancarAtaque(hab,atacante,alvoHex,()=>{
+      const dmgR=rollNotacao(hab.dano);
+      const playlist=[{
+        tipo:'rolar', label:`${hab.icone} Dano em Área`,
+        nomeJog:atacante.nome,
+        alvo:areaAlvos.length?areaAlvos.map(e=>e.nome).join(', '):'(ninguém)',
+        resultado:dmgR.total, notacao:hab.dano,
+        dados:parseNotacao(hab.dano)?.sides||6, condicionalDe:0
+      }];
+      if(window._fbBroadcastDice) window._fbBroadcastDice(playlist);
+      DiceOverlay.mostrar(playlist,results=>{
+        const dmg=results[0].resultado;
+        for(const e of areaAlvos){
+          e.hp=Math.max(0,e.hp-dmg);
+          const p=hexCentro(e.col,e.row);
+          setTimeout(()=>spawnImpact(p.x,p.y,hab.anim==='fireball'?'fireball':'magic'),200);
+        }
+        if(areaAlvos.length&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
+        render(); renderBottomPanel(); cb();
+      });
+    });
+    return;
+  }
+
   // Deduct SP cost
   if((hab.custoSP||0)>0 && atacante.sp>=hab.custoSP){
     atacante.sp=Math.max(0,atacante.sp-hab.custoSP);
@@ -1894,7 +2015,7 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
 function proximoTurno(){
   planoMovimento=null; planoAtaque=null; movBloqueado=false;
   selUnit=null; moveHexes=[]; targetHex=null;
-  modoAtaque=false; habAtual=null; atkTargets=[];
+  modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null;
   render(); renderBottomPanel();
   if(verificarVitoria()) return;
   _advanceTurn();
@@ -2171,10 +2292,26 @@ function selecionarHabilidade(hab){
     return;
   }
 
-  habAtual=hab; modoAtaque=true;
+  habAtual=hab; modoAtaque=true; areaPreview=null;
   faseDoTurno='acao_ativa';
 
   const _pos=posEfetiva(selUnit);
+
+  if(hab.areaRaio>0){
+    // AoE: qualquer hex dentro do alcance é alvo válido
+    const allHexes=[];
+    for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
+      if(hexDist(_pos.col,_pos.row,c,r)<=hab.alcance) allHexes.push({col:c,row:r});
+    }
+    atkTargets=allHexes;
+    // Verifica se há ao menos 1 inimigo acessível (dentro de alcance + raio)
+    const temAlvo=unidades.some(u=>u.tipo==='inimigo'&&u.hp>0&&
+      hexDist(_pos.col,_pos.row,u.col,u.row)<=hab.alcance+hab.areaRaio);
+    if(!temAlvo){ modoAtaque=false; habAtual=null; faseDoTurno='planejar_acao'; renderActionRow(); return; }
+    renderActionRow(); renderSel();
+    return;
+  }
+
   const inimigosAlvo=unidades.filter(u=>{
     if(u===selUnit) return false;
     if(u.tipo!=='inimigo') return false;
@@ -2182,18 +2319,7 @@ function selecionarHabilidade(hab){
   });
   atkTargets=inimigosAlvo.map(u=>({col:u.col,row:u.row}));
 
-  // Auto-disparo com 1 alvo: vai direto para acao_pronta
-  if(inimigosAlvo.length===1){
-    planoAtaque={hab, atacante:selUnit, alvo:inimigosAlvo[0]};
-    modoAtaque=false; habAtual=null; atkTargets=[];
-    faseDoTurno='acao_pronta';
-    _broadcastIntent();
-    renderActionRow(); renderBottomPanel(); renderSel();
-    return;
-  }
-
   if(!inimigosAlvo.length){
-    // Skill sem alvo em alcance — cancela
     modoAtaque=false; habAtual=null;
     faseDoTurno='planejar_acao';
     renderActionRow(); renderSel();
@@ -2258,6 +2384,16 @@ document.getElementById('world').addEventListener('pointerdown',e=>{
 
   // Fase ação_ativa: clique em alvo
   if(faseDoTurno==='acao_ativa' && modoAtaque && habAtual && hex){
+    if(habAtual.areaRaio>0){
+      // AoE: clique em qualquer hex do alcance seleciona o centro da explosão
+      if(atkTargets.some(h=>h.col===hex.col&&h.row===hex.row)){
+        areaPreview={col:hex.col,row:hex.row};
+        renderActionRow(); renderSel(); renderBottomPanel();
+      } else {
+        cancelarAtaqueAtual();
+      }
+      return;
+    }
     const alvo=unidades.find(u=>u.col===hex.col&&u.row===hex.row&&u.tipo==='inimigo');
     if(alvo && atkTargets.some(h=>h.col===hex.col&&h.row===hex.row)){
       planoAtaque={hab:habAtual, atacante:selUnit, alvo};
