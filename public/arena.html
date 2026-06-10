@@ -852,7 +852,7 @@ const _hcd = _HERO_CLASS_DATA[_heroClassId] || _HERO_CLASS_DATA.mago;
 // ══════════════════════════════════════════
 //  UNIDADES
 // ══════════════════════════════════════════
-const unidades = [
+let unidades = [
   { nome:_hcd.nome, col:_fbIsHost?4:6, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
     imgSrc:`sprites/${_heroClassId}_${_heroGender}_costas.png`,
     imgSrcAtaque:`sprites/${_heroClassId}_${_heroGender}.png`,
