@@ -27,7 +27,7 @@ if(_cfg&&_rid&&_pid){
     };
     window._fbSetEnemies=async(enemies)=>{
       try{
-        const data=enemies.map(u=>({nome:u.nome,x:u.col,y:u.row,hp:u.hp,maxHp:u.maxHp}));
+        const data=enemies.map(u=>({id:u.id||u.nome,nome:u.nome,x:u.col,y:u.row,hp:u.hp,maxHp:u.maxHp}));
         await updateDoc(rd,{enemies:data});
       }catch{}
     };
@@ -850,13 +850,13 @@ const unidades = [
     hp:_hcd.hp, maxHp:_hcd.hp, sp:_hcd.sp, maxSp:_hcd.sp,
     portrait:`portraits/${_heroClassId}_${_heroGender}.png`,
     itens:_hcd.itens },
-  { nome:'Espantalho', col:3, row:4, emoji:'🌾', cor:'#8b4513',
+  { id:'esp_0', nome:'Espantalho', col:3, row:4, emoji:'🌾', cor:'#8b4513',
     imgSrc:'sprites/inimigo_espantalho_assombrado.png', img:null, tipo:'inimigo', mov:3,
     hp:18, maxHp:18, sp:0, maxSp:0, portrait:null, ac:11 },
-  { nome:'Espantalho', col:6, row:3, emoji:'🌾', cor:'#8b4513',
+  { id:'esp_1', nome:'Espantalho', col:6, row:3, emoji:'🌾', cor:'#8b4513',
     imgSrc:'sprites/inimigo_espantalho_assombrado.png', img:null, tipo:'inimigo', mov:3,
     hp:18, maxHp:18, sp:0, maxSp:0, portrait:null, ac:11 },
-  { nome:'Espantalho', col:9, row:4, emoji:'🌾', cor:'#8b4513',
+  { id:'esp_2', nome:'Espantalho', col:9, row:4, emoji:'🌾', cor:'#8b4513',
     imgSrc:'sprites/inimigo_espantalho_assombrado.png', img:null, tipo:'inimigo', mov:3,
     hp:18, maxHp:18, sp:0, maxSp:0, portrait:null, ac:11 },
 ];
@@ -1598,14 +1598,14 @@ function renderUnits(){
     }
     const ly=y+OOFF-14;
     if(u.tipo==='inimigo'){
-      const bw=28,bh=4;
-      const bx=Math.round(x-bw/2),by=ly-7;
+      const bw=56,bh=14;
+      const bx=Math.round(x-bw/2),by=ly-18;
       const ratio=Math.max(0,Math.min(1,u.hp/u.maxHp));
-      ctxU.fillStyle='rgba(0,0,0,.78)'; ctxU.fillRect(bx,by,bw,bh);
+      ctxU.fillStyle='rgba(0,0,0,.82)'; ctxU.fillRect(bx,by,bw,bh);
       ctxU.fillStyle=ratio>0.6?'#44bb22':ratio>0.3?'#ddaa00':'#cc2200';
       ctxU.fillRect(bx,by,Math.round(bw*ratio),bh);
-      ctxU.strokeStyle='rgba(255,255,255,.18)'; ctxU.lineWidth=0.5;
-      ctxU.strokeRect(bx+.25,by+.25,bw-.5,bh-.5);
+      ctxU.strokeStyle='rgba(255,255,255,.25)'; ctxU.lineWidth=1;
+      ctxU.strokeRect(bx+.5,by+.5,bw-1,bh-1);
     }
     ctxU.font='bold 10px Segoe UI,sans-serif';
     const lw=ctxU.measureText(u.nome).width+10;
@@ -2442,7 +2442,7 @@ function onRoomUpdate(room){
   // ── Sync inimigos ──
   if(room.enemies){
     for(const fbE of room.enemies){
-      const u=unidades.find(u=>u.tipo==='inimigo'&&u.nome===fbE.nome);
+      const u=unidades.find(u=>u.tipo==='inimigo'&&(fbE.id?u.id===fbE.id:u.nome===fbE.nome));
       if(u){
         if(u.col!==fbE.x||u.row!==fbE.y){ u.col=fbE.x; u.row=fbE.y; u._ax=null; u._ay=null; }
         if(fbE.hp!=null) u.hp=fbE.hp;
