@@ -2778,18 +2778,19 @@ function onRoomUpdate(room){
         'narration.dialogo':[],
         'narration.introConfirmados':{},
         postBattleConfirmados:{},
+        batalha:{},
       });
       return;
     }
   }
 
-  // Non-host: acionar cinematica de vitória quando host sinalizar
-  if (!_fbIsHost && room.batalha?.cinematicaVitoria && !_cinematicaRodando) {
-    _cinematicaVitoria();
-  }
-
   const myId=localStorage.getItem('oraculo.playerId');
   const wasFirst=_firstRoomUpdate;
+
+  // Non-host: acionar cinematica de vitória quando host sinalizar (ignorar na primeira leitura para evitar estado stale)
+  if (!_fbIsHost && !wasFirst && room.batalha?.cinematicaVitoria && !_cinematicaRodando) {
+    _cinematicaVitoria();
+  }
 
   // ── Sync outros jogadores ──
   const others=Object.values(room.players).filter(p=>p.id!==myId&&p.x!=null&&p.y!=null);
@@ -2820,7 +2821,9 @@ function onRoomUpdate(room){
   }
 
   // ── Sync inimigos ──
-  if(room.enemies){
+  // Host não sincroniza na primeira leitura: o estado canônico é o unidades[] local;
+  // _fbSetEnemies() já foi chamado em startFbListener para gravar o estado fresco.
+  if(room.enemies && !(_fbIsHost && wasFirst)){
     for(const fbE of room.enemies){
       const u=unidades.find(u=>u.tipo==='inimigo'&&(fbE.id?u.id===fbE.id:u.nome===fbE.nome));
       if(u){
