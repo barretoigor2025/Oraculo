@@ -1116,12 +1116,12 @@ function _fxLoop(ts){
     } else if(p.type==='pulse'){
       const t=1-alpha;
       const r=p.r+p.dr*t;
-      ctxFx.shadowColor=p.color;ctxFx.shadowBlur=18;
+      ctxFx.shadowColor=p.color;ctxFx.shadowBlur=30;
       ctxFx.beginPath();ctxFx.arc(p.x,p.y,r,0,Math.PI*2);
-      ctxFx.strokeStyle=p.color;ctxFx.lineWidth=(5.5-t*4)*alpha;ctxFx.stroke();
+      ctxFx.strokeStyle=p.color;ctxFx.lineWidth=(10+14*(1-t))*alpha;ctxFx.stroke();
     } else if(p.type==='flash'){
-      ctxFx.shadowColor=p.color;ctxFx.shadowBlur=22;
-      ctxFx.beginPath();ctxFx.arc(p.x,p.y,p.r*(1-alpha*.6),0,Math.PI*2);
+      ctxFx.shadowColor=p.color;ctxFx.shadowBlur=45;
+      ctxFx.beginPath();ctxFx.arc(p.x,p.y,p.r*(alpha*.7+.3),0,Math.PI*2);
       ctxFx.fillStyle=p.color;ctxFx.fill();
     } else if(p.type==='orbit'){
       ctxFx.shadowColor=p.color;ctxFx.shadowBlur=20;
@@ -1267,22 +1267,27 @@ function _drawProj(p){
 // ── Spawna partículas de impacto ──
 function spawnImpact(x,y,kind){
   if(kind==='fireball'){
-    // flash central
-    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:45,color:'rgba(255,220,120,0.9)',life:200,maxLife:200});
-    // rings
-    for(let i=0;i<3;i++){
-      _fxParticles.push({type:'ring',x,y,vx:0,vy:0,gravity:0,r:20+i*22,color:`rgba(255,${100-i*25},0,0.8)`,life:400+i*100,maxLife:400+i*100});
+    // flash branco gigante — instante de impacto
+    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:105,color:'rgba(255,255,220,0.95)',life:155,maxLife:155});
+    // flash laranja secundário
+    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:70,color:'rgba(255,140,20,0.88)',life:260,maxLife:260});
+    // 4 anéis de pulso expansivos
+    const _fb=[
+      {dr: 95,color:'rgba(255,255,190,0.92)',life:320},
+      {dr:148,color:'rgba(255,110,0,0.82)',  life:490},
+      {dr:192,color:'rgba(255,40,0,0.65)',   life:640},
+      {dr:238,color:'rgba(180,10,0,0.38)',   life:800},
+    ];
+    for(const pd of _fb) _fxParticles.push({type:'pulse',x,y,vx:0,vy:0,gravity:0,r:4,dr:pd.dr,color:pd.color,life:pd.life,maxLife:pd.life});
+    // sparks rápidos
+    for(let i=0;i<42;i++){
+      const a=Math.random()*Math.PI*2,sp=5+Math.random()*11;
+      _fxParticles.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:.04,r:2.5+Math.random()*2.5,color:Math.random()<.6?'#ff7700':'#ffee44',life:350+Math.random()*450,maxLife:800});
     }
-    // sparks
-    for(let i=0;i<22;i++){
-      const a=Math.random()*Math.PI*2;
-      const sp=2+Math.random()*5;
-      _fxParticles.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:.04,r:2+Math.random()*2,color:Math.random()<.5?'#ff8800':'#ffff44',life:300+Math.random()*300,maxLife:600});
-    }
-    // embers
-    for(let i=0;i<12;i++){
-      const a=Math.random()*Math.PI*2;
-      _fxParticles.push({type:'dot',x,y,vx:Math.cos(a)*(1+Math.random()*3),vy:Math.sin(a)*(1+Math.random()*3),gravity:.03,r:3+Math.random()*2,color:'rgba(255,120,0,0.8)',life:400+Math.random()*400,maxLife:800});
+    // brasas grossas
+    for(let i=0;i<26;i++){
+      const a=Math.random()*Math.PI*2,sp=2.5+Math.random()*5.5;
+      _fxParticles.push({type:'dot',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:.025,r:4+Math.random()*4,color:Math.random()<.5?'rgba(255,100,0,0.90)':'rgba(255,200,40,0.85)',life:550+Math.random()*700,maxLife:1250});
     }
   } else if(kind==='arrow'){
     // spark burst
@@ -1293,14 +1298,21 @@ function spawnImpact(x,y,kind){
     }
     _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:18,color:'rgba(180,255,160,0.7)',life:120,maxLife:120});
   } else if(kind==='magic'){
-    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:30,color:'rgba(200,120,255,0.85)',life:180,maxLife:180});
-    for(let i=0;i<3;i++){
-      _fxParticles.push({type:'ring',x,y,vx:0,vy:0,gravity:0,r:14+i*16,color:`rgba(180,80,255,0.7)`,life:350+i*80,maxLife:350+i*80});
+    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:90,color:'rgba(220,140,255,0.92)',life:165,maxLife:165});
+    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:58,color:'rgba(255,220,255,0.88)',life:130,maxLife:130});
+    const _mg=[
+      {dr: 90,color:'rgba(255,220,255,0.90)',life:310},
+      {dr:138,color:'rgba(200,80,255,0.78)', life:470},
+      {dr:180,color:'rgba(130,0,210,0.55)',  life:600},
+    ];
+    for(const pd of _mg) _fxParticles.push({type:'pulse',x,y,vx:0,vy:0,gravity:0,r:4,dr:pd.dr,color:pd.color,life:pd.life,maxLife:pd.life});
+    for(let i=0;i<34;i++){
+      const a=Math.random()*Math.PI*2,sp=4+Math.random()*9;
+      _fxParticles.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:.02,r:2+Math.random()*2.5,color:Math.random()<.5?'#cc66ff':'#ffaaff',life:300+Math.random()*400,maxLife:700});
     }
     for(let i=0;i<16;i++){
-      const a=Math.random()*Math.PI*2;
-      const sp=1.5+Math.random()*4;
-      _fxParticles.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:.02,r:1.5+Math.random()*2,color:Math.random()<.5?'#cc66ff':'#ffaaff',life:250+Math.random()*300,maxLife:550});
+      const a=Math.random()*Math.PI*2,sp=1.5+Math.random()*4;
+      _fxParticles.push({type:'dot',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:-.005,r:3+Math.random()*3,color:Math.random()<.5?'rgba(180,80,255,0.85)':'rgba(255,200,255,0.80)',life:500+Math.random()*600,maxLife:1100});
     }
   } else if(kind==='melee'){
     _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:28,color:'rgba(255,220,100,0.7)',life:140,maxLife:140});
@@ -1325,14 +1337,20 @@ function spawnAura(cx,cy,kind){
     cure:  { flash:'rgba(0,210,80,0.80)',   ring:'rgba(50,230,110,0.85)',orb:'#88ffaa', rise:'rgba(140,255,180,0.75)' },
   }[kind];
 
-  // flash central
+  // flash central grande
   _fxParticles.push({type:'flash',x:cx,y:cy,vx:0,vy:0,gravity:0,
-    r:58,color:C.flash,life:380,maxLife:380});
+    r:90,color:C.flash,life:370,maxLife:370});
+  _fxParticles.push({type:'flash',x:cx,y:cy,vx:0,vy:0,gravity:0,
+    r:55,color:'rgba(255,255,255,0.70)',life:180,maxLife:180});
 
-  // 5 anéis de pulso escalonados
+  // 2 anéis de pulso de impacto iniciais (grandes e rápidos)
+  _fxParticles.push({type:'pulse',x:cx,y:cy,vx:0,vy:0,gravity:0,r:5,dr:110,color:C.ring,life:380,maxLife:380});
+  _fxParticles.push({type:'pulse',x:cx,y:cy,vx:0,vy:0,gravity:0,r:5,dr:155,color:C.flash,life:280,maxLife:280});
+
+  // 5 anéis de pulso escalonados (duradouros)
   for(let i=0;i<5;i++){
     _fxParticles.push({type:'pulse',x:cx,y:cy,vx:0,vy:0,gravity:0,
-      r:16,dr:68,color:C.ring,
+      r:5,dr:95,color:C.ring,
       life:2000-i*340,maxLife:2000-i*340});
   }
 
@@ -1341,7 +1359,7 @@ function spawnAura(cx,cy,kind){
     _fxParticles.push({type:'orbit',ox:cx,oy:cy,x:cx,y:cy,
       angle:i*Math.PI*2/3,
       angSpeed:kind==='fury'?0.0085:0.0052,
-      orbitR:30,r:6,color:C.orb,
+      orbitR:32,r:7,color:C.orb,
       vx:0,vy:0,gravity:0,life:2200,maxLife:2200});
   }
 
@@ -1350,22 +1368,22 @@ function spawnAura(cx,cy,kind){
     _fxParticles.push({type:'orbit',ox:cx,oy:cy,x:cx,y:cy,
       angle:i*Math.PI*2/4+Math.PI/4,
       angSpeed:kind==='fury'?-0.006:-0.0038,
-      orbitR:48,r:4.5,color:C.rise,
+      orbitR:52,r:5.5,color:C.rise,
       vx:0,vy:0,gravity:0,life:2200,maxLife:2200});
   }
 
   // partículas subindo (para todos, mas fúria mais rápidas)
   const speedMult=kind==='fury'?2.2:1.0;
-  for(let i=0;i<22;i++){
+  for(let i=0;i<30;i++){
     const a=(kind==='fury')?-(Math.random()*.8+0.1)*Math.PI:Math.random()*Math.PI*2;
-    const sp=(1+Math.random()*2.5)*speedMult;
+    const sp=(1.5+Math.random()*3.5)*speedMult;
     _fxParticles.push({
       type:kind==='fury'?'spark':'dot',
       x:cx+(Math.random()-.5)*22, y:cy+(Math.random()-.5)*22,
       vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-(kind==='fury'?1.8:0.9),
       gravity:kind==='fury'?.012:-.004,
-      r:2.5+Math.random()*2.5, color:Math.random()<.5?C.flash:C.rise,
-      life:700+Math.random()*900, maxLife:1600});
+      r:2.5+Math.random()*3, color:Math.random()<.5?C.flash:C.rise,
+      life:700+Math.random()*1000, maxLife:1700});
   }
 
   _fxStart();
