@@ -230,12 +230,31 @@ export const CENAS = {
     id: 'prologo',
     titulo: 'Prólogo — O Mundo de Ygdis',
     subtitulo: 'Megalos · Reino de Mhoried',
-    textoIntro: `No mundo de Ygdis, onde a magia antiga ainda respira nas pedras das montanhas e nas raízes das florestas milenares, o Reino de Mhoried ergue-se como bastião de ordem entre terras cada vez mais sombrias. A Duquesa Catherine Laskaris governa com mão firme e coração preocupado: seu irmão Oswald desapareceu nas profundezas dos Blackwoods após buscar um mago chamado Dendybar — e o que voltou não era mais o homem que todos conheciam. Vocês são aventureiros que chegaram à Feira da Colheita de St. Phanourios, atraídos por promessas de trabalho, glória ou simplesmente por acaso. O que encontrarão aqui mudará o destino de todo o reino.`,
+    textoIntro: `No mundo de Ygdis, o Reino de Mhoried ergue-se como bastião de ordem entre terras cada vez mais sombrias. A Duquesa Catherine Laskaris governa com mão firme — e coração preocupado com o irmão desaparecido. Vocês são aventureiros chegando à Feira da Colheita de St. Phanourios. O que encontrarão aqui mudará o destino de todo o reino.`,
     imgExterior: 'locations/mhoried_castelo_ext.png',
     imgInterior: 'locations/mhoried_market_int.png',
     npcsPresentes: [],
     temBatalha: false,
     ordemNarrativa: 0,
+    introSlides: [
+      {
+        imagem: 'locations/mhoried_castelo_ext.png',
+        texto: `No mundo de Ygdis, onde a magia antiga ainda respira nas pedras das montanhas e nas raízes das florestas milenares, o Reino de Mhoried ergue-se como bastião de ordem entre terras cada vez mais sombrias. A Duquesa Catherine Laskaris governa com mão firme e coração preocupado: seu irmão Oswald desapareceu nas profundezas dos Blackwoods após buscar o mago Dendybar — e o que voltou não era mais o homem que todos conheciam.`,
+      },
+      {
+        imagem: 'locations/mhoried_castelo_ext.png',
+        texto: `Vocês são aventureiros que chegaram à Feira da Colheita de St. Phanourios, atraídos por promessas de trabalho, glória ou simplesmente pelo acaso. Algo importante está prestes a acontecer nesta cidade — e os ventos do destino já escolheram os seus personagens para testemunhá-lo.`,
+      },
+      {
+        imagem: 'locations/mhoried_market_ext.png',
+        texto: `A Feira da Colheita transborda de vida e cor. Vendedores proclamam especiarias e tecidos, crianças perseguem umas às outras entre as barracas, e o aroma de pão quente mistura-se ao de cerveja e incenso. Bardos tocam em cada esquina, malabaristas arrancam aplausos da multidão. Por um momento, é difícil imaginar que algo de errado pudesse rondar estas terras tão festivas.`,
+      },
+      {
+        imagem: 'locations/mhoried_market_int.png',
+        texto: `No salão principal, a Duquesa Catherine aguarda com urgência disfarçada em cortesia — seus olhos percorrem cada rosto em busca de competência. Antes que qualquer palavra seja dita, um grito perfura o burburinho lá fora. Depois outro. Cabeças se viram: os espantalhos decorativos das barracas estão... se movendo.`,
+        ganchoBatalha: true,
+      },
+    ],
   },
 
   mhoried_market: {
