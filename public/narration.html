@@ -541,6 +541,7 @@ let _cenaAtual = 'mhoried_market';
 let _modoImagem = 'exterior';
 let _dialogoLog = [];
 let _unsubRoom = null;
+let _firstNarrationSnap = true;
 
 // ── Referências DOM ──────────────────────────────────────────────
 const elTitulo = document.getElementById('narr-titulo');
@@ -597,11 +598,14 @@ function init() {
 function onRoomUpdate(room) {
   if (!room) return;
 
-  // Redirecionar quando batalha começa
+  // Redirecionar quando batalha começa — ignorar primeiro snapshot para evitar
+  // loop quando regredimos da arena (status pode ainda ser 'battle' no cache)
   if (room.status === 'battle') {
+    if (_firstNarrationSnap) { _firstNarrationSnap = false; return; }
     window.location.href = 'arena.html';
     return;
   }
+  _firstNarrationSnap = false;
 
   const narr = room.narration ?? {};
   const novaCena = narr.cenaId ?? 'mhoried_market';

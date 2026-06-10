@@ -38,6 +38,16 @@ if(_cfg&&_rid&&_pid){
       try{await updateDoc(rd,{enemyIntent:intent??null});}catch{}
     };
     window._fbListenRoom=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
+    window._fbSetStatus=async(status,extra={})=>{
+      try{
+        const data={status,updatedAt:Date.now()};
+        for(const[k,v]of Object.entries(extra)) data[k]=v;
+        await updateDoc(rd,data);
+      }catch{}
+    };
+    window._fbAddPostBattleConfirm=async()=>{
+      try{await updateDoc(rd,{[`postBattleConfirmados.${_pid}`]:true});}catch{}
+    };
   }catch(e){console.warn('Arena Firebase init:',e);}
 }
 window._fbReady=true;
@@ -1862,7 +1872,13 @@ function _mostrarOverlayFimBatalha(vitoria){
     <button id="btn-voltar-narracao" style="padding:13px 30px;font-size:15px;font-family:inherit;background:rgba(190,135,35,.25);color:#f5d878;border:1px solid rgba(190,135,35,.55);border-radius:8px;cursor:pointer;letter-spacing:1px;font-weight:600;-webkit-tap-highlight-color:transparent;">📖 Voltar à Narração</button>`;
   document.body.appendChild(div);
   document.getElementById('btn-voltar-narracao').addEventListener('click',()=>{
-    window.location.href='narration.html';
+    const btn=document.getElementById('btn-voltar-narracao');
+    btn.disabled=true; btn.textContent='⌛ Aguardando…';
+    if(window._fbAddPostBattleConfirm){
+      window._fbAddPostBattleConfirm();
+    } else {
+      window.location.href='narration.html';
+    }
   });
 }
 
@@ -2546,6 +2562,29 @@ function renderRemoteIntents(){
 
 function onRoomUpdate(room){
   if(!room||!room.players) return;
+
+  // Navigate to narration when battle is over
+  if(room.status==='narration'){
+    window.location.href='narration.html';
+    return;
+  }
+
+  // Host: when all players confirmed post-battle, transition everyone to narration
+  if(_fbIsHost && room.status==='battle' && room.postBattleConfirmados){
+    const pids=Object.keys(room.players||{});
+    const confirmed=Object.keys(room.postBattleConfirmados||{});
+    if(pids.length>0 && pids.every(p=>confirmed.includes(p))){
+      if(window._fbSetStatus) window._fbSetStatus('narration',{
+        'narration.cenaId':'mhoried_market',
+        'narration.modoImagem':'interior',
+        'narration.dialogo':[],
+        'narration.introConfirmados':{},
+        postBattleConfirmados:{},
+      });
+      return;
+    }
+  }
+
   const myId=localStorage.getItem('oraculo.playerId');
   const wasFirst=_firstRoomUpdate;
 
