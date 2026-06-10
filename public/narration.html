@@ -713,8 +713,8 @@ function _aplicarSlide(bg, textoEl, btnEl, dotsEl) {
     // Pré-carregar conteúdo enquanto invisível
     textoEl.textContent = slide?.texto || '';
     _preencherDotsBtn(dotsEl, btnEl, slide);
-    // Após ~1.7s revelar gradiente + texto
-    setTimeout(() => overlay.classList.remove('intro-img-reveal'), 1700);
+    // Após ~3s revelar gradiente + texto
+    setTimeout(() => overlay.classList.remove('intro-img-reveal'), 3000);
     return;
   }
 

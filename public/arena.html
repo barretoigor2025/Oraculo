@@ -805,6 +805,9 @@ const HABILIDADES = {
     { id:'cajado',      nome:'Cajado',             icone:'✨', tipo:'melee',    categoria:'basico', alcance:1,  anim:'melee',    cor:'#eecc44', desc:'Golpe sagrado',               dano:'1d6+1',  custoSP:0  },
     { id:'curar',       nome:'Curar Ferimentos',   icone:'💚', tipo:'buff',     categoria:'buff',   alcance:0,  anim:'cure',     cor:'#22dd88', desc:'Cura 1d8+2 HP',               dano:null,     custoSP:20 },
   ],
+  'Espantalho': [
+    { id:'garra',       nome:'Garra',              icone:'🌾', tipo:'melee',    categoria:'basico', alcance:1,  anim:'melee',    cor:'#8b4513', desc:'Garra cortante',              dano:'1d6',    custoSP:0  },
+  ],
 };
 
 // ══════════════════════════════════════════
@@ -833,9 +836,15 @@ const unidades = [
     hp:_hcd.hp, maxHp:_hcd.hp, sp:_hcd.sp, maxSp:_hcd.sp,
     portrait:`portraits/${_heroClassId}_${_heroGender}.png`,
     itens:_hcd.itens },
-  { nome:'Espantalho', col:5, row:7, emoji:'🌾', cor:'#8b4513',
+  { nome:'Espantalho', col:3, row:4, emoji:'🌾', cor:'#8b4513',
     imgSrc:'sprites/inimigo_espantalho_assombrado.png', img:null, tipo:'inimigo', mov:3,
-    hp:60, maxHp:60, sp:0, maxSp:1, portrait:null, ac:12 },
+    hp:18, maxHp:18, sp:0, maxSp:0, portrait:null, ac:11 },
+  { nome:'Espantalho', col:6, row:3, emoji:'🌾', cor:'#8b4513',
+    imgSrc:'sprites/inimigo_espantalho_assombrado.png', img:null, tipo:'inimigo', mov:3,
+    hp:18, maxHp:18, sp:0, maxSp:0, portrait:null, ac:11 },
+  { nome:'Espantalho', col:9, row:4, emoji:'🌾', cor:'#8b4513',
+    imgSrc:'sprites/inimigo_espantalho_assombrado.png', img:null, tipo:'inimigo', mov:3,
+    hp:18, maxHp:18, sp:0, maxSp:0, portrait:null, ac:11 },
 ];
 
 // ══════════════════════════════════════════
@@ -1807,14 +1816,15 @@ function finalizarTurno(){
   });
 }
 
-function executarAtaquePlano(hab, atacante, alvo){
+function executarAtaquePlano(hab, atacante, alvo, onDone){
+  const cb = onDone || proximoTurno;
   // Deduct SP cost
   if((hab.custoSP||0)>0 && atacante.sp>=hab.custoSP){
     atacante.sp=Math.max(0,atacante.sp-hab.custoSP);
     renderBottomPanel();
   }
   if(hab.tipo==='buff'||hab.alcance===0){
-    lancarAtaque(hab,atacante,atacante,()=>{ proximoTurno(); });
+    lancarAtaque(hab,atacante,atacante,()=>{ cb(); });
     return;
   }
   const atqMod=ATTR_MOD[atacante.nome]||2;
@@ -1850,9 +1860,9 @@ function executarAtaquePlano(hab, atacante, alvo){
     const atk=results[0];
     if((atk.sucesso||atk.critico)&&!atk.catastrofe){
       if(results[1]){ alvo.hp=Math.max(0,alvo.hp-results[1].resultado); if(alvo.tipo==='inimigo'&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo')); }
-      lancarAtaque(hab,atacante,alvo,()=>{ render(); renderBottomPanel(); proximoTurno(); });
+      lancarAtaque(hab,atacante,alvo,()=>{ render(); renderBottomPanel(); cb(); });
     } else {
-      render(); renderBottomPanel(); proximoTurno();
+      render(); renderBottomPanel(); cb();
     }
   });
 }
@@ -1868,24 +1878,31 @@ function proximoTurno(){
 
 function turnoInimigo(){
   faseDoTurno='turno_inimigo'; renderActionRow();
-  const esp=unidades.find(u=>u.tipo==='inimigo'&&u.hp>0);
-  const espName=esp?esp.nome:'Inimigo';
+  const allEnemies=unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0);
 
-  // Non-host: apenas aguarda o host avançar o turno via Firebase
+  // Non-host: just show letreiro and wait for host to advance via Firebase
   if(!_fbIsHost){
+    const espName=allEnemies.length?allEnemies[0].nome:'Inimigo';
     mostrarLetreiro(espName.toUpperCase(),'turno do inimigo','',1800,()=>renderActionRow());
     return;
   }
 
-  if(!esp){ _advanceTurn(); return; }
+  if(!allEnemies.length){ _advanceTurn(); return; }
+  _executarProximoInimigo(allEnemies, 0);
+}
 
-  // Host: calcula intenção do inimigo
-  planoMovimento=null; planoAtaque=null;
+function _executarProximoInimigo(enemies, idx){
+  if(idx>=enemies.length){ proximoTurno(); return; }
+  const esp=enemies[idx];
+  if(!esp||esp.hp<=0){ _executarProximoInimigo(enemies, idx+1); return; }
+
+  planoMovimento=null; planoAtaque=null; movBloqueado=false;
   const allHeroes=unidades.filter(u=>u.tipo==='heroi'&&u.hp>0);
-  if(!allHeroes.length){ _advanceTurn(); return; }
-  const alvo=allHeroes.sort((a,b)=>hexDist(esp.col,esp.row,a.col,a.row)-hexDist(esp.col,esp.row,b.col,b.row))[0];
+  if(!allHeroes.length){ proximoTurno(); return; }
 
+  const alvo=allHeroes.sort((a,b)=>hexDist(esp.col,esp.row,a.col,a.row)-hexDist(esp.col,esp.row,b.col,b.row))[0];
   const dist=hexDist(esp.col,esp.row,alvo.col,alvo.row);
+
   if(dist>1){
     // Pathing to an adjacent FREE hex next to the target (never onto occupied hex)
     const adjFree=hexVizinhos(alvo.col,alvo.row)
@@ -1898,15 +1915,15 @@ function turnoInimigo(){
   }
   const destCol=planoMovimento?planoMovimento.path[planoMovimento.path.length-1].col:esp.col;
   const destRow=planoMovimento?planoMovimento.path[planoMovimento.path.length-1].row:esp.row;
-  if(hexDist(destCol,destRow,alvo.col,alvo.row)<=1){
-    planoAtaque={
-      hab:{icone:'🌾',nome:'Garra',alcance:1,tipo:'melee',anim:'melee',dano:'1d6',desc:'Garra cortante'},
-      atacante:esp, alvo
-    };
+  const habEsp=(HABILIDADES[esp.nome]||[]).find(h=>h.categoria==='basico')||
+    {icone:'🌾',nome:'Garra',alcance:1,tipo:'melee',anim:'melee',dano:'1d6',desc:'Garra cortante'};
+
+  if(hexDist(destCol,destRow,alvo.col,alvo.row)<=habEsp.alcance){
+    planoAtaque={hab:habEsp, atacante:esp, alvo};
     if(!esp.ac) esp.ac=10;
   }
 
-  // Broadcast intenção para todos os dispositivos verem as setas
+  // Broadcast intent so all clients see movement/attack arrows
   const intent={
     moveTarget:planoMovimento?{col:destCol,row:destRow}:null,
     attackTarget:planoAtaque?{col:alvo.col,row:alvo.row}:null,
@@ -1915,8 +1932,32 @@ function turnoInimigo(){
   if(window._fbSetEnemyIntent) window._fbSetEnemyIntent(intent);
   renderSel();
 
-  mostrarLetreiro(espName.toUpperCase(),'turno do inimigo','',1800,()=>{
-    setTimeout(()=>finalizarTurno(),800);
+  mostrarLetreiro(esp.nome.toUpperCase(),'turno do inimigo','',1800,()=>{
+    setTimeout(()=>_executarAtaqueInimigo(enemies, idx),800);
+  });
+}
+
+function _executarAtaqueInimigo(enemies, idx){
+  fecharAtkPanel();
+  movBloqueado=false;
+  resolverMovimento(movOk=>{
+    render();
+    if(planoAtaque&&!movBloqueado){
+      setTimeout(()=>{
+        const {hab,atacante,alvo}=planoAtaque;
+        executarAtaquePlano(hab, atacante, alvo, ()=>{
+          planoMovimento=null; planoAtaque=null; movBloqueado=false;
+          render(); renderBottomPanel();
+          if(verificarVitoria()) return;
+          _executarProximoInimigo(enemies, idx+1);
+        });
+      },600);
+    } else {
+      planoMovimento=null; planoAtaque=null; movBloqueado=false;
+      render(); renderBottomPanel();
+      if(verificarVitoria()) return;
+      _executarProximoInimigo(enemies, idx+1);
+    }
   });
 }
 
