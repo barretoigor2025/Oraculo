@@ -354,6 +354,79 @@ html,body{
 @media(max-width:380px){
   .dialogo-npc-portrait img{height:44px;}
 }
+/* ── INTRO CINEMATOGRÁFICO ── */
+#intro-cinematico{
+  position:fixed;inset:0;z-index:200;
+  display:flex;flex-direction:column;
+  background:#04030200;
+  transition:opacity .6s;
+}
+#intro-cinematico.oculto{opacity:0;pointer-events:none;}
+#intro-bg{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  transition:opacity 1s;
+}
+#intro-grad{
+  position:absolute;inset:0;
+  background:linear-gradient(
+    to bottom,
+    rgba(0,0,0,.25) 0%,
+    rgba(0,0,0,.45) 35%,
+    rgba(0,0,0,.80) 65%,
+    rgba(0,0,0,.97) 100%
+  );
+}
+#intro-content{
+  position:relative;z-index:2;
+  flex:1;min-height:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-end;
+  padding:max(60px,12vh) 24px 0;
+  text-align:center;
+}
+#intro-subtitulo-cena{
+  font-size:11px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(220,190,100,.5);margin-bottom:10px;
+}
+#intro-titulo-cena{
+  font-size:clamp(24px,7vw,40px);font-weight:900;
+  color:#f5d878;letter-spacing:3px;text-transform:uppercase;
+  text-shadow:0 0 50px rgba(200,160,30,.9),0 2px 10px #000;
+  margin-bottom:28px;line-height:1.1;
+}
+#intro-texto-pag{
+  font-size:clamp(14px,3.8vw,18px);
+  color:rgba(235,215,165,.92);
+  font-style:italic;line-height:1.85;
+  max-width:580px;
+  text-shadow:0 1px 6px rgba(0,0,0,.95);
+  animation:fadePag .55s ease;
+}
+@keyframes fadePag{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+#intro-dots{
+  display:flex;gap:7px;justify-content:center;
+  margin-top:22px;min-height:8px;
+}
+.intro-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(190,135,35,.25);transition:background .3s;
+}
+.intro-dot.ativo{background:#f5d878;}
+#intro-btn-continuar{
+  position:relative;z-index:2;
+  margin:24px auto max(20px,calc(14px + env(safe-area-inset-bottom)));
+  background:rgba(190,135,35,.12);
+  border:1px solid rgba(190,135,35,.45);
+  border-radius:12px;
+  color:#f5d878;font-size:15px;font-weight:700;
+  padding:15px 48px;
+  cursor:pointer;font-family:inherit;letter-spacing:1.5px;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .15s,border-color .15s;
+}
+#intro-btn-continuar:active{background:rgba(190,135,35,.28);border-color:rgba(190,135,35,.8);}
+
 </style>
 </head>
 <body>
@@ -408,6 +481,19 @@ html,body{
     </div>
   </div>
 
+</div>
+
+<!-- Intro cinematográfico de cena -->
+<div id="intro-cinematico" class="oculto">
+  <div id="intro-bg"></div>
+  <div id="intro-grad"></div>
+  <div id="intro-content">
+    <div id="intro-subtitulo-cena"></div>
+    <div id="intro-titulo-cena"></div>
+    <div id="intro-texto-pag"></div>
+    <div id="intro-dots"></div>
+  </div>
+  <button id="intro-btn-continuar" onclick="avancarIntro()">Continuar →</button>
 </div>
 
 <!-- Config IA -->
@@ -473,6 +559,7 @@ window.iniciarBatalha = iniciarBatalha;
 window.abrirCfgIA = abrirCfgIA;
 window.fecharCfgIA = fecharCfgIA;
 window.salvarCfgIA = salvarCfgIA;
+window.avancarIntro = avancarIntro;
 
 // ── Init ─────────────────────────────────────────────────────────
 function init() {
@@ -537,6 +624,75 @@ function atualizarCena() {
     elImagem.src = imgSrc;
     elImagem.classList.remove('oculto');
   }
+
+  mostrarIntroCinemat(cena);
+}
+
+// ── Intro cinematográfico ────────────────────────────────────────
+let _introPages = [];
+let _introIdx   = 0;
+
+function splitIntroPages(texto) {
+  const partes = texto.match(/[^.!?]+[.!?—]+\s*/g) || [texto];
+  const paginas = [];
+  for (let i = 0; i < partes.length; i += 2) {
+    paginas.push((partes[i] + (partes[i+1] || '')).trim());
+  }
+  return paginas.filter(Boolean);
+}
+
+function mostrarIntroCinemat(cena) {
+  const overlay = document.getElementById('intro-cinematico');
+  const bg      = document.getElementById('intro-bg');
+  const tituloEl   = document.getElementById('intro-titulo-cena');
+  const subEl      = document.getElementById('intro-subtitulo-cena');
+  const textoEl    = document.getElementById('intro-texto-pag');
+  const btnEl      = document.getElementById('intro-btn-continuar');
+  const dotsEl     = document.getElementById('intro-dots');
+
+  const imgSrc = _modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior;
+  bg.style.backgroundImage = imgSrc ? `url(${imgSrc})` : 'none';
+
+  _introPages = splitIntroPages(cena.textoIntro || '');
+  _introIdx = 0;
+
+  tituloEl.textContent  = cena.titulo;
+  subEl.textContent     = cena.subtitulo || '';
+  textoEl.textContent   = _introPages[0] || '';
+
+  renderIntroDots(dotsEl);
+  btnEl.textContent = _introPages.length > 1 ? 'Continuar →' : 'Entrar na Cena →';
+
+  overlay.classList.remove('oculto');
+}
+
+function renderIntroDots(dotsEl) {
+  if (_introPages.length <= 1) { dotsEl.innerHTML = ''; return; }
+  dotsEl.innerHTML = _introPages
+    .map((_, i) => `<div class="intro-dot${i === _introIdx ? ' ativo' : ''}"></div>`)
+    .join('');
+}
+
+function avancarIntro() {
+  _introIdx++;
+  const overlay = document.getElementById('intro-cinematico');
+  const textoEl = document.getElementById('intro-texto-pag');
+  const btnEl   = document.getElementById('intro-btn-continuar');
+  const dotsEl  = document.getElementById('intro-dots');
+
+  if (_introIdx >= _introPages.length) {
+    overlay.classList.add('oculto');
+    return;
+  }
+
+  // Re-trigger animation
+  textoEl.style.animation = 'none';
+  void textoEl.offsetWidth;
+  textoEl.style.animation = '';
+  textoEl.textContent = _introPages[_introIdx];
+
+  renderIntroDots(dotsEl);
+  btnEl.textContent = _introIdx >= _introPages.length - 1 ? 'Entrar na Cena →' : 'Continuar →';
 }
 
 function onImagemCarregada() {
