@@ -369,7 +369,7 @@ html,body{
 #intro-bg{
   position:absolute;inset:0;
   background-size:cover;background-position:center;
-  transition:opacity 1s;
+  transition:opacity 0.65s;
 }
 #intro-grad{
   position:absolute;inset:0;
@@ -702,18 +702,31 @@ function mostrarIntroCinemat(cena) {
 
 function _aplicarSlide(bg, textoEl, btnEl, dotsEl) {
   const slide = _introSlides[_introIdx];
-  const overlay = document.getElementById('intro-cinematico');
 
   bg.style.backgroundImage = slide?.imagem ? `url(${slide.imagem})` : 'none';
 
   if (slide?.revealFirst) {
-    // Esconder overlay + conteúdo enquanto a imagem carrega limpa
-    overlay.classList.add('intro-img-reveal');
-    // Pré-carregar conteúdo enquanto invisível
+    // Oculta conteúdo instantaneamente (sem transição) para mostrar imagem limpa
+    const grad      = document.getElementById('intro-grad');
+    const contentEl = document.getElementById('intro-content');
+    [grad, contentEl, btnEl].forEach(el => {
+      el.style.transition   = 'none';
+      el.style.opacity      = '0';
+      el.style.pointerEvents = 'none';
+    });
     textoEl.textContent = slide?.texto || '';
-    _preencherDotsBtn(dotsEl, btnEl, slide);
-    // Após ~3s revelar gradiente + texto
-    setTimeout(() => overlay.classList.remove('intro-img-reveal'), 3000);
+    dotsEl.innerHTML = _introSlides
+      .map((_, i) => `<div class="intro-dot${i === _introIdx ? ' ativo' : ''}"></div>`)
+      .join('');
+    // Após 1.8s restaura transições e revela gradiente + texto suavemente
+    setTimeout(() => {
+      [grad, contentEl, btnEl].forEach(el => {
+        el.style.transition   = '';
+        el.style.opacity      = '';
+        el.style.pointerEvents = '';
+      });
+      _preencherDotsBtn(dotsEl, btnEl, slide);
+    }, 1800);
     return;
   }
 
@@ -753,16 +766,22 @@ function avancarIntro() {
     overlay.classList.add('oculto');
     return;
   }
+  const bg      = document.getElementById('intro-bg');
   const textoEl = document.getElementById('intro-texto-pag');
-  textoEl.style.animation = 'none';
-  void textoEl.offsetWidth;
-  textoEl.style.animation = '';
-  _aplicarSlide(
-    document.getElementById('intro-bg'),
-    textoEl,
-    document.getElementById('intro-btn-continuar'),
-    document.getElementById('intro-dots')
-  );
+  const btnEl   = document.getElementById('intro-btn-continuar');
+  const dotsEl  = document.getElementById('intro-dots');
+
+  // Fade-out do bg e desabilita botão; após dip aplica o novo slide
+  btnEl.disabled  = true;
+  bg.style.opacity = '0';
+
+  setTimeout(() => {
+    textoEl.style.animation = 'none';
+    void textoEl.offsetWidth;
+    textoEl.style.animation = '';
+    _aplicarSlide(bg, textoEl, btnEl, dotsEl);
+    bg.style.opacity = '1';
+  }, 500);
 }
 
 function confirmarPronto() {
