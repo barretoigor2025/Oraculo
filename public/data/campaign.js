@@ -248,11 +248,13 @@ export const CENAS = {
       {
         imagem: 'locations/mhoried_market_ext.png',
         texto: `A Feira da Colheita transborda de vida e cor. Vendedores proclamam especiarias e tecidos, crianças perseguem umas às outras entre as barracas, e o aroma de pão quente mistura-se ao de cerveja e incenso. Bardos tocam em cada esquina, malabaristas arrancam aplausos da multidão. Por um momento, é difícil imaginar que algo de errado pudesse rondar estas terras tão festivas.`,
+        revealFirst: true,
       },
       {
-        imagem: 'locations/mhoried_market_int.png',
-        texto: `No salão principal, a Duquesa Catherine aguarda com urgência disfarçada em cortesia — seus olhos percorrem cada rosto em busca de competência. Antes que qualquer palavra seja dita, um grito perfura o burburinho lá fora. Depois outro. Cabeças se viram: os espantalhos decorativos das barracas estão... se movendo.`,
+        imagem: 'locations/mhoried_market_ext2.png',
+        texto: `No salão principal, a Duquesa Catherine aguarda aventureiros de confiança — seus olhos percorrem cada rosto com urgência disfarçada de cortesia. Antes que qualquer palavra seja dita, um grito perfura o burburinho lá fora. Depois outro. Cabeças se viram: os espantalhos decorativos das barracas estão... se movendo.`,
         ganchoBatalha: true,
+        revealFirst: true,
       },
     ],
   },
