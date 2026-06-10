@@ -1643,6 +1643,7 @@ function renderGrid(){
 function renderUnits(){
   ctxU.clearRect(0,0,MAP_W,MAP_H);
   for(const u of unidades){
+    if(u.tipo==='inimigo'&&u.hp<=0) continue; // inimigo morto some imediatamente
     const{x,y}=unitPos(u);
     if(u.img){
       const sw=HR*3.2,sh=HR*3.2,foot=y+OOFF*.3;
@@ -1908,7 +1909,7 @@ function _cinematicaVitoria() {
     try { window._fbSetStatus?.('battle',{'batalha.cinematicaVitoria':Date.now()}); } catch(e){}
   }
 
-  // Remove inimigos do mapa
+  // Garante que inimigos foram removidos (pode ter sido feito em verificarVitoria)
   unidades = unidades.filter(u => u.tipo !== 'inimigo');
   render();
 
@@ -1918,10 +1919,14 @@ function _cinematicaVitoria() {
   let pendentes = herois.length || 1;
   const _chegou = () => { if (--pendentes <= 0) setTimeout(_cinSpawnGregoras, 650); };
 
-  if (herois.length === 0) _chegou();
-  else herois.forEach((h,i) => _cinAnimarParaHex(h,
-    destHerois[i%destHerois.length].col, destHerois[i%destHerois.length].row,
-    1000 + i*230, _chegou));
+  if (herois.length === 0) {
+    _chegou();
+  } else {
+    herois.forEach((h,i) => {
+      const dest = destHerois[i % destHerois.length];
+      _cinAnimarParaHex(h, dest.col, dest.row, 900 + i*200, _chegou);
+    });
+  }
 }
 
 function _cinAnimarParaHex(unit, dc, dr, dur, onDone) {
@@ -2034,7 +2039,9 @@ function verificarVitoria(){
   const inimigos=unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0);
   const herois=unidades.filter(u=>u.tipo==='heroi'&&u.hp>0);
   if(inimigos.length===0){
-    mostrarLetreiro('VITÓRIA!','o inimigo foi derrotado','',3000, _cinematicaVitoria);
+    unidades=unidades.filter(u=>u.tipo!=='inimigo'); // remove inimigos mortos do array
+    render();
+    mostrarLetreiro('VITÓRIA!','os inimigos foram derrotados','',2500, _cinematicaVitoria);
     return true;
   }
   if(herois.length===0){
