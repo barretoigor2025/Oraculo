@@ -1947,8 +1947,9 @@ function _executarProximoInimigo(enemies, idx){
     if(!esp.ac) esp.ac=10;
   }
 
-  // Broadcast intent so all clients see movement/attack arrows
+  // Broadcast intent so all clients see movement/attack arrows for THIS specific enemy
   const intent={
+    id: esp.id||null,
     moveTarget:planoMovimento?{col:destCol,row:destRow}:null,
     attackTarget:planoAtaque?{col:alvo.col,row:alvo.row}:null,
   };
@@ -2384,8 +2385,9 @@ function renderRemoteIntents(){
     }
   }
   // ── Intenção do inimigo (broadcast pelo host) ──
-  if(enemyIntent){
-    const esp=unidades.find(u=>u.tipo==='inimigo'&&u.hp>0);
+  if(enemyIntent && faseDoTurno==='turno_inimigo'){
+    const esp=unidades.find(u=>u.tipo==='inimigo'&&u.hp>0&&
+      (enemyIntent.id ? u.id===enemyIntent.id : true));
     if(esp){
       const from=hexCentro(esp.col,esp.row);
       if(enemyIntent.moveTarget){
