@@ -177,7 +177,16 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   text-shadow:0 0 8px rgba(255,50,20,0.45);
 }
 .pt-s{ font-size:9px; color:rgba(210,175,105,0.65); }
-#pt-hp{ font-size:11px; color:rgba(255,125,95,0.9); font-weight:700; }
+#pt-sprite{
+  align-self:center;
+  width:44px; height:56px;
+  overflow:hidden; border-radius:5px;
+  background:rgba(139,69,19,0.15);
+  border:1px solid rgba(139,69,19,0.45);
+  display:flex; align-items:flex-end; justify-content:center;
+  margin-bottom:2px;
+}
+#pt-sprite img{ height:100%; width:auto; display:block; image-rendering:pixelated; }
 
 /* ── Botões ── */
 #action-row{
@@ -498,9 +507,14 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
       <div class="pch" id="pc-hex"></div>
     </div>
     <div id="panel-target">
+      <div id="pt-sprite"></div>
       <div id="pt-nome"></div>
       <div class="pt-s" id="pt-stats"></div>
-      <div id="pt-hp"></div>
+      <div class="psr">
+        <span class="psi">❤️</span>
+        <div class="pbar"><div class="pbar-fill hp" id="pt-hp-bar"></div></div>
+        <span class="psv" id="pt-hp-val">—</span>
+      </div>
     </div>
   </div>
   <div id="action-row">
@@ -1582,9 +1596,19 @@ function renderUnits(){
       ctxU.fillStyle=u.cor; ctxU.fill();
       ctxU.strokeStyle='rgba(255,255,255,.7)'; ctxU.lineWidth=2; ctxU.stroke();
     }
+    const ly=y+OOFF-14;
+    if(u.tipo==='inimigo'){
+      const bw=28,bh=4;
+      const bx=Math.round(x-bw/2),by=ly-7;
+      const ratio=Math.max(0,Math.min(1,u.hp/u.maxHp));
+      ctxU.fillStyle='rgba(0,0,0,.78)'; ctxU.fillRect(bx,by,bw,bh);
+      ctxU.fillStyle=ratio>0.6?'#44bb22':ratio>0.3?'#ddaa00':'#cc2200';
+      ctxU.fillRect(bx,by,Math.round(bw*ratio),bh);
+      ctxU.strokeStyle='rgba(255,255,255,.18)'; ctxU.lineWidth=0.5;
+      ctxU.strokeRect(bx+.25,by+.25,bw-.5,bh-.5);
+    }
     ctxU.font='bold 10px Segoe UI,sans-serif';
     const lw=ctxU.measureText(u.nome).width+10;
-    const ly=y+OOFF-14;
     ctxU.fillStyle='rgba(0,0,0,.78)';
     ctxU.beginPath(); ctxU.roundRect(x-lw/2,ly,lw,14,3); ctxU.fill();
     ctxU.fillStyle='#c8e8ff'; ctxU.textAlign='center'; ctxU.textBaseline='middle';
@@ -2116,10 +2140,18 @@ function renderBottomPanel(){
     ? unidades.find(e=>e.tipo==='inimigo'&&atkTargets.some(h=>h.col===e.col&&h.row===e.row))
     : null;
   if(enemy){
+    const ptSprite = document.getElementById('pt-sprite');
+    if(enemy.imgSrc){
+      ptSprite.innerHTML = `<img src="${enemy.imgSrc}" alt="${enemy.nome}">`;
+    } else {
+      ptSprite.innerHTML = `<span style="font-size:22px">${enemy.emoji||'👹'}</span>`;
+    }
+    ptSprite.style.background = enemy.cor+'18';
+    ptSprite.style.borderColor = enemy.cor+'70';
     document.getElementById('pt-nome').textContent = enemy.nome;
-    const eHab = HABILIDADES[enemy.nome]||[];
     document.getElementById('pt-stats').textContent = '🛡️ '+(enemy.ac||8);
-    document.getElementById('pt-hp').textContent = '❤️ '+enemy.hp+'/'+enemy.maxHp;
+    document.getElementById('pt-hp-bar').style.width = Math.round(enemy.hp/enemy.maxHp*100)+'%';
+    document.getElementById('pt-hp-val').textContent = enemy.hp+'/'+enemy.maxHp;
     targetPanel.classList.add('visivel');
   } else {
     targetPanel.classList.remove('visivel');
