@@ -709,7 +709,7 @@ function _aplicarSlide(bg, textoEl, btnEl, dotsEl) {
     // Oculta conteúdo instantaneamente (sem transição) para mostrar imagem limpa
     const grad      = document.getElementById('intro-grad');
     const contentEl = document.getElementById('intro-content');
-    [grad, contentEl, btnEl].forEach(el => {
+    [grad, contentEl, btnEl].filter(Boolean).forEach(el => {
       el.style.transition   = 'none';
       el.style.opacity      = '0';
       el.style.pointerEvents = 'none';
@@ -720,7 +720,7 @@ function _aplicarSlide(bg, textoEl, btnEl, dotsEl) {
       .join('');
     // Após 1.8s restaura transições e revela gradiente + texto suavemente
     setTimeout(() => {
-      [grad, contentEl, btnEl].forEach(el => {
+      [grad, contentEl, btnEl].filter(Boolean).forEach(el => {
         el.style.transition   = '';
         el.style.opacity      = '';
         el.style.pointerEvents = '';
