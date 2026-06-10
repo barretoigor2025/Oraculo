@@ -86,31 +86,36 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   z-index:200;
   box-shadow:0 -6px 24px rgba(0,0,0,0.85);
 }
-
-/* ── Faixa 1: Herói ── */
 #panel-info{
-  flex-shrink:0;
+  flex:1; min-height:0;
   display:flex; align-items:stretch;
-  padding:7px 10px 6px; gap:0;
-  border-bottom:1px solid rgba(190,140,35,0.10);
+  padding:8px 10px 6px; gap:0;
 }
 
 /* ── Portrait ── */
 #panel-portrait{
-  flex-shrink:0; align-self:flex-start;
-  margin-right:10px; border-radius:6px;
+  flex-shrink:0;
+  align-self:flex-start;
+  margin-right:10px;
+  border-radius:6px;
   overflow:hidden;
   display:flex; align-items:center; justify-content:center;
-  font-size:26px; background:rgba(0,0,0,.4);
+  font-size:26px;
+  background:rgba(0,0,0,.4);
 }
-#panel-portrait img{ width:100%; height:auto; display:block; border-radius:6px; }
+#panel-portrait img{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:6px;
+}
 
 /* ── Stats ── */
 #panel-stats{
-  flex:1; min-width:0;
-  display:flex; flex-direction:column; justify-content:center; gap:4px;
-  padding:0 10px;
-  border-right:1px solid rgba(190,140,35,0.10);
+  flex:0 0 auto; width:clamp(95px,29vw,148px);
+  display:flex; flex-direction:column; justify-content:center; gap:5px;
+  padding-right:10px;
+  border-right:1px solid rgba(190,140,35,0.12);
 }
 #panel-char-name{
   font-size:12px; font-weight:900; color:#f5d878;
@@ -122,7 +127,8 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 .psi{ font-size:11px; flex-shrink:0; width:15px; text-align:center; }
 .pbar{
   flex:1; height:6px; border-radius:3px;
-  background:rgba(0,0,0,0.45); overflow:hidden;
+  background:rgba(0,0,0,0.45);
+  overflow:hidden;
   box-shadow:inset 0 1px 3px rgba(0,0,0,0.7);
 }
 .pbar-fill{ height:100%; border-radius:3px; transition:width .35s; }
@@ -138,14 +144,10 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   font-size:9px; color:rgba(205,175,95,0.82);
   flex-shrink:0; min-width:36px; text-align:right; font-weight:700;
 }
-#panel-mini{ display:flex; gap:5px; align-items:center; }
+#panel-mini{ display:flex; gap:6px; align-items:center; }
 .pmini{
   font-size:10px; color:rgba(180,155,80,0.82);
   display:flex; align-items:center; gap:2px; font-weight:700;
-}
-.pmini-fase{
-  font-size:9px; color:rgba(140,185,255,0.6);
-  font-style:italic; letter-spacing:.3px;
 }
 #panel-bag-btn{
   font-size:16px; cursor:pointer; padding:1px 4px; margin-left:auto;
@@ -153,53 +155,32 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   filter:drop-shadow(0 0 4px rgba(200,150,40,0.45));
 }
 
-/* ── Botões-verbo (3 fixos na faixa 1) ── */
-#panel-verbs{
-  flex-shrink:0; width:clamp(82px,25vw,106px);
-  display:flex; flex-direction:column; gap:4px;
-  padding-left:9px; justify-content:center;
-}
-.verb-btn{
-  height:34px !important;
-  border-radius:8px !important;
-  gap:4px !important;
-}
-.verb-btn .btn-icon{ font-size:14px; }
-.verb-btn .btn-label{ font-size:9px; }
-.verb-btn.inativo{ opacity:0.20 !important; }
-
-/* ── Faixa 2: Detalhe contextual ── */
-#panel-detail{
-  flex-shrink:0;
-  display:flex; align-items:stretch;
-  padding:5px 10px 4px; gap:0;
-  min-height:48px;
-  border-bottom:1px solid rgba(190,140,35,0.08);
-}
-#pd-left{
+/* ── Centro ── */
+#panel-center{
   flex:1; min-width:0;
-  display:flex; flex-direction:column; gap:3px;
-  padding-right:10px;
-  border-right:1px solid rgba(190,140,35,0.10);
+  display:flex; flex-direction:column; justify-content:center; gap:4px;
+  padding:0 12px;
 }
-#pd-right{
-  flex:0 0 auto; width:clamp(78px,24vw,116px);
-  display:flex; flex-direction:column; gap:3px;
+.pcl{
+  font-size:8px; color:rgba(155,130,65,0.55);
+  text-transform:uppercase; letter-spacing:.8px;
+}
+.pct{
+  font-size:12px; color:rgba(225,195,115,0.9); font-weight:800;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  text-shadow:0 1px 4px rgba(0,0,0,0.9);
+}
+.pch{ font-size:10px; color:rgba(125,195,255,0.78); font-weight:600; }
+
+/* ── Alvo ── */
+#panel-target{
+  flex:0 0 auto; width:clamp(70px,21vw,106px);
+  display:flex; flex-direction:column; justify-content:center; gap:4px;
+  border-left:1px solid rgba(190,140,35,0.12);
   padding-left:10px;
+  opacity:0; transition:opacity .25s; pointer-events:none;
 }
-.pd-head{
-  font-size:8px; text-transform:uppercase;
-  letter-spacing:.8px; color:rgba(155,130,65,0.50);
-  line-height:1;
-}
-#pd-plan-body{
-  font-size:11px; color:rgba(220,190,110,0.9);
-  font-weight:600; line-height:1.45;
-}
-#pd-right-info{
-  font-size:10px; color:rgba(200,175,100,0.75);
-  line-height:1.4;
-}
+#panel-target.visivel{ opacity:1; pointer-events:all; }
 #pt-nome{
   font-size:11px; color:rgba(255,95,65,0.95); font-weight:800;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -207,8 +188,8 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 }
 .pt-s{ font-size:9px; color:rgba(210,175,105,0.65); }
 #pt-sprite{
-  align-self:flex-start;
-  width:38px; height:48px;
+  align-self:center;
+  width:44px; height:56px;
   overflow:hidden; border-radius:5px;
   background:rgba(139,69,19,0.15);
   border:1px solid rgba(139,69,19,0.45);
@@ -217,15 +198,14 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 }
 #pt-sprite img{ height:100%; width:auto; display:block; image-rendering:pixelated; }
 
-/* ── Faixa 3: Botões de confirmação ── */
+/* ── Botões ── */
 #action-row{
-  display:grid; grid-template-columns:1fr 2fr; gap:7px;
+  display:grid; grid-template-columns:repeat(4,1fr); gap:6px;
   padding:5px 10px;
-  padding-bottom:max(8px,env(safe-area-inset-bottom));
-  flex-shrink:0;
+  padding-bottom:max(10px,env(safe-area-inset-bottom));
 }
 .act-btn{
-  height:46px; border:none; border-radius:10px;
+  height:52px; border:none; border-radius:11px;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
   cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
   transition:opacity .15s, transform .1s;
@@ -243,45 +223,26 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 #btn-mover{
   background:linear-gradient(155deg,#162d5a,#0a1a38);
   color:#7aa0c8;
-  border:1px solid rgba(50,80,150,0.25);
+  border:1px solid rgba(50,80,150,0.22);
   box-shadow:0 2px 8px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06);
-}
-#btn-mover.ativo{
-  box-shadow:0 0 14px rgba(60,120,220,.5), inset 0 1px 0 rgba(255,255,255,0.10);
 }
 #btn-atacar{
   background:linear-gradient(155deg,#581008,#360906);
   color:#b07055;
-  border:1px solid rgba(150,45,20,0.25);
+  border:1px solid rgba(150,45,20,0.22);
   box-shadow:0 2px 8px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06);
-}
-#btn-atacar.ativo{
-  box-shadow:0 0 14px rgba(200,60,20,.5), inset 0 1px 0 rgba(255,255,255,0.10);
 }
 #btn-skill{
   background:linear-gradient(155deg,#2e0f58,#1a0838);
   color:#8a60b0;
-  border:1px solid rgba(90,35,160,0.25);
+  border:1px solid rgba(90,35,160,0.22);
   box-shadow:0 2px 8px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06);
 }
-#btn-skill.ativo{
-  box-shadow:0 0 14px rgba(130,50,220,.5), inset 0 1px 0 rgba(255,255,255,0.10);
-}
-
-/* ── Faixa 4: Log narrativo ── */
-#log-strip{
-  flex-shrink:0;
-  display:flex; align-items:center; gap:8px;
-  padding:3px 12px max(5px,env(safe-area-inset-bottom));
-  background:rgba(0,0,0,0.30);
-  border-top:1px solid rgba(190,140,35,0.10);
-  min-height:24px;
-}
-.log-icon{ font-size:12px; flex-shrink:0; opacity:.7; }
-#log-text{
-  flex:1; font-size:10px; color:rgba(185,160,88,0.68);
-  font-style:italic; white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis;
+#btn-acao{
+  background:linear-gradient(155deg,#3e2800,#241800);
+  color:#9a6e28;
+  border:1px solid rgba(140,85,10,0.22);
+  box-shadow:0 2px 8px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 /* ── Modal Ação Livre ── */
@@ -531,8 +492,6 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 </div>
 
 <div id="bottom-panel">
-
-  <!-- Faixa 1: Herói -->
   <div id="panel-info">
     <div id="panel-portrait"><span id="pp-emoji">⚔️</span></div>
     <div id="panel-stats">
@@ -550,50 +509,30 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
       <div id="panel-mini">
         <span class="pmini" id="pb-mov">👢 —</span>
         <span id="panel-bag-btn" onclick="abrirBagModal()">🎒</span>
-        <span id="pb-fase" class="pmini-fase"></span>
       </div>
     </div>
-    <div id="panel-verbs">
-      <button class="act-btn verb-btn" id="btn-mover"  onclick="clicarMover()">
-        <span class="btn-icon">👢</span><span class="btn-label">MOVER</span>
-      </button>
-      <button class="act-btn verb-btn" id="btn-atacar" onclick="clicarAtacar()">
-        <span class="btn-icon">⚔️</span><span class="btn-label">ATACAR</span>
-      </button>
-      <button class="act-btn verb-btn" id="btn-skill"  onclick="abrirSkillPanel()">
-        <span class="btn-icon">🪄</span><span class="btn-label">AÇÃO</span>
-      </button>
+    <div id="panel-center">
+      <div class="pcl" id="pc-label">Selecione</div>
+      <div class="pct" id="pc-main">um herói</div>
+      <div class="pch" id="pc-hex"></div>
     </div>
-  </div>
-
-  <!-- Faixa 2: Detalhe contextual -->
-  <div id="panel-detail">
-    <div id="pd-left">
-      <div class="pd-head" id="pc-label">—</div>
-      <div id="pd-plan-body"></div>
-    </div>
-    <div id="pd-right">
-      <div id="pt-sprite" style="display:none"></div>
-      <div id="pt-nome" style="display:none"></div>
-      <div class="pt-s" id="pt-stats" style="display:none"></div>
-      <div class="psr" id="pt-hp-row" style="display:none">
+    <div id="panel-target">
+      <div id="pt-sprite"></div>
+      <div id="pt-nome"></div>
+      <div class="pt-s" id="pt-stats"></div>
+      <div class="psr">
         <span class="psi">❤️</span>
         <div class="pbar"><div class="pbar-fill hp" id="pt-hp-bar"></div></div>
         <span class="psv" id="pt-hp-val">—</span>
       </div>
-      <div id="pd-right-info"></div>
     </div>
   </div>
-
-  <!-- Faixa 3: Botões de confirmação -->
-  <div id="action-row"></div>
-
-  <!-- Faixa 4: Log narrativo -->
-  <div id="log-strip">
-    <span class="log-icon">📜</span>
-    <span id="log-text">—</span>
+  <div id="action-row">
+    <button class="act-btn" id="btn-mover"  onclick="executarMovimento()"><span class="btn-icon">👢</span><span class="btn-label">MOVER</span></button>
+    <button class="act-btn" id="btn-atacar" onclick="abrirAtkPanel()"><span class="btn-icon">⚔️</span><span class="btn-label">ATACAR</span></button>
+    <button class="act-btn" id="btn-skill"  onclick="abrirSkillPanel()"><span class="btn-icon">📜</span><span class="btn-label">SKILL</span></button>
+    <button class="act-btn" id="btn-acao"   onclick="abrirAcao()"><span class="btn-icon">🧠</span><span class="btn-label">AÇÃO</span></button>
   </div>
-
 </div>
 
 <div id="bag-modal">
@@ -1740,44 +1679,24 @@ function atualizarHUD(){
   renderActionRow();
 }
 
-function _updateVerbBtns(){
-  const estados={
-    'planejar_mover': {mover:true, atacar:false,skill:false},
-    'mover_ativo':    {mover:true, atacar:false,skill:false},
-    'planejar_acao':  {mover:false,atacar:true, skill:true},
-    'acao_ativa':     {mover:false,atacar:true, skill:true},
-    'acao_pronta':    {mover:false,atacar:false,skill:false},
-    'resolvendo':     {mover:false,atacar:false,skill:false},
-    'turno_inimigo':  {mover:false,atacar:false,skill:false},
-    'aguardando':     {mover:false,atacar:false,skill:false},
-    'idle':           {mover:false,atacar:false,skill:false},
-  };
-  const e=estados[faseDoTurno]||{mover:false,atacar:false,skill:false};
-  ['mover','atacar','skill'].forEach(k=>{
-    const btn=document.getElementById('btn-'+k);
-    if(!btn) return;
-    btn.classList.toggle('ativo',e[k]);
-    btn.classList.toggle('inativo',!e[k]);
-    btn.disabled=!e[k];
-  });
-}
-
 function renderActionRow(){
   const row = document.getElementById('action-row');
   if(!row) return;
-  _updateVerbBtns();
 
   const configs = {
     'idle':           [],
     'planejar_mover': [
-      {id:'btn-nao-mover',icon:'⏭', label:'SEM MOVER', fn:'clicarNaoMover()', ativo:true},
+      {id:'btn-mover',    icon:'👢', label:'MOVER',       fn:'clicarMover()',    ativo:true},
+      {id:'btn-nao-mover',icon:'⏭', label:'NÃO MOVER',   fn:'clicarNaoMover()', ativo:true},
     ],
     'mover_ativo': [
       {id:'btn-cancelar', icon:'✕', label:'CANCELAR',  fn:'cancelarMover()',    ativo:true},
       ...(hexPreview ? [{id:'btn-ok-mov', icon:'✓', label:'OK', fn:'confirmarHexMover()', ativo:true}] : []),
     ],
     'planejar_acao': [
-      {id:'btn-finalizar',icon:'⏭', label:'PULAR ATAQUE', fn:'finalizarTurno()', ativo:true},
+      {id:'btn-atacar',   icon:'⚔️', label:'ATACAR',    fn:'clicarAtacar()',        ativo:true},
+      {id:'btn-skill',    icon:'📜', label:'SKILL',      fn:'abrirSkillPanel()',     ativo:true},
+      {id:'btn-finalizar',icon:'✓', label:'FINALIZAR',  fn:'finalizarTurno()',      ativo:true},
     ],
     'acao_ativa': [
       {id:'btn-cancelar', icon:'✕', label:'CANCELAR',   fn:'cancelarAtaqueAtual()', ativo:true},
@@ -1786,8 +1705,10 @@ function renderActionRow(){
         : []),
     ],
     'acao_pronta': [
-      {id:'btn-cancelar', icon:'✕', label:'CANCELAR',    fn:'cancelarAcaoPlano()',  ativo:true},
       {id:'btn-finalizar',icon:'✓', label:'FINALIZAR TURNO', fn:'finalizarTurno()', ativo:true, extra:'destaque'},
+      ...(planoAtaque&&!planoAtaque.hab?.tipo?.match(/buff/)&&planoAtaque.alvo!==planoAtaque?.atacante
+        ? [{id:'btn-mudar-alvo',icon:'🔄', label:'MUDAR ALVO', fn:'voltarParaAlvo()', ativo:true}]
+        : []),
     ],
     'resolvendo':    [],
     'turno_inimigo': [],
@@ -1795,10 +1716,8 @@ function renderActionRow(){
   };
 
   const btns = configs[faseDoTurno] || [];
-  // Grid: 1 botão → largura total; 2 botões → 1fr 2fr (cancelar menor, finalizar maior)
-  if(btns.length===0) row.style.gridTemplateColumns='1fr';
-  else if(btns.length===1) row.style.gridTemplateColumns='1fr';
-  else row.style.gridTemplateColumns='1fr 2fr';
+  // Ajusta grid para número de botões
+  row.style.gridTemplateColumns = btns.length <= 1 ? '1fr' : btns.length === 2 ? '1fr 1fr' : `repeat(${btns.length},1fr)`;
   row.innerHTML = btns.map(b=>`
     <button class="act-btn${b.ativo?' ativo':''}${b.extra?' '+b.extra:''}" id="${b.id}" onclick="${b.fn}">
       <span class="btn-icon">${b.icon}</span>
@@ -1828,7 +1747,6 @@ function iniciarTurno(unit){
   modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null;
   _broadcastIntent();
   faseDoTurno='planejar_mover';
-  _updateLogStrip('Turno de '+unit.nome);
   const sub = unit.tipo==='heroi' ? 'escolha sua ação' : 'turno do inimigo';
   mostrarLetreiro('TURNO DO '+unit.nome.toUpperCase(), sub, '', 2000, ()=>{
     render(); renderActionRow(); renderBottomPanel();
@@ -1885,15 +1803,6 @@ function confirmarAoeAlvo(){
   _broadcastIntent();
   renderActionRow(); renderBottomPanel(); renderSel();
 }
-
-function cancelarAcaoPlano(){
-  planoAtaque=null; modoAtaque=false; habAtual=null;
-  areaPreview=null; atkTargets=[];
-  faseDoTurno='planejar_acao';
-  _broadcastIntent();
-  renderActionRow(); renderBottomPanel();
-}
-window.cancelarAcaoPlano=cancelarAcaoPlano;
 
 function voltarParaAlvo(){
   if(!planoAtaque) return;
@@ -2012,12 +1921,7 @@ function resolverMovimento(cb){
       const metade=path.slice(0,Math.max(1,Math.ceil(path.length/2)));
       animarMovimento(unit,metade,()=>{ _fbSyncUnit(unit); render(); cb(true); });
     } else {
-      const dest=path[path.length-1];
-      animarMovimento(unit,path,()=>{
-        _fbSyncUnit(unit);
-        _updateLogStrip(`${unit.nome} moveu para ${hexLabel(dest.col,dest.row)}`);
-        render(); cb(true);
-      });
+      animarMovimento(unit,path,()=>{ _fbSyncUnit(unit); render(); cb(true); });
     }
   });
 }
@@ -2116,15 +2020,9 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
   DiceOverlay.mostrar(playlist, results=>{
     const atk=results[0];
     if((atk.sucesso||atk.critico)&&!atk.catastrofe){
-      if(results[1]){
-        const dmg=results[1].resultado;
-        alvo.hp=Math.max(0,alvo.hp-dmg);
-        if(alvo.tipo==='inimigo'&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
-        _updateLogStrip(`${atacante.nome} acertou ${alvo.nome||'alvo'} — ${dmg} de dano`);
-      }
+      if(results[1]){ alvo.hp=Math.max(0,alvo.hp-results[1].resultado); if(alvo.tipo==='inimigo'&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo')); }
       lancarAtaque(hab,atacante,alvo,()=>{ render(); renderBottomPanel(); cb(); });
     } else {
-      _updateLogStrip(`${atacante.nome} errou o ataque!`);
       render(); renderBottomPanel(); cb();
     }
   });
@@ -2322,11 +2220,6 @@ function fecharAcao(){
   document.getElementById('acao-modal').classList.remove('visivel');
 }
 
-function _updateLogStrip(text){
-  const el=document.getElementById('log-text');
-  if(el) el.textContent=text||'—';
-}
-
 function renderBottomPanel(){
   const u = selUnit || unidades.find(u=>u.tipo==='heroi');
   if(!u) return;
@@ -2347,112 +2240,61 @@ function renderBottomPanel(){
   document.getElementById('pb-hp-val').textContent = u.hp+'/'+u.maxHp;
   document.getElementById('pb-sp').style.width = u.maxSp>1?Math.round(u.sp/u.maxSp*100)+'%':'0%';
   document.getElementById('pb-sp-val').textContent = u.maxSp>1?(u.sp+'/'+u.maxSp):'—';
-  document.getElementById('pb-mov').textContent = '👢 '+u.mov+'/'+(MOV_CLASSE[u.nome]||u.mov);
+  document.getElementById('pb-mov').textContent = '👢 '+u.mov+'/'+( MOV_CLASSE[u.nome]||u.mov);
 
-  // Fase textual na faixa de herói
-  const _faseTexto={
-    planejar_mover:'mover ou ação',planejar_acao:'escolha ataque',
-    mover_ativo:'movendo',acao_ativa:'mirando',
-    acao_pronta:'pronto',resolvendo:'resolvendo…',
-    turno_inimigo:'inimigos agem',aguardando:'aguardando…',idle:''
-  };
-  document.getElementById('pb-fase').textContent = _faseTexto[faseDoTurno]||'';
-
-  // Painel de detalhe — header (pc-label) e corpo (pd-plan-body)
-  const label = document.getElementById('pc-label');
-  const body  = document.getElementById('pd-plan-body');
-  const rightInfo = document.getElementById('pd-right-info');
-
+  // Center info
   if(selUnit){
-    if(faseDoTurno==='acao_pronta' && planoAtaque){
-      // Plano completo
-      label.textContent = 'Plano do turno';
-      const linhas=[];
-      if(planoMovimento){
-        const dest=planoMovimento.path?.[planoMovimento.path.length-1]||planoMovimento;
-        linhas.push(`<span style="color:#7aa0c8">1. Mover para ${hexLabel(dest.col??dest.x, dest.row??dest.y)}</span>`);
-      }
-      const hab=planoAtaque.hab;
-      const alvoNome = planoAtaque.areaAlvos?.length
-        ? planoAtaque.areaAlvos.map(e=>e.nome).join(', ')
-        : (planoAtaque.alvo?.nome || (planoAtaque.alvo===planoAtaque.atacante ? 'si mesmo' : '—'));
-      linhas.push(`<span style="color:#e08866">${planoMovimento?'2':'1'}. ${hab.nome} em ${alvoNome}</span>`);
-      body.innerHTML = linhas.join('<br>');
-      // Coluna direita: alvos + magia
-      const alvosVisiveis = atkTargets.length
-        ? unidades.filter(e=>e.tipo==='inimigo'&&e.hp>0&&atkTargets.some(h=>h.col===e.col&&h.row===e.row))
-        : (planoAtaque.areaAlvos||[]);
-      const nomesAlvos = [...new Set(alvosVisiveis.map(e=>e.nome))].join(', ')||'—';
-      rightInfo.innerHTML =
-        `<div style="color:rgba(155,130,65,.5);font-size:8px;text-transform:uppercase;letter-spacing:.7px">Alvos</div>`+
-        `<div style="color:rgba(255,100,70,.85);font-size:10px;font-weight:700">${nomesAlvos}</div>`+
-        (hab.categoria==='magia'||hab.tipo==='projétil'
-          ?`<div style="color:rgba(155,130,65,.5);font-size:8px;text-transform:uppercase;letter-spacing:.7px;margin-top:4px">Magia</div>`+
-           `<div style="color:#a070d8;font-size:10px;font-weight:700">${hab.nome}</div>`:'');
-    } else if(modoAtaque && habAtual){
-      label.textContent = 'Habilidade';
-      body.innerHTML = `<span style="color:#cc8844;font-weight:800">${habAtual.nome}</span> — alcance ${habAtual.alcance}`;
-      rightInfo.innerHTML='';
+    if(modoAtaque && habAtual){
+      document.getElementById('pc-label').textContent = 'Habilidade';
+      document.getElementById('pc-main').textContent = habAtual.nome;
+      document.getElementById('pc-hex').textContent = 'Alcance '+habAtual.alcance;
     } else if(hexPreview && faseDoTurno==='mover_ativo'){
-      label.textContent = 'Movendo';
-      body.innerHTML = `<span style="color:#7aa0c8">Destino: ${hexLabel(hexPreview.col,hexPreview.row)}</span> — toque OK`;
-      rightInfo.innerHTML='';
-    } else if(planoMovimento && faseDoTurno==='planejar_acao'){
-      const dest=planoMovimento.path?.[planoMovimento.path.length-1]||planoMovimento;
-      label.textContent = 'Plano do turno';
-      body.innerHTML = `<span style="color:#7aa0c8">1. Mover para ${hexLabel(dest.col??dest.x, dest.row??dest.y)}</span><br><span style="color:rgba(200,175,100,.6)">2. Escolha uma ação →</span>`;
-      rightInfo.innerHTML='';
+      document.getElementById('pc-label').textContent = 'Destino';
+      document.getElementById('pc-main').textContent = hexLabel(hexPreview.col, hexPreview.row);
+      document.getElementById('pc-hex').textContent = 'toque OK para confirmar';
+    } else if(targetHex){
+      document.getElementById('pc-label').textContent = 'Destino';
+      document.getElementById('pc-main').textContent = hexLabel(targetHex.col, targetHex.row);
+      document.getElementById('pc-hex').textContent = moveHexes.length+' hexes disponíveis';
     } else {
-      label.textContent = faseDoTurno==='planejar_mover'?'Turno':'Posição';
-      body.textContent = faseDoTurno==='planejar_mover'
-        ? 'Mover ou pular direto para ação'
-        : hexLabel(selUnit.col,selUnit.row);
-      rightInfo.innerHTML='';
+      document.getElementById('pc-label').textContent = 'Posição';
+      document.getElementById('pc-main').textContent = hexLabel(selUnit.col, selUnit.row);
+      document.getElementById('pc-hex').textContent = moveHexes.length+' hexes de mov.';
     }
   } else if(faseDoTurno==='aguardando'){
     const name=_currentTurnPlayerId==='enemy'?'Inimigos':_currentTurnPlayerName||'outro jogador';
-    label.textContent='⏳ Turno de';
-    body.textContent=name;
-    rightInfo.innerHTML='';
+    document.getElementById('pc-label').textContent = '⏳ Turno de';
+    document.getElementById('pc-main').textContent = name;
+    document.getElementById('pc-hex').textContent = 'aguardando…';
   } else {
-    label.textContent='Selecione';
-    body.textContent='um herói para jogar';
-    rightInfo.innerHTML='';
+    document.getElementById('pc-label').textContent = 'Selecione';
+    document.getElementById('pc-main').textContent = 'um herói';
+    document.getElementById('pc-hex').textContent = '';
   }
 
-  // Inimigo alvo na coluna direita (modo de ataque ativo)
-  const enemy = (modoAtaque && atkTargets.length>0 && faseDoTurno!=='acao_pronta')
-    ? unidades.find(e=>e.tipo==='inimigo'&&e.hp>0&&atkTargets.some(h=>h.col===e.col&&h.row===e.row))
+  // Target panel (enemy in attack mode)
+  const targetPanel = document.getElementById('panel-target');
+  const enemy = (modoAtaque && atkTargets.length>0)
+    ? unidades.find(e=>e.tipo==='inimigo'&&atkTargets.some(h=>h.col===e.col&&h.row===e.row))
     : null;
-  const ptSprite  = document.getElementById('pt-sprite');
-  const ptNome    = document.getElementById('pt-nome');
-  const ptStats   = document.getElementById('pt-stats');
-  const ptHpRow   = document.getElementById('pt-hp-row');
   if(enemy){
-    ptSprite.style.display='flex';
-    ptNome.style.display='block';
-    ptStats.style.display='block';
-    ptHpRow.style.display='flex';
+    const ptSprite = document.getElementById('pt-sprite');
     if(enemy.imgSrc){
-      ptSprite.innerHTML=`<img src="${enemy.imgSrc}" alt="${enemy.nome}">`;
+      ptSprite.innerHTML = `<img src="${enemy.imgSrc}" alt="${enemy.nome}">`;
     } else {
-      ptSprite.innerHTML=`<span style="font-size:20px">${enemy.emoji||'👹'}</span>`;
+      ptSprite.innerHTML = `<span style="font-size:22px">${enemy.emoji||'👹'}</span>`;
     }
-    ptSprite.style.background=enemy.cor+'18';
-    ptSprite.style.borderColor=enemy.cor+'70';
-    ptNome.textContent=enemy.nome;
-    ptStats.textContent='🛡️ '+(enemy.ac||8);
-    document.getElementById('pt-hp-bar').style.width=Math.round(enemy.hp/enemy.maxHp*100)+'%';
-    document.getElementById('pt-hp-val').textContent=enemy.hp+'/'+enemy.maxHp;
-    rightInfo.innerHTML='';
+    ptSprite.style.background = enemy.cor+'18';
+    ptSprite.style.borderColor = enemy.cor+'70';
+    document.getElementById('pt-nome').textContent = enemy.nome;
+    document.getElementById('pt-stats').textContent = '🛡️ '+(enemy.ac||8);
+    document.getElementById('pt-hp-bar').style.width = Math.round(enemy.hp/enemy.maxHp*100)+'%';
+    document.getElementById('pt-hp-val').textContent = enemy.hp+'/'+enemy.maxHp;
+    targetPanel.classList.add('visivel');
   } else {
-    ptSprite.style.display='none';
-    ptNome.style.display='none';
-    ptStats.style.display='none';
-    ptHpRow.style.display='none';
+    targetPanel.classList.remove('visivel');
   }
 
-  _updateVerbBtns();
 }
 
 function selecionarHabilidade(hab){
@@ -2856,7 +2698,7 @@ function onRoomUpdate(room){
 //  ESCALA + INIT
 // ══════════════════════════════════════════
 function initScale(){
-  const minPanelH=205;
+  const minPanelH=130;
   const scaleByW=window.innerWidth/MAP_W;
   const scaleByH=(window.innerHeight-minPanelH)/MAP_H;
   _mapScale=Math.min(scaleByW,scaleByH);
@@ -2874,9 +2716,9 @@ function initScale(){
   bp.style.top=mapScreenH+'px';
   bp.style.height=panelH+'px';
 
-  // portrait: altura fixa da faixa de herói ~84px, portrait ocupa ~80% dessa altura
-  const heroRowH=Math.min(84, Math.max(60, panelH*0.40));
-  const pw=Math.max(42,Math.min(66,Math.round(heroRowH*0.72)));
+  // portrait responsivo ao painel — largura limitada, altura natural (sem corte)
+  const infoH=panelH-72;
+  const pw=Math.max(44,Math.min(72,Math.round((infoH-12)*0.68)));
   const pp=document.getElementById('panel-portrait');
   pp.style.width=pw+'px';
   pp.style.height='auto';
