@@ -278,21 +278,8 @@ export const CENAS = {
       },
       {
         imagem: 'locations/mhoried_market_int.png',
-        texto: `Um homem de meia-idade abre caminho entre a multidão em sua direção — rolo de pergaminho sob o braço, óculos de aros de bronze, expressão que mistura alívio com urgência burocrática. Ele ajusta os óculos duas vezes antes de falar. "Conforme o protocolo de emergência da corte, artigo quatorze..." ele começa — e então para. "Perdão. Gregoras Pellos, assessor sênior da Duquesa. Ela precisa falar com vocês. Agora. A situação é delicada."`,
+        texto: `Um homem de meia-idade abre caminho entre a multidão em sua direção — rolo de pergaminho sob o braço, óculos de aros de bronze, expressão que mistura alívio com urgência burocrática. Ele ajusta os óculos duas vezes antes de falar. "Conforme o protocolo de emergência da corte, artigo quatorze..." ele começa — e então para. Ele olha ao redor, abaixa a voz. "Gregoras Pellos, assessor sênior da Duquesa Catherine Laskaris. Ela precisa falar com vocês. Agora."`,
         revealFirst: true,
-      },
-      {
-        imagem: 'locations/mhoried_castelo_ext.png',
-        texto: `No salão principal do castelo de Mhoried, a Duquesa Catherine Laskaris os recebe de pé — um sinal que Gregoras anota silenciosamente nos pergaminhos. Ela não começa com formalismos. "O que atacou a feira hoje foi enviado de dentro dos Blackwoods. E meu irmão..." ela para, escolhendo cada palavra com cuidado. "Meu irmão foi para aquela floresta há três semanas. O que voltou não era mais Oswald."`,
-        revealFirst: true,
-      },
-      {
-        imagem: 'locations/mhoried_castelo_ext.png',
-        texto: `A história que se desenrola é sombria: o Duque Oswald tentou contratar o mago errante Dendybar para um ritual de rejuvenescimento. Algo correu terrivelmente errado. Ele voltou transformado em uma criatura chamada Thool — inteligência embotada, forma monstruosa, mas ainda com fragmentos de memória. Catherine oferece cinco mil peças de ouro por informações que levem à cura do irmão. Se ele for restituído: cavalaria e terras. Gregoras tem notas detalhadas com marcas de identificação de Oswald. Finn Willowheel, o sapateiro élfico que está na feira, conhece os Blackwoods melhor do que qualquer mapa.`,
-      },
-      {
-        imagem: 'locations/mhoried_market_int.png',
-        texto: `A tarde avança. Há tempo para negociar os termos do contrato com Gregoras, perguntar a Catherine sobre os Blackwoods, consultar Finn sobre a rota mais segura e ouvir os rumores que Hobbleboot Sam coleta atrás do balcão de cerveja. A missão está clara. A preparação, ainda em aberto. O que vocês querem saber antes de partir?`,
       },
     ],
   },

@@ -943,9 +943,46 @@ async function gerarFalaIA() {
   if (!npc) return;
 
   const diretiva = elInputTexto.value.trim();
-  const ultimasLinhas = _dialogoLog.slice(-6)
+  const ultimasLinhas = _dialogoLog.slice(-12)
     .map(l => `${l.oradorNome}: ${l.texto}`)
     .join('\n');
+
+  // Contexto narrativo completo (introSlides + textoIntro)
+  const situacaoNarrativa = (
+    cena?.introSlides?.map(s => s.texto).join('\n\n') || cena?.textoIntro || ''
+  ).slice(0, 700);
+
+  // Outros NPCs presentes na cena (nomes + primeira frase da personalidade)
+  const outrosNpcs = (cena?.npcsPresentes || [])
+    .filter(id => id !== npcId && NPCS[id])
+    .map(id => `• ${NPCS[id].nome}: ${(NPCS[id].personalidade || '').split('.')[0]}`)
+    .join('\n');
+
+  const systemContent =
+`Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. Jogadores reais estão interagindo com você agora. Seja completamente este personagem.
+
+QUEM VOCÊ É:
+${npc.personalidade}
+
+O QUE VOCÊ SABE (revele aos poucos conforme a conversa justificar — nunca tudo de uma vez):
+${npc.conhecimentos}
+
+SUA FORMA DE FALAR:
+${npc.formaDeFalar}
+
+SITUAÇÃO ATUAL — ${cena?.titulo ?? ''}:
+${situacaoNarrativa}
+${outrosNpcs ? `\nOUTROS PRESENTES NA CENA:\n${outrosNpcs}` : ''}
+
+REGRAS ABSOLUTAS:
+- Português brasileiro, primeira pessoa, como ${npc.nome} — jamais quebre o personagem
+- Máximo 3 frases por resposta; seja direto e vivo
+- Nunca use asteriscos para ações
+- Se precisar negociar, negocie de verdade — defenda seus interesses
+- Se desconfiar de algo, demonstre a desconfiança com seu jeito de falar
+- Se tiver urgência, transmita urgência
+- Se tiver segredo, proteja-o até ser convencido a revelar
+- Reaja ao que foi dito — não responda no vácuo, reaja como um ser humano real agiria`;
 
   elIaLoading.classList.remove('oculto');
   const btnGer = document.getElementById('btn-gerar-ia');
@@ -960,15 +997,15 @@ async function gerarFalaIA() {
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        max_tokens: 220,
+        max_tokens: 350,
         messages: [
           {
             role: 'system',
-            content: `Você é o personagem "${npc.nome}" em uma campanha de RPG de fantasia medieval.\n\nPERSONALIDADE: ${npc.personalidade}\nCONHECIMENTOS: ${npc.conhecimentos}\nCOMO FALA: ${npc.formaDeFalar}\nCENA ATUAL: ${cena?.titulo ?? ''} — ${cena?.textoIntro?.slice(0, 180) ?? ''}\n\nResponda SEMPRE em português brasileiro, em primeira pessoa como este personagem. Entre 1 e 3 frases curtas. Totalmente no personagem. Nunca use asteriscos para ações. Nunca quebre o personagem.`,
+            content: systemContent,
           },
           {
             role: 'user',
-            content: `${ultimasLinhas ? `Contexto da conversa:\n${ultimasLinhas}\n\n` : ''}${diretiva || 'Reaja naturalmente ao que foi dito ou à situação atual.'}`,
+            content: `${ultimasLinhas ? `Histórico recente da conversa:\n${ultimasLinhas}\n\n` : ''}${diretiva || 'Reaja naturalmente ao que acabou de acontecer ou ao que foi dito.'}`,
           },
         ],
       }),
