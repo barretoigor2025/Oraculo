@@ -1909,24 +1909,22 @@ function _cinematicaVitoria() {
     try { window._fbSetStatus?.('battle',{'batalha.cinematicaVitoria':Date.now()}); } catch(e){}
   }
 
-  // Garante que inimigos foram removidos (pode ter sido feito em verificarVitoria)
+  // Garante que inimigos foram removidos
   unidades = unidades.filter(u => u.tipo !== 'inimigo');
   render();
 
   // Heróis caminham para posições ao redor do centro
   const destHerois = [{col:5,row:6},{col:7,row:6},{col:6,row:5},{col:6,row:7},{col:6,row:6}];
   const herois = unidades.filter(u => u.tipo === 'heroi' && u.hp > 0);
-  let pendentes = herois.length || 1;
-  const _chegou = () => { if (--pendentes <= 0) setTimeout(_cinSpawnGregoras, 650); };
 
-  if (herois.length === 0) {
-    _chegou();
-  } else {
-    herois.forEach((h,i) => {
-      const dest = destHerois[i % destHerois.length];
-      _cinAnimarParaHex(h, dest.col, dest.row, 900 + i*200, _chegou);
-    });
-  }
+  herois.forEach((h,i) => {
+    const dest = destHerois[i % destHerois.length];
+    _cinAnimarParaHex(h, dest.col, dest.row, 900 + i*180, null);
+  });
+
+  // Gregoras spawna após animação dos heróis (timer fixo, não depende de callback)
+  const gregoDelay = herois.length > 0 ? 1200 : 300;
+  setTimeout(_cinSpawnGregoras, gregoDelay);
 }
 
 function _cinAnimarParaHex(unit, dc, dr, dur, onDone) {
@@ -1945,21 +1943,30 @@ function _cinAnimarParaHex(unit, dc, dr, dur, onDone) {
 }
 
 function _cinSpawnGregoras() {
+  // Evita duplicata caso seja chamado mais de uma vez
+  if (unidades.find(u => u.id === '_greg_cin')) return;
+
   const greg = {
-    nome:'Gregoras Pellos', tipo:'aliado_cin',
-    emoji:'📜', col:1, row:12,
+    nome:'Gregoras', tipo:'aliado_cin',
+    emoji:'📜', col:1, row:9,
     hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10,
     cor:'#8899bb',
     imgSrc:'sprites/npc_gregoras_pellos.png',
     img:null, portrait:null,
     _ax:null, _ay:null, clipBottom:0, itens:[], id:'_greg_cin',
   };
+
+  // Tenta carregar sprite; se falhar usa círculo colorido
   const img = new Image();
-  img.onload = () => { greg.img=img; renderUnits(); };
+  img.onload = () => { greg.img = img; renderUnits(); };
+  img.onerror = () => { greg.img = null; renderUnits(); };
   img.src = greg.imgSrc;
+
   unidades.push(greg);
   render();
-  setTimeout(() => _cinAnimarParaHex(greg, 6, 6, 2400, _cinMostrarDialogo), 350);
+
+  // Caminha do canto até perto dos heróis
+  setTimeout(() => _cinAnimarParaHex(greg, 5, 7, 1800, _cinMostrarDialogo), 200);
 }
 
 function _cinMostrarDialogo() {
