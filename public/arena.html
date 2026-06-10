@@ -2260,34 +2260,70 @@ function renderBottomPanel(){
   document.getElementById('pb-sp-val').textContent = u.maxSp>1?(u.sp+'/'+u.maxSp):'—';
   document.getElementById('pb-mov').textContent = '👢 '+u.mov+'/'+( MOV_CLASSE[u.nome]||u.mov);
 
-  // Center info
-  if(selUnit){
-    if(modoAtaque && habAtual){
-      document.getElementById('pc-label').textContent = 'Habilidade';
-      document.getElementById('pc-main').textContent = habAtual.nome;
-      document.getElementById('pc-hex').textContent = 'Alcance '+habAtual.alcance;
-    } else if(hexPreview && faseDoTurno==='mover_ativo'){
-      document.getElementById('pc-label').textContent = 'Destino';
-      document.getElementById('pc-main').textContent = hexLabel(hexPreview.col, hexPreview.row);
-      document.getElementById('pc-hex').textContent = 'toque OK para confirmar';
-    } else if(targetHex){
-      document.getElementById('pc-label').textContent = 'Destino';
-      document.getElementById('pc-main').textContent = hexLabel(targetHex.col, targetHex.row);
-      document.getElementById('pc-hex').textContent = moveHexes.length+' hexes disponíveis';
-    } else {
-      document.getElementById('pc-label').textContent = 'Posição';
-      document.getElementById('pc-main').textContent = hexLabel(selUnit.col, selUnit.row);
-      document.getElementById('pc-hex').textContent = moveHexes.length+' hexes de mov.';
+  // ── Centro de info: tracker visual de fases do plano ──
+  {
+    const elL=document.getElementById('pc-label');
+    const elM=document.getElementById('pc-main');
+    const elH=document.getElementById('pc-hex');
+    if(elL&&elM&&elH){
+      const sep=`<span style="opacity:.30"> › </span>`;
+      const clA='color:#ddb840';   // fase ativa
+      const clD='color:#72d668';   // fase concluída
+      const clO='opacity:.28';     // fase inativa
+
+      const s1done  =!['planejar_mover','mover_ativo','idle'].includes(faseDoTurno);
+      const s1active=['planejar_mover','mover_ativo'].includes(faseDoTurno);
+      const s2done  =['acao_pronta','resolvendo'].includes(faseDoTurno);
+      const s2active=['planejar_acao','acao_ativa'].includes(faseDoTurno);
+      const s3active=faseDoTurno==='acao_pronta';
+
+      const movT =s1done?'✓ '+(planoMovimento?hexLabel(planoMovimento.col,planoMovimento.row):'sem mov'):'① Mover';
+      const acT  =s2done?'✓ '+(planoAtaque?.hab?.nome||'ação'):'② Ação';
+      const tracker=`<span style="${s1done?clD:s1active?clA:clO}">${movT}</span>${sep}`+
+                    `<span style="${s2done?clD:s2active?clA:clO}">${acT}</span>${sep}`+
+                    `<span style="${s3active?clA:clO}">③ Confirmar</span>`;
+
+      if(faseDoTurno==='aguardando'){
+        const nm=_currentTurnPlayerId==='enemy'?'Inimigos':_currentTurnPlayerName||'outro jogador';
+        elL.innerHTML=`<span style="${clO}">⏳ AGUARDANDO</span>`;
+        elM.textContent=nm; elH.textContent='turno de outro jogador';
+      } else if(faseDoTurno==='turno_inimigo'){
+        elL.innerHTML=`<span style="${clO}">⏳ INIMIGO</span>`;
+        elM.textContent='aguardando…'; elH.textContent='';
+      } else if(!selUnit){
+        elL.innerHTML=`<span style="${clO}">Selecione um herói</span>`;
+        elM.textContent='—'; elH.textContent='';
+      } else if(faseDoTurno==='planejar_mover'){
+        elL.innerHTML=tracker;
+        elM.textContent='Iniciar turno';
+        elH.textContent='MOVER → escolher destino  ·  NÃO MOVER → ir à ação';
+      } else if(faseDoTurno==='mover_ativo'){
+        elL.innerHTML=tracker;
+        elM.textContent=hexPreview?hexLabel(hexPreview.col,hexPreview.row):'Toque em hex azul';
+        elH.textContent=hexPreview?'OK para confirmar  ·  CANCELAR para voltar':selUnit.mov+' hexes disponíveis';
+      } else if(faseDoTurno==='planejar_acao'){
+        elL.innerHTML=tracker;
+        elM.textContent='Escolher ação';
+        elH.textContent='ATACAR  ·  SKILL  ·  FINALIZAR sem ação';
+      } else if(faseDoTurno==='acao_ativa'){
+        elL.innerHTML=tracker;
+        elM.textContent=habAtual?.nome||'?';
+        elH.textContent='Alcance '+(habAtual?.alcance||'?')+'  ·  selecione o alvo';
+      } else if(faseDoTurno==='acao_pronta'){
+        elL.innerHTML=tracker;
+        const isSelf=planoAtaque?.alvo===planoAtaque?.atacante;
+        const alvN=isSelf?'si mesmo':(planoAtaque?.alvo?.nome||(planoAtaque?.alvoHex?hexLabel(planoAtaque.alvoHex.col,planoAtaque.alvoHex.row):'?'));
+        elM.textContent=(planoAtaque?.hab?.nome||'?')+' → '+alvN;
+        elH.textContent='✓ toque FINALIZAR TURNO para executar';
+      } else if(faseDoTurno==='resolvendo'){
+        elL.innerHTML=`<span style="${clO}">⚙️ EXECUTANDO</span>`;
+        elM.textContent='…'; elH.textContent='';
+      } else {
+        elL.textContent='Posição';
+        elM.textContent=hexLabel(selUnit.col,selUnit.row);
+        elH.textContent=moveHexes.length+' hexes de mov.';
+      }
     }
-  } else if(faseDoTurno==='aguardando'){
-    const name=_currentTurnPlayerId==='enemy'?'Inimigos':_currentTurnPlayerName||'outro jogador';
-    document.getElementById('pc-label').textContent = '⏳ Turno de';
-    document.getElementById('pc-main').textContent = name;
-    document.getElementById('pc-hex').textContent = 'aguardando…';
-  } else {
-    document.getElementById('pc-label').textContent = 'Selecione';
-    document.getElementById('pc-main').textContent = 'um herói';
-    document.getElementById('pc-hex').textContent = '';
   }
 
   // Target panel (enemy in attack mode)
