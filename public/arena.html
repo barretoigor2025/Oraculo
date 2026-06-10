@@ -1878,7 +1878,7 @@ function cancelarConfirmacao(){
 }
 
 function _mostrarOverlayFimBatalha(vitoria){
-  // Remove overlay anterior se existir
+  // Usado apenas para DERROTA
   document.getElementById('overlay-fim-batalha')?.remove();
   const div=document.createElement('div');
   div.id='overlay-fim-batalha';
@@ -1900,11 +1900,147 @@ function _mostrarOverlayFimBatalha(vitoria){
   });
 }
 
+// ── Cinematica pós-batalha (vitória) ─────────────────────────────
+let _cinematicaRodando = false;
+
+function _cinematicaVitoria() {
+  if (_cinematicaRodando) return;
+  _cinematicaRodando = true;
+  faseDoTurno = 'resolvendo';
+  document.getElementById('action-row').innerHTML = '';
+
+  // Sinaliza para não-hosts via Firebase
+  if (_fbIsHost) {
+    try { window._fbSetStatus?.('battle',{'batalha.cinematicaVitoria':Date.now()}); } catch(e){}
+  }
+
+  // Remove inimigos do mapa
+  unidades = unidades.filter(u => u.tipo !== 'inimigo');
+  render();
+
+  // Heróis caminham para posições ao redor do centro
+  const destHerois = [{col:5,row:6},{col:7,row:6},{col:6,row:5},{col:6,row:7},{col:6,row:6}];
+  const herois = unidades.filter(u => u.tipo === 'heroi' && u.hp > 0);
+  let pendentes = herois.length || 1;
+  const _chegou = () => { if (--pendentes <= 0) setTimeout(_cinSpawnGregoras, 650); };
+
+  if (herois.length === 0) _chegou();
+  else herois.forEach((h,i) => _cinAnimarParaHex(h,
+    destHerois[i%destHerois.length].col, destHerois[i%destHerois.length].row,
+    1000 + i*230, _chegou));
+}
+
+function _cinAnimarParaHex(unit, dc, dr, dur, onDone) {
+  const s = unitPos(unit);
+  const e = hexCentro(dc, dr);
+  const t0 = performance.now();
+  (function tick(now){
+    let p = Math.min((now-t0)/dur, 1);
+    p = p<.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
+    unit._ax = s.x+(e.x-s.x)*p;
+    unit._ay = s.y+(e.y-s.y)*p;
+    renderUnits();
+    if (p < 1) requestAnimationFrame(tick);
+    else { unit._ax=null; unit._ay=null; unit.col=dc; unit.row=dr; onDone?.(); }
+  })(t0);
+}
+
+function _cinSpawnGregoras() {
+  const greg = {
+    nome:'Gregoras Pellos', tipo:'aliado_cin',
+    emoji:'📜', col:1, row:12,
+    hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10,
+    cor:'#8899bb',
+    imgSrc:'sprites/npc_gregoras_pellos.png',
+    img:null, portrait:null,
+    _ax:null, _ay:null, clipBottom:0, itens:[], id:'_greg_cin',
+  };
+  const img = new Image();
+  img.onload = () => { greg.img=img; renderUnits(); };
+  img.src = greg.imgSrc;
+  unidades.push(greg);
+  render();
+  setTimeout(() => _cinAnimarParaHex(greg, 6, 6, 2400, _cinMostrarDialogo), 350);
+}
+
+function _cinMostrarDialogo() {
+  const bh = document.getElementById('bottom-panel')?.offsetHeight || 130;
+  const d = document.createElement('div');
+  d.id = 'cin-greg';
+  d.style.cssText = `position:fixed;bottom:${bh+6}px;left:8px;right:8px;`+
+    `background:rgba(10,6,3,.95);border:1px solid rgba(185,135,30,.6);`+
+    `border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;`+
+    `gap:12px;z-index:500;box-shadow:0 -4px 24px rgba(0,0,0,.55);`+
+    `animation:_cinFI .38s ease;`;
+  d.innerHTML = `
+    <div style="width:50px;height:62px;border-radius:7px;overflow:hidden;flex-shrink:0;border:1px solid rgba(185,135,30,.4)">
+      <img src="sprites/npc_gregoras_pellos.png" style="width:100%;height:100%;object-fit:cover;object-position:top">
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:10px;color:rgba(180,150,60,.65);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:5px">Gregoras Pellos</div>
+      <div id="cin-greg-txt" style="font-size:12.5px;color:rgba(230,210,165,.95);line-height:1.55;margin-bottom:10px">
+        "Perdão pela interrupção..." ele ajusta os óculos duas vezes. "Conforme o protocolo de emergência da corte — a Duquesa Catherine solicita a presença de vocês no castelo. Agora. Virão?"
+      </div>
+      <div style="display:flex;gap:8px">
+        <button id="cin-btn-nao" style="flex:1;padding:8px 6px;background:rgba(100,30,30,.3);color:rgba(210,140,140,.85);border:1px solid rgba(160,60,60,.4);border-radius:7px;font-family:inherit;font-size:11.5px;cursor:pointer">Ainda não</button>
+        <button id="cin-btn-sim" style="flex:2.2;padding:8px 6px;background:rgba(30,80,30,.45);color:rgba(155,225,150,.95);border:1px solid rgba(70,175,70,.55);border-radius:7px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;letter-spacing:.5px">Ir ao castelo →</button>
+      </div>
+    </div>`;
+  if (!document.getElementById('_cin-sty')) {
+    const s = document.createElement('style');
+    s.id = '_cin-sty';
+    s.textContent = '@keyframes _cinFI{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}';
+    document.head.appendChild(s);
+  }
+  document.body.appendChild(d);
+
+  let recusas = 0;
+  const frases = [
+    '"A Duquesa é... bastante precisa sobre urgência." Ele reajusta os óculos com nervosismo.',
+    '"Com respeito — ela sabe coisas que vocês precisam ouvir. Cada minuto importa."',
+  ];
+  document.getElementById('cin-btn-nao').addEventListener('click', () => {
+    const t = document.getElementById('cin-greg-txt');
+    if (t && recusas < frases.length) t.textContent = frases[recusas];
+    recusas++;
+    if (recusas >= frases.length) {
+      document.getElementById('cin-btn-nao').style.display = 'none';
+      document.getElementById('cin-btn-sim').textContent = 'Está bem, vamos';
+    }
+  });
+  document.getElementById('cin-btn-sim').addEventListener('click', () => {
+    d.remove();
+    _cinTransicaoCastelo();
+  });
+}
+
+function _cinTransicaoCastelo() {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9000;opacity:0;transition:opacity .65s;display:flex;align-items:center;justify-content:center;overflow:hidden;';
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => {
+    ov.style.opacity = '1';
+    setTimeout(() => {
+      const img = document.createElement('img');
+      img.src = 'locations/mhoried_castelo_ext.png';
+      img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;opacity:0;transition:opacity .65s;';
+      ov.appendChild(img);
+      requestAnimationFrame(() => {
+        img.style.opacity = '1';
+        setTimeout(() => {
+          if (window._fbAddPostBattleConfirm) window._fbAddPostBattleConfirm();
+          else window.location.href = 'narration.html';
+        }, 2400);
+      });
+    }, 680);
+  });
+}
+
 function verificarVitoria(){
   const inimigos=unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0);
   const herois=unidades.filter(u=>u.tipo==='heroi'&&u.hp>0);
   if(inimigos.length===0){
-    mostrarLetreiro('VITÓRIA!','o inimigo foi derrotado','',3000,()=>{_mostrarOverlayFimBatalha(true);});
+    mostrarLetreiro('VITÓRIA!','o inimigo foi derrotado','',3000, _cinematicaVitoria);
     return true;
   }
   if(herois.length===0){
@@ -2637,6 +2773,11 @@ function onRoomUpdate(room){
       });
       return;
     }
+  }
+
+  // Non-host: acionar cinematica de vitória quando host sinalizar
+  if (!_fbIsHost && room.batalha?.cinematicaVitoria && !_cinematicaRodando) {
+    _cinematicaVitoria();
   }
 
   const myId=localStorage.getItem('oraculo.playerId');

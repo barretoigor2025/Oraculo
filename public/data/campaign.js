@@ -273,12 +273,12 @@ export const CENAS = {
     ordemNarrativa: 1,
     introSlides: [
       {
-        imagem: 'locations/mhoried_market_ext.png',
-        texto: `O último espantalho desmorona em palha e trapos podres. O silêncio dura apenas um segundo — depois a praça explode em vozes: choro de crianças, ordens de guardas, mercadores inspecionando seus pertences espalhados pelo chão. Ninguém sabe ao certo o que aconteceu. Mas todos viram quem enfrentou as criaturas quando os soldados da Duquesa hesitaram.`,
+        imagem: 'locations/mhoried_castelo_ext.png',
+        texto: `Gregoras conduz o grupo pelas ruas de Mhoried em passo apressado, desviando das barracas reviradas e dos guardas que ainda isolam a área do ataque. Ao chegar ao castelo ele troca um aceno com o sentinela — sem espera, sem anúncio formal. "A Duquesa pediu para não haver cerimônias," ele diz enquanto abre a porta lateral.`,
       },
       {
         imagem: 'locations/mhoried_market_int.png',
-        texto: `Um homem de meia-idade abre caminho entre a multidão em sua direção — rolo de pergaminho sob o braço, óculos de aros de bronze, expressão que mistura alívio com urgência burocrática. Ele ajusta os óculos duas vezes antes de falar. "Conforme o protocolo de emergência da corte, artigo quatorze..." ele começa — e então para. Ele olha ao redor, abaixa a voz. "Gregoras Pellos, assessor sênior da Duquesa Catherine Laskaris. Ela precisa falar com vocês. Agora."`,
+        texto: `A Duquesa Catherine Laskaris os aguarda no salão principal, de pé junto à janela, os olhos na praça ainda agitada lá embaixo. Ela se vira quando vocês entram. "Obrigada por virem," ela diz, voz firme mas carregando algo que não é só preocupação política. Gregoras fecha a porta suavemente. A conversa pode começar.`,
         revealFirst: true,
       },
     ],
