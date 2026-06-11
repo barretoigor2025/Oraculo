@@ -208,6 +208,28 @@ export const NPCS = {
     formaDeFalar: `Direta, profissional, sem floreios. Avalia tudo em termos de custo-benefício. Respostas precisas. Raramente faz perguntas desnecessárias. Tom neutro mesmo em situações extremas. Quando decide confiar em alguém, é completamente franca.`,
   },
 
+  npc_azzika_fren: {
+    id: 'npc_azzika_fren',
+    nome: 'Azzika Fren',
+    sprite: 'sprites/npc_azzika_fren.png',
+    categoria: 'hostil',
+    descFisica: `Elfa sombria de aparência jovem com pele escura-acinzentada e cabelo negro curto e selvagem. Olhos dourados penetrantes com expressão de desafio permanente. Veste armadura de malha fina sob uma capa negra esfarrapada. Carrega espada larga e arco longo — ambas de fabricação élfica fina. Movimentos rápidos e confiantes. Líder de patrulhas com postura de quem sabe que ninguém escapa dela.`,
+    personalidade: `Tenente dos Elfos Sombrios sob o Príncipe Kalos. Sanguinária, obstinada e perigosamente confiante demais — acredita que pode superar qualquer obstáculo pela força. Leal à sua equipe mas disposta a sacrificá-los pelo sucesso da missão. Considera humanos e outras raças como obstáculos descartáveis.`,
+    conhecimentos: `Lidera as patrulhas dos Elfos Sombrios nos Blackwoods. Sabe da localização do acampamento dos elfos. Conhece a missão de recuperar os fragmentos de Hooded Voorn. Não confia no Príncipe Kalos completamente mas o serve por ambição própria.`,
+    formaDeFalar: `Curta, direta, com desprezo velado por não-elfos. Não perde tempo com gentilezas. Dá ordens mais do que faz perguntas. Em combate, grita táticas para seus companheiros em Élfico. Quando confrontada com superioridade evidente, recua sem orgulho ferido — eficiência acima de tudo.`,
+  },
+
+  npc_jariella: {
+    id: 'npc_jariella',
+    nome: 'Jariella, a Elfa do Mar',
+    sprite: 'sprites/npc_jariella.png',
+    categoria: 'neutro',
+    descFisica: `Elfa do mar de cabelo loiro-prateado longo e solto. Pele com tom levemente azulado, típico das elfas do mar. Veste armadura negra intrincada com gravações de ondas e padrões marinhos. Usa uma tiara/viseira metálica ornamentada. Carrega arco longo nas costas e espada longa na mão — movimentos fluidos como água. Quando vista em visões, parece simultaneamente presente e distante, como névoa sobre o oceano.`,
+    personalidade: `Guerreira lendária das elfas do mar que caçou monstros nos Blackwoods há dez anos. Orgulhosa, destemida, com um código de honra rígido. Veio aos Blackwoods perseguir ameaças mágicas e acabou encontrando a Manticora Albina — seu maior erro. Seus ossos descansam num local secreto, mas seu espírito inquieto ainda permeia o bosque, especialmente perto do Poço dos Chorões.`,
+    conhecimentos: `Conhecia os segredos dos Blackwoods há dez anos. Sabia da existência do Vulkrundshard. Sua espada encantada "Selvimar" (Puissance+1, Accuracy+1, com pedras de Breathe Water e Resist Lightning) ficou com seus restos. O Príncipe Kalos a conhecia e a desrespeitava. Os elfos sombrios usaram seu desaparecimento como oportunidade.`,
+    formaDeFalar: `(Só aparece em visões do Poço dos Chorões ou como presença espiritual). Fala em fragmentos, como memórias: "O bosque me consumiu... a besta de dentes podres... minha espada ainda canta nas águas..." Pode revelar a localização de seu túmulo aos que beberem da água do poço.`,
+  },
+
   npc_choir_necromante: {
     id: 'npc_choir_necromante',
     nome: 'Choir, o Necromante',
