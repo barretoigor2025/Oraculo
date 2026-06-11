@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oráculo — Catálogo de Personagens</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0e0c0a;
+      --bg2:       #181410;
+      --bg3:       #221e18;
+      --gold:      #c8a040;
+      --gold2:     #e8c060;
+      --gold-dim:  rgba(200,160,64,0.18);
+      --text:      #e0d0a8;
+      --text-dim:  rgba(200,180,128,0.55);
+      --border:    rgba(200,160,64,0.18);
+      --aliado:    #2a6a3a;
+      --aliado-t:  #60cc80;
+      --neutro:    #5a5020;
+      --neutro-t:  #ccaa40;
+      --hostil:    #6a2020;
+      --hostil-t:  #ee6060;
+      --vilao:     #4a1a6a;
+      --vilao-t:   #cc66ff;
+      --radius:    10px;
+    }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(180deg, #0a0806 0%, var(--bg2) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px 0;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-top {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 14px;
+    }
+    .header-top h1 {
+      font-size: clamp(16px, 3vw, 22px);
+      color: var(--gold2);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 400;
+    }
+    .header-top span { font-size: 10px; color: var(--text-dim); margin-left: auto; }
+
+    .tabs { display: flex; gap: 4px; }
+    .tab-btn {
+      padding: 8px 20px 10px;
+      background: none; border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-dim);
+      font-family: inherit; font-size: 12px;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      cursor: pointer; transition: all .2s;
+    }
+    .tab-btn.active { color: var(--gold2); border-bottom-color: var(--gold); }
+    .tab-btn:hover { color: var(--text); }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .filter-btn {
+      padding: 4px 12px; border-radius: 20px;
+      border: 1px solid rgba(200,160,64,0.2);
+      background: rgba(200,160,64,0.06);
+      color: var(--text-dim); font-size: 10px;
+      letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; transition: all .15s;
+    }
+    .filter-btn.active { background: var(--gold-dim); color: var(--gold2); border-color: var(--gold); }
+    .filter-btn:hover { color: var(--text); }
+
+    /* ── MAIN GRID ── */
+    main { padding: 20px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Classes grid: wider minimum so portraits look good */
+    #classes-tab .card-grid {
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 14px;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .15s, border-color .15s, box-shadow .15s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(200,160,64,0.45);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+    }
+
+    /* ── PORTRAIT CARD IMAGE (classes) ── */
+    .card-portrait {
+      position: relative;
+      height: 240px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.3);
+    }
+    .card-portrait img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: 50% 12%;
+      display: block;
+      transition: opacity .2s;
+    }
+    .card-portrait .no-img {
+      font-size: 48px; opacity: 0.3;
+      position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    }
+    /* gradient overlay at bottom */
+    .card-portrait::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 60px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.65));
+      pointer-events: none;
+    }
+    /* M/F toggle buttons inside portrait */
+    .portrait-toggle {
+      position: absolute; bottom: 6px; right: 6px; z-index: 2;
+      display: flex; gap: 3px;
+    }
+    .pt-btn {
+      padding: 2px 7px; border-radius: 4px;
+      background: rgba(0,0,0,0.65); border: 1px solid rgba(200,160,64,0.3);
+      color: var(--text-dim); font-size: 9px; letter-spacing: .5px;
+      cursor: pointer; transition: all .15s;
+      font-family: inherit;
+    }
+    .pt-btn.active { background: rgba(200,160,64,0.25); color: var(--gold2); border-color: var(--gold); }
+    .pt-btn:hover { color: var(--text); }
+
+    /* ── SPRITE CARD IMAGE (NPCs / inimigos) ── */
+    .card-sprite {
+      background: rgba(0,0,0,0.3);
+      display: flex; align-items: flex-end; justify-content: center;
+      height: 160px; padding: 0;
+      position: relative;
+    }
+    .card-sprite img {
+      max-height: 100%; max-width: 100%;
+      object-fit: contain; object-position: bottom;
+    }
+    .card-sprite .no-img {
+      font-size: 48px; opacity: 0.3;
+      position: absolute; bottom: 12px;
+    }
+
+    .cat-badge {
+      position: absolute; top: 6px; right: 6px;
+      padding: 2px 6px; border-radius: 4px;
+      font-size: 8px; letter-spacing: .8px; text-transform: uppercase;
+      font-weight: 700;
+    }
+    .cat-aliado    { background: var(--aliado);    color: var(--aliado-t); }
+    .cat-neutro    { background: var(--neutro);    color: var(--neutro-t); }
+    .cat-neutro_hostil { background: #5a3810; color: #ffaa50; }
+    .cat-hostil    { background: var(--hostil);    color: var(--hostil-t); }
+    .cat-vilao     { background: var(--vilao);     color: var(--vilao-t); }
+    .cat-classe    { background: #1a2a4a;          color: #88aaee; }
+    .cat-inimigo   { background: #3a1a0a;          color: #ee7744; }
+
+    .card-body { padding: 8px 10px 10px; }
+    .card-name {
+      font-size: 12px; font-weight: 700;
+      color: var(--gold2); line-height: 1.3;
+      margin-bottom: 4px;
+    }
+    .card-sub {
+      font-size: 10px; color: var(--text-dim);
+      line-height: 1.4; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ── CLASS STAT CHIPS ── */
+    .stat-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+    .chip {
+      padding: 2px 6px; border-radius: 4px;
+      font-size: 9px; font-weight: 700; letter-spacing: .5px;
+      background: rgba(200,160,64,0.1);
+      color: rgba(200,160,64,0.7);
+      border: 1px solid rgba(200,160,64,0.15);
+    }
+
+    /* ── ENEMY TYPE ── */
+    .type-badge {
+      font-size: 9px; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: .8px;
+      margin-bottom: 3px;
+    }
+
+    /* ── MODAL ── */
+    #modal-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.82);
+      backdrop-filter: blur(4px);
+      overflow-y: auto;
+      padding: 20px;
+    }
+    #modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+    #modal {
+      background: var(--bg2);
+      border: 1px solid rgba(200,160,64,0.3);
+      border-radius: 14px;
+      max-width: 640px; width: 100%;
+      margin: auto;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.9);
+    }
+
+    /* ── CLASS MODAL PORTRAIT STRIP ── */
+    .portrait-strip {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    .portrait-col {
+      flex: 1;
+      display: flex; flex-direction: column;
+      border-right: 1px solid var(--border);
+      background: rgba(0,0,0,0.35);
+      overflow: hidden;
+    }
+    .portrait-col:last-child { border-right: none; }
+    .portrait-img-wrap {
+      height: 320px;
+      overflow: hidden;
+      position: relative;
+    }
+    .portrait-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: 50% 8%;
+      display: block;
+    }
+    .portrait-img-wrap::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 80px;
+      background: linear-gradient(transparent, rgba(14,12,10,0.9));
+      pointer-events: none;
+    }
+    .portrait-label {
+      text-align: center; font-size: 9px; color: var(--text-dim);
+      padding: 6px 4px; letter-spacing: 1px; text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    /* ── CLASS MODAL STATS (below strip) ── */
+    .modal-class-info {
+      padding: 16px 20px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-name {
+      font-size: clamp(16px, 3vw, 22px);
+      color: var(--gold2); font-weight: 400;
+      line-height: 1.2; margin-bottom: 6px;
+    }
+    .modal-cat { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+    .modal-feat {
+      font-size: 12px; color: var(--text);
+      line-height: 1.5; font-style: italic;
+    }
+    .stats-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .stat-box {
+      background: rgba(200,160,64,0.07);
+      border: 1px solid rgba(200,160,64,0.15);
+      border-radius: 6px; padding: 4px 8px;
+      text-align: center; min-width: 48px;
+    }
+    .stat-box .sv { font-size: 16px; font-weight: 700; color: var(--gold2); }
+    .stat-box .sk { font-size: 8px; color: var(--text-dim); letter-spacing: .8px; text-transform: uppercase; margin-top: 1px; }
+    .attrs-grid {
+      display: grid; grid-template-columns: repeat(6,1fr); gap: 4px;
+      margin-top: 10px;
+    }
+    .attr-box {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(200,160,64,0.1);
+      border-radius: 5px; padding: 4px 0; text-align: center;
+    }
+    .attr-box .av { font-size: 13px; font-weight: 700; color: var(--text); }
+    .attr-box .am { font-size: 10px; color: var(--gold); }
+    .attr-box .ak { font-size: 8px; color: var(--text-dim); letter-spacing: .5px; }
+
+    /* ── NPC MODAL HEADER ── */
+    .modal-header {
+      display: flex; gap: 0;
+      border-bottom: 1px solid var(--border);
+      min-height: 200px;
+    }
+    .modal-sprites {
+      display: flex; flex-direction: column; gap: 0;
+      background: rgba(0,0,0,0.4);
+      flex-shrink: 0;
+      min-width: 120px; max-width: 200px;
+    }
+    .modal-sprite-wrap {
+      display: flex; align-items: flex-end; justify-content: center;
+      flex: 1; padding: 8px;
+    }
+    .modal-sprite-wrap img {
+      max-height: 180px; max-width: 100%;
+      object-fit: contain; object-position: bottom;
+    }
+    .sprite-label {
+      text-align: center; font-size: 8px; color: var(--text-dim);
+      padding: 4px; letter-spacing: .8px; text-transform: uppercase;
+      border-top: 1px solid var(--border);
+    }
+    .modal-title-area {
+      flex: 1; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .modal-feat-npc {
+      font-size: 12px; color: var(--text);
+      line-height: 1.5; font-style: italic;
+      margin-top: 4px;
+    }
+
+    /* abilities list */
+    .habs-list { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+    .hab-row {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(200,160,64,0.1);
+      border-radius: 6px; padding: 6px 10px;
+    }
+    .hab-icon { font-size: 16px; }
+    .hab-info { flex: 1; }
+    .hab-nome { font-size: 11px; font-weight: 700; color: var(--text); }
+    .hab-desc { font-size: 10px; color: var(--text-dim); }
+    .hab-tags { display: flex; gap: 4px; margin-top: 3px; }
+    .htag {
+      font-size: 8px; padding: 1px 5px; border-radius: 3px;
+      font-weight: 700; letter-spacing: .3px;
+    }
+    .htag.dano  { background: rgba(255,80,30,.2);  color: #ff9966; border: 1px solid rgba(255,80,30,.3); }
+    .htag.sp    { background: rgba(40,140,255,.15); color: #88ccff; border: 1px solid rgba(40,140,255,.25); }
+    .htag.type  { background: rgba(200,160,64,.1);  color: var(--gold); border: 1px solid rgba(200,160,64,.2); }
+
+    /* modal body sections */
+    .modal-body { padding: 16px 20px 20px; }
+    .section { margin-bottom: 14px; }
+    .section-title {
+      font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 6px;
+      padding-bottom: 4px; border-bottom: 1px solid var(--border);
+    }
+    .section-text {
+      font-size: 12px; color: var(--text);
+      line-height: 1.65;
+    }
+    .section-text span.em { color: var(--gold); font-style: italic; }
+
+    #modal-close {
+      display: block; width: calc(100% - 40px); margin: 0 20px 20px;
+      padding: 10px; border-radius: 8px;
+      background: rgba(200,160,64,0.1);
+      border: 1px solid rgba(200,160,64,0.25);
+      color: var(--gold); font-family: inherit; font-size: 12px;
+      letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; transition: background .15s;
+    }
+    #modal-close:hover { background: rgba(200,160,64,0.2); }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex; align-items: baseline; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .section-header h2 {
+      font-size: 13px; font-weight: 400;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gold);
+    }
+    .count-badge { font-size: 10px; color: var(--text-dim); }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(200,160,64,0.3); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>⚔️ Oráculo — Catálogo de Personagens</h1>
+    <span id="count-label"></span>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="classes">Classes</button>
+    <button class="tab-btn" data-tab="npcs">NPCs</button>
+    <button class="tab-btn" data-tab="inimigos">Inimigos</button>
+  </nav>
+</header>
+
+<div class="filter-bar" id="filter-bar" style="display:none">
+  <button class="filter-btn active" data-filter="todos">Todos</button>
+  <button class="filter-btn" data-filter="aliado">Aliados</button>
+  <button class="filter-btn" data-filter="neutro">Neutros</button>
+  <button class="filter-btn" data-filter="neutro_hostil">Neutros-Hostis</button>
+  <button class="filter-btn" data-filter="hostil">Hostis</button>
+  <button class="filter-btn" data-filter="vilao">Vilões</button>
+</div>
+
+<main>
+  <div id="classes-tab"   class="tab-content active"></div>
+  <div id="npcs-tab"      class="tab-content"></div>
+  <div id="inimigos-tab"  class="tab-content"></div>
+</main>
+
+<!-- Modal -->
+<div id="modal-overlay">
+  <div id="modal">
+    <div id="modal-inner"></div>
+    <button id="modal-close" onclick="closeModal()">✕ Fechar</button>
+  </div>
+</div>
+
+<script type="module">
+import { NPCS } from '../data/campaign.js';
+
+// ── DATA ──────────────────────────────────────────────────────────────
+
+const CLASSES_DATA = {
+  guerreiro: {
+    nome:'Guerreiro', icon:'⚔️',
+    maxHp:12, sp:80, mov:5, atk:4,
+    attrs:{FOR:16,DES:12,CON:15,INT:10,SAB:10,CAR:10},
+    feat:'Especialista em combate corpo a corpo. Bônus extra de ataque.',
+    habs:[
+      {icon:'⚔️',nome:'Espadada',desc:'Golpe com espada',dano:'1d8+2',tipo:'melee',sp:0},
+      {icon:'💥',nome:'Golpe Poderoso',desc:'Concentra força — +4 dano',dano:'1d8+6',tipo:'melee',sp:15},
+      {icon:'🛡️',nome:'Postura de Defesa',desc:'CA +3 até próximo turno',dano:'—',tipo:'buff',sp:0},
+    ],
+    cor:'#8a4a20',
+  },
+  mago: {
+    nome:'Mago', icon:'🔮',
+    maxHp:6, sp:120, mov:4, atk:5,
+    attrs:{FOR:8,DES:14,CON:10,INT:17,SAB:12,CAR:12},
+    feat:'Conjurador arcano. Maior poder de ataque, mas frágil.',
+    habs:[
+      {icon:'🪄',nome:'Cajadada',desc:'Golpe com o cajado',dano:'1d4+1',tipo:'melee',sp:0},
+      {icon:'🔥',nome:'Bola de Fogo',desc:'Explosão de fogo — área (raio 2)',dano:'2d6+2',tipo:'magia',sp:20},
+      {icon:'🌀',nome:'Confusão',desc:'Magia mental — área (raio 1)',dano:'1d6+2',tipo:'magia',sp:15},
+      {icon:'🛡️',nome:'Escudo Arcano',desc:'Escudo mágico (self-cast)',dano:'—',tipo:'buff',sp:10},
+    ],
+    cor:'#3a2a6a',
+  },
+  ladino: {
+    nome:'Ladino', icon:'🗡️',
+    maxHp:8, sp:90, mov:6, atk:3,
+    attrs:{FOR:12,DES:17,CON:12,INT:12,SAB:11,CAR:12},
+    feat:'Ágil e furtivo. Maior alcance de movimento por turno.',
+    habs:[
+      {icon:'🗡️',nome:'Facada',desc:'Golpe rápido',dano:'1d6+2',tipo:'melee',sp:0},
+      {icon:'🌑',nome:'Ataque Furtivo',desc:'Nas sombras — dano x2',dano:'2d6+2',tipo:'melee',sp:10},
+    ],
+    cor:'#0f2448',
+  },
+  clerigo: {
+    nome:'Clérigo', icon:'✨',
+    maxHp:10, sp:100, mov:4, atk:3,
+    attrs:{FOR:13,DES:11,CON:14,INT:10,SAB:16,CAR:13},
+    feat:'Guardião divino. Resistência elevada e suporte ao grupo.',
+    habs:[
+      {icon:'✨',nome:'Cajado',desc:'Golpe sagrado',dano:'1d6+1',tipo:'melee',sp:0},
+      {icon:'💚',nome:'Curar Ferimentos',desc:'Cura 1d8+2 HP',dano:'1d8+2',tipo:'cura',sp:20},
+    ],
+    cor:'#4a3a10',
+  },
+  barbaro: {
+    nome:'Bárbaro', icon:'🪓',
+    maxHp:14, sp:60, mov:5, atk:4,
+    attrs:{FOR:18,DES:14,CON:16,INT:8,SAB:10,CAR:8},
+    feat:'Força bruta e resistência. Maior PV de todas as classes.',
+    habs:[
+      {icon:'🪓',nome:'Golpe',desc:'Ataque corpo a corpo',dano:'1d8+3',tipo:'melee',sp:0},
+      {icon:'💢',nome:'Golpe Devastador',desc:'Golpe pesado — dano duplo',dano:'2d6+4',tipo:'melee',sp:20},
+      {icon:'🔥',nome:'Fúria',desc:'Entra em fúria (+dano)',dano:'—',tipo:'buff',sp:0},
+    ],
+    cor:'#6a1a1a',
+  },
+  arqueiro: {
+    nome:'Arqueiro', icon:'🏹',
+    maxHp:9, sp:85, mov:5, atk:4,
+    attrs:{FOR:13,DES:16,CON:12,INT:12,SAB:13,CAR:10},
+    feat:'Combatente à distância. Precisão e velocidade equilibradas.',
+    habs:[
+      {icon:'🏹',nome:'Flecha',desc:'Flecha rápida e precisa',dano:'1d8+2',tipo:'projétil',sp:0},
+      {icon:'🎯',nome:'Tiro Preciso',desc:'Foco total — ignora cobertura',dano:'1d8+5',tipo:'projétil',sp:15},
+    ],
+    cor:'#2a4a2a',
+  },
+};
+
+const INIMIGOS_DATA = [
+  {id:'espantalho_assombrado',  nome:'Espantalho Assombrado', tipo:'Morto-Vivo',  desc:'Criatura de palha animada por necromancia. Usada por Choir para atacar a Feira.'},
+  {id:'kobold_azul',            nome:'Kobold Azul',           tipo:'Kobold',      desc:'Soldado básico do exército do Rei Blunkin. Ágil e traiçoeiro em grupo.'},
+  {id:'elfo_sombrio',           nome:'Elfo Sombrio',          tipo:'Elfo Negro',  desc:'Guerreiro dos Vhuureth. Patrulha os Blackwoods sob ordens do Príncipe Kalos.'},
+  {id:'grimhollow_thool',       nome:'Grimhollow Thool',      tipo:'Thool',       desc:'Humano transformado em ogre pelo feiticeiro do Rei Chutter. Violento e confuso.'},
+  {id:'manticora_albina',       nome:'Manticora Albina',      tipo:'Fera',        desc:'Criatura alada e venenosa dos Blackwoods. Guarda a área do Greybane.'},
+  {id:'larva_gigante',          nome:'Larva Gigante',         tipo:'Fera',        desc:'Larva monstruosa que habita as profundezas da floresta. Segrega ácido.'},
+  {id:'log_wife',               nome:'Log-Wife',              tipo:'Espírito',    desc:'Espírito maligno que habita troncos podres. Atrai viajantes perdidos.'},
+  {id:'mother_clutch',          nome:'Mother Clutch',         tipo:'Morto-Vivo',  desc:'Criatura de braços múltiplos criada por Choir para dizimar os druidas.'},
+  {id:'wraithweaver_spider',    nome:'Aranha Espectral',      tipo:'Aranha',      desc:'Aranha gigante que tece teias de energia espectral no Campo das Aranhas.'},
+  {id:'javali_ensandecido',     nome:'Javali Ensandecido',    tipo:'Fera',        desc:'Javali selvagem corrompido pela magia dos Blackwoods. Atacante implacável.'},
+  {id:'esqueleto_lanceiro',     nome:'Esqueleto Lanceiro',    tipo:'Morto-Vivo',  desc:'Esqueleto animado por necromancia, armado com lança longa.'},
+  {id:'golem_de_pergaminho',    nome:'Golem de Pergaminho',   tipo:'Constructo',  desc:'Guarda-costas do Rei Chutter, feito de pergaminhos mágicos animados.'},
+  {id:'orc_bandido',            nome:'Orc Bandido',           tipo:'Orc',         desc:'Orc saqueador que opera nos arredores dos Blackwoods.'},
+  {id:'bugbear_assassino',      nome:'Bugbear Assassino',     tipo:'Bugbear',     desc:'Criatura peluda e brutal, especialista em emboscadas noturnas.'},
+  {id:'troll_moss_belly',       nome:'Troll Barriga-de-Musgo',tipo:'Troll',       desc:'Troll colossal com musgo e plantas crescendo sobre seu ventre regenerativo.'},
+  {id:'ankle_snapper',          nome:'Ankle Snapper',         tipo:'Fera',        desc:'Pequena criatura que ataca tornozelos com mordidas venenosas e rápidas.'},
+  {id:'barkthresher',           nome:'Barkthresher',          tipo:'Fera',        desc:'Criatura que vive sob cascas de árvores antigas e ataca com mandíbulas.'},
+  {id:'marrowwither',           nome:'Marrowwither',          tipo:'Espírito',    desc:'Espírito que drena força vital e vigor das suas vítimas.'},
+  {id:'quay_grabber',           nome:'Quay Grabber',          tipo:'Aquático',    desc:'Criatura das águas que arrasta vítimas para as profundezas.'},
+  {id:'caranguejo_gigante',     nome:'Caranguejo Gigante',    tipo:'Aquático',    desc:'Caranguejo colossal nas áreas alagadas dos Blackwoods.'},
+  {id:'rei_chutter',            nome:'Rei Chutter (Combate)', tipo:'Boss',        desc:'Forma de combate do Rei Chutter. Troll-feiticeiro colossal e implacável.'},
+  {id:'goblin_arqueiro',        nome:'Goblin Arqueiro',       tipo:'Goblin',      desc:'Goblin especializado em ataques à distância.'},
+  {id:'goblin_batedor',         nome:'Goblin Batedor',        tipo:'Goblin',      desc:'Goblin explorador, rápido e difícil de capturar.'},
+  {id:'goblin_bruto',           nome:'Goblin Bruto',          tipo:'Goblin',      desc:'Goblin de combate corpo a corpo, robusto e agressivo.'},
+  {id:'goblin_lider',           nome:'Goblin Líder',          tipo:'Goblin',      desc:'Líder de horda goblin. Coordena ataques e buffa aliados.'},
+];
+
+// ── HELPERS ──────────────────────────────────────────────────────────
+
+function mod(v){ const m=Math.floor((v-10)/2); return m>=0?`+${m}`:String(m); }
+
+function catLabel(c){
+  const map={aliado:'Aliado',neutro:'Neutro',neutro_hostil:'Neutro-Hostil',hostil:'Hostil',vilao:'Vilão',classe:'Classe',inimigo:'Inimigo'};
+  return map[c]||c;
+}
+
+function portraitUrl(id, gender){
+  return `../portraits/${id}_${gender}.png`;
+}
+
+function npcSpriteUrl(path){
+  if(!path) return '';
+  return path.startsWith('../') ? path : `../${path}`;
+}
+
+function inimSpriteUrl(id, costas){
+  const fname = id.startsWith('goblin') ? id : `inimigo_${id}`;
+  return costas ? `../sprites/${fname}_costas.png` : `../sprites/${fname}.png`;
+}
+
+// ── BUILD CLASSES TAB ─────────────────────────────────────────────────
+
+function buildClassesTab(){
+  const tab = document.getElementById('classes-tab');
+  const header = `<div class="section-header"><h2>Classes de Jogadores</h2><span class="count-badge">${Object.keys(CLASSES_DATA).length} classes</span></div>`;
+
+  let cards = '<div class="card-grid">';
+  for(const [id, cls] of Object.entries(CLASSES_DATA)){
+    cards += `
+      <div class="card" onclick="openClassModal('${id}')">
+        <div class="card-portrait" style="background:linear-gradient(180deg, rgba(0,0,0,.5), ${cls.cor}66);">
+          <span class="cat-badge cat-classe" style="top:6px;left:6px;right:auto">${cls.icon}</span>
+          <img id="card-img-${id}" src="${portraitUrl(id,'m')}" alt="${cls.nome}"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          <span class="no-img" style="display:none">${cls.icon}</span>
+          <div class="portrait-toggle" onclick="event.stopPropagation()">
+            <button class="pt-btn active" id="ptbtn-${id}-m" onclick="switchPortrait('${id}','m')">M</button>
+            <button class="pt-btn"        id="ptbtn-${id}-f" onclick="switchPortrait('${id}','f')">F</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">${cls.icon} ${cls.nome}</div>
+          <div class="stat-chips">
+            <span class="chip">❤️ ${cls.maxHp} PV</span>
+            <span class="chip">👢 MOV ${cls.mov}</span>
+            <span class="chip">⚔️ ATK d${cls.atk+4}</span>
+          </div>
+          <div class="card-sub" style="margin-top:6px">${cls.feat}</div>
+        </div>
+      </div>`;
+  }
+  cards += '</div>';
+  tab.innerHTML = header + cards;
+}
+
+window.switchPortrait = function(id, gender){
+  const img = document.getElementById(`card-img-${id}`);
+  if(img){
+    img.src = portraitUrl(id, gender);
+    img.style.display = '';
+  }
+  ['m','f'].forEach(g=>{
+    const btn = document.getElementById(`ptbtn-${id}-${g}`);
+    if(btn) btn.classList.toggle('active', g===gender);
+  });
+};
+
+// ── BUILD NPCS TAB ────────────────────────────────────────────────────
+
+function buildNpcsTab(){
+  const tab = document.getElementById('npcs-tab');
+  const npcList = Object.values(NPCS);
+  const header = `<div class="section-header"><h2>NPCs da Campanha</h2><span class="count-badge">${npcList.length} personagens</span></div>`;
+
+  let cards = '<div class="card-grid" id="npc-grid">';
+  for(const npc of npcList){
+    const sprUrl = npcSpriteUrl(npc.sprite);
+    const snippet = (npc.descFisica||'').slice(0,80).replace(/`/g,'') + '…';
+    cards += `
+      <div class="card" data-cat="${npc.categoria}" onclick="openNpcModal('${npc.id}')">
+        <div class="card-sprite">
+          <span class="cat-badge cat-${npc.categoria}">${catLabel(npc.categoria)}</span>
+          <img src="${sprUrl}" alt="${npc.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          <span class="no-img" style="display:none">🧙</span>
+        </div>
+        <div class="card-body">
+          <div class="card-name">${npc.nome}</div>
+          <div class="card-sub">${snippet}</div>
+        </div>
+      </div>`;
+  }
+  cards += '</div>';
+  tab.innerHTML = header + cards;
+}
+
+// ── BUILD ENEMIES TAB ─────────────────────────────────────────────────
+
+function buildInimigosTab(){
+  const tab = document.getElementById('inimigos-tab');
+  const header = `<div class="section-header"><h2>Inimigos &amp; Criaturas</h2><span class="count-badge">${INIMIGOS_DATA.length} tipos</span></div>`;
+
+  let cards = '<div class="card-grid">';
+  for(const en of INIMIGOS_DATA){
+    const spr = inimSpriteUrl(en.id, false);
+    cards += `
+      <div class="card" onclick="openEnemyModal('${en.id}')">
+        <div class="card-sprite" style="background:rgba(60,10,0,.25)">
+          <span class="cat-badge cat-inimigo">${en.tipo}</span>
+          <img src="${spr}" alt="${en.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          <span class="no-img" style="display:none">💀</span>
+        </div>
+        <div class="card-body">
+          <div class="type-badge">${en.tipo}</div>
+          <div class="card-name">${en.nome}</div>
+          <div class="card-sub">${en.desc}</div>
+        </div>
+      </div>`;
+  }
+  cards += '</div>';
+  tab.innerHTML = header + cards;
+}
+
+// ── MODALS ────────────────────────────────────────────────────────────
+
+window.openClassModal = function(id){
+  const cls = CLASSES_DATA[id];
+  if(!cls) return;
+
+  const attrKeys = Object.keys(cls.attrs);
+  const attrsHtml = attrKeys.map(k=>`
+    <div class="attr-box">
+      <div class="av">${cls.attrs[k]}</div>
+      <div class="am">${mod(cls.attrs[k])}</div>
+      <div class="ak">${k}</div>
+    </div>`).join('');
+
+  const habsHtml = cls.habs.map(h=>`
+    <div class="hab-row">
+      <span class="hab-icon">${h.icon}</span>
+      <div class="hab-info">
+        <div class="hab-nome">${h.nome}</div>
+        <div class="hab-desc">${h.desc}</div>
+        <div class="hab-tags">
+          ${h.dano!=='—'?`<span class="htag dano">⚔️ ${h.dano}</span>`:''}
+          ${h.sp>0?`<span class="htag sp">💠 ${h.sp} SP</span>`:''}
+          <span class="htag type">${h.tipo}</span>
+        </div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('modal-inner').innerHTML = `
+    <div class="portrait-strip">
+      <div class="portrait-col">
+        <div class="portrait-img-wrap">
+          <img src="${portraitUrl(id,'m')}" alt="Masculino" onerror="this.style.display='none'">
+        </div>
+        <div class="portrait-label">♂ Masculino</div>
+      </div>
+      <div class="portrait-col">
+        <div class="portrait-img-wrap">
+          <img src="${portraitUrl(id,'f')}" alt="Feminino" onerror="this.style.display='none'">
+        </div>
+        <div class="portrait-label">♀ Feminino</div>
+      </div>
+    </div>
+    <div class="modal-class-info">
+      <div class="modal-name">${cls.icon} ${cls.nome}</div>
+      <div class="modal-cat"><span class="cat-badge cat-classe">Classe Jogável</span></div>
+      <div class="modal-feat">${cls.feat}</div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="sv">❤️ ${cls.maxHp}</div><div class="sk">PV Máx</div></div>
+        <div class="stat-box"><div class="sv">💠 ${cls.sp}</div><div class="sk">SP Máx</div></div>
+        <div class="stat-box"><div class="sv">👢 ${cls.mov}</div><div class="sk">Mov/Turno</div></div>
+        <div class="stat-box"><div class="sv">🎲 d${cls.atk+4}</div><div class="sk">Dado Atk</div></div>
+      </div>
+      <div class="attrs-grid">${attrsHtml}</div>
+    </div>
+    <div class="modal-body">
+      <div class="section">
+        <div class="section-title">Habilidades</div>
+        <div class="habs-list">${habsHtml}</div>
+      </div>
+    </div>`;
+  openModal();
+};
+
+window.openNpcModal = function(id){
+  const npc = NPCS[id];
+  if(!npc) return;
+
+  const sprUrl = npcSpriteUrl(npc.sprite);
+
+  const sprPairs = `
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3)">
+      <div class="modal-sprite-wrap"><img src="${sprUrl}" alt="frente" onerror="this.style.display='none'"></div>
+      <div class="sprite-label">Frente</div>
+    </div>`;
+
+  const sections = [
+    npc.descFisica     && ['Aparência Física',  npc.descFisica],
+    npc.personalidade  && ['Personalidade',     npc.personalidade],
+    npc.conhecimentos  && ['O que Sabe',        npc.conhecimentos],
+    npc.formaDeFalar   && ['Forma de Falar',    npc.formaDeFalar],
+  ].filter(Boolean).map(([t,c])=>`
+    <div class="section">
+      <div class="section-title">${t}</div>
+      <div class="section-text">${c}</div>
+    </div>`).join('');
+
+  document.getElementById('modal-inner').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-sprites">${sprPairs}</div>
+      <div class="modal-title-area">
+        <div class="modal-name">${npc.nome}</div>
+        <div class="modal-cat"><span class="cat-badge cat-${npc.categoria}">${catLabel(npc.categoria)}</span></div>
+        <div class="modal-feat-npc">${npc.personalidade ? npc.personalidade.slice(0,140)+'…' : ''}</div>
+      </div>
+    </div>
+    <div class="modal-body">${sections}</div>`;
+  openModal();
+};
+
+window.openEnemyModal = function(id){
+  const en = INIMIGOS_DATA.find(e=>e.id===id);
+  if(!en) return;
+
+  const sprPairs = `
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3);border-right:1px solid var(--border)">
+      <div class="modal-sprite-wrap"><img src="${inimSpriteUrl(id,false)}" alt="frente" onerror="this.style.display='none'"></div>
+      <div class="sprite-label">Frente</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3)">
+      <div class="modal-sprite-wrap"><img src="${inimSpriteUrl(id,true)}" alt="costas" onerror="this.style.display='none'"></div>
+      <div class="sprite-label">Costas</div>
+    </div>`;
+
+  document.getElementById('modal-inner').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-sprites" style="flex-direction:row;min-width:200px;max-width:260px">${sprPairs}</div>
+      <div class="modal-title-area">
+        <div class="modal-name">💀 ${en.nome}</div>
+        <div class="modal-cat"><span class="cat-badge cat-inimigo">${en.tipo}</span></div>
+        <div class="modal-feat-npc" style="margin-top:12px">${en.desc}</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="section">
+        <div class="section-title">Tipo</div>
+        <div class="section-text">${en.tipo}</div>
+      </div>
+      <div class="section">
+        <div class="section-title">Descrição</div>
+        <div class="section-text">${en.desc}</div>
+      </div>
+    </div>`;
+  openModal();
+};
+
+function openModal(){
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+window.closeModal = function(){
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+document.getElementById('modal-overlay').addEventListener('click', e=>{
+  if(e.target === e.currentTarget) closeModal();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') closeModal();
+});
+
+// ── TABS ──────────────────────────────────────────────────────────────
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`${tab}-tab`).classList.add('active');
+    document.getElementById('filter-bar').style.display = tab==='npcs' ? 'flex' : 'none';
+    updateCount(tab);
+  });
+});
+
+// ── NPC FILTER ────────────────────────────────────────────────────────
+
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const f = btn.dataset.filter;
+    document.querySelectorAll('#npc-grid .card').forEach(card=>{
+      const cat = card.dataset.cat;
+      card.style.display = (f==='todos' || cat===f) ? '' : 'none';
+    });
+  });
+});
+
+// ── COUNT LABEL ──────────────────────────────────────────────────────
+
+function updateCount(tab){
+  const labels = {
+    classes: `${Object.keys(CLASSES_DATA).length} classes`,
+    npcs:    `${Object.keys(NPCS).length} personagens`,
+    inimigos:`${INIMIGOS_DATA.length} criaturas`,
+  };
+  document.getElementById('count-label').textContent = labels[tab]||'';
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+
+buildClassesTab();
+buildNpcsTab();
+buildInimigosTab();
+updateCount('classes');
+</script>
+</body>
+</html>
