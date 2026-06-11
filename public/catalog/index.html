@@ -539,6 +539,8 @@ const INIMIGOS_DATA = [
   {id:'javali_ensandecido',     nome:'Javali Ensandecido',    tipo:'Fera',        desc:'Javali selvagem corrompido pela magia dos Blackwoods. Atacante implacável.'},
   {id:'esqueleto_lanceiro',     nome:'Esqueleto Lanceiro',    tipo:'Morto-Vivo',  desc:'Esqueleto animado por necromancia, armado com lança longa.'},
   {id:'golem_de_pergaminho',    nome:'Golem de Pergaminho',   tipo:'Constructo',  desc:'Guarda-costas do Rei Chutter, feito de pergaminhos mágicos animados.'},
+  {id:'alquimista_choir',       nome:'Alquimista de Choir',   tipo:'Humanoide',   desc:'Infiltrado pálido e calculista do necromante Choir. Defende o Gloamreach com poções e venenos.'},
+  {id:'demonio_vulkrundshard',  nome:'Demônio do Vulkrundshard',tipo:'Demônio',   desc:'Entidade de fogo e lava aprisionada na pedra vulcânica cobiçada por Fariborz. Perigoso se liberado.'},
   {id:'orc_bandido',            nome:'Orc Bandido',           tipo:'Orc',         desc:'Orc saqueador que opera nos arredores dos Blackwoods.'},
   {id:'bugbear_assassino',      nome:'Bugbear Assassino',     tipo:'Bugbear',     desc:'Criatura peluda e brutal, especialista em emboscadas noturnas.'},
   {id:'troll_moss_belly',       nome:'Troll Barriga-de-Musgo',tipo:'Troll',       desc:'Troll colossal com musgo e plantas crescendo sobre seu ventre regenerativo.'},
@@ -574,6 +576,10 @@ function npcPortraitUrl(id){
 function npcSpriteUrl(path){
   if(!path) return '';
   return path.startsWith('../') ? path : `../${path}`;
+}
+
+function enemyPortraitUrl(id){
+  return `../portraits/enemy_${id}.png`;
 }
 
 function inimSpriteUrl(id, costas){
@@ -665,16 +671,17 @@ function buildInimigosTab(){
 
   let cards = '<div class="card-grid">';
   for(const en of INIMIGOS_DATA){
+    const portrait = enemyPortraitUrl(en.id);
     const spr = inimSpriteUrl(en.id, false);
     cards += `
       <div class="card" onclick="openEnemyModal('${en.id}')">
-        <div class="card-sprite" style="background:rgba(60,10,0,.25)">
-          <span class="cat-badge cat-inimigo">${en.tipo}</span>
-          <img src="${spr}" alt="${en.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div class="card-portrait" style="background:rgba(60,10,0,.25)">
+          <span class="cat-badge cat-inimigo" style="top:6px;left:6px;right:auto">${en.tipo}</span>
+          <img id="en-card-${en.id}" src="${portrait}" alt="${en.nome}"
+            onerror="this.src='${spr}';this.style.objectFit='contain';this.style.objectPosition='bottom'">
           <span class="no-img" style="display:none">💀</span>
         </div>
         <div class="card-body">
-          <div class="type-badge">${en.tipo}</div>
           <div class="card-name">${en.nome}</div>
           <div class="card-sub">${en.desc}</div>
         </div>
@@ -791,33 +798,40 @@ window.openEnemyModal = function(id){
   const en = INIMIGOS_DATA.find(e=>e.id===id);
   if(!en) return;
 
-  const sprPairs = `
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3);border-right:1px solid var(--border)">
-      <div class="modal-sprite-wrap"><img src="${inimSpriteUrl(id,false)}" alt="frente" onerror="this.style.display='none'"></div>
-      <div class="sprite-label">Frente</div>
-    </div>
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3)">
-      <div class="modal-sprite-wrap"><img src="${inimSpriteUrl(id,true)}" alt="costas" onerror="this.style.display='none'"></div>
-      <div class="sprite-label">Costas</div>
-    </div>`;
+  const portrait = enemyPortraitUrl(id);
+  const sprFront = inimSpriteUrl(id, false);
+  const sprBack  = inimSpriteUrl(id, true);
 
   document.getElementById('modal-inner').innerHTML = `
-    <div class="modal-header">
-      <div class="modal-sprites" style="flex-direction:row;min-width:200px;max-width:260px">${sprPairs}</div>
+    <div style="display:flex;border-bottom:1px solid var(--border)">
+      <div style="flex:0 0 auto;width:160px;background:rgba(0,0,0,0.4);overflow:hidden;flex-shrink:0">
+        <div style="height:320px;overflow:hidden;position:relative">
+          <img src="${portrait}" alt="${en.nome}"
+            style="width:100%;height:100%;object-fit:cover;object-position:50% 8%;display:block"
+            onerror="this.src='${sprFront}';this.style.objectFit='contain';this.style.objectPosition='bottom'">
+          <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,rgba(14,12,10,.9))"></div>
+        </div>
+        <div class="sprite-label">${en.tipo}</div>
+      </div>
       <div class="modal-title-area">
         <div class="modal-name">💀 ${en.nome}</div>
         <div class="modal-cat"><span class="cat-badge cat-inimigo">${en.tipo}</span></div>
-        <div class="modal-feat-npc" style="margin-top:12px">${en.desc}</div>
+        <div class="modal-feat-npc">${en.desc}</div>
       </div>
     </div>
     <div class="modal-body">
       <div class="section">
-        <div class="section-title">Tipo</div>
-        <div class="section-text">${en.tipo}</div>
-      </div>
-      <div class="section">
-        <div class="section-title">Descrição</div>
-        <div class="section-text">${en.desc}</div>
+        <div class="section-title">Sprites de Jogo</div>
+        <div style="display:flex;gap:16px;justify-content:center;padding:8px 0">
+          <div style="text-align:center">
+            <img src="${sprFront}" alt="frente" style="max-height:80px;object-fit:contain" onerror="this.style.display='none'">
+            <div class="sprite-label">Frente</div>
+          </div>
+          <div style="text-align:center">
+            <img src="${sprBack}" alt="costas" style="max-height:80px;object-fit:contain" onerror="this.style.display='none'">
+            <div class="sprite-label">Costas</div>
+          </div>
+        </div>
       </div>
     </div>`;
   openModal();
