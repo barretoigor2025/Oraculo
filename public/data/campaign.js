@@ -208,17 +208,6 @@ export const NPCS = {
     formaDeFalar: `Direta, profissional, sem floreios. Avalia tudo em termos de custo-benefício. Respostas precisas. Raramente faz perguntas desnecessárias. Tom neutro mesmo em situações extremas. Quando decide confiar em alguém, é completamente franca.`,
   },
 
-  npc_azzika_fren: {
-    id: 'npc_azzika_fren',
-    nome: 'Azzika Fren',
-    sprite: 'sprites/npc_azzika_fren.png',
-    categoria: 'hostil',
-    descFisica: `Elfa sombria de aparência jovem com pele escura-acinzentada e cabelo negro curto e selvagem. Olhos dourados penetrantes com expressão de desafio permanente. Veste armadura de malha fina sob uma capa negra esfarrapada. Carrega espada larga e arco longo — ambas de fabricação élfica fina. Movimentos rápidos e confiantes. Líder de patrulhas com postura de quem sabe que ninguém escapa dela.`,
-    personalidade: `Tenente dos Elfos Sombrios sob o Príncipe Kalos. Sanguinária, obstinada e perigosamente confiante demais — acredita que pode superar qualquer obstáculo pela força. Leal à sua equipe mas disposta a sacrificá-los pelo sucesso da missão. Considera humanos e outras raças como obstáculos descartáveis.`,
-    conhecimentos: `Lidera as patrulhas dos Elfos Sombrios nos Blackwoods. Sabe da localização do acampamento dos elfos. Conhece a missão de recuperar os fragmentos de Hooded Voorn. Não confia no Príncipe Kalos completamente mas o serve por ambição própria.`,
-    formaDeFalar: `Curta, direta, com desprezo velado por não-elfos. Não perde tempo com gentilezas. Dá ordens mais do que faz perguntas. Em combate, grita táticas para seus companheiros em Élfico. Quando confrontada com superioridade evidente, recua sem orgulho ferido — eficiência acima de tudo.`,
-  },
-
   npc_jariella: {
     id: 'npc_jariella',
     nome: 'Jariella, a Elfa do Mar',
