@@ -541,19 +541,7 @@ const INIMIGOS_DATA = [
   {id:'golem_de_pergaminho',    nome:'Golem de Pergaminho',   tipo:'Constructo',  desc:'Guarda-costas do Rei Chutter, feito de pergaminhos mágicos animados.'},
   {id:'alquimista_choir',       nome:'Alquimista de Choir',   tipo:'Humanoide',   desc:'Infiltrado pálido e calculista do necromante Choir. Defende o Gloamreach com poções e venenos.'},
   {id:'demonio_vulkrundshard',  nome:'Demônio do Vulkrundshard',tipo:'Demônio',   desc:'Entidade de fogo e lava aprisionada na pedra vulcânica cobiçada por Fariborz. Perigoso se liberado.'},
-  {id:'orc_bandido',            nome:'Orc Bandido',           tipo:'Orc',         desc:'Orc saqueador que opera nos arredores dos Blackwoods.'},
-  {id:'bugbear_assassino',      nome:'Bugbear Assassino',     tipo:'Bugbear',     desc:'Criatura peluda e brutal, especialista em emboscadas noturnas.'},
-  {id:'troll_moss_belly',       nome:'Troll Barriga-de-Musgo',tipo:'Troll',       desc:'Troll colossal com musgo e plantas crescendo sobre seu ventre regenerativo.'},
-  {id:'ankle_snapper',          nome:'Ankle Snapper',         tipo:'Fera',        desc:'Pequena criatura que ataca tornozelos com mordidas venenosas e rápidas.'},
-  {id:'barkthresher',           nome:'Barkthresher',          tipo:'Fera',        desc:'Criatura que vive sob cascas de árvores antigas e ataca com mandíbulas.'},
-  {id:'marrowwither',           nome:'Marrowwither',          tipo:'Espírito',    desc:'Espírito que drena força vital e vigor das suas vítimas.'},
-  {id:'quay_grabber',           nome:'Quay Grabber',          tipo:'Aquático',    desc:'Criatura das águas que arrasta vítimas para as profundezas.'},
-  {id:'caranguejo_gigante',     nome:'Caranguejo Gigante',    tipo:'Aquático',    desc:'Caranguejo colossal nas áreas alagadas dos Blackwoods.'},
   {id:'rei_chutter',            nome:'Rei Chutter (Combate)', tipo:'Boss',        desc:'Forma de combate do Rei Chutter. Troll-feiticeiro colossal e implacável.'},
-  {id:'goblin_arqueiro',        nome:'Goblin Arqueiro',       tipo:'Goblin',      desc:'Goblin especializado em ataques à distância.'},
-  {id:'goblin_batedor',         nome:'Goblin Batedor',        tipo:'Goblin',      desc:'Goblin explorador, rápido e difícil de capturar.'},
-  {id:'goblin_bruto',           nome:'Goblin Bruto',          tipo:'Goblin',      desc:'Goblin de combate corpo a corpo, robusto e agressivo.'},
-  {id:'goblin_lider',           nome:'Goblin Líder',          tipo:'Goblin',      desc:'Líder de horda goblin. Coordena ataques e buffa aliados.'},
 ];
 
 // ── HELPERS ──────────────────────────────────────────────────────────
@@ -671,7 +659,7 @@ function buildInimigosTab(){
 
   let cards = '<div class="card-grid">';
   for(const en of INIMIGOS_DATA){
-    const portrait = enemyPortraitUrl(en.id);
+    const portrait = en.id === 'rei_chutter' ? '../portraits/npc_rei_chutter.png' : enemyPortraitUrl(en.id);
     const spr = inimSpriteUrl(en.id, false);
     cards += `
       <div class="card" onclick="openEnemyModal('${en.id}')">
@@ -798,7 +786,7 @@ window.openEnemyModal = function(id){
   const en = INIMIGOS_DATA.find(e=>e.id===id);
   if(!en) return;
 
-  const portrait = enemyPortraitUrl(id);
+  const portrait = id === 'rei_chutter' ? '../portraits/npc_rei_chutter.png' : enemyPortraitUrl(id);
   const sprFront = inimSpriteUrl(id, false);
   const sprBack  = inimSpriteUrl(id, true);
 
