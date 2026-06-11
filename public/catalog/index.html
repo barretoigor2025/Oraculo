@@ -567,6 +567,10 @@ function portraitUrl(id, gender){
   return `../portraits/${id}_${gender}.png`;
 }
 
+function npcPortraitUrl(id){
+  return `../portraits/${id}.png`;
+}
+
 function npcSpriteUrl(path){
   if(!path) return '';
   return path.startsWith('../') ? path : `../${path}`;
@@ -633,14 +637,15 @@ function buildNpcsTab(){
 
   let cards = '<div class="card-grid" id="npc-grid">';
   for(const npc of npcList){
-    const sprUrl = npcSpriteUrl(npc.sprite);
+    const portraitSrc = npcPortraitUrl(npc.id);
+    const fallbackSrc = npcSpriteUrl(npc.sprite);
     const snippet = (npc.descFisica||'').slice(0,80).replace(/`/g,'') + '…';
     cards += `
       <div class="card" data-cat="${npc.categoria}" onclick="openNpcModal('${npc.id}')">
-        <div class="card-sprite">
-          <span class="cat-badge cat-${npc.categoria}">${catLabel(npc.categoria)}</span>
-          <img src="${sprUrl}" alt="${npc.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-          <span class="no-img" style="display:none">🧙</span>
+        <div class="card-portrait" style="background:rgba(0,0,0,0.35)">
+          <span class="cat-badge cat-${npc.categoria}" style="top:6px;left:6px;right:auto">${catLabel(npc.categoria)}</span>
+          <img src="${portraitSrc}" alt="${npc.nome}"
+            onerror="this.src='${fallbackSrc}';this.style.objectFit='contain';this.style.objectPosition='bottom'">
         </div>
         <div class="card-body">
           <div class="card-name">${npc.nome}</div>
@@ -747,13 +752,8 @@ window.openNpcModal = function(id){
   const npc = NPCS[id];
   if(!npc) return;
 
-  const sprUrl = npcSpriteUrl(npc.sprite);
-
-  const sprPairs = `
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3)">
-      <div class="modal-sprite-wrap"><img src="${sprUrl}" alt="frente" onerror="this.style.display='none'"></div>
-      <div class="sprite-label">Frente</div>
-    </div>`;
+  const portraitSrc = npcPortraitUrl(npc.id);
+  const fallbackSrc = npcSpriteUrl(npc.sprite);
 
   const sections = [
     npc.descFisica     && ['Aparência Física',  npc.descFisica],
@@ -767,12 +767,20 @@ window.openNpcModal = function(id){
     </div>`).join('');
 
   document.getElementById('modal-inner').innerHTML = `
-    <div class="modal-header">
-      <div class="modal-sprites">${sprPairs}</div>
+    <div style="display:flex;border-bottom:1px solid var(--border)">
+      <div style="flex:0 0 auto;width:160px;background:rgba(0,0,0,0.4);overflow:hidden;flex-shrink:0">
+        <div style="height:320px;overflow:hidden;position:relative">
+          <img src="${portraitSrc}" alt="${npc.nome}"
+            style="width:100%;height:100%;object-fit:cover;object-position:50% 8%;display:block"
+            onerror="this.src='${fallbackSrc}';this.style.objectFit='contain';this.style.objectPosition='bottom'">
+          <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,rgba(14,12,10,.9))"></div>
+        </div>
+        <div class="sprite-label">${catLabel(npc.categoria)}</div>
+      </div>
       <div class="modal-title-area">
         <div class="modal-name">${npc.nome}</div>
         <div class="modal-cat"><span class="cat-badge cat-${npc.categoria}">${catLabel(npc.categoria)}</span></div>
-        <div class="modal-feat-npc">${npc.personalidade ? npc.personalidade.slice(0,140)+'…' : ''}</div>
+        <div class="modal-feat-npc">${npc.personalidade ? npc.personalidade.slice(0,180)+'…' : ''}</div>
       </div>
     </div>
     <div class="modal-body">${sections}</div>`;
