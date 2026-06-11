@@ -26,10 +26,10 @@ export const NPCS = {
     nome: 'Gregoras Pellos',
     sprite: 'sprites/npc_gregoras_pellos.png',
     categoria: 'aliado',
-    descFisica: `Homem de ~50 anos, constituição mediana, barba grisalha bem aparada, calvície parcial. Usa óculos de leitura de aros de bronze. Veste traje formal de burocrata da corte em azul-escuro com toque de cinza. Sempre carrega rolos de pergaminho sob o braço. Expressão séria e ligeiramente ansiosa, postura curvada de quem passa horas sobre papéis.`,
-    personalidade: `Funcionário sênior da corte de Mhoried. Meticuloso, formal, obcecado com procedimentos corretos. Genuinamente leal à Duquesa. Fala em termos legais e administrativos mesmo em situações de urgência. Preocupado com o que os nobres vizinhos vão pensar.`,
-    conhecimentos: `Conhece Oswald desde a infância e pode descrever como identificá-lo: dedo indicador dos pés maior que o dedão, marca de nascença em forma de baga-de-espinheiro no ombro. Sabe que Oswald tentou aprender magia com o mago Dendybar e que deu terrivelmente errado.`,
-    formaDeFalar: `Fala em frases técnicas e protocolares. Usa termos como "procedimento adequado", "conforme o registro" e "segundo o protocolo". Fica visivelmente desconfortável quando pressionado a dar informações não oficiais. Tem o hábito de ajustar os óculos quando nervoso.`,
+    descFisica: `Homem de ~45 anos, constituição robusta e ombros largos. Cabelo castanho-escuro curto, barba de três dias, expressão séria e fechada. Veste armadura acolchoada azul-escura reforçada com detalhes em bronze, cinto largo com fivela de ferro. Empunha uma maça de cabeça ferrada à cinta. Postura ereta de soldado — não se curva, não sorri à toa. Olhar direto e avaliador, como alguém que mede ameaças por reflexo.`,
+    personalidade: `Braço direito militar da Duquesa Catherine — não um burocrata, mas um homem de ação que age como emissário quando necessário. Leal à Duquesa por juramento e por convicção, não por protocolo. Direto ao ponto, intolerante com enrolação. Não se importa se os aventureiros gostam dele — importa que façam o trabalho. Carrega o peso da missão com silêncio, não com discursos. Quando pressiona, pressiona de verdade.`,
+    conhecimentos: `Conhece Oswald há anos — pode identificá-lo pela marca de nascença no ombro e pelo dedo indicador do pé maior que o dedão. Sabe que Oswald buscou o mago Dendybar nos Blackwoods e que deu errado. Conhece os perigos da região ao norte. Tem ordens explícitas da Duquesa para trazer esses aventureiros ao castelo — com ou sem diplomacia.`,
+    formaDeFalar: `Frases curtas e diretas. Não explica o que não precisa explicar. Usa imperativos: "Venham.", "Não temos tempo.", "Sigam-me." Quando irritado, a voz fica mais baixa, não mais alta. Nunca enrola — se tem algo a dizer, diz na primeira frase. Não usa "por favor" com frequência. Quando dá uma informação, é porque decidiu dar — não porque foi convencido por lábia.`,
   },
 
   npc_hobbleboot_sam: {

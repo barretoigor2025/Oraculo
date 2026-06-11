@@ -2005,6 +2005,7 @@ async function _cinMostrarDialogo() {
 .cin-msg{display:flex;align-items:flex-start;gap:10px;}
 .cin-msg-port{width:46px;height:60px;border-radius:7px;overflow:hidden;flex-shrink:0;border:1px solid rgba(190,140,35,.3);background:rgba(0,0,0,.4);}
 .cin-msg-port img{width:100%;height:100%;object-fit:cover;object-position:top;}
+.cin-msg:not(.player) .cin-msg-port img{transform:scaleX(-1);}
 .cin-msg-body{flex:1;min-width:0;}
 .cin-msg-nome{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(180,150,60,.6);margin-bottom:4px;}
 .cin-msg-txt{font-size:13px;color:rgba(230,205,160,.92);line-height:1.58;font-style:italic;}
@@ -2099,21 +2100,23 @@ async function _cinMostrarDialogo() {
     return d;
   }
 
-  const _gregSystem = `Você é Gregoras Pellos — funcionário sênior da corte de Mhoried.
+  const _gregSystem = `Você é Gregoras Pellos — braço direito militar da Duquesa Catherine de Mhoried. Você não é burocrata. Você é soldado e emissário.
 
-PERSONALIDADE: Meticuloso, formal, obcecado com procedimentos corretos. Genuinamente leal à Duquesa Catherine. Fala em termos legais e administrativos mesmo em urgência. Preocupado com o que os nobres pensarão.
+QUEM VOCÊ É: Homem de ~45 anos, robusto, armadura acolchoada azul-escura, maça à cinta. Veteran de campanha. Poucos sorrisos, menos ainda palavras desnecessárias. A Duquesa confia em você para missões que exigem discernimento — e força, se preciso.
 
-FORMA DE FALAR: Frases técnicas e protocolares. Usa "procedimento adequado", "conforme o registro", "segundo o protocolo". Ajusta os óculos quando nervoso. Fica visivelmente desconfortável com informações não oficiais. Tem o hábito de ajustar os óculos duas vezes quando pressionado.
+PERSONALIDADE: Direto. Sem rodeios. Intolerante com enrolação. Leal à Duquesa por juramento e convicção — não por protocolo. Não se importa se os aventureiros gostam de você. Importa que façam o trabalho. Quando pressiona, pressiona de verdade. Quando dá informação, é porque escolheu dar — não porque foi convencido por lábia.
 
-SITUAÇÃO: Você encontrou os aventureiros logo após a batalha na feira de Mhoried. O Duque Oswald, irmão da Duquesa Catherine, desapareceu e foi transformado em criatura selvagem por uma maldição. A Duquesa convoca urgentemente esses heróis ao castelo — são os únicos em quem ela confia com esse segredo de Estado.
+FORMA DE FALAR: Frases curtas. Imperativos quando necessário: "Venham.", "Agora.", "Sigam." Nunca explica o que não precisa explicar. Quando irritado, a voz fica mais baixa, não mais alta. Sem "procedimento adequado", sem "conforme o registro" — isso é linguagem de escrivão, não de soldado. Pode usar linguagem militar: flancos, cobrir, missão, ordens.
 
-O QUE VOCÊ SABE (revele aos poucos — nunca tudo de uma vez):
-- A Duquesa Catherine governa Mhoried com firmeza mas carrega culpa pelo sumiço do irmão.
-- O Duque Oswald foi visto pela última vez nos Blackwoods.
-- Há boatos de uma maldição druídica mas Gregoras nunca confirmaria "rumores sem registro oficial".
+SITUAÇÃO: Você encontrou os aventureiros logo após a batalha na feira de Mhoried. O Duque Oswald, irmão da Duquesa, desapareceu nas Blackwoods e foi transformado em criatura. A Duquesa precisa desses heróis no castelo — são os únicos em quem ela confia com este segredo. Você tem ordens de trazê-los, com ou sem diplomacia.
+
+O QUE VOCÊ SABE (revele com relutância, aos poucos — nunca tudo de uma vez):
+- Oswald foi visto pela última vez nos Blackwoods, perto do território do mago Dendybar.
+- A transformação foi resultado de algo que deu muito errado com magia.
 - A situação política é delicada — os barões vizinhos não podem saber da fraqueza da casa.
+- Você pode identificar Oswald: marca de nascença no ombro, dedo indicador do pé maior que o dedão.
 
-REGRAS: Português brasileiro. Máximo 3 frases por resposta. Nunca quebre o personagem. Reaja sempre ao que foi dito — responda especificamente ao que o aventureiro disse. Se insistirem, eventualmente ceda informações com relutância formal.`;
+REGRAS: Português brasileiro. Máximo 2-3 frases por resposta — você não discursa. Nunca quebre o personagem. Reaja ao que foi dito. Se pressionado demais, endurece — não cede por pressão de lábia, só por argumento real. Sem óculos, sem ajustar ombros de forma elegante — no máximo um gesto de impaciência.`;
 
   async function gregorasFala(userMsg) {
     const el = appendMsg('greg', 'Gregoras Pellos', 'sprites/npc_gregoras_pellos.png', '...', true);
@@ -2123,10 +2126,10 @@ REGRAS: Português brasileiro. Máximo 3 frases por resposta. Nunca quebre o per
     if (!apiKey) {
       await new Promise(r => setTimeout(r, 700));
       const fallbacks = [
-        '"Perdão pela interrupção..." ele ajusta os óculos duas vezes. "Conforme o protocolo de emergência da corte — a Duquesa Catherine solicita urgentemente a presença de vocês no castelo. O assunto é... classificado."',
-        '"Compreendo suas reservas." Ele faz uma anotação no pergaminho. "Porém o protocolo é claro — a Duquesa precisa de vocês. Cada momento de demora compromete o assunto de Estado."',
-        '"Permita-me ser direto." Ele olha em volta com cautela. "O que a Duquesa tem a comunicar não pode ser dito aqui em público. No castelo — com discrição adequada."',
-        '"Não posso fornecer mais informações em local público." Ele aperta o pergaminho contra o peito. "Confiem no protocolo. A Duquesa é justa — e o assunto é urgente."',
+        'Ele para na sua frente, bloqueia o caminho com o ombro. "A Duquesa manda chamar. Não é um convite — é uma ordem." Um aceno seco com a cabeça. "Agora."',
+        'Ele cruza os braços, olhar fixo. "Você quer detalhes. Entendo. Mas não aqui, não agora." Pausa. "O castelo. Então explico o que posso."',
+        'Ele olha em volta — avaliando, não com medo. "Tem ouvidos em toda a feira." A mão pousa na maça, não ameaçador, apenas reflexo de quem viveu de se precaver. "Sigam."',
+        'Ele não repete o pedido. Apenas aponta para a saída da feira com dois dedos, sem palavra. Quem sabe ler linguagem de soldado entende: é hora de ir.',
       ];
       const idx = Math.min(convHist.filter(m => m.role === 'assistant').length, fallbacks.length - 1);
       const fb = fallbacks[idx];
@@ -2186,9 +2189,9 @@ REGRAS: Português brasileiro. Máximo 3 frases por resposta. Nunca quebre o per
 
   // Narrativa introdutória e primeira fala de Gregoras
   await new Promise(r => setTimeout(r, 400));
-  appendNarr('Gregoras Pellos se aproxima, ajustando os óculos com nervosismo visível.');
+  appendNarr('Gregoras Pellos corta caminho entre os feridos da batalha. Nem olha para os lados — os olhos já fixos nos aventureiros.');
   await new Promise(r => setTimeout(r, 600));
-  await gregorasFala('Você acabou de alcançar os aventureiros após a batalha. Cumprimente-os brevemente e transmita o recado urgente da Duquesa Catherine com seu jeito protocolar — ela precisa deles no castelo agora. Seja formal e urgente ao mesmo tempo.');
+  await gregorasFala('Você é Gregoras Pellos, soldado e emissário da Duquesa Catherine de Mhoried. Você acabou de chegar até os aventureiros logo após a batalha. Apresente-se de forma direta e curta — diga que a Duquesa manda chamá-los urgentemente ao castelo. Não explique mais do que o necessário. Menos de 3 frases, tom seco e sério.');
 }
 
 function _cinTransicaoCastelo() {
