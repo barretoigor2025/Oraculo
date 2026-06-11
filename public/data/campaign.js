@@ -35,7 +35,7 @@ export const NPCS = {
   npc_hobbleboot_sam: {
     id: 'npc_hobbleboot_sam',
     nome: 'Hobbleboot Sam',
-    sprite: 'sprites/npc_finn_willowheel.png',
+    sprite: 'sprites/npc_hobbleboot_sam.png',
     categoria: 'neutro',
     descFisica: `Homem de meia-idade ~50 anos, barba curta grisalha, cabelo castanho-acinzentado. Veste casaco de viajante marrom com capa verde desgastada. Usa bengala de madeira. Carrega às costas uma grande cesta repleta de cogumelos, ervas e outros produtos da floresta. Rosto angular e expressão séria mas não hostil — homem acostumado a caminhar sozinho pelas matas.`,
     personalidade: `Comerciante itinerante da Feira de St. Phanourios, especializado em produtos da floresta — cogumelos, ervas, raízes medicinais. Tagarela e fonte inesgotável de rumores locais. Gosta de aventureiros pois trazem histórias. Conhece atalhos e perigos das matas por anos de coleta. Sem agenda política — apenas quer que a feira transcorra bem.`,
@@ -46,7 +46,7 @@ export const NPCS = {
   npc_finn_willowheel: {
     id: 'npc_finn_willowheel',
     nome: 'Finn Willowheel',
-    sprite: 'sprites/npc_hobbleboot_sam.png',
+    sprite: 'sprites/npc_finn_willowheel.png',
     categoria: 'aliado',
     descFisica: `Homem idoso de ~70 anos, cabelo branco muito curto e ralo, rosto rosado com sorriso largo e afável. Veste roupas de trabalho — avental de couro com bolsos cheios de ferramentas de sapateiro, fita métrica no cinto. Carrega às costas uma enorme saca transbordando de sapatos, botas, sandálias e chinelos de todas as cores e tamanhos. Olhos espertos e cheios de vida. Postura ativa e passo leve apesar da aparente idade.`,
     personalidade: `Sapateiro experiente e amigável, conhecido há décadas nas estradas e feiras da região. Enérgico, cheio de histórias, genuinamente curioso sobre cada pessoa que encontra. Desconfia profundamente de elfos negros por experiências passadas. Dedica-se ao ofício com paixão — cada sapato é uma obra de arte para ele.`,
@@ -79,7 +79,7 @@ export const NPCS = {
   npc_valmorien: {
     id: 'npc_valmorien',
     nome: 'Valmorien',
-    sprite: 'sprites/npc_mac_ronan.png',
+    sprite: 'sprites/npc_valmorien.png',
     categoria: 'hostil',
     descFisica: `Elfa negra jovem e ágil, pele cinza-escura com subtom avermelhado, cabelo curto e escuro preso em rabo de cavalo baixo. Traços afiados e expressão severa, olhos vermelhos estreitados em avaliação constante. Veste armadura de caçador em couro escuro e peles, arco longo às costas e faca curta sempre à mão. Postura compacta e atlética — corpo treinado para eliminar alvos rapidamente. Cicatriz sutil no queixo esquerdo.`,
     personalidade: `Assassina e caçadora de elite do Príncipe Kalos. Leal ao Kalos acima de tudo. Poucas palavras, ação rápida. Vê humanos como problemas a serem gerenciados. Não mata por prazer — apenas por necessidade ou ordens. Tem um código de honra arcano que a impede de atacar pelas costas.`,
@@ -90,7 +90,7 @@ export const NPCS = {
   npc_ysoria: {
     id: 'npc_ysoria',
     nome: 'Ysoria',
-    sprite: 'sprites/npc_wulfram_chifrado.png',
+    sprite: 'sprites/npc_ysoria.png',
     categoria: 'hostil',
     descFisica: `Elfo negro de feições angulosas, pele cinza-esverdeada, cabelo escuro e volumoso. Olhos vermelhos com expressão permanentemente calculista. Veste equipamento de caçador/ranger em couro escuro e peles irregulares, manta rasgada sobre os ombros. Carrega arco com corda de nervo animal e aljava de flechas nas costas. Movimentos silenciosos como um predador — cada passo deliberado e sem desperdício.`,
     personalidade: `Guerreiro arqueiro dos elfos negros, par de Valmorien. Mais perigoso que aparenta pela aproximação silenciosa. Frio, calculista, vê as situações como equações. Está em missão e considera qualquer interrupção um desperdício de seu tempo. Tem curiosidade intelectual que o faz fazer perguntas inesperadas antes de atacar.`,
@@ -101,7 +101,7 @@ export const NPCS = {
   npc_wulfram_chifrado: {
     id: 'npc_wulfram_chifrado',
     nome: 'Wulfram, o Chifrado',
-    sprite: 'sprites/npc_ysoria.png',
+    sprite: 'sprites/npc_wulfram_chifrado.png',
     categoria: 'neutro',
     descFisica: `Homem robusto e imponente de ~40 anos, porte intimidador. Chifres de cervo crescendo organicamente da testa — ramificados, com veludo natural, definitivamente parte de seu corpo. Cabelo escuro e desgrenhado, barba densa. Pele bronzeada pela floresta. Veste capa de peles de animais sobre armadura de couro grosseiro. Empunha um machado de batalha de lâmina larga. Expressão séria e direta, olhos castanho-esverdeados que raramente piscam.`,
     personalidade: `Guardião selvagem dos Blackwoods, filho de Mutter Grimmhaar. Neutro — não é inimigo, não é aliado incondicional. Respeita quem respeita a floresta. Recusou a oferta do Rei Chutter de liderar os kobolds porque odeia o necromante Choir, aliado de Chutter. Não faz amizade fácil mas honra promessas.`,
@@ -134,7 +134,7 @@ export const NPCS = {
   npc_mac_ronan: {
     id: 'npc_mac_ronan',
     nome: 'Mac Rónán, Alto Druida',
-    sprite: 'sprites/npc_valmorien.png',
+    sprite: 'sprites/npc_mac_ronan.png',
     categoria: 'aliado',
     descFisica: `Druida extremamente idoso de aparência ~80 anos, provavelmente muito mais velho. Cabelo branco longo e barba comprida com folhas, pequenos galhos e musgo entrelaçados naturalmente. Robes verdes desgastados em camadas — mais natureza do que tecido, com vegetação viva crescendo sobre o pano. Pés descalços ou amarrados com cipó. Mãos com veias proeminentes, dedos entrelaçados em frente ao corpo em gesto sereno. Olhos cinza-esverdeados de sabedoria profunda. Caminha devagar mas com intenção absoluta.`,
     personalidade: `Alto Druida de Cnoc na Ríthe, curandeiro e guardião da floresta. Sábio, medido, pesa cada palavra. Profundamente preocupado com a segurança de sua aldeia e de Cnoc na Ríthe. Depois de ser resgatado dos kobolds, quer voltar imediatamente. Pode curar os heróis (cura Major e Minor). Conhece o feitiço para reverter a maldição de Oswald mas precisa de três ervas raras.`,
@@ -167,7 +167,7 @@ export const NPCS = {
   npc_blunkin_esmaga_cranios: {
     id: 'npc_blunkin_esmaga_cranios',
     nome: 'Blunkin Esmaga-Crânios',
-    sprite: 'sprites/npc_rei_chutter.png',
+    sprite: 'sprites/npc_blunkin_esmaga_cranios.png',
     categoria: 'neutro_hostil',
     descFisica: `Criatura réptil-anfíbia de estatura baixa (~1,0m), corpo redondo e rechonchudo. Pele alaranjada-avermelhada e escamosa. Olhos amarelo-esverdeados esbugalhados, expressão permanentemente pomposa. Usa coroa torta de metal com pedras semipreciosas encrustadas — claramente presente de alguém importante. Capa real roxa com bordas de pelo branco. Colar de dentes e amuletos. Empunha cetro com crânio decorativo na ponta. Barriga protuberante, postura erguida com orgulho ridículo.`,
     personalidade: `Rei dos kobolds da Cidade Kobold, aliado obrigado do Rei Chutter. Excessivamente vaidoso e facilmente bajulado. Considera-se um gênio estratégico apesar de tomar decisões terríveis. Genuinamente adora seus súditos à sua maneira. Facilmente distraído por elogios. Tem medo do Rei Chutter mas mais medo de parecer covarde.`,
@@ -189,7 +189,7 @@ export const NPCS = {
   npc_rei_chutter: {
     id: 'npc_rei_chutter',
     nome: 'Rei Chutter',
-    sprite: 'sprites/npc_blunkin_esmaga_cranios.png',
+    sprite: 'sprites/npc_rei_chutter.png',
     categoria: 'vilao',
     descFisica: `Criatura monstruosa e colossal de ~3m, pele cinza-pedra densa e enrugada como rocha viva. Musculatura absurda — braços como troncos, tórax que parece uma muralha. Espinhos ósseos emergindo da cabeça e ombros. Tatuagem/marca violeta no peito — símbolo do pacto com as Pedras de Limm. Equipamento de couro pesado grosseiro adaptado para seu tamanho brutal. Braços cruzados com arrogância de quem nunca precisou se defender. Expressão que combina inteligência traiçoeira com brutalidade absoluta. Cada passo faz o chão tremer.`,
     personalidade: `Troll-feiticeiro poderoso com planos de conquista da região norte de Megalos. Inteligência cruel disfarçada por aparência puramente brutal — subestimá-lo é erro fatal. Ama magia de areia acima de tudo. Paga dívidas, cumpre barganha. Odeia traidores. Alimentou-se dos ossos do mago Limm para absorver seu conhecimento.`,
