@@ -786,41 +786,35 @@ window.openEnemyModal = function(id){
   const en = INIMIGOS_DATA.find(e=>e.id===id);
   if(!en) return;
 
-  const portrait = id === 'rei_chutter' ? '../portraits/npc_rei_chutter.png' : enemyPortraitUrl(id);
-  const sprFront = inimSpriteUrl(id, false);
-  const sprBack  = inimSpriteUrl(id, true);
+  const isRei    = id === 'rei_chutter';
+  const portFront = isRei ? '../portraits/npc_rei_chutter.png' : enemyPortraitUrl(id);
+  const portBack  = isRei ? '../portraits/npc_rei_chutter.png' : `../portraits/enemy_${id}_costas.png`;
+  const sprFront  = inimSpriteUrl(id, false);
+  const sprBack   = inimSpriteUrl(id, true);
 
   document.getElementById('modal-inner').innerHTML = `
-    <div style="display:flex;border-bottom:1px solid var(--border)">
-      <div style="flex:0 0 auto;width:160px;background:rgba(0,0,0,0.4);overflow:hidden;flex-shrink:0">
-        <div style="height:320px;overflow:hidden;position:relative">
-          <img src="${portrait}" alt="${en.nome}"
-            style="width:100%;height:100%;object-fit:cover;object-position:50% 8%;display:block"
-            onerror="this.src='${sprFront}';this.style.objectFit='contain';this.style.objectPosition='bottom'">
-          <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,rgba(14,12,10,.9))"></div>
+    <div class="portrait-strip">
+      <div class="portrait-col">
+        <div class="portrait-img-wrap">
+          <img src="${portFront}" alt="Frente"
+            style="object-fit:contain;background:rgba(0,0,0,0.25)"
+            onerror="this.src='${sprFront}';this.style.objectFit='contain'">
         </div>
-        <div class="sprite-label">${en.tipo}</div>
+        <div class="portrait-label">▶ Frente</div>
       </div>
-      <div class="modal-title-area">
-        <div class="modal-name">💀 ${en.nome}</div>
-        <div class="modal-cat"><span class="cat-badge cat-inimigo">${en.tipo}</span></div>
-        <div class="modal-feat-npc">${en.desc}</div>
+      <div class="portrait-col">
+        <div class="portrait-img-wrap">
+          <img src="${portBack}" alt="Costas"
+            style="object-fit:contain;background:rgba(0,0,0,0.25)"
+            onerror="this.src='${sprBack}';this.style.objectFit='contain'">
+        </div>
+        <div class="portrait-label">◀ Costas</div>
       </div>
     </div>
-    <div class="modal-body">
-      <div class="section">
-        <div class="section-title">Sprites de Jogo</div>
-        <div style="display:flex;gap:16px;justify-content:center;padding:8px 0">
-          <div style="text-align:center">
-            <img src="${sprFront}" alt="frente" style="max-height:80px;object-fit:contain" onerror="this.style.display='none'">
-            <div class="sprite-label">Frente</div>
-          </div>
-          <div style="text-align:center">
-            <img src="${sprBack}" alt="costas" style="max-height:80px;object-fit:contain" onerror="this.style.display='none'">
-            <div class="sprite-label">Costas</div>
-          </div>
-        </div>
-      </div>
+    <div class="modal-class-info">
+      <div class="modal-name">💀 ${en.nome}</div>
+      <div class="modal-cat"><span class="cat-badge cat-inimigo">${en.tipo}</span></div>
+      <div class="modal-feat">${en.desc}</div>
     </div>`;
   openModal();
 };
