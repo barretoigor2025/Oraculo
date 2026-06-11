@@ -219,17 +219,6 @@ export const NPCS = {
     formaDeFalar: `(Só aparece em visões do Poço dos Chorões ou como presença espiritual). Fala em fragmentos, como memórias: "O bosque me consumiu... a besta de dentes podres... minha espada ainda canta nas águas..." Pode revelar a localização de seu túmulo aos que beberem da água do poço.`,
   },
 
-  npc_drizzle: {
-    id: 'npc_drizzle',
-    nome: 'Drizzle',
-    sprite: 'sprites/npc_drizzle.png',
-    categoria: 'neutro',
-    descFisica: `Criatura réptil-esguia de estatura baixa (~1,1m). Pele esverdeada-oliva, escamosa e lustrosa. Orelhas grandes parecidas com asas de morcego, sempre em alerta. Olhos grandes e amarelos, expressão esperta e levemente sorrateira. Corpo magro mas coberto em camadas de colares, pulseiras, cordões com badulaques coloridos — pedras, contas, adornos baratos e alguns possivelmente valiosos. Veste trapos em camadas sobrepostas. Expressão de quem sabe mais do que parece e está sempre calculando uma vantagem.`,
-    personalidade: `Mercador e informante de natureza oportunista. Neutro por conveniência — está sempre do lado que lhe traz mais lucro ou segurança. Inteligente e perspicaz, coleta informações como outros coletam moedas. Sobreviveu nos Blackwoods por saber quando falar e quando calar.`,
-    conhecimentos: `Conhece rumores, rotas e segredos de várias facções nos Blackwoods. Sabe de movimentações de elfos sombrios, kobolds e criaturas. Tem bugigangas e itens incomuns para trocar. Suas informações são geralmente confiáveis — sua reputação depende disso.`,
-    formaDeFalar: `Fala rápido e em voz baixa, como se cada palavra fosse uma mercadoria. Mistura adulação com cálculo. Usa "amigo" com todos mas não confia em ninguém. Sempre introduz uma oferta ou troca no meio da conversa. "Drizzle sabe coisas... mas coisas têm preço, sim?"`,
-  },
-
   npc_choir_necromante: {
     id: 'npc_choir_necromante',
     nome: 'Choir, o Necromante',
