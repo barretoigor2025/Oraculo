@@ -786,26 +786,26 @@ window.openEnemyModal = function(id){
   const en = INIMIGOS_DATA.find(e=>e.id===id);
   if(!en) return;
 
-  const isRei    = id === 'rei_chutter';
-  const portFront = isRei ? '../portraits/npc_rei_chutter.png' : enemyPortraitUrl(id);
-  const portBack  = isRei ? '../portraits/npc_rei_chutter.png' : `../portraits/enemy_${id}_costas.png`;
-  const sprFront  = inimSpriteUrl(id, false);
-  const sprBack   = inimSpriteUrl(id, true);
+  const isRei     = id === 'rei_chutter';
+  const sheetFront = isRei ? '../portraits/npc_rei_chutter.png' : `../portraits/enemy_${id}_frente.png`;
+  const sheetBack  = isRei ? '../portraits/npc_rei_chutter.png' : `../portraits/enemy_${id}_costas.png`;
+  const sprFront   = inimSpriteUrl(id, false);
+  const sprBack    = inimSpriteUrl(id, true);
 
   document.getElementById('modal-inner').innerHTML = `
     <div class="portrait-strip">
       <div class="portrait-col">
         <div class="portrait-img-wrap">
-          <img src="${portFront}" alt="Frente"
-            style="object-fit:contain;background:rgba(0,0,0,0.25)"
+          <img src="${sheetFront}" alt="Frente"
+            style="object-fit:contain;background:rgba(0,0,0,0.2)"
             onerror="this.src='${sprFront}';this.style.objectFit='contain'">
         </div>
         <div class="portrait-label">▶ Frente</div>
       </div>
       <div class="portrait-col">
         <div class="portrait-img-wrap">
-          <img src="${portBack}" alt="Costas"
-            style="object-fit:contain;background:rgba(0,0,0,0.25)"
+          <img src="${sheetBack}" alt="Costas"
+            style="object-fit:contain;background:rgba(0,0,0,0.2)"
             onerror="this.src='${sprBack}';this.style.objectFit='contain'">
         </div>
         <div class="portrait-label">◀ Costas</div>
