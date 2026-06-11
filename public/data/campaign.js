@@ -230,12 +230,33 @@ export const CENAS = {
     id: 'prologo',
     titulo: 'Prólogo — O Mundo de Ygdis',
     subtitulo: 'Megalos · Reino de Mhoried',
-    textoIntro: `No mundo de Ygdis, onde a magia antiga ainda respira nas pedras das montanhas e nas raízes das florestas milenares, o Reino de Mhoried ergue-se como bastião de ordem entre terras cada vez mais sombrias. A Duquesa Catherine Laskaris governa com mão firme e coração preocupado: seu irmão Oswald desapareceu nas profundezas dos Blackwoods após buscar um mago chamado Dendybar — e o que voltou não era mais o homem que todos conheciam. Vocês são aventureiros que chegaram à Feira da Colheita de St. Phanourios, atraídos por promessas de trabalho, glória ou simplesmente por acaso. O que encontrarão aqui mudará o destino de todo o reino.`,
+    textoIntro: `No mundo de Ygdis, o Reino de Mhoried ergue-se como bastião de ordem entre terras cada vez mais sombrias. A Duquesa Catherine Laskaris governa com mão firme — e coração preocupado com o irmão desaparecido. Vocês são aventureiros chegando à Feira da Colheita de St. Phanourios. O que encontrarão aqui mudará o destino de todo o reino.`,
     imgExterior: 'locations/mhoried_castelo_ext.png',
     imgInterior: 'locations/mhoried_market_int.png',
     npcsPresentes: [],
     temBatalha: false,
     ordemNarrativa: 0,
+    introSlides: [
+      {
+        imagem: 'locations/mhoried_castelo_ext.png',
+        texto: `No mundo de Ygdis, onde a magia antiga ainda respira nas pedras das montanhas e nas raízes das florestas milenares, o Reino de Mhoried ergue-se como bastião de ordem entre terras cada vez mais sombrias. A Duquesa Catherine Laskaris governa com mão firme e coração preocupado: seu irmão Oswald desapareceu nas profundezas dos Blackwoods após buscar o mago Dendybar — e o que voltou não era mais o homem que todos conheciam.`,
+      },
+      {
+        imagem: 'locations/mhoried_castelo_ext.png',
+        texto: `Vocês são aventureiros que chegaram à Feira da Colheita de St. Phanourios, atraídos por promessas de trabalho, glória ou simplesmente pelo acaso. Algo importante está prestes a acontecer nesta cidade — e os ventos do destino já escolheram os seus personagens para testemunhá-lo.`,
+      },
+      {
+        imagem: 'locations/mhoried_market_ext.png',
+        texto: `A Feira da Colheita transborda de vida e cor. Vendedores proclamam especiarias e tecidos, crianças perseguem umas às outras entre as barracas, e o aroma de pão quente mistura-se ao de cerveja e incenso. Bardos tocam em cada esquina, malabaristas arrancam aplausos da multidão. Por um momento, é difícil imaginar que algo de errado pudesse rondar estas terras tão festivas.`,
+        revealFirst: true,
+      },
+      {
+        imagem: 'locations/mhoried_market_ext2.png',
+        texto: `No salão principal, a Duquesa Catherine aguarda aventureiros de confiança — seus olhos percorrem cada rosto com urgência disfarçada de cortesia. Antes que qualquer palavra seja dita, um grito perfura o burburinho lá fora. Depois outro. Cabeças se viram: os espantalhos decorativos das barracas estão... se movendo.`,
+        ganchoBatalha: true,
+        revealFirst: true,
+      },
+    ],
   },
 
   mhoried_market: {
@@ -250,6 +271,17 @@ export const CENAS = {
     descBatalha: 'Espantalhos animados por necromancia irrompem na feira durante a festa',
     inimigos: 'Espantalhos de Choir',
     ordemNarrativa: 1,
+    introSlides: [
+      {
+        imagem: 'locations/mhoried_castelo_ext.png',
+        texto: `Gregoras conduz o grupo pelas ruas de Mhoried em passo apressado, desviando das barracas reviradas e dos guardas que ainda isolam a área do ataque. Ao chegar ao castelo ele troca um aceno com o sentinela — sem espera, sem anúncio formal. "A Duquesa pediu para não haver cerimônias," ele diz enquanto abre a porta lateral.`,
+      },
+      {
+        imagem: 'locations/mhoried_market_int.png',
+        texto: `A Duquesa Catherine Laskaris os aguarda no salão principal, de pé junto à janela, os olhos na praça ainda agitada lá embaixo. Ela se vira quando vocês entram. "Obrigada por virem," ela diz, voz firme mas carregando algo que não é só preocupação política. Gregoras fecha a porta suavemente. A conversa pode começar.`,
+        revealFirst: true,
+      },
+    ],
   },
 
   blackwoods_entrada: {

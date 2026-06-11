@@ -67,6 +67,11 @@ export async function startNarration(roomId, cenaId = 'mhoried_market') {
       dialogo: [],
       ts: Date.now(),
     },
+    postBattleConfirmados: {},
+    batalha: {},
+    currentTurnPlayerId: null,
+    turnOrder: [],
+    enemies: [],
   });
 }
 

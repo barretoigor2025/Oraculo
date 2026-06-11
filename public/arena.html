@@ -27,7 +27,7 @@ if(_cfg&&_rid&&_pid){
     };
     window._fbSetEnemies=async(enemies)=>{
       try{
-        const data=enemies.map(u=>({nome:u.nome,x:u.col,y:u.row,hp:u.hp,maxHp:u.maxHp}));
+        const data=enemies.map(u=>({id:u.id||u.nome,nome:u.nome,x:u.col,y:u.row,hp:u.hp,maxHp:u.maxHp}));
         await updateDoc(rd,{enemies:data});
       }catch{}
     };
@@ -38,6 +38,16 @@ if(_cfg&&_rid&&_pid){
       try{await updateDoc(rd,{enemyIntent:intent??null});}catch{}
     };
     window._fbListenRoom=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
+    window._fbSetStatus=async(status,extra={})=>{
+      try{
+        const data={status,updatedAt:Date.now()};
+        for(const[k,v]of Object.entries(extra)) data[k]=v;
+        await updateDoc(rd,data);
+      }catch{}
+    };
+    window._fbAddPostBattleConfirm=async()=>{
+      try{await updateDoc(rd,{[`postBattleConfirmados.${_pid}`]:true});}catch{}
+    };
   }catch(e){console.warn('Arena Firebase init:',e);}
 }
 window._fbReady=true;
@@ -177,7 +187,16 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   text-shadow:0 0 8px rgba(255,50,20,0.45);
 }
 .pt-s{ font-size:9px; color:rgba(210,175,105,0.65); }
-#pt-hp{ font-size:11px; color:rgba(255,125,95,0.9); font-weight:700; }
+#pt-sprite{
+  align-self:center;
+  width:44px; height:56px;
+  overflow:hidden; border-radius:5px;
+  background:rgba(139,69,19,0.15);
+  border:1px solid rgba(139,69,19,0.45);
+  display:flex; align-items:flex-end; justify-content:center;
+  margin-bottom:2px;
+}
+#pt-sprite img{ height:100%; width:auto; display:block; image-rendering:pixelated; }
 
 /* ── Botões ── */
 #action-row{
@@ -498,9 +517,14 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
       <div class="pch" id="pc-hex"></div>
     </div>
     <div id="panel-target">
+      <div id="pt-sprite"></div>
       <div id="pt-nome"></div>
       <div class="pt-s" id="pt-stats"></div>
-      <div id="pt-hp"></div>
+      <div class="psr">
+        <span class="psi">❤️</span>
+        <div class="pbar"><div class="pbar-fill hp" id="pt-hp-bar"></div></div>
+        <span class="psv" id="pt-hp-val">—</span>
+      </div>
     </div>
   </div>
   <div id="action-row">
@@ -789,8 +813,8 @@ const HABILIDADES = {
   ],
   'Mago': [
     { id:'cajadada',    nome:'Cajadada',           icone:'🪄', tipo:'melee',    categoria:'basico', alcance:1,  anim:'melee',    cor:'#9988dd', desc:'Golpe com o cajado',          dano:'1d4+1',  custoSP:0  },
-    { id:'bola_fogo',   nome:'Bola de Fogo',       icone:'🔥', tipo:'projétil', categoria:'magia',  alcance:8,  anim:'fireball', cor:'#ff4400', desc:'Projétil de fogo explosivo',  dano:'1d8+3',  custoSP:20 },
-    { id:'confusao',    nome:'Confusão',           icone:'🌀', tipo:'projétil', categoria:'magia',  alcance:6,  anim:'magic',    cor:'#aa22ff', desc:'Magia que confunde a mente',  dano:'1d6+2',  custoSP:15 },
+    { id:'bola_fogo',   nome:'Bola de Fogo',       icone:'🔥', tipo:'projétil', categoria:'magia',  alcance:8,  anim:'fireball', cor:'#ff4400', desc:'Explosão de fogo — dano em área (raio 2)',  dano:'2d6+2',  areaRaio:2, custoSP:20 },
+    { id:'confusao',    nome:'Confusão',           icone:'🌀', tipo:'projétil', categoria:'magia',  alcance:6,  anim:'magic',    cor:'#aa22ff', desc:'Magia mental — dano em área (raio 1)',     dano:'1d6+2',  areaRaio:1, custoSP:15 },
     { id:'escudo',      nome:'Escudo Arcano',      icone:'🛡️', tipo:'buff',     categoria:'buff',   alcance:0,  anim:'shield',   cor:'#4488ff', desc:'Escudo mágico (self-cast)',   dano:null,     custoSP:10 },
   ],
   'Arqueiro': [
@@ -804,6 +828,9 @@ const HABILIDADES = {
   'Clérigo': [
     { id:'cajado',      nome:'Cajado',             icone:'✨', tipo:'melee',    categoria:'basico', alcance:1,  anim:'melee',    cor:'#eecc44', desc:'Golpe sagrado',               dano:'1d6+1',  custoSP:0  },
     { id:'curar',       nome:'Curar Ferimentos',   icone:'💚', tipo:'buff',     categoria:'buff',   alcance:0,  anim:'cure',     cor:'#22dd88', desc:'Cura 1d8+2 HP',               dano:null,     custoSP:20 },
+  ],
+  'Espantalho': [
+    { id:'garra',       nome:'Garra',              icone:'🌾', tipo:'melee',    categoria:'basico', alcance:1,  anim:'melee',    cor:'#8b4513', desc:'Garra cortante',              dano:'1d6',    custoSP:0  },
   ],
 };
 
@@ -825,7 +852,7 @@ const _hcd = _HERO_CLASS_DATA[_heroClassId] || _HERO_CLASS_DATA.mago;
 // ══════════════════════════════════════════
 //  UNIDADES
 // ══════════════════════════════════════════
-const unidades = [
+let unidades = [
   { nome:_hcd.nome, col:_fbIsHost?4:6, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
     imgSrc:`sprites/${_heroClassId}_${_heroGender}_costas.png`,
     imgSrcAtaque:`sprites/${_heroClassId}_${_heroGender}.png`,
@@ -833,9 +860,9 @@ const unidades = [
     hp:_hcd.hp, maxHp:_hcd.hp, sp:_hcd.sp, maxSp:_hcd.sp,
     portrait:`portraits/${_heroClassId}_${_heroGender}.png`,
     itens:_hcd.itens },
-  { nome:'Espantalho', col:5, row:7, emoji:'🌾', cor:'#8b4513',
+  { id:'esp_0', nome:'Espantalho', col:6, row:3, emoji:'🌾', cor:'#8b4513',
     imgSrc:'sprites/inimigo_espantalho_assombrado.png', img:null, tipo:'inimigo', mov:3,
-    hp:60, maxHp:60, sp:0, maxSp:1, portrait:null, ac:12 },
+    hp:12, maxHp:12, sp:0, maxSp:0, portrait:null, ac:11 },
 ];
 
 // ══════════════════════════════════════════
@@ -866,6 +893,17 @@ let turnoIdx             = 0;   // offline/solo fallback
 let planoMovimento       = null;
 let planoAtaque          = null;
 let movBloqueado         = false;
+let areaPreview          = null;   // hex center preview during AoE targeting
+
+// Returns the effective attacker position: the confirmed movement destination
+// if the player has already locked in a move this turn, else current hex.
+// This lets melee units check attack range from where they *will be* after
+// moving, so move + attack can happen in the same turn.
+function posEfetiva(unit){
+  if(planoMovimento && planoMovimento.unit===unit && targetHex)
+    return {col:targetHex.col, row:targetHex.row};
+  return {col:unit.col, row:unit.row};
+}
 
 // ══════════════════════════════════════════
 //  CANVASES
@@ -1072,12 +1110,12 @@ function _fxLoop(ts){
     } else if(p.type==='pulse'){
       const t=1-alpha;
       const r=p.r+p.dr*t;
-      ctxFx.shadowColor=p.color;ctxFx.shadowBlur=18;
+      ctxFx.shadowColor=p.color;ctxFx.shadowBlur=30;
       ctxFx.beginPath();ctxFx.arc(p.x,p.y,r,0,Math.PI*2);
-      ctxFx.strokeStyle=p.color;ctxFx.lineWidth=(5.5-t*4)*alpha;ctxFx.stroke();
+      ctxFx.strokeStyle=p.color;ctxFx.lineWidth=(10+14*(1-t))*alpha;ctxFx.stroke();
     } else if(p.type==='flash'){
-      ctxFx.shadowColor=p.color;ctxFx.shadowBlur=22;
-      ctxFx.beginPath();ctxFx.arc(p.x,p.y,p.r*(1-alpha*.6),0,Math.PI*2);
+      ctxFx.shadowColor=p.color;ctxFx.shadowBlur=45;
+      ctxFx.beginPath();ctxFx.arc(p.x,p.y,p.r*(alpha*.7+.3),0,Math.PI*2);
       ctxFx.fillStyle=p.color;ctxFx.fill();
     } else if(p.type==='orbit'){
       ctxFx.shadowColor=p.color;ctxFx.shadowBlur=20;
@@ -1223,22 +1261,27 @@ function _drawProj(p){
 // ── Spawna partículas de impacto ──
 function spawnImpact(x,y,kind){
   if(kind==='fireball'){
-    // flash central
-    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:45,color:'rgba(255,220,120,0.9)',life:200,maxLife:200});
-    // rings
-    for(let i=0;i<3;i++){
-      _fxParticles.push({type:'ring',x,y,vx:0,vy:0,gravity:0,r:20+i*22,color:`rgba(255,${100-i*25},0,0.8)`,life:400+i*100,maxLife:400+i*100});
+    // flash branco gigante — instante de impacto
+    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:105,color:'rgba(255,255,220,0.95)',life:155,maxLife:155});
+    // flash laranja secundário
+    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:70,color:'rgba(255,140,20,0.88)',life:260,maxLife:260});
+    // 4 anéis de pulso expansivos
+    const _fb=[
+      {dr: 95,color:'rgba(255,255,190,0.92)',life:320},
+      {dr:148,color:'rgba(255,110,0,0.82)',  life:490},
+      {dr:192,color:'rgba(255,40,0,0.65)',   life:640},
+      {dr:238,color:'rgba(180,10,0,0.38)',   life:800},
+    ];
+    for(const pd of _fb) _fxParticles.push({type:'pulse',x,y,vx:0,vy:0,gravity:0,r:4,dr:pd.dr,color:pd.color,life:pd.life,maxLife:pd.life});
+    // sparks rápidos
+    for(let i=0;i<42;i++){
+      const a=Math.random()*Math.PI*2,sp=5+Math.random()*11;
+      _fxParticles.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:.04,r:2.5+Math.random()*2.5,color:Math.random()<.6?'#ff7700':'#ffee44',life:350+Math.random()*450,maxLife:800});
     }
-    // sparks
-    for(let i=0;i<22;i++){
-      const a=Math.random()*Math.PI*2;
-      const sp=2+Math.random()*5;
-      _fxParticles.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:.04,r:2+Math.random()*2,color:Math.random()<.5?'#ff8800':'#ffff44',life:300+Math.random()*300,maxLife:600});
-    }
-    // embers
-    for(let i=0;i<12;i++){
-      const a=Math.random()*Math.PI*2;
-      _fxParticles.push({type:'dot',x,y,vx:Math.cos(a)*(1+Math.random()*3),vy:Math.sin(a)*(1+Math.random()*3),gravity:.03,r:3+Math.random()*2,color:'rgba(255,120,0,0.8)',life:400+Math.random()*400,maxLife:800});
+    // brasas grossas
+    for(let i=0;i<26;i++){
+      const a=Math.random()*Math.PI*2,sp=2.5+Math.random()*5.5;
+      _fxParticles.push({type:'dot',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:.025,r:4+Math.random()*4,color:Math.random()<.5?'rgba(255,100,0,0.90)':'rgba(255,200,40,0.85)',life:550+Math.random()*700,maxLife:1250});
     }
   } else if(kind==='arrow'){
     // spark burst
@@ -1249,14 +1292,21 @@ function spawnImpact(x,y,kind){
     }
     _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:18,color:'rgba(180,255,160,0.7)',life:120,maxLife:120});
   } else if(kind==='magic'){
-    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:30,color:'rgba(200,120,255,0.85)',life:180,maxLife:180});
-    for(let i=0;i<3;i++){
-      _fxParticles.push({type:'ring',x,y,vx:0,vy:0,gravity:0,r:14+i*16,color:`rgba(180,80,255,0.7)`,life:350+i*80,maxLife:350+i*80});
+    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:90,color:'rgba(220,140,255,0.92)',life:165,maxLife:165});
+    _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:58,color:'rgba(255,220,255,0.88)',life:130,maxLife:130});
+    const _mg=[
+      {dr: 90,color:'rgba(255,220,255,0.90)',life:310},
+      {dr:138,color:'rgba(200,80,255,0.78)', life:470},
+      {dr:180,color:'rgba(130,0,210,0.55)',  life:600},
+    ];
+    for(const pd of _mg) _fxParticles.push({type:'pulse',x,y,vx:0,vy:0,gravity:0,r:4,dr:pd.dr,color:pd.color,life:pd.life,maxLife:pd.life});
+    for(let i=0;i<34;i++){
+      const a=Math.random()*Math.PI*2,sp=4+Math.random()*9;
+      _fxParticles.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:.02,r:2+Math.random()*2.5,color:Math.random()<.5?'#cc66ff':'#ffaaff',life:300+Math.random()*400,maxLife:700});
     }
     for(let i=0;i<16;i++){
-      const a=Math.random()*Math.PI*2;
-      const sp=1.5+Math.random()*4;
-      _fxParticles.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:.02,r:1.5+Math.random()*2,color:Math.random()<.5?'#cc66ff':'#ffaaff',life:250+Math.random()*300,maxLife:550});
+      const a=Math.random()*Math.PI*2,sp=1.5+Math.random()*4;
+      _fxParticles.push({type:'dot',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,gravity:-.005,r:3+Math.random()*3,color:Math.random()<.5?'rgba(180,80,255,0.85)':'rgba(255,200,255,0.80)',life:500+Math.random()*600,maxLife:1100});
     }
   } else if(kind==='melee'){
     _fxParticles.push({type:'flash',x,y,vx:0,vy:0,gravity:0,r:28,color:'rgba(255,220,100,0.7)',life:140,maxLife:140});
@@ -1281,14 +1331,20 @@ function spawnAura(cx,cy,kind){
     cure:  { flash:'rgba(0,210,80,0.80)',   ring:'rgba(50,230,110,0.85)',orb:'#88ffaa', rise:'rgba(140,255,180,0.75)' },
   }[kind];
 
-  // flash central
+  // flash central grande
   _fxParticles.push({type:'flash',x:cx,y:cy,vx:0,vy:0,gravity:0,
-    r:58,color:C.flash,life:380,maxLife:380});
+    r:90,color:C.flash,life:370,maxLife:370});
+  _fxParticles.push({type:'flash',x:cx,y:cy,vx:0,vy:0,gravity:0,
+    r:55,color:'rgba(255,255,255,0.70)',life:180,maxLife:180});
 
-  // 5 anéis de pulso escalonados
+  // 2 anéis de pulso de impacto iniciais (grandes e rápidos)
+  _fxParticles.push({type:'pulse',x:cx,y:cy,vx:0,vy:0,gravity:0,r:5,dr:110,color:C.ring,life:380,maxLife:380});
+  _fxParticles.push({type:'pulse',x:cx,y:cy,vx:0,vy:0,gravity:0,r:5,dr:155,color:C.flash,life:280,maxLife:280});
+
+  // 5 anéis de pulso escalonados (duradouros)
   for(let i=0;i<5;i++){
     _fxParticles.push({type:'pulse',x:cx,y:cy,vx:0,vy:0,gravity:0,
-      r:16,dr:68,color:C.ring,
+      r:5,dr:95,color:C.ring,
       life:2000-i*340,maxLife:2000-i*340});
   }
 
@@ -1297,7 +1353,7 @@ function spawnAura(cx,cy,kind){
     _fxParticles.push({type:'orbit',ox:cx,oy:cy,x:cx,y:cy,
       angle:i*Math.PI*2/3,
       angSpeed:kind==='fury'?0.0085:0.0052,
-      orbitR:30,r:6,color:C.orb,
+      orbitR:32,r:7,color:C.orb,
       vx:0,vy:0,gravity:0,life:2200,maxLife:2200});
   }
 
@@ -1306,22 +1362,22 @@ function spawnAura(cx,cy,kind){
     _fxParticles.push({type:'orbit',ox:cx,oy:cy,x:cx,y:cy,
       angle:i*Math.PI*2/4+Math.PI/4,
       angSpeed:kind==='fury'?-0.006:-0.0038,
-      orbitR:48,r:4.5,color:C.rise,
+      orbitR:52,r:5.5,color:C.rise,
       vx:0,vy:0,gravity:0,life:2200,maxLife:2200});
   }
 
   // partículas subindo (para todos, mas fúria mais rápidas)
   const speedMult=kind==='fury'?2.2:1.0;
-  for(let i=0;i<22;i++){
+  for(let i=0;i<30;i++){
     const a=(kind==='fury')?-(Math.random()*.8+0.1)*Math.PI:Math.random()*Math.PI*2;
-    const sp=(1+Math.random()*2.5)*speedMult;
+    const sp=(1.5+Math.random()*3.5)*speedMult;
     _fxParticles.push({
       type:kind==='fury'?'spark':'dot',
       x:cx+(Math.random()-.5)*22, y:cy+(Math.random()-.5)*22,
       vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-(kind==='fury'?1.8:0.9),
       gravity:kind==='fury'?.012:-.004,
-      r:2.5+Math.random()*2.5, color:Math.random()<.5?C.flash:C.rise,
-      life:700+Math.random()*900, maxLife:1600});
+      r:2.5+Math.random()*3, color:Math.random()<.5?C.flash:C.rise,
+      life:700+Math.random()*1000, maxLife:1700});
   }
 
   _fxStart();
@@ -1462,12 +1518,37 @@ function renderSel(){
   if(!selUnit) return;
 
   if(modoAtaque){
-    // range de ataque em vermelho/laranja
-    for(const h of atkTargets){
-      const{x,y}=hexCentro(h.col,h.row);
-      hexPath(ctxS,x,y);
-      ctxS.fillStyle='rgba(255,60,0,0.18)'; ctxS.fill();
-      ctxS.strokeStyle='rgba(255,100,0,0.55)'; ctxS.lineWidth=1.5; ctxS.stroke();
+    if(habAtual?.areaRaio>0){
+      // AoE: zona de lançamento em roxo suave
+      for(const h of atkTargets){
+        const{x,y}=hexCentro(h.col,h.row);
+        hexPath(ctxS,x,y);
+        ctxS.fillStyle='rgba(180,60,255,0.08)'; ctxS.fill();
+      }
+      // Preview da explosão ao redor do hex selecionado
+      if(areaPreview){
+        for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
+          if(hexDist(areaPreview.col,areaPreview.row,c,r)<=habAtual.areaRaio){
+            const{x,y}=hexCentro(c,r);
+            hexPath(ctxS,x,y);
+            ctxS.fillStyle='rgba(255,110,0,0.32)'; ctxS.fill();
+            ctxS.save(); ctxS.shadowColor='#ff6600'; ctxS.shadowBlur=12;
+            ctxS.strokeStyle='rgba(255,170,0,0.85)'; ctxS.lineWidth=2; hexPath(ctxS,x,y); ctxS.stroke(); ctxS.restore();
+          }
+        }
+        const fp=posEfetiva(selUnit);
+        const from=hexCentro(fp.col,fp.row);
+        const{x,y}=hexCentro(areaPreview.col,areaPreview.row);
+        drawArrow(ctxS,from.x,from.y,x,y);
+      }
+    } else {
+      // single-target: range em vermelho/laranja
+      for(const h of atkTargets){
+        const{x,y}=hexCentro(h.col,h.row);
+        hexPath(ctxS,x,y);
+        ctxS.fillStyle='rgba(255,60,0,0.18)'; ctxS.fill();
+        ctxS.strokeStyle='rgba(255,100,0,0.55)'; ctxS.lineWidth=1.5; ctxS.stroke();
+      }
     }
   } else {
     // range de movimento em azul
@@ -1505,8 +1586,25 @@ function renderSel(){
     drawArrow(ctxS,from.x,from.y,x,y);
   }
 
-  // seta de intenção de ataque (laranja) quando planoAtaque está definido
-  if(planoAtaque && planoAtaque.alvo && planoAtaque.alvo!==planoAtaque.atacante){
+  // AoE confirmado: mostra raio de explosão + seta
+  if(planoAtaque?.alvoHex){
+    const ctr=planoAtaque.alvoHex;
+    for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
+      if(hexDist(ctr.col,ctr.row,c,r)<=planoAtaque.hab.areaRaio){
+        const{x,y}=hexCentro(c,r);
+        hexPath(ctxS,x,y);
+        ctxS.fillStyle='rgba(255,100,0,0.28)'; ctxS.fill();
+        ctxS.save(); ctxS.shadowColor='#ff6600'; ctxS.shadowBlur=12;
+        ctxS.strokeStyle='rgba(255,150,0,0.75)'; ctxS.lineWidth=2; hexPath(ctxS,x,y); ctxS.stroke(); ctxS.restore();
+      }
+    }
+    const fromPos=(planoMovimento&&planoMovimento.unit===planoAtaque.atacante&&planoMovimento.path.length>0)
+      ?planoMovimento.path[planoMovimento.path.length-1]:planoAtaque.atacante;
+    const from=hexCentro(fromPos.col,fromPos.row);
+    const{x:tx,y:ty}=hexCentro(ctr.col,ctr.row);
+    drawAttackArrow(ctxS,from.x,from.y,tx,ty);
+  // seta de intenção de ataque single-target (laranja)
+  } else if(planoAtaque && planoAtaque.alvo && planoAtaque.alvo!==planoAtaque.atacante){
     const{x:tx,y:ty}=hexCentro(planoAtaque.alvo.col,planoAtaque.alvo.row);
     hexPath(ctxS,tx,ty); ctxS.fillStyle='rgba(255,60,0,0.22)'; ctxS.fill();
     ctxS.save(); ctxS.shadowColor='#ff4400'; ctxS.shadowBlur=16;
@@ -1545,27 +1643,36 @@ function renderGrid(){
 function renderUnits(){
   ctxU.clearRect(0,0,MAP_W,MAP_H);
   for(const u of unidades){
+    if(u.tipo==='inimigo'&&u.hp<=0) continue; // inimigo morto some imediatamente
     const{x,y}=unitPos(u);
     if(u.img){
       const sw=HR*3.2,sh=HR*3.2,foot=y+OOFF*.3;
       const clip=u.clipBottom||0;
       const srcH=Math.round(u.img.naturalHeight*(1-clip));
       const drawH=sh*(1-clip);
-      const drawArgs=[u.img,0,0,u.img.naturalWidth,srcH,x-sw/2,foot-drawH,sw,drawH];
-      if(u===selUnit){
-        ctxU.save(); ctxU.filter='drop-shadow(0 0 8px #ffd028) drop-shadow(0 0 14px #ffd02888)';
-        ctxU.drawImage(...drawArgs); ctxU.restore();
-      } else {
-        ctxU.drawImage(...drawArgs);
-      }
+      ctxU.save();
+      if(u===selUnit) ctxU.filter='drop-shadow(0 0 8px #ffd028) drop-shadow(0 0 14px #ffd02888)';
+      if(u.flipH){ ctxU.translate(2*x,0); ctxU.scale(-1,1); }
+      ctxU.drawImage(u.img,0,0,u.img.naturalWidth,srcH,x-sw/2,foot-drawH,sw,drawH);
+      ctxU.restore();
     } else {
       ctxU.beginPath(); ctxU.arc(x,y,HR*.45,0,Math.PI*2);
       ctxU.fillStyle=u.cor; ctxU.fill();
       ctxU.strokeStyle='rgba(255,255,255,.7)'; ctxU.lineWidth=2; ctxU.stroke();
     }
+    const ly=y+OOFF-14;
+    if(u.tipo==='inimigo'){
+      const bw=56,bh=14;
+      const bx=Math.round(x-bw/2),by=ly-18;
+      const ratio=Math.max(0,Math.min(1,u.hp/u.maxHp));
+      ctxU.fillStyle='rgba(0,0,0,.82)'; ctxU.fillRect(bx,by,bw,bh);
+      ctxU.fillStyle=ratio>0.6?'#44bb22':ratio>0.3?'#ddaa00':'#cc2200';
+      ctxU.fillRect(bx,by,Math.round(bw*ratio),bh);
+      ctxU.strokeStyle='rgba(255,255,255,.25)'; ctxU.lineWidth=1;
+      ctxU.strokeRect(bx+.5,by+.5,bw-1,bh-1);
+    }
     ctxU.font='bold 10px Segoe UI,sans-serif';
     const lw=ctxU.measureText(u.nome).width+10;
-    const ly=y+OOFF-14;
     ctxU.fillStyle='rgba(0,0,0,.78)';
     ctxU.beginPath(); ctxU.roundRect(x-lw/2,ly,lw,14,3); ctxU.fill();
     ctxU.fillStyle='#c8e8ff'; ctxU.textAlign='center'; ctxU.textBaseline='middle';
@@ -1604,9 +1711,15 @@ function renderActionRow(){
     ],
     'acao_ativa': [
       {id:'btn-cancelar', icon:'✕', label:'CANCELAR',   fn:'cancelarAtaqueAtual()', ativo:true},
+      ...(habAtual?.areaRaio>0 && areaPreview
+        ? [{id:'btn-lançar', icon:'💥', label:'LANÇAR', fn:'confirmarAoeAlvo()', ativo:true}]
+        : []),
     ],
     'acao_pronta': [
       {id:'btn-finalizar',icon:'✓', label:'FINALIZAR TURNO', fn:'finalizarTurno()', ativo:true, extra:'destaque'},
+      ...(planoAtaque&&!planoAtaque.hab?.tipo?.match(/buff/)&&planoAtaque.alvo!==planoAtaque?.atacante
+        ? [{id:'btn-mudar-alvo',icon:'🔄', label:'MUDAR ALVO', fn:'voltarParaAlvo()', ativo:true}]
+        : []),
     ],
     'resolvendo':    [],
     'turno_inimigo': [],
@@ -1642,7 +1755,7 @@ function mostrarLetreiro(nome, sub, punicao, duracao, cb){
 function iniciarTurno(unit){
   planoMovimento=null; planoAtaque=null; movBloqueado=false;
   selUnit=unit; moveHexes=[]; targetHex=null; hexPreview=null;
-  modoAtaque=false; habAtual=null; atkTargets=[];
+  modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null;
   _broadcastIntent();
   faseDoTurno='planejar_mover';
   const sub = unit.tipo==='heroi' ? 'escolha sua ação' : 'turno do inimigo';
@@ -1677,11 +1790,51 @@ function cancelarMover(){
 
 function cancelarAtaqueAtual(){
   faseDoTurno='planejar_acao';
-  modoAtaque=false; habAtual=null; atkTargets=[]; planoAtaque=null;
+  modoAtaque=false; habAtual=null; atkTargets=[]; planoAtaque=null; areaPreview=null;
   _broadcastIntent();
   fecharAtkPanel();
   ctxS.clearRect(0,0,MAP_W,MAP_H);
   render(); renderActionRow();
+}
+
+function confirmarAoeAlvo(){
+  if(!areaPreview||!habAtual||!selUnit) return;
+  const areaAlvos=unidades.filter(u=>
+    u.tipo==='inimigo'&&u.hp>0&&
+    hexDist(areaPreview.col,areaPreview.row,u.col,u.row)<=habAtual.areaRaio
+  );
+  planoAtaque={
+    hab:habAtual, atacante:selUnit,
+    alvoHex:{col:areaPreview.col,row:areaPreview.row},
+    alvo:{col:areaPreview.col,row:areaPreview.row},
+    areaAlvos
+  };
+  modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null;
+  faseDoTurno='acao_pronta';
+  _broadcastIntent();
+  renderActionRow(); renderBottomPanel(); renderSel();
+}
+
+function voltarParaAlvo(){
+  if(!planoAtaque) return;
+  const hab=planoAtaque.hab;
+  if(!hab||hab.alcance===0||hab.tipo==='buff') return;
+  planoAtaque=null; areaPreview=null;
+  habAtual=hab; modoAtaque=true;
+  const _pos=posEfetiva(selUnit);
+  if(hab.areaRaio>0){
+    const allHexes=[];
+    for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
+      if(hexDist(_pos.col,_pos.row,c,r)<=hab.alcance) allHexes.push({col:c,row:r});
+    }
+    atkTargets=allHexes;
+  } else {
+    atkTargets=unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0&&
+      hexDist(_pos.col,_pos.row,u.col,u.row)<=hab.alcance).map(u=>({col:u.col,row:u.row}));
+  }
+  faseDoTurno='acao_ativa';
+  _broadcastIntent();
+  renderActionRow(); renderSel(); renderBottomPanel();
 }
 
 function confirmarHexMover(){
@@ -1718,7 +1871,7 @@ function cancelarConfirmacao(){
 }
 
 function _mostrarOverlayFimBatalha(vitoria){
-  // Remove overlay anterior se existir
+  // Usado apenas para DERROTA
   document.getElementById('overlay-fim-batalha')?.remove();
   const div=document.createElement('div');
   div.id='overlay-fim-batalha';
@@ -1730,7 +1883,329 @@ function _mostrarOverlayFimBatalha(vitoria){
     <button id="btn-voltar-narracao" style="padding:13px 30px;font-size:15px;font-family:inherit;background:rgba(190,135,35,.25);color:#f5d878;border:1px solid rgba(190,135,35,.55);border-radius:8px;cursor:pointer;letter-spacing:1px;font-weight:600;-webkit-tap-highlight-color:transparent;">📖 Voltar à Narração</button>`;
   document.body.appendChild(div);
   document.getElementById('btn-voltar-narracao').addEventListener('click',()=>{
-    window.location.href='narration.html';
+    const btn=document.getElementById('btn-voltar-narracao');
+    btn.disabled=true; btn.textContent='⌛ Aguardando…';
+    if(window._fbAddPostBattleConfirm){
+      window._fbAddPostBattleConfirm();
+    } else {
+      window.location.href='narration.html';
+    }
+  });
+}
+
+// ── Cinematica pós-batalha (vitória) ─────────────────────────────
+let _cinematicaRodando = false;
+
+function _cinematicaVitoria() {
+  if (_cinematicaRodando) return;
+  _cinematicaRodando = true;
+  faseDoTurno = 'resolvendo';
+  document.getElementById('action-row').innerHTML = '';
+
+  // Sinaliza para não-hosts via Firebase
+  if (_fbIsHost) {
+    try { window._fbSetStatus?.('battle',{'batalha.cinematicaVitoria':Date.now()}); } catch(e){}
+  }
+
+  // Garante que inimigos foram removidos
+  unidades = unidades.filter(u => u.tipo !== 'inimigo');
+  render();
+
+  // Heróis caminham para posições ao redor do centro
+  const destHerois = [{col:5,row:6},{col:7,row:6},{col:6,row:5},{col:6,row:7},{col:6,row:6}];
+  const herois = unidades.filter(u => u.tipo === 'heroi' && u.hp > 0);
+
+  herois.forEach((h,i) => {
+    const dest = destHerois[i % destHerois.length];
+    _cinAnimarParaHex(h, dest.col, dest.row, 900 + i*180, null);
+  });
+
+  // Gregoras spawna após animação dos heróis (timer fixo, não depende de callback)
+  const gregoDelay = herois.length > 0 ? 1200 : 300;
+  setTimeout(_cinSpawnGregoras, gregoDelay);
+}
+
+function _cinAnimarParaHex(unit, dc, dr, dur, onDone) {
+  const s = unitPos(unit);
+  const e = hexCentro(dc, dr);
+  const t0 = performance.now();
+  (function tick(now){
+    let p = Math.min((now-t0)/dur, 1);
+    p = p<.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
+    unit._ax = s.x+(e.x-s.x)*p;
+    unit._ay = s.y+(e.y-s.y)*p;
+    renderUnits();
+    if (p < 1) requestAnimationFrame(tick);
+    else { unit._ax=null; unit._ay=null; unit.col=dc; unit.row=dr; onDone?.(); }
+  })(t0);
+}
+
+function _cinSpawnGregoras() {
+  if (unidades.find(u => u.id === '_greg_cin')) return;
+
+  const greg = {
+    nome:'Gregoras Pellos', tipo:'aliado_cin',
+    emoji:'📜', col:1, row:9,
+    hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10,
+    cor:'#8899bb',
+    imgSrc:'sprites/npc_gregoras_pellos.png',
+    img:null, portrait:null, flipH:false,
+    _ax:null, _ay:null, clipBottom:0, itens:[], id:'_greg_cin',
+  };
+
+  const img = new Image();
+  img.onload = () => { greg.img = img; renderUnits(); };
+  img.onerror = () => { greg.img = null; renderUnits(); };
+  img.src = greg.imgSrc;
+
+  unidades.push(greg);
+  render();
+
+  const gregoPath = [{col:2,row:9},{col:3,row:8},{col:4,row:8},{col:5,row:7}];
+  setTimeout(() => animarMovimento(greg, gregoPath, _cinMostrarDialogo), 300);
+}
+
+async function _cinMostrarDialogo() {
+  // Virar Gregoras para encarar os heróis
+  const greg = unidades.find(u => u.id === '_greg_cin');
+  if (greg) { greg.flipH = true; renderUnits(); }
+
+  const hero     = unidades.find(u => u.tipo === 'heroi' && !u._fbId);
+  const heroNome = hero?.nome  || 'Herói';
+  const heroPort = hero?.portrait || '';
+
+  // CSS do painel de conversa (injetado uma vez)
+  if (!document.getElementById('_cinconv-sty')) {
+    const s = document.createElement('style');
+    s.id = '_cinconv-sty';
+    s.textContent = `
+#cin-conv{display:flex;flex-direction:column;height:100%;overflow:hidden;}
+#cin-conv-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px 8px;border-bottom:1px solid rgba(190,140,35,.2);flex-shrink:0;}
+#cin-conv-hdr-name{flex:1;font-size:14px;font-weight:700;color:rgba(220,190,120,1);letter-spacing:.5px;}
+#cin-conv-hdr-badge{font-size:10px;padding:2px 8px;background:rgba(50,90,50,.4);border:1px solid rgba(80,160,80,.35);border-radius:20px;color:rgba(140,210,140,.85);letter-spacing:.3px;}
+#cin-conv-key-cfg{flex-shrink:0;display:none;padding:8px 14px;border-bottom:1px solid rgba(190,140,35,.15);background:rgba(0,0,0,.25);}
+#cin-conv-key-row{display:flex;gap:6px;}
+#cin-conv-key-input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(190,140,35,.4);border-radius:8px;padding:7px 10px;color:rgba(220,195,130,.9);font-family:inherit;font-size:12px;outline:none;}
+#cin-conv-key-save{padding:7px 14px;background:rgba(60,110,60,.4);border:1px solid rgba(90,175,90,.4);border-radius:8px;color:rgba(140,215,140,.9);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;}
+#cin-conv-key-hint{font-size:10px;color:rgba(190,165,90,.5);margin-top:4px;font-style:italic;}
+#cin-conv-log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:10px 14px 6px;scroll-behavior:smooth;}
+#cin-conv-controls{flex-shrink:0;padding:6px 12px max(10px,env(safe-area-inset-bottom));border-top:1px solid rgba(190,140,35,.18);}
+#cin-conv-input-row{display:flex;gap:6px;margin-bottom:6px;}
+#cin-conv-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(190,140,35,.35);border-radius:10px;padding:10px 14px;color:rgba(225,200,140,.92);font-family:inherit;font-size:13px;font-style:italic;outline:none;-webkit-appearance:none;caret-color:#f5d878;}
+#cin-conv-input::placeholder{color:rgba(190,155,75,.38);}
+#cin-conv-send{width:42px;height:42px;background:rgba(190,140,35,.22);border:1px solid rgba(190,140,35,.5);border-radius:10px;color:#f5d878;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;touch-action:manipulation;}
+#cin-conv-send:disabled{opacity:.3;}
+#cin-conv-toolbar{display:flex;gap:6px;}
+#cin-conv-encerrar{flex:1;padding:9px;background:rgba(30,80,30,.4);border:1px solid rgba(70,175,70,.4);border-radius:10px;color:rgba(155,225,150,.9);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.4px;touch-action:manipulation;}
+#cin-conv-key-btn{padding:9px 14px;background:rgba(50,50,15,.35);border:1px solid rgba(190,160,30,.28);border-radius:10px;color:rgba(220,190,80,.65);font-family:inherit;font-size:11px;cursor:pointer;touch-action:manipulation;}
+.cin-msg{display:flex;align-items:flex-start;gap:10px;}
+.cin-msg-port{width:46px;height:60px;border-radius:7px;overflow:hidden;flex-shrink:0;border:1px solid rgba(190,140,35,.3);background:rgba(0,0,0,.4);}
+.cin-msg-port img{width:100%;height:100%;object-fit:cover;object-position:top;}
+.cin-msg-body{flex:1;min-width:0;}
+.cin-msg-nome{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(180,150,60,.6);margin-bottom:4px;}
+.cin-msg-txt{font-size:13px;color:rgba(230,205,160,.92);line-height:1.58;font-style:italic;}
+.cin-msg.player{flex-direction:row-reverse;}
+.cin-msg.player .cin-msg-body{text-align:right;}
+.cin-msg.player .cin-msg-nome{color:rgba(120,180,255,.6);}
+.cin-msg.player .cin-msg-txt{color:rgba(210,230,255,.88);font-style:normal;font-size:13px;}
+.cin-msg.loading .cin-msg-txt{color:rgba(190,165,100,.35);font-style:italic;}
+.cin-narr{font-size:12px;color:rgba(190,165,100,.65);line-height:1.55;padding:2px 0 2px 10px;font-style:italic;border-left:2px solid rgba(190,140,35,.2);}
+@keyframes _cinmsgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.cin-msg,.cin-narr{animation:_cinmsgIn .3s ease;}`;
+    document.head.appendChild(s);
+  }
+
+  // Substituir bottom-panel pelo painel de conversa
+  const bp = document.getElementById('bottom-panel');
+  bp.innerHTML = `<div id="cin-conv">
+    <div id="cin-conv-hdr">
+      <div id="cin-conv-hdr-name">📜 Gregoras Pellos</div>
+      <div id="cin-conv-hdr-badge">Emissário da Duquesa</div>
+    </div>
+    <div id="cin-conv-key-cfg">
+      <div style="font-size:10px;color:rgba(220,185,90,.7);margin-bottom:5px;">🔑 Chave Groq para respostas dinâmicas da IA:</div>
+      <div id="cin-conv-key-row">
+        <input id="cin-conv-key-input" placeholder="gsk_..." autocomplete="off" spellcheck="false">
+        <button id="cin-conv-key-save">Salvar</button>
+      </div>
+      <div id="cin-conv-key-hint">Obtenha gratuitamente em console.groq.com</div>
+    </div>
+    <div id="cin-conv-log"></div>
+    <div id="cin-conv-controls">
+      <div id="cin-conv-input-row">
+        <input id="cin-conv-input" placeholder="O que você diz ou faz?" autocomplete="off" spellcheck="false">
+        <button id="cin-conv-send">➤</button>
+      </div>
+      <div id="cin-conv-toolbar">
+        <button id="cin-conv-encerrar">Ir ao castelo →</button>
+        <button id="cin-conv-key-btn">🔑</button>
+      </div>
+    </div>
+  </div>`;
+
+  // ── Curtain: painel sobe para cobrir o mapa inteiro ──
+  bp.style.transition = 'top 0.65s cubic-bezier(0.22,1,0.36,1), height 0.65s cubic-bezier(0.22,1,0.36,1)';
+  requestAnimationFrame(() => {
+    bp.style.top    = '0px';
+    bp.style.height = '100%';
+  });
+
+  const logEl   = document.getElementById('cin-conv-log');
+  const input   = document.getElementById('cin-conv-input');
+  const btnSend = document.getElementById('cin-conv-send');
+  const btnSair = document.getElementById('cin-conv-encerrar');
+  const btnKey  = document.getElementById('cin-conv-key-btn');
+  const keyCfg  = document.getElementById('cin-conv-key-cfg');
+  const keyInp  = document.getElementById('cin-conv-key-input');
+  const keySave = document.getElementById('cin-conv-key-save');
+
+  // ── Configuração da chave inline ──
+  const existingKey = localStorage.getItem('oraculo.groqKey');
+  if (existingKey) keyInp.value = existingKey;
+
+  btnKey.addEventListener('click', () => {
+    const visible = keyCfg.style.display === 'block';
+    keyCfg.style.display = visible ? 'none' : 'block';
+    if (!visible) setTimeout(() => keyInp.focus(), 50);
+  });
+
+  keySave.addEventListener('click', () => {
+    const k = keyInp.value.trim();
+    if (k) localStorage.setItem('oraculo.groqKey', k);
+    keyCfg.style.display = 'none';
+  });
+
+  // convHist: formato multi-turn correto para a API Groq
+  const convHist = []; // [{role:'user'|'assistant', content:string}]
+
+  function appendNarr(txt) {
+    const d = document.createElement('div');
+    d.className = 'cin-narr'; d.textContent = txt;
+    logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function appendMsg(quem, nome, portrait, txt, loading=false) {
+    const d = document.createElement('div');
+    d.className = 'cin-msg'+(quem==='player'?' player':'')+(loading?' loading':'');
+    const portHTML = portrait
+      ? `<div class="cin-msg-port"><img src="${portrait}" onerror="this.parentElement.style.display='none'"></div>`
+      : `<div class="cin-msg-port" style="display:flex;align-items:center;justify-content:center;font-size:22px">${quem==='player'?'🧑':'📜'}</div>`;
+    d.innerHTML = `${portHTML}<div class="cin-msg-body"><div class="cin-msg-nome">${nome}</div><div class="cin-msg-txt">${txt}</div></div>`;
+    logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+    return d;
+  }
+
+  const _gregSystem = `Você é Gregoras Pellos — funcionário sênior da corte de Mhoried.
+
+PERSONALIDADE: Meticuloso, formal, obcecado com procedimentos corretos. Genuinamente leal à Duquesa Catherine. Fala em termos legais e administrativos mesmo em urgência. Preocupado com o que os nobres pensarão.
+
+FORMA DE FALAR: Frases técnicas e protocolares. Usa "procedimento adequado", "conforme o registro", "segundo o protocolo". Ajusta os óculos quando nervoso. Fica visivelmente desconfortável com informações não oficiais. Tem o hábito de ajustar os óculos duas vezes quando pressionado.
+
+SITUAÇÃO: Você encontrou os aventureiros logo após a batalha na feira de Mhoried. O Duque Oswald, irmão da Duquesa Catherine, desapareceu e foi transformado em criatura selvagem por uma maldição. A Duquesa convoca urgentemente esses heróis ao castelo — são os únicos em quem ela confia com esse segredo de Estado.
+
+O QUE VOCÊ SABE (revele aos poucos — nunca tudo de uma vez):
+- A Duquesa Catherine governa Mhoried com firmeza mas carrega culpa pelo sumiço do irmão.
+- O Duque Oswald foi visto pela última vez nos Blackwoods.
+- Há boatos de uma maldição druídica mas Gregoras nunca confirmaria "rumores sem registro oficial".
+- A situação política é delicada — os barões vizinhos não podem saber da fraqueza da casa.
+
+REGRAS: Português brasileiro. Máximo 3 frases por resposta. Nunca quebre o personagem. Reaja sempre ao que foi dito — responda especificamente ao que o aventureiro disse. Se insistirem, eventualmente ceda informações com relutância formal.`;
+
+  async function gregorasFala(userMsg) {
+    const el = appendMsg('greg', 'Gregoras Pellos', 'sprites/npc_gregoras_pellos.png', '...', true);
+    const txtEl = el.querySelector('.cin-msg-txt');
+
+    const apiKey = localStorage.getItem('oraculo.groqKey');
+    if (!apiKey) {
+      await new Promise(r => setTimeout(r, 700));
+      const fallbacks = [
+        '"Perdão pela interrupção..." ele ajusta os óculos duas vezes. "Conforme o protocolo de emergência da corte — a Duquesa Catherine solicita urgentemente a presença de vocês no castelo. O assunto é... classificado."',
+        '"Compreendo suas reservas." Ele faz uma anotação no pergaminho. "Porém o protocolo é claro — a Duquesa precisa de vocês. Cada momento de demora compromete o assunto de Estado."',
+        '"Permita-me ser direto." Ele olha em volta com cautela. "O que a Duquesa tem a comunicar não pode ser dito aqui em público. No castelo — com discrição adequada."',
+        '"Não posso fornecer mais informações em local público." Ele aperta o pergaminho contra o peito. "Confiem no protocolo. A Duquesa é justa — e o assunto é urgente."',
+      ];
+      const idx = Math.min(convHist.filter(m => m.role === 'assistant').length, fallbacks.length - 1);
+      const fb = fallbacks[idx];
+      txtEl.textContent = fb;
+      el.classList.remove('loading');
+      convHist.push({role:'user', content: userMsg}, {role:'assistant', content: fb});
+      logEl.scrollTop = logEl.scrollHeight;
+      const hint = document.createElement('div');
+      hint.style.cssText = 'font-size:10px;color:rgba(190,160,70,.4);text-align:center;padding:3px 0;font-style:italic;';
+      hint.textContent = '(Configure 🔑 para respostas dinâmicas da IA)';
+      logEl.appendChild(hint);
+      logEl.scrollTop = logEl.scrollHeight;
+      return;
+    }
+
+    // Mensagens multi-turn: histórico completo + nova mensagem do usuário
+    const messages = [
+      {role:'system', content: _gregSystem},
+      ...convHist,
+      {role:'user', content: userMsg},
+    ];
+
+    try {
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {'Authorization':`Bearer ${apiKey}`,'content-type':'application/json'},
+        body: JSON.stringify({model:'llama-3.3-70b-versatile', max_tokens:220, messages})
+      });
+      const data = await resp.json();
+      const texto = data.choices?.[0]?.message?.content?.trim();
+      if (!texto) throw new Error('empty');
+      txtEl.textContent = texto;
+      convHist.push({role:'user', content: userMsg}, {role:'assistant', content: texto});
+    } catch(e) {
+      const err = '"A urgência não permite mais demoras. O castelo — agora."';
+      txtEl.textContent = err;
+      convHist.push({role:'user', content: userMsg}, {role:'assistant', content: err});
+    }
+    el.classList.remove('loading');
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  async function enviarFala() {
+    const txt = input.value.trim();
+    if (!txt || input.disabled) return;
+    input.value = '';
+    input.disabled = true; btnSend.disabled = true;
+    appendMsg('player', heroNome, heroPort, txt);
+    await gregorasFala(txt);
+    input.disabled = false; btnSend.disabled = false;
+    input.focus();
+  }
+
+  btnSend.addEventListener('click', enviarFala);
+  input.addEventListener('keydown', e => { if(e.key==='Enter') enviarFala(); });
+  btnSair.addEventListener('click', _cinTransicaoCastelo);
+
+  // Narrativa introdutória e primeira fala de Gregoras
+  await new Promise(r => setTimeout(r, 400));
+  appendNarr('Gregoras Pellos se aproxima, ajustando os óculos com nervosismo visível.');
+  await new Promise(r => setTimeout(r, 600));
+  await gregorasFala('Você acabou de alcançar os aventureiros após a batalha. Cumprimente-os brevemente e transmita o recado urgente da Duquesa Catherine com seu jeito protocolar — ela precisa deles no castelo agora. Seja formal e urgente ao mesmo tempo.');
+}
+
+function _cinTransicaoCastelo() {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9000;opacity:0;transition:opacity .65s;display:flex;align-items:center;justify-content:center;overflow:hidden;';
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => {
+    ov.style.opacity = '1';
+    setTimeout(() => {
+      const img = document.createElement('img');
+      img.src = 'locations/mhoried_castelo_ext.png';
+      img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;opacity:0;transition:opacity .65s;';
+      ov.appendChild(img);
+      requestAnimationFrame(() => {
+        img.style.opacity = '1';
+        setTimeout(() => {
+          if (window._fbAddPostBattleConfirm) window._fbAddPostBattleConfirm();
+          else window.location.href = 'narration.html';
+        }, 2400);
+      });
+    }, 680);
   });
 }
 
@@ -1738,7 +2213,9 @@ function verificarVitoria(){
   const inimigos=unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0);
   const herois=unidades.filter(u=>u.tipo==='heroi'&&u.hp>0);
   if(inimigos.length===0){
-    mostrarLetreiro('VITÓRIA!','o inimigo foi derrotado','',3000,()=>{_mostrarOverlayFimBatalha(true);});
+    unidades=unidades.filter(u=>u.tipo!=='inimigo'); // remove inimigos mortos do array
+    render();
+    mostrarLetreiro('VITÓRIA!','os inimigos foram derrotados','',2500, _cinematicaVitoria);
     return true;
   }
   if(herois.length===0){
@@ -1797,14 +2274,47 @@ function finalizarTurno(){
   });
 }
 
-function executarAtaquePlano(hab, atacante, alvo){
+function executarAtaquePlano(hab, atacante, alvo, onDone){
+  const cb = onDone || proximoTurno;
+
+  // AoE: lança projétil no hex central, depois rola 1 dado de dano para todos na área
+  if(hab.areaRaio>0 && planoAtaque?.areaAlvos){
+    if((hab.custoSP||0)>0 && atacante.sp>=hab.custoSP){
+      atacante.sp=Math.max(0,atacante.sp-hab.custoSP); renderBottomPanel();
+    }
+    const areaAlvos=planoAtaque.areaAlvos;
+    const alvoHex=planoAtaque.alvoHex||alvo;
+    lancarAtaque(hab,atacante,alvoHex,()=>{
+      const dmgR=rollNotacao(hab.dano);
+      const playlist=[{
+        tipo:'rolar', label:`${hab.icone} Dano em Área`,
+        nomeJog:atacante.nome,
+        alvo:areaAlvos.length?areaAlvos.map(e=>e.nome).join(', '):'(ninguém)',
+        resultado:dmgR.total, notacao:hab.dano,
+        dados:parseNotacao(hab.dano)?.sides||6, condicionalDe:0
+      }];
+      if(window._fbBroadcastDice) window._fbBroadcastDice(playlist);
+      DiceOverlay.mostrar(playlist,results=>{
+        const dmg=results[0].resultado;
+        for(const e of areaAlvos){
+          e.hp=Math.max(0,e.hp-dmg);
+          const p=hexCentro(e.col,e.row);
+          setTimeout(()=>spawnImpact(p.x,p.y,hab.anim==='fireball'?'fireball':'magic'),200);
+        }
+        if(areaAlvos.length&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
+        render(); renderBottomPanel(); cb();
+      });
+    });
+    return;
+  }
+
   // Deduct SP cost
   if((hab.custoSP||0)>0 && atacante.sp>=hab.custoSP){
     atacante.sp=Math.max(0,atacante.sp-hab.custoSP);
     renderBottomPanel();
   }
   if(hab.tipo==='buff'||hab.alcance===0){
-    lancarAtaque(hab,atacante,atacante,()=>{ proximoTurno(); });
+    lancarAtaque(hab,atacante,atacante,()=>{ cb(); });
     return;
   }
   const atqMod=ATTR_MOD[atacante.nome]||2;
@@ -1840,9 +2350,9 @@ function executarAtaquePlano(hab, atacante, alvo){
     const atk=results[0];
     if((atk.sucesso||atk.critico)&&!atk.catastrofe){
       if(results[1]){ alvo.hp=Math.max(0,alvo.hp-results[1].resultado); if(alvo.tipo==='inimigo'&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo')); }
-      lancarAtaque(hab,atacante,alvo,()=>{ render(); renderBottomPanel(); proximoTurno(); });
+      lancarAtaque(hab,atacante,alvo,()=>{ render(); renderBottomPanel(); cb(); });
     } else {
-      render(); renderBottomPanel(); proximoTurno();
+      render(); renderBottomPanel(); cb();
     }
   });
 }
@@ -1850,7 +2360,7 @@ function executarAtaquePlano(hab, atacante, alvo){
 function proximoTurno(){
   planoMovimento=null; planoAtaque=null; movBloqueado=false;
   selUnit=null; moveHexes=[]; targetHex=null;
-  modoAtaque=false; habAtual=null; atkTargets=[];
+  modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null;
   render(); renderBottomPanel();
   if(verificarVitoria()) return;
   _advanceTurn();
@@ -1858,24 +2368,31 @@ function proximoTurno(){
 
 function turnoInimigo(){
   faseDoTurno='turno_inimigo'; renderActionRow();
-  const esp=unidades.find(u=>u.tipo==='inimigo'&&u.hp>0);
-  const espName=esp?esp.nome:'Inimigo';
+  const allEnemies=unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0);
 
-  // Non-host: apenas aguarda o host avançar o turno via Firebase
+  // Non-host: just show letreiro and wait for host to advance via Firebase
   if(!_fbIsHost){
+    const espName=allEnemies.length?allEnemies[0].nome:'Inimigo';
     mostrarLetreiro(espName.toUpperCase(),'turno do inimigo','',1800,()=>renderActionRow());
     return;
   }
 
-  if(!esp){ _advanceTurn(); return; }
+  if(!allEnemies.length){ _advanceTurn(); return; }
+  _executarProximoInimigo(allEnemies, 0);
+}
 
-  // Host: calcula intenção do inimigo
-  planoMovimento=null; planoAtaque=null;
+function _executarProximoInimigo(enemies, idx){
+  if(idx>=enemies.length){ proximoTurno(); return; }
+  const esp=enemies[idx];
+  if(!esp||esp.hp<=0){ _executarProximoInimigo(enemies, idx+1); return; }
+
+  planoMovimento=null; planoAtaque=null; movBloqueado=false;
   const allHeroes=unidades.filter(u=>u.tipo==='heroi'&&u.hp>0);
-  if(!allHeroes.length){ _advanceTurn(); return; }
-  const alvo=allHeroes.sort((a,b)=>hexDist(esp.col,esp.row,a.col,a.row)-hexDist(esp.col,esp.row,b.col,b.row))[0];
+  if(!allHeroes.length){ proximoTurno(); return; }
 
+  const alvo=allHeroes.sort((a,b)=>hexDist(esp.col,esp.row,a.col,a.row)-hexDist(esp.col,esp.row,b.col,b.row))[0];
   const dist=hexDist(esp.col,esp.row,alvo.col,alvo.row);
+
   if(dist>1){
     // Pathing to an adjacent FREE hex next to the target (never onto occupied hex)
     const adjFree=hexVizinhos(alvo.col,alvo.row)
@@ -1888,16 +2405,17 @@ function turnoInimigo(){
   }
   const destCol=planoMovimento?planoMovimento.path[planoMovimento.path.length-1].col:esp.col;
   const destRow=planoMovimento?planoMovimento.path[planoMovimento.path.length-1].row:esp.row;
-  if(hexDist(destCol,destRow,alvo.col,alvo.row)<=1){
-    planoAtaque={
-      hab:{icone:'🌾',nome:'Garra',alcance:1,tipo:'melee',anim:'melee',dano:'1d6',desc:'Garra cortante'},
-      atacante:esp, alvo
-    };
+  const habEsp=(HABILIDADES[esp.nome]||[]).find(h=>h.categoria==='basico')||
+    {icone:'🌾',nome:'Garra',alcance:1,tipo:'melee',anim:'melee',dano:'1d6',desc:'Garra cortante'};
+
+  if(hexDist(destCol,destRow,alvo.col,alvo.row)<=habEsp.alcance){
+    planoAtaque={hab:habEsp, atacante:esp, alvo};
     if(!esp.ac) esp.ac=10;
   }
 
-  // Broadcast intenção para todos os dispositivos verem as setas
+  // Broadcast intent so all clients see movement/attack arrows for THIS specific enemy
   const intent={
+    id: esp.id||null,
     moveTarget:planoMovimento?{col:destCol,row:destRow}:null,
     attackTarget:planoAtaque?{col:alvo.col,row:alvo.row}:null,
   };
@@ -1905,8 +2423,32 @@ function turnoInimigo(){
   if(window._fbSetEnemyIntent) window._fbSetEnemyIntent(intent);
   renderSel();
 
-  mostrarLetreiro(espName.toUpperCase(),'turno do inimigo','',1800,()=>{
-    setTimeout(()=>finalizarTurno(),800);
+  mostrarLetreiro(esp.nome.toUpperCase(),'turno do inimigo','',1800,()=>{
+    setTimeout(()=>_executarAtaqueInimigo(enemies, idx),800);
+  });
+}
+
+function _executarAtaqueInimigo(enemies, idx){
+  fecharAtkPanel();
+  movBloqueado=false;
+  resolverMovimento(movOk=>{
+    render();
+    if(planoAtaque&&!movBloqueado){
+      setTimeout(()=>{
+        const {hab,atacante,alvo}=planoAtaque;
+        executarAtaquePlano(hab, atacante, alvo, ()=>{
+          planoMovimento=null; planoAtaque=null; movBloqueado=false;
+          render(); renderBottomPanel();
+          if(verificarVitoria()) return;
+          _executarProximoInimigo(enemies, idx+1);
+        });
+      },600);
+    } else {
+      planoMovimento=null; planoAtaque=null; movBloqueado=false;
+      render(); renderBottomPanel();
+      if(verificarVitoria()) return;
+      _executarProximoInimigo(enemies, idx+1);
+    }
   });
 }
 
@@ -1962,9 +2504,10 @@ function clicarAtacar(){
   const basicos=(HABILIDADES[selUnit.nome]||[]).filter(h=>h.categoria==='basico');
   if(!basicos.length){ abrirSkillPanel(); return; } // fallback: unit has no basic attack
 
+  const _pos=posEfetiva(selUnit);
   const inimigosAlvo=unidades.filter(u=>{
     if(u.tipo!=='inimigo'||u.hp<=0) return false;
-    return basicos.some(h=>hexDist(selUnit.col,selUnit.row,u.col,u.row)<=h.alcance);
+    return basicos.some(h=>hexDist(_pos.col,_pos.row,u.col,u.row)<=h.alcance);
   });
 
   if(!inimigosAlvo.length) return; // no targets in range — do nothing visible
@@ -2028,34 +2571,70 @@ function renderBottomPanel(){
   document.getElementById('pb-sp-val').textContent = u.maxSp>1?(u.sp+'/'+u.maxSp):'—';
   document.getElementById('pb-mov').textContent = '👢 '+u.mov+'/'+( MOV_CLASSE[u.nome]||u.mov);
 
-  // Center info
-  if(selUnit){
-    if(modoAtaque && habAtual){
-      document.getElementById('pc-label').textContent = 'Habilidade';
-      document.getElementById('pc-main').textContent = habAtual.nome;
-      document.getElementById('pc-hex').textContent = 'Alcance '+habAtual.alcance;
-    } else if(hexPreview && faseDoTurno==='mover_ativo'){
-      document.getElementById('pc-label').textContent = 'Destino';
-      document.getElementById('pc-main').textContent = hexLabel(hexPreview.col, hexPreview.row);
-      document.getElementById('pc-hex').textContent = 'toque OK para confirmar';
-    } else if(targetHex){
-      document.getElementById('pc-label').textContent = 'Destino';
-      document.getElementById('pc-main').textContent = hexLabel(targetHex.col, targetHex.row);
-      document.getElementById('pc-hex').textContent = moveHexes.length+' hexes disponíveis';
-    } else {
-      document.getElementById('pc-label').textContent = 'Posição';
-      document.getElementById('pc-main').textContent = hexLabel(selUnit.col, selUnit.row);
-      document.getElementById('pc-hex').textContent = moveHexes.length+' hexes de mov.';
+  // ── Centro de info: tracker visual de fases do plano ──
+  {
+    const elL=document.getElementById('pc-label');
+    const elM=document.getElementById('pc-main');
+    const elH=document.getElementById('pc-hex');
+    if(elL&&elM&&elH){
+      const sep=`<span style="opacity:.30"> › </span>`;
+      const clA='color:#ddb840';   // fase ativa
+      const clD='color:#72d668';   // fase concluída
+      const clO='opacity:.28';     // fase inativa
+
+      const s1done  =!['planejar_mover','mover_ativo','idle'].includes(faseDoTurno);
+      const s1active=['planejar_mover','mover_ativo'].includes(faseDoTurno);
+      const s2done  =['acao_pronta','resolvendo'].includes(faseDoTurno);
+      const s2active=['planejar_acao','acao_ativa'].includes(faseDoTurno);
+      const s3active=faseDoTurno==='acao_pronta';
+
+      const movT =s1done?'✓ '+(planoMovimento?hexLabel(planoMovimento.col,planoMovimento.row):'sem mov'):'① Mover';
+      const acT  =s2done?'✓ '+(planoAtaque?.hab?.nome||'ação'):'② Ação';
+      const tracker=`<span style="${s1done?clD:s1active?clA:clO}">${movT}</span>${sep}`+
+                    `<span style="${s2done?clD:s2active?clA:clO}">${acT}</span>${sep}`+
+                    `<span style="${s3active?clA:clO}">③ Confirmar</span>`;
+
+      if(faseDoTurno==='aguardando'){
+        const nm=_currentTurnPlayerId==='enemy'?'Inimigos':_currentTurnPlayerName||'outro jogador';
+        elL.innerHTML=`<span style="${clO}">⏳ AGUARDANDO</span>`;
+        elM.textContent=nm; elH.textContent='turno de outro jogador';
+      } else if(faseDoTurno==='turno_inimigo'){
+        elL.innerHTML=`<span style="${clO}">⏳ INIMIGO</span>`;
+        elM.textContent='aguardando…'; elH.textContent='';
+      } else if(!selUnit){
+        elL.innerHTML=`<span style="${clO}">Selecione um herói</span>`;
+        elM.textContent='—'; elH.textContent='';
+      } else if(faseDoTurno==='planejar_mover'){
+        elL.innerHTML=tracker;
+        elM.textContent='Iniciar turno';
+        elH.textContent='MOVER → escolher destino  ·  NÃO MOVER → ir à ação';
+      } else if(faseDoTurno==='mover_ativo'){
+        elL.innerHTML=tracker;
+        elM.textContent=hexPreview?hexLabel(hexPreview.col,hexPreview.row):'Toque em hex azul';
+        elH.textContent=hexPreview?'OK para confirmar  ·  CANCELAR para voltar':selUnit.mov+' hexes disponíveis';
+      } else if(faseDoTurno==='planejar_acao'){
+        elL.innerHTML=tracker;
+        elM.textContent='Escolher ação';
+        elH.textContent='ATACAR  ·  SKILL  ·  FINALIZAR sem ação';
+      } else if(faseDoTurno==='acao_ativa'){
+        elL.innerHTML=tracker;
+        elM.textContent=habAtual?.nome||'?';
+        elH.textContent='Alcance '+(habAtual?.alcance||'?')+'  ·  selecione o alvo';
+      } else if(faseDoTurno==='acao_pronta'){
+        elL.innerHTML=tracker;
+        const isSelf=planoAtaque?.alvo===planoAtaque?.atacante;
+        const alvN=isSelf?'si mesmo':(planoAtaque?.alvo?.nome||(planoAtaque?.alvoHex?hexLabel(planoAtaque.alvoHex.col,planoAtaque.alvoHex.row):'?'));
+        elM.textContent=(planoAtaque?.hab?.nome||'?')+' → '+alvN;
+        elH.textContent='✓ toque FINALIZAR TURNO para executar';
+      } else if(faseDoTurno==='resolvendo'){
+        elL.innerHTML=`<span style="${clO}">⚙️ EXECUTANDO</span>`;
+        elM.textContent='…'; elH.textContent='';
+      } else {
+        elL.textContent='Posição';
+        elM.textContent=hexLabel(selUnit.col,selUnit.row);
+        elH.textContent=moveHexes.length+' hexes de mov.';
+      }
     }
-  } else if(faseDoTurno==='aguardando'){
-    const name=_currentTurnPlayerId==='enemy'?'Inimigos':_currentTurnPlayerName||'outro jogador';
-    document.getElementById('pc-label').textContent = '⏳ Turno de';
-    document.getElementById('pc-main').textContent = name;
-    document.getElementById('pc-hex').textContent = 'aguardando…';
-  } else {
-    document.getElementById('pc-label').textContent = 'Selecione';
-    document.getElementById('pc-main').textContent = 'um herói';
-    document.getElementById('pc-hex').textContent = '';
   }
 
   // Target panel (enemy in attack mode)
@@ -2064,10 +2643,18 @@ function renderBottomPanel(){
     ? unidades.find(e=>e.tipo==='inimigo'&&atkTargets.some(h=>h.col===e.col&&h.row===e.row))
     : null;
   if(enemy){
+    const ptSprite = document.getElementById('pt-sprite');
+    if(enemy.imgSrc){
+      ptSprite.innerHTML = `<img src="${enemy.imgSrc}" alt="${enemy.nome}">`;
+    } else {
+      ptSprite.innerHTML = `<span style="font-size:22px">${enemy.emoji||'👹'}</span>`;
+    }
+    ptSprite.style.background = enemy.cor+'18';
+    ptSprite.style.borderColor = enemy.cor+'70';
     document.getElementById('pt-nome').textContent = enemy.nome;
-    const eHab = HABILIDADES[enemy.nome]||[];
     document.getElementById('pt-stats').textContent = '🛡️ '+(enemy.ac||8);
-    document.getElementById('pt-hp').textContent = '❤️ '+enemy.hp+'/'+enemy.maxHp;
+    document.getElementById('pt-hp-bar').style.width = Math.round(enemy.hp/enemy.maxHp*100)+'%';
+    document.getElementById('pt-hp-val').textContent = enemy.hp+'/'+enemy.maxHp;
     targetPanel.classList.add('visivel');
   } else {
     targetPanel.classList.remove('visivel');
@@ -2086,28 +2673,34 @@ function selecionarHabilidade(hab){
     return;
   }
 
-  habAtual=hab; modoAtaque=true;
+  habAtual=hab; modoAtaque=true; areaPreview=null;
   faseDoTurno='acao_ativa';
+
+  const _pos=posEfetiva(selUnit);
+
+  if(hab.areaRaio>0){
+    // AoE: qualquer hex dentro do alcance é alvo válido
+    const allHexes=[];
+    for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
+      if(hexDist(_pos.col,_pos.row,c,r)<=hab.alcance) allHexes.push({col:c,row:r});
+    }
+    atkTargets=allHexes;
+    // Verifica se há ao menos 1 inimigo acessível (dentro de alcance + raio)
+    const temAlvo=unidades.some(u=>u.tipo==='inimigo'&&u.hp>0&&
+      hexDist(_pos.col,_pos.row,u.col,u.row)<=hab.alcance+hab.areaRaio);
+    if(!temAlvo){ modoAtaque=false; habAtual=null; faseDoTurno='planejar_acao'; renderActionRow(); return; }
+    renderActionRow(); renderSel();
+    return;
+  }
 
   const inimigosAlvo=unidades.filter(u=>{
     if(u===selUnit) return false;
     if(u.tipo!=='inimigo') return false;
-    return hexDist(selUnit.col,selUnit.row,u.col,u.row)<=hab.alcance;
+    return hexDist(_pos.col,_pos.row,u.col,u.row)<=hab.alcance;
   });
   atkTargets=inimigosAlvo.map(u=>({col:u.col,row:u.row}));
 
-  // Auto-disparo com 1 alvo: vai direto para acao_pronta
-  if(inimigosAlvo.length===1){
-    planoAtaque={hab, atacante:selUnit, alvo:inimigosAlvo[0]};
-    modoAtaque=false; habAtual=null; atkTargets=[];
-    faseDoTurno='acao_pronta';
-    _broadcastIntent();
-    renderActionRow(); renderBottomPanel(); renderSel();
-    return;
-  }
-
   if(!inimigosAlvo.length){
-    // Skill sem alvo em alcance — cancela
     modoAtaque=false; habAtual=null;
     faseDoTurno='planejar_acao';
     renderActionRow(); renderSel();
@@ -2172,6 +2765,16 @@ document.getElementById('world').addEventListener('pointerdown',e=>{
 
   // Fase ação_ativa: clique em alvo
   if(faseDoTurno==='acao_ativa' && modoAtaque && habAtual && hex){
+    if(habAtual.areaRaio>0){
+      // AoE: clique em qualquer hex do alcance seleciona o centro da explosão
+      if(atkTargets.some(h=>h.col===hex.col&&h.row===hex.row)){
+        areaPreview={col:hex.col,row:hex.row};
+        renderActionRow(); renderSel(); renderBottomPanel();
+      } else {
+        cancelarAtaqueAtual();
+      }
+      return;
+    }
     const alvo=unidades.find(u=>u.col===hex.col&&u.row===hex.row&&u.tipo==='inimigo');
     if(alvo && atkTargets.some(h=>h.col===hex.col&&h.row===hex.row)){
       planoAtaque={hab:habAtual, atacante:selUnit, alvo};
@@ -2299,8 +2902,9 @@ function renderRemoteIntents(){
     }
   }
   // ── Intenção do inimigo (broadcast pelo host) ──
-  if(enemyIntent){
-    const esp=unidades.find(u=>u.tipo==='inimigo'&&u.hp>0);
+  if(enemyIntent && faseDoTurno==='turno_inimigo'){
+    const esp=unidades.find(u=>u.tipo==='inimigo'&&u.hp>0&&
+      (enemyIntent.id ? u.id===enemyIntent.id : true));
     if(esp){
       const from=hexCentro(esp.col,esp.row);
       if(enemyIntent.moveTarget){
@@ -2323,8 +2927,38 @@ function renderRemoteIntents(){
 
 function onRoomUpdate(room){
   if(!room||!room.players) return;
+
+  // Navigate to narration when battle is over
+  if(room.status==='narration'){
+    window.location.href='narration.html';
+    return;
+  }
+
+  // Host: when all players confirmed post-battle, transition everyone to narration
+  // wasFirst guard prevents stale postBattleConfirmados from previous sessions
+  if(!wasFirst && _fbIsHost && room.status==='battle' && room.postBattleConfirmados){
+    const pids=Object.keys(room.players||{});
+    const confirmed=Object.keys(room.postBattleConfirmados||{});
+    if(pids.length>0 && pids.every(p=>confirmed.includes(p))){
+      if(window._fbSetStatus) window._fbSetStatus('narration',{
+        'narration.cenaId':'mhoried_market',
+        'narration.modoImagem':'interior',
+        'narration.dialogo':[],
+        'narration.introConfirmados':{},
+        postBattleConfirmados:{},
+        batalha:{},
+      });
+      return;
+    }
+  }
+
   const myId=localStorage.getItem('oraculo.playerId');
   const wasFirst=_firstRoomUpdate;
+
+  // Non-host: acionar cinematica de vitória quando host sinalizar (ignorar na primeira leitura para evitar estado stale)
+  if (!_fbIsHost && !wasFirst && room.batalha?.cinematicaVitoria && !_cinematicaRodando) {
+    _cinematicaVitoria();
+  }
 
   // ── Sync outros jogadores ──
   const others=Object.values(room.players).filter(p=>p.id!==myId&&p.x!=null&&p.y!=null);
@@ -2355,9 +2989,11 @@ function onRoomUpdate(room){
   }
 
   // ── Sync inimigos ──
-  if(room.enemies){
+  // Host não sincroniza na primeira leitura: o estado canônico é o unidades[] local;
+  // _fbSetEnemies() já foi chamado em startFbListener para gravar o estado fresco.
+  if(room.enemies && !(_fbIsHost && wasFirst)){
     for(const fbE of room.enemies){
-      const u=unidades.find(u=>u.tipo==='inimigo'&&u.nome===fbE.nome);
+      const u=unidades.find(u=>u.tipo==='inimigo'&&(fbE.id?u.id===fbE.id:u.nome===fbE.nome));
       if(u){
         if(u.col!==fbE.x||u.row!==fbE.y){ u.col=fbE.x; u.row=fbE.y; u._ax=null; u._ay=null; }
         if(fbE.hp!=null) u.hp=fbE.hp;
@@ -2436,6 +3072,7 @@ function onRoomUpdate(room){
 //  ESCALA + INIT
 // ══════════════════════════════════════════
 function initScale(){
+  if(document.getElementById('cin-conv')) return; // conversa ativa, não reposicionar
   const minPanelH=130;
   const scaleByW=window.innerWidth/MAP_W;
   const scaleByH=(window.innerHeight-minPanelH)/MAP_H;
@@ -2458,8 +3095,7 @@ function initScale(){
   const infoH=panelH-72;
   const pw=Math.max(44,Math.min(72,Math.round((infoH-12)*0.68)));
   const pp=document.getElementById('panel-portrait');
-  pp.style.width=pw+'px';
-  pp.style.height='auto';
+  if(pp){ pp.style.width=pw+'px'; pp.style.height='auto'; }
 
   document.getElementById('atk-panel').style.bottom=(panelH+8)+'px';
 }
