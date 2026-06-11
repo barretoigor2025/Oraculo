@@ -30,8 +30,12 @@ if(_cfg&&_rid){
         await updateDoc(rd,{'narration.dialogo':dialogo,'narration.ts':Date.now()});
       }catch(e){console.warn('fbAddDialogue:',e);}
     };
-    window._fbSetStatus=async(status)=>{
-      try{await updateDoc(rd,{status,updatedAt:Date.now()});}catch(e){console.warn('fbSetStatus:',e);}
+    window._fbSetStatus=async(status,extra={})=>{
+      try{
+        const d={status,updatedAt:Date.now()};
+        for(const[k,v]of Object.entries(extra))d[k]=v;
+        await updateDoc(rd,d);
+      }catch(e){console.warn('fbSetStatus:',e);}
     };
     window._fbAddIntroConfirm=async(playerId)=>{
       try{await updateDoc(rd,{[`narration.introConfirmados.${playerId}`]:true,'narration.ts':Date.now()});}
@@ -1054,7 +1058,13 @@ async function iniciarBatalha() {
     if (!ok) return;
   }
   if (window._fbSetStatus) {
-    await window._fbSetStatus('battle');
+    await window._fbSetStatus('battle', {
+      postBattleConfirmados: {},
+      batalha: {},
+      currentTurnPlayerId: null,
+      turnOrder: [],
+      enemies: [],
+    });
   } else {
     window.location.href = 'arena.html';
   }

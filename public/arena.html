@@ -2874,7 +2874,8 @@ function onRoomUpdate(room){
   }
 
   // Host: when all players confirmed post-battle, transition everyone to narration
-  if(_fbIsHost && room.status==='battle' && room.postBattleConfirmados){
+  // wasFirst guard prevents stale postBattleConfirmados from previous sessions
+  if(!wasFirst && _fbIsHost && room.status==='battle' && room.postBattleConfirmados){
     const pids=Object.keys(room.players||{});
     const confirmed=Object.keys(room.postBattleConfirmados||{});
     if(pids.length>0 && pids.every(p=>confirmed.includes(p))){
