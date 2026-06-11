@@ -1412,14 +1412,18 @@ function lancarAtaque(hab,atacante,alvoUnit,onDone){
     return;
   }
 
-  const dist=Math.hypot(to.x-from.x,to.y-from.y);
+  // Altura do peito: deslocar para cima em relação ao centro do hex
+  const chestOffset = HR * 1.3;
+  const fy = from.y - chestOffset;
+  const ty = to.y - chestOffset;
+  const dist=Math.hypot(to.x-from.x,ty-fy);
   const speeds={ arrow:0.9, fireball:0.45, magic:0.55 };
   const speed=speeds[hab.anim]||0.55;
   const duration=dist/speed;
 
   _fxProj={
     kind:hab.anim, subkind:hab.id,
-    x:from.x, y:from.y, x0:from.x, y0:from.y, x1:to.x, y1:to.y,
+    x:from.x, y:fy, x0:from.x, y0:fy, x1:to.x, y1:ty,
     elapsed:0, duration,
     onImpact:(ix,iy)=>{
       spawnImpact(ix,iy,hab.anim);
@@ -1980,49 +1984,103 @@ async function _cinMostrarDialogo() {
     s.id = '_cinconv-sty';
     s.textContent = `
 #cin-conv{display:flex;flex-direction:column;height:100%;overflow:hidden;}
-#cin-conv-log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:8px 10px 4px;scroll-behavior:smooth;}
-#cin-conv-controls{flex-shrink:0;padding:5px 10px max(8px,env(safe-area-inset-bottom));border-top:1px solid rgba(190,140,35,0.18);}
-#cin-conv-input-row{display:flex;gap:6px;margin-bottom:5px;}
-#cin-conv-input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(190,140,35,.35);border-radius:10px;padding:9px 13px;color:rgba(225,200,140,.92);font-family:inherit;font-size:12.5px;font-style:italic;outline:none;-webkit-appearance:none;caret-color:#f5d878;}
-#cin-conv-input::placeholder{color:rgba(190,155,75,.4);}
-#cin-conv-send{width:38px;height:38px;background:rgba(190,140,35,.22);border:1px solid rgba(190,140,35,.5);border-radius:10px;color:#f5d878;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;touch-action:manipulation;}
+#cin-conv-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px 8px;border-bottom:1px solid rgba(190,140,35,.2);flex-shrink:0;}
+#cin-conv-hdr-name{flex:1;font-size:14px;font-weight:700;color:rgba(220,190,120,1);letter-spacing:.5px;}
+#cin-conv-hdr-badge{font-size:10px;padding:2px 8px;background:rgba(50,90,50,.4);border:1px solid rgba(80,160,80,.35);border-radius:20px;color:rgba(140,210,140,.85);letter-spacing:.3px;}
+#cin-conv-key-cfg{flex-shrink:0;display:none;padding:8px 14px;border-bottom:1px solid rgba(190,140,35,.15);background:rgba(0,0,0,.25);}
+#cin-conv-key-row{display:flex;gap:6px;}
+#cin-conv-key-input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(190,140,35,.4);border-radius:8px;padding:7px 10px;color:rgba(220,195,130,.9);font-family:inherit;font-size:12px;outline:none;}
+#cin-conv-key-save{padding:7px 14px;background:rgba(60,110,60,.4);border:1px solid rgba(90,175,90,.4);border-radius:8px;color:rgba(140,215,140,.9);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;}
+#cin-conv-key-hint{font-size:10px;color:rgba(190,165,90,.5);margin-top:4px;font-style:italic;}
+#cin-conv-log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:10px 14px 6px;scroll-behavior:smooth;}
+#cin-conv-controls{flex-shrink:0;padding:6px 12px max(10px,env(safe-area-inset-bottom));border-top:1px solid rgba(190,140,35,.18);}
+#cin-conv-input-row{display:flex;gap:6px;margin-bottom:6px;}
+#cin-conv-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(190,140,35,.35);border-radius:10px;padding:10px 14px;color:rgba(225,200,140,.92);font-family:inherit;font-size:13px;font-style:italic;outline:none;-webkit-appearance:none;caret-color:#f5d878;}
+#cin-conv-input::placeholder{color:rgba(190,155,75,.38);}
+#cin-conv-send{width:42px;height:42px;background:rgba(190,140,35,.22);border:1px solid rgba(190,140,35,.5);border-radius:10px;color:#f5d878;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;touch-action:manipulation;}
 #cin-conv-send:disabled{opacity:.3;}
-#cin-conv-encerrar{width:100%;padding:9px;background:rgba(30,80,30,.4);border:1px solid rgba(70,175,70,.4);border-radius:10px;color:rgba(155,225,150,.9);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.4px;touch-action:manipulation;}
-.cin-msg{display:flex;align-items:flex-start;gap:8px;}
-.cin-msg-port{width:38px;height:50px;border-radius:6px;overflow:hidden;flex-shrink:0;border:1px solid rgba(190,140,35,.3);background:rgba(0,0,0,.4);}
+#cin-conv-toolbar{display:flex;gap:6px;}
+#cin-conv-encerrar{flex:1;padding:9px;background:rgba(30,80,30,.4);border:1px solid rgba(70,175,70,.4);border-radius:10px;color:rgba(155,225,150,.9);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.4px;touch-action:manipulation;}
+#cin-conv-key-btn{padding:9px 14px;background:rgba(50,50,15,.35);border:1px solid rgba(190,160,30,.28);border-radius:10px;color:rgba(220,190,80,.65);font-family:inherit;font-size:11px;cursor:pointer;touch-action:manipulation;}
+.cin-msg{display:flex;align-items:flex-start;gap:10px;}
+.cin-msg-port{width:46px;height:60px;border-radius:7px;overflow:hidden;flex-shrink:0;border:1px solid rgba(190,140,35,.3);background:rgba(0,0,0,.4);}
 .cin-msg-port img{width:100%;height:100%;object-fit:cover;object-position:top;}
 .cin-msg-body{flex:1;min-width:0;}
-.cin-msg-nome{font-size:8.5px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(180,150,60,.6);margin-bottom:3px;}
-.cin-msg-txt{font-size:12px;color:rgba(230,205,160,.92);line-height:1.52;font-style:italic;}
+.cin-msg-nome{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(180,150,60,.6);margin-bottom:4px;}
+.cin-msg-txt{font-size:13px;color:rgba(230,205,160,.92);line-height:1.58;font-style:italic;}
 .cin-msg.player{flex-direction:row-reverse;}
 .cin-msg.player .cin-msg-body{text-align:right;}
 .cin-msg.player .cin-msg-nome{color:rgba(120,180,255,.6);}
-.cin-msg.player .cin-msg-txt{color:rgba(210,230,255,.88);font-style:normal;}
+.cin-msg.player .cin-msg-txt{color:rgba(210,230,255,.88);font-style:normal;font-size:13px;}
 .cin-msg.loading .cin-msg-txt{color:rgba(190,165,100,.35);font-style:italic;}
-.cin-narr{font-size:11px;color:rgba(190,165,100,.65);line-height:1.5;padding:1px 0 1px 8px;font-style:italic;border-left:2px solid rgba(190,140,35,.2);}
-@keyframes _cinmsgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-.cin-msg,.cin-narr{animation:_cinmsgIn .28s ease;}`;
+.cin-narr{font-size:12px;color:rgba(190,165,100,.65);line-height:1.55;padding:2px 0 2px 10px;font-style:italic;border-left:2px solid rgba(190,140,35,.2);}
+@keyframes _cinmsgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.cin-msg,.cin-narr{animation:_cinmsgIn .3s ease;}`;
     document.head.appendChild(s);
   }
 
   // Substituir bottom-panel pelo painel de conversa
   const bp = document.getElementById('bottom-panel');
   bp.innerHTML = `<div id="cin-conv">
+    <div id="cin-conv-hdr">
+      <div id="cin-conv-hdr-name">📜 Gregoras Pellos</div>
+      <div id="cin-conv-hdr-badge">Emissário da Duquesa</div>
+    </div>
+    <div id="cin-conv-key-cfg">
+      <div style="font-size:10px;color:rgba(220,185,90,.7);margin-bottom:5px;">🔑 Chave Groq para respostas dinâmicas da IA:</div>
+      <div id="cin-conv-key-row">
+        <input id="cin-conv-key-input" placeholder="gsk_..." autocomplete="off" spellcheck="false">
+        <button id="cin-conv-key-save">Salvar</button>
+      </div>
+      <div id="cin-conv-key-hint">Obtenha gratuitamente em console.groq.com</div>
+    </div>
     <div id="cin-conv-log"></div>
     <div id="cin-conv-controls">
       <div id="cin-conv-input-row">
-        <input id="cin-conv-input" placeholder="Declare a ação do seu personagem..." autocomplete="off" spellcheck="false">
+        <input id="cin-conv-input" placeholder="O que você diz ou faz?" autocomplete="off" spellcheck="false">
         <button id="cin-conv-send">➤</button>
       </div>
-      <button id="cin-conv-encerrar">Ir ao castelo →</button>
+      <div id="cin-conv-toolbar">
+        <button id="cin-conv-encerrar">Ir ao castelo →</button>
+        <button id="cin-conv-key-btn">🔑</button>
+      </div>
     </div>
   </div>`;
+
+  // ── Curtain: painel sobe para cobrir o mapa inteiro ──
+  bp.style.transition = 'top 0.65s cubic-bezier(0.22,1,0.36,1), height 0.65s cubic-bezier(0.22,1,0.36,1)';
+  requestAnimationFrame(() => {
+    bp.style.top    = '0px';
+    bp.style.height = '100%';
+  });
 
   const logEl   = document.getElementById('cin-conv-log');
   const input   = document.getElementById('cin-conv-input');
   const btnSend = document.getElementById('cin-conv-send');
   const btnSair = document.getElementById('cin-conv-encerrar');
-  const convHist = [];
+  const btnKey  = document.getElementById('cin-conv-key-btn');
+  const keyCfg  = document.getElementById('cin-conv-key-cfg');
+  const keyInp  = document.getElementById('cin-conv-key-input');
+  const keySave = document.getElementById('cin-conv-key-save');
+
+  // ── Configuração da chave inline ──
+  const existingKey = localStorage.getItem('oraculo.groqKey');
+  if (existingKey) keyInp.value = existingKey;
+
+  btnKey.addEventListener('click', () => {
+    const visible = keyCfg.style.display === 'block';
+    keyCfg.style.display = visible ? 'none' : 'block';
+    if (!visible) setTimeout(() => keyInp.focus(), 50);
+  });
+
+  keySave.addEventListener('click', () => {
+    const k = keyInp.value.trim();
+    if (k) localStorage.setItem('oraculo.groqKey', k);
+    keyCfg.style.display = 'none';
+  });
+
+  // convHist: formato multi-turn correto para a API Groq
+  const convHist = []; // [{role:'user'|'assistant', content:string}]
 
   function appendNarr(txt) {
     const d = document.createElement('div');
@@ -2035,34 +2093,13 @@ async function _cinMostrarDialogo() {
     d.className = 'cin-msg'+(quem==='player'?' player':'')+(loading?' loading':'');
     const portHTML = portrait
       ? `<div class="cin-msg-port"><img src="${portrait}" onerror="this.parentElement.style.display='none'"></div>`
-      : `<div class="cin-msg-port" style="display:flex;align-items:center;justify-content:center;font-size:20px">${quem==='player'?'🧑':'📜'}</div>`;
+      : `<div class="cin-msg-port" style="display:flex;align-items:center;justify-content:center;font-size:22px">${quem==='player'?'🧑':'📜'}</div>`;
     d.innerHTML = `${portHTML}<div class="cin-msg-body"><div class="cin-msg-nome">${nome}</div><div class="cin-msg-txt">${txt}</div></div>`;
     logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
     return d;
   }
 
-  async function gregorasFala(contexto) {
-    const el = appendMsg('greg', 'Gregoras Pellos', 'sprites/npc_gregoras_pellos.png', '...', true);
-    const txtEl = el.querySelector('.cin-msg-txt');
-
-    const apiKey = localStorage.getItem('oraculo.groqKey');
-    if (!apiKey) {
-      await new Promise(r => setTimeout(r, 600));
-      const fb = convHist.length === 0
-        ? '"Perdão pela interrupção..." ele ajusta os óculos duas vezes. "Conforme o protocolo de emergência da corte — a Duquesa Catherine solicita urgentemente a presença de vocês no castelo. O assunto é... classificado."'
-        : '"Compreendo." Ele anota algo no pergaminho. "A urgência não permite negociações prolongadas. A Duquesa aguarda."';
-      txtEl.textContent = fb;
-      el.classList.remove('loading');
-      convHist.push({role:'greg', texto: fb});
-      logEl.scrollTop = logEl.scrollHeight;
-      return;
-    }
-
-    const hist = convHist.slice(-10)
-      .map(l => `${l.role==='greg'?'Gregoras Pellos':heroNome}: ${l.texto}`)
-      .join('\n');
-
-    const system = `Você é Gregoras Pellos — funcionário sênior da corte de Mhoried.
+  const _gregSystem = `Você é Gregoras Pellos — funcionário sênior da corte de Mhoried.
 
 PERSONALIDADE: Meticuloso, formal, obcecado com procedimentos corretos. Genuinamente leal à Duquesa Catherine. Fala em termos legais e administrativos mesmo em urgência. Preocupado com o que os nobres pensarão.
 
@@ -2076,28 +2113,57 @@ O QUE VOCÊ SABE (revele aos poucos — nunca tudo de uma vez):
 - Há boatos de uma maldição druídica mas Gregoras nunca confirmaria "rumores sem registro oficial".
 - A situação política é delicada — os barões vizinhos não podem saber da fraqueza da casa.
 
-REGRAS: Português brasileiro. Máximo 3 frases por resposta. Nunca quebre o personagem. Reaja ao que foi dito — não fale no vácuo. Se insistirem, eventualmente ceda informações com relutância formal.`;
+REGRAS: Português brasileiro. Máximo 3 frases por resposta. Nunca quebre o personagem. Reaja sempre ao que foi dito — responda especificamente ao que o aventureiro disse. Se insistirem, eventualmente ceda informações com relutância formal.`;
+
+  async function gregorasFala(userMsg) {
+    const el = appendMsg('greg', 'Gregoras Pellos', 'sprites/npc_gregoras_pellos.png', '...', true);
+    const txtEl = el.querySelector('.cin-msg-txt');
+
+    const apiKey = localStorage.getItem('oraculo.groqKey');
+    if (!apiKey) {
+      await new Promise(r => setTimeout(r, 700));
+      const fallbacks = [
+        '"Perdão pela interrupção..." ele ajusta os óculos duas vezes. "Conforme o protocolo de emergência da corte — a Duquesa Catherine solicita urgentemente a presença de vocês no castelo. O assunto é... classificado."',
+        '"Compreendo suas reservas." Ele faz uma anotação no pergaminho. "Porém o protocolo é claro — a Duquesa precisa de vocês. Cada momento de demora compromete o assunto de Estado."',
+        '"Permita-me ser direto." Ele olha em volta com cautela. "O que a Duquesa tem a comunicar não pode ser dito aqui em público. No castelo — com discrição adequada."',
+        '"Não posso fornecer mais informações em local público." Ele aperta o pergaminho contra o peito. "Confiem no protocolo. A Duquesa é justa — e o assunto é urgente."',
+      ];
+      const idx = Math.min(convHist.filter(m => m.role === 'assistant').length, fallbacks.length - 1);
+      const fb = fallbacks[idx];
+      txtEl.textContent = fb;
+      el.classList.remove('loading');
+      convHist.push({role:'user', content: userMsg}, {role:'assistant', content: fb});
+      logEl.scrollTop = logEl.scrollHeight;
+      const hint = document.createElement('div');
+      hint.style.cssText = 'font-size:10px;color:rgba(190,160,70,.4);text-align:center;padding:3px 0;font-style:italic;';
+      hint.textContent = '(Configure 🔑 para respostas dinâmicas da IA)';
+      logEl.appendChild(hint);
+      logEl.scrollTop = logEl.scrollHeight;
+      return;
+    }
+
+    // Mensagens multi-turn: histórico completo + nova mensagem do usuário
+    const messages = [
+      {role:'system', content: _gregSystem},
+      ...convHist,
+      {role:'user', content: userMsg},
+    ];
 
     try {
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {'Authorization':`Bearer ${apiKey}`,'content-type':'application/json'},
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          max_tokens: 220,
-          messages: [
-            {role:'system', content: system},
-            {role:'user', content: hist ? `${hist}\n\n${contexto}` : contexto}
-          ]
-        })
+        body: JSON.stringify({model:'llama-3.3-70b-versatile', max_tokens:220, messages})
       });
       const data = await resp.json();
       const texto = data.choices?.[0]?.message?.content?.trim();
-      txtEl.textContent = texto || '"A urgência não permite mais demoras. O castelo — agora."';
-      convHist.push({role:'greg', texto: txtEl.textContent});
+      if (!texto) throw new Error('empty');
+      txtEl.textContent = texto;
+      convHist.push({role:'user', content: userMsg}, {role:'assistant', content: texto});
     } catch(e) {
-      txtEl.textContent = '"Não posso me demorar. A Duquesa aguarda. Virão?"';
-      convHist.push({role:'greg', texto: txtEl.textContent});
+      const err = '"A urgência não permite mais demoras. O castelo — agora."';
+      txtEl.textContent = err;
+      convHist.push({role:'user', content: userMsg}, {role:'assistant', content: err});
     }
     el.classList.remove('loading');
     logEl.scrollTop = logEl.scrollHeight;
@@ -2108,7 +2174,6 @@ REGRAS: Português brasileiro. Máximo 3 frases por resposta. Nunca quebre o per
     if (!txt || input.disabled) return;
     input.value = '';
     input.disabled = true; btnSend.disabled = true;
-    convHist.push({role:'player', texto: txt});
     appendMsg('player', heroNome, heroPort, txt);
     await gregorasFala(txt);
     input.disabled = false; btnSend.disabled = false;
@@ -2216,14 +2281,16 @@ function finalizarTurno(){
 function executarAtaquePlano(hab, atacante, alvo, onDone){
   const cb = onDone || proximoTurno;
 
-  // AoE: lança projétil no hex central, depois rola 1 dado de dano para todos na área
+  // AoE: projétil voa até o hex central → explosão → dado de dano → HP atualiza → mortos somem
   if(hab.areaRaio>0 && planoAtaque?.areaAlvos){
     if((hab.custoSP||0)>0 && atacante.sp>=hab.custoSP){
       atacante.sp=Math.max(0,atacante.sp-hab.custoSP); renderBottomPanel();
     }
     const areaAlvos=planoAtaque.areaAlvos;
     const alvoHex=planoAtaque.alvoHex||alvo;
+    // Projétil voa → onImpact dispara uma única explosão central
     lancarAtaque(hab,atacante,alvoHex,()=>{
+      // Depois da explosão visual: rola o dano
       const dmgR=rollNotacao(hab.dano);
       const playlist=[{
         tipo:'rolar', label:`${hab.icone} Dano em Área`,
@@ -2235,12 +2302,10 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
       if(window._fbBroadcastDice) window._fbBroadcastDice(playlist);
       DiceOverlay.mostrar(playlist,results=>{
         const dmg=results[0].resultado;
-        for(const e of areaAlvos){
-          e.hp=Math.max(0,e.hp-dmg);
-          const p=hexCentro(e.col,e.row);
-          setTimeout(()=>spawnImpact(p.x,p.y,hab.anim==='fireball'?'fireball':'magic'),200);
-        }
-        if(areaAlvos.length&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
+        for(const e of areaAlvos) e.hp=Math.max(0,e.hp-dmg);
+        // Remove inimigos mortos imediatamente do mapa
+        unidades=unidades.filter(u=>u.tipo!=='inimigo'||u.hp>0);
+        if(window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
         render(); renderBottomPanel(); cb();
       });
     });
@@ -2256,6 +2321,8 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
     lancarAtaque(hab,atacante,atacante,()=>{ cb(); });
     return;
   }
+
+  // Alvo único: 1) rola hit → 2) projétil voa → 3) explosão → 4) rola dano → 5) HP/morte
   const atqMod=ATTR_MOD[atacante.nome]||2;
   const alvoAC=alvo.ac||10;
   const d20v=Math.floor(Math.random()*20)+1;
@@ -2264,32 +2331,40 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
   const sucesso=(total>=alvoAC||critico)&&!catastrofe;
   const modStr=atqMod>=0?`+${atqMod}`:`${atqMod}`;
 
-  const playlist=[{
+  const hitPlaylist=[{
     tipo:'testar', label:`${hab.icone} ${hab.nome}`,
     nomeJog:atacante.nome, alvo:alvo.nome,
     d20:d20v, modStr, total, dc:alvoAC,
     sucesso, critico, catastrofe
   }];
-
-  if((sucesso||critico)&&!catastrofe&&hab.dano){
-    const dmgR=rollNotacao(hab.dano);
-    const finalDmg=critico?dmgR.total*2:dmgR.total;
-    playlist.push({
-      tipo:'rolar', label:`Dano ${hab.icone}`,
-      nomeJog:atacante.nome, alvo:alvo.nome,
-      resultado:finalDmg,
-      notacao:critico?`${hab.dano} (CRÍTICO×2)`:hab.dano,
-      dados:parseNotacao(hab.dano)?.sides||6,
-      condicionalDe:0
-    });
-  }
-
-  if(window._fbBroadcastDice) window._fbBroadcastDice(playlist);
-  DiceOverlay.mostrar(playlist, results=>{
+  if(window._fbBroadcastDice) window._fbBroadcastDice(hitPlaylist);
+  DiceOverlay.mostrar(hitPlaylist, results=>{
     const atk=results[0];
     if((atk.sucesso||atk.critico)&&!atk.catastrofe){
-      if(results[1]){ alvo.hp=Math.max(0,alvo.hp-results[1].resultado); if(alvo.tipo==='inimigo'&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo')); }
-      lancarAtaque(hab,atacante,alvo,()=>{ render(); renderBottomPanel(); cb(); });
+      // Projétil voa → explosão → só então rola dano
+      lancarAtaque(hab,atacante,alvo,()=>{
+        if(hab.dano){
+          const dmgR=rollNotacao(hab.dano);
+          const finalDmg=critico?dmgR.total*2:dmgR.total;
+          const dmgPlaylist=[{
+            tipo:'rolar', label:`Dano ${hab.icone}`,
+            nomeJog:atacante.nome, alvo:alvo.nome,
+            resultado:finalDmg,
+            notacao:critico?`${hab.dano} (CRÍTICO×2)`:hab.dano,
+            dados:parseNotacao(hab.dano)?.sides||6, condicionalDe:0
+          }];
+          if(window._fbBroadcastDice) window._fbBroadcastDice(dmgPlaylist);
+          DiceOverlay.mostrar(dmgPlaylist, dmgResults=>{
+            alvo.hp=Math.max(0,alvo.hp-dmgResults[0].resultado);
+            // Remove inimigo morto imediatamente do mapa
+            if(alvo.tipo==='inimigo'&&alvo.hp<=0) unidades=unidades.filter(u=>u!==alvo);
+            if(window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
+            render(); renderBottomPanel(); cb();
+          });
+        } else {
+          render(); renderBottomPanel(); cb();
+        }
+      });
     } else {
       render(); renderBottomPanel(); cb();
     }
@@ -3011,6 +3086,7 @@ function onRoomUpdate(room){
 //  ESCALA + INIT
 // ══════════════════════════════════════════
 function initScale(){
+  if(document.getElementById('cin-conv')) return; // conversa ativa, não reposicionar
   const minPanelH=130;
   const scaleByW=window.innerWidth/MAP_W;
   const scaleByH=(window.innerHeight-minPanelH)/MAP_H;
