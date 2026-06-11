@@ -1650,13 +1650,11 @@ function renderUnits(){
       const clip=u.clipBottom||0;
       const srcH=Math.round(u.img.naturalHeight*(1-clip));
       const drawH=sh*(1-clip);
-      const drawArgs=[u.img,0,0,u.img.naturalWidth,srcH,x-sw/2,foot-drawH,sw,drawH];
-      if(u===selUnit){
-        ctxU.save(); ctxU.filter='drop-shadow(0 0 8px #ffd028) drop-shadow(0 0 14px #ffd02888)';
-        ctxU.drawImage(...drawArgs); ctxU.restore();
-      } else {
-        ctxU.drawImage(...drawArgs);
-      }
+      ctxU.save();
+      if(u===selUnit) ctxU.filter='drop-shadow(0 0 8px #ffd028) drop-shadow(0 0 14px #ffd02888)';
+      if(u.flipH){ ctxU.translate(2*x,0); ctxU.scale(-1,1); }
+      ctxU.drawImage(u.img,0,0,u.img.naturalWidth,srcH,x-sw/2,foot-drawH,sw,drawH);
+      ctxU.restore();
     } else {
       ctxU.beginPath(); ctxU.arc(x,y,HR*.45,0,Math.PI*2);
       ctxU.fillStyle=u.cor; ctxU.fill();
@@ -1943,20 +1941,18 @@ function _cinAnimarParaHex(unit, dc, dr, dur, onDone) {
 }
 
 function _cinSpawnGregoras() {
-  // Evita duplicata caso seja chamado mais de uma vez
   if (unidades.find(u => u.id === '_greg_cin')) return;
 
   const greg = {
-    nome:'Gregoras', tipo:'aliado_cin',
+    nome:'Gregoras Pellos', tipo:'aliado_cin',
     emoji:'📜', col:1, row:9,
     hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10,
     cor:'#8899bb',
     imgSrc:'sprites/npc_gregoras_pellos.png',
-    img:null, portrait:null,
+    img:null, portrait:null, flipH:false,
     _ax:null, _ay:null, clipBottom:0, itens:[], id:'_greg_cin',
   };
 
-  // Tenta carregar sprite; se falhar usa círculo colorido
   const img = new Image();
   img.onload = () => { greg.img = img; renderUnits(); };
   img.onerror = () => { greg.img = null; renderUnits(); };
@@ -1965,59 +1961,169 @@ function _cinSpawnGregoras() {
   unidades.push(greg);
   render();
 
-  // Caminha do canto até perto dos heróis
-  setTimeout(() => _cinAnimarParaHex(greg, 5, 7, 1800, _cinMostrarDialogo), 200);
+  const gregoPath = [{col:2,row:9},{col:3,row:8},{col:4,row:8},{col:5,row:7}];
+  setTimeout(() => animarMovimento(greg, gregoPath, _cinMostrarDialogo), 300);
 }
 
-function _cinMostrarDialogo() {
-  const bh = document.getElementById('bottom-panel')?.offsetHeight || 130;
-  const d = document.createElement('div');
-  d.id = 'cin-greg';
-  d.style.cssText = `position:fixed;bottom:${bh+6}px;left:8px;right:8px;`+
-    `background:rgba(10,6,3,.95);border:1px solid rgba(185,135,30,.6);`+
-    `border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;`+
-    `gap:12px;z-index:500;box-shadow:0 -4px 24px rgba(0,0,0,.55);`+
-    `animation:_cinFI .38s ease;`;
-  d.innerHTML = `
-    <div style="width:50px;height:62px;border-radius:7px;overflow:hidden;flex-shrink:0;border:1px solid rgba(185,135,30,.4)">
-      <img src="sprites/npc_gregoras_pellos.png" style="width:100%;height:100%;object-fit:cover;object-position:top">
-    </div>
-    <div style="flex:1;min-width:0">
-      <div style="font-size:10px;color:rgba(180,150,60,.65);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:5px">Gregoras Pellos</div>
-      <div id="cin-greg-txt" style="font-size:12.5px;color:rgba(230,210,165,.95);line-height:1.55;margin-bottom:10px">
-        "Perdão pela interrupção..." ele ajusta os óculos duas vezes. "Conforme o protocolo de emergência da corte — a Duquesa Catherine solicita a presença de vocês no castelo. Agora. Virão?"
-      </div>
-      <div style="display:flex;gap:8px">
-        <button id="cin-btn-nao" style="flex:1;padding:8px 6px;background:rgba(100,30,30,.3);color:rgba(210,140,140,.85);border:1px solid rgba(160,60,60,.4);border-radius:7px;font-family:inherit;font-size:11.5px;cursor:pointer">Ainda não</button>
-        <button id="cin-btn-sim" style="flex:2.2;padding:8px 6px;background:rgba(30,80,30,.45);color:rgba(155,225,150,.95);border:1px solid rgba(70,175,70,.55);border-radius:7px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;letter-spacing:.5px">Ir ao castelo →</button>
-      </div>
-    </div>`;
-  if (!document.getElementById('_cin-sty')) {
+async function _cinMostrarDialogo() {
+  // Virar Gregoras para encarar os heróis
+  const greg = unidades.find(u => u.id === '_greg_cin');
+  if (greg) { greg.flipH = true; renderUnits(); }
+
+  const hero     = unidades.find(u => u.tipo === 'heroi' && !u._fbId);
+  const heroNome = hero?.nome  || 'Herói';
+  const heroPort = hero?.portrait || '';
+
+  // CSS do painel de conversa (injetado uma vez)
+  if (!document.getElementById('_cinconv-sty')) {
     const s = document.createElement('style');
-    s.id = '_cin-sty';
-    s.textContent = '@keyframes _cinFI{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}';
+    s.id = '_cinconv-sty';
+    s.textContent = `
+#cin-conv{display:flex;flex-direction:column;height:100%;overflow:hidden;}
+#cin-conv-log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:8px 10px 4px;scroll-behavior:smooth;}
+#cin-conv-controls{flex-shrink:0;padding:5px 10px max(8px,env(safe-area-inset-bottom));border-top:1px solid rgba(190,140,35,0.18);}
+#cin-conv-input-row{display:flex;gap:6px;margin-bottom:5px;}
+#cin-conv-input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(190,140,35,.35);border-radius:10px;padding:9px 13px;color:rgba(225,200,140,.92);font-family:inherit;font-size:12.5px;font-style:italic;outline:none;-webkit-appearance:none;caret-color:#f5d878;}
+#cin-conv-input::placeholder{color:rgba(190,155,75,.4);}
+#cin-conv-send{width:38px;height:38px;background:rgba(190,140,35,.22);border:1px solid rgba(190,140,35,.5);border-radius:10px;color:#f5d878;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;touch-action:manipulation;}
+#cin-conv-send:disabled{opacity:.3;}
+#cin-conv-encerrar{width:100%;padding:9px;background:rgba(30,80,30,.4);border:1px solid rgba(70,175,70,.4);border-radius:10px;color:rgba(155,225,150,.9);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.4px;touch-action:manipulation;}
+.cin-msg{display:flex;align-items:flex-start;gap:8px;}
+.cin-msg-port{width:38px;height:50px;border-radius:6px;overflow:hidden;flex-shrink:0;border:1px solid rgba(190,140,35,.3);background:rgba(0,0,0,.4);}
+.cin-msg-port img{width:100%;height:100%;object-fit:cover;object-position:top;}
+.cin-msg-body{flex:1;min-width:0;}
+.cin-msg-nome{font-size:8.5px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(180,150,60,.6);margin-bottom:3px;}
+.cin-msg-txt{font-size:12px;color:rgba(230,205,160,.92);line-height:1.52;font-style:italic;}
+.cin-msg.player{flex-direction:row-reverse;}
+.cin-msg.player .cin-msg-body{text-align:right;}
+.cin-msg.player .cin-msg-nome{color:rgba(120,180,255,.6);}
+.cin-msg.player .cin-msg-txt{color:rgba(210,230,255,.88);font-style:normal;}
+.cin-msg.loading .cin-msg-txt{color:rgba(190,165,100,.35);font-style:italic;}
+.cin-narr{font-size:11px;color:rgba(190,165,100,.65);line-height:1.5;padding:1px 0 1px 8px;font-style:italic;border-left:2px solid rgba(190,140,35,.2);}
+@keyframes _cinmsgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.cin-msg,.cin-narr{animation:_cinmsgIn .28s ease;}`;
     document.head.appendChild(s);
   }
-  document.body.appendChild(d);
 
-  let recusas = 0;
-  const frases = [
-    '"A Duquesa é... bastante precisa sobre urgência." Ele reajusta os óculos com nervosismo.',
-    '"Com respeito — ela sabe coisas que vocês precisam ouvir. Cada minuto importa."',
-  ];
-  document.getElementById('cin-btn-nao').addEventListener('click', () => {
-    const t = document.getElementById('cin-greg-txt');
-    if (t && recusas < frases.length) t.textContent = frases[recusas];
-    recusas++;
-    if (recusas >= frases.length) {
-      document.getElementById('cin-btn-nao').style.display = 'none';
-      document.getElementById('cin-btn-sim').textContent = 'Está bem, vamos';
+  // Substituir bottom-panel pelo painel de conversa
+  const bp = document.getElementById('bottom-panel');
+  bp.innerHTML = `<div id="cin-conv">
+    <div id="cin-conv-log"></div>
+    <div id="cin-conv-controls">
+      <div id="cin-conv-input-row">
+        <input id="cin-conv-input" placeholder="Declare a ação do seu personagem..." autocomplete="off" spellcheck="false">
+        <button id="cin-conv-send">➤</button>
+      </div>
+      <button id="cin-conv-encerrar">Ir ao castelo →</button>
+    </div>
+  </div>`;
+
+  const logEl   = document.getElementById('cin-conv-log');
+  const input   = document.getElementById('cin-conv-input');
+  const btnSend = document.getElementById('cin-conv-send');
+  const btnSair = document.getElementById('cin-conv-encerrar');
+  const convHist = [];
+
+  function appendNarr(txt) {
+    const d = document.createElement('div');
+    d.className = 'cin-narr'; d.textContent = txt;
+    logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function appendMsg(quem, nome, portrait, txt, loading=false) {
+    const d = document.createElement('div');
+    d.className = 'cin-msg'+(quem==='player'?' player':'')+(loading?' loading':'');
+    const portHTML = portrait
+      ? `<div class="cin-msg-port"><img src="${portrait}" onerror="this.parentElement.style.display='none'"></div>`
+      : `<div class="cin-msg-port" style="display:flex;align-items:center;justify-content:center;font-size:20px">${quem==='player'?'🧑':'📜'}</div>`;
+    d.innerHTML = `${portHTML}<div class="cin-msg-body"><div class="cin-msg-nome">${nome}</div><div class="cin-msg-txt">${txt}</div></div>`;
+    logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+    return d;
+  }
+
+  async function gregorasFala(contexto) {
+    const el = appendMsg('greg', 'Gregoras Pellos', 'sprites/npc_gregoras_pellos.png', '...', true);
+    const txtEl = el.querySelector('.cin-msg-txt');
+
+    const apiKey = localStorage.getItem('oraculo.groqKey');
+    if (!apiKey) {
+      await new Promise(r => setTimeout(r, 600));
+      const fb = convHist.length === 0
+        ? '"Perdão pela interrupção..." ele ajusta os óculos duas vezes. "Conforme o protocolo de emergência da corte — a Duquesa Catherine solicita urgentemente a presença de vocês no castelo. O assunto é... classificado."'
+        : '"Compreendo." Ele anota algo no pergaminho. "A urgência não permite negociações prolongadas. A Duquesa aguarda."';
+      txtEl.textContent = fb;
+      el.classList.remove('loading');
+      convHist.push({role:'greg', texto: fb});
+      logEl.scrollTop = logEl.scrollHeight;
+      return;
     }
-  });
-  document.getElementById('cin-btn-sim').addEventListener('click', () => {
-    d.remove();
-    _cinTransicaoCastelo();
-  });
+
+    const hist = convHist.slice(-10)
+      .map(l => `${l.role==='greg'?'Gregoras Pellos':heroNome}: ${l.texto}`)
+      .join('\n');
+
+    const system = `Você é Gregoras Pellos — funcionário sênior da corte de Mhoried.
+
+PERSONALIDADE: Meticuloso, formal, obcecado com procedimentos corretos. Genuinamente leal à Duquesa Catherine. Fala em termos legais e administrativos mesmo em urgência. Preocupado com o que os nobres pensarão.
+
+FORMA DE FALAR: Frases técnicas e protocolares. Usa "procedimento adequado", "conforme o registro", "segundo o protocolo". Ajusta os óculos quando nervoso. Fica visivelmente desconfortável com informações não oficiais. Tem o hábito de ajustar os óculos duas vezes quando pressionado.
+
+SITUAÇÃO: Você encontrou os aventureiros logo após a batalha na feira de Mhoried. O Duque Oswald, irmão da Duquesa Catherine, desapareceu e foi transformado em criatura selvagem por uma maldição. A Duquesa convoca urgentemente esses heróis ao castelo — são os únicos em quem ela confia com esse segredo de Estado.
+
+O QUE VOCÊ SABE (revele aos poucos — nunca tudo de uma vez):
+- A Duquesa Catherine governa Mhoried com firmeza mas carrega culpa pelo sumiço do irmão.
+- O Duque Oswald foi visto pela última vez nos Blackwoods.
+- Há boatos de uma maldição druídica mas Gregoras nunca confirmaria "rumores sem registro oficial".
+- A situação política é delicada — os barões vizinhos não podem saber da fraqueza da casa.
+
+REGRAS: Português brasileiro. Máximo 3 frases por resposta. Nunca quebre o personagem. Reaja ao que foi dito — não fale no vácuo. Se insistirem, eventualmente ceda informações com relutância formal.`;
+
+    try {
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {'Authorization':`Bearer ${apiKey}`,'content-type':'application/json'},
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          max_tokens: 220,
+          messages: [
+            {role:'system', content: system},
+            {role:'user', content: hist ? `${hist}\n\n${contexto}` : contexto}
+          ]
+        })
+      });
+      const data = await resp.json();
+      const texto = data.choices?.[0]?.message?.content?.trim();
+      txtEl.textContent = texto || '"A urgência não permite mais demoras. O castelo — agora."';
+      convHist.push({role:'greg', texto: txtEl.textContent});
+    } catch(e) {
+      txtEl.textContent = '"Não posso me demorar. A Duquesa aguarda. Virão?"';
+      convHist.push({role:'greg', texto: txtEl.textContent});
+    }
+    el.classList.remove('loading');
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  async function enviarFala() {
+    const txt = input.value.trim();
+    if (!txt || input.disabled) return;
+    input.value = '';
+    input.disabled = true; btnSend.disabled = true;
+    convHist.push({role:'player', texto: txt});
+    appendMsg('player', heroNome, heroPort, txt);
+    await gregorasFala(txt);
+    input.disabled = false; btnSend.disabled = false;
+    input.focus();
+  }
+
+  btnSend.addEventListener('click', enviarFala);
+  input.addEventListener('keydown', e => { if(e.key==='Enter') enviarFala(); });
+  btnSair.addEventListener('click', _cinTransicaoCastelo);
+
+  // Narrativa introdutória e primeira fala de Gregoras
+  await new Promise(r => setTimeout(r, 400));
+  appendNarr('Gregoras Pellos se aproxima, ajustando os óculos com nervosismo visível.');
+  await new Promise(r => setTimeout(r, 600));
+  await gregorasFala('Você acabou de alcançar os aventureiros após a batalha. Cumprimente-os brevemente e transmita o recado urgente da Duquesa Catherine com seu jeito protocolar — ela precisa deles no castelo agora. Seja formal e urgente ao mesmo tempo.');
 }
 
 function _cinTransicaoCastelo() {
@@ -2926,8 +3032,7 @@ function initScale(){
   const infoH=panelH-72;
   const pw=Math.max(44,Math.min(72,Math.round((infoH-12)*0.68)));
   const pp=document.getElementById('panel-portrait');
-  pp.style.width=pw+'px';
-  pp.style.height='auto';
+  if(pp){ pp.style.width=pw+'px'; pp.style.height='auto'; }
 
   document.getElementById('atk-panel').style.bottom=(panelH+8)+'px';
 }
