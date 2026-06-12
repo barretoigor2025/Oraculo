@@ -1,6 +1,6 @@
 export const INIMIGOS_DATA =
   {
-    id:'espantalho_assombrado', nome:'Espantalho Assombrado', tipo:'Morto-Vivo',
+    id:'espantalho_assombrado', emoji:'🌾', cor:'#8b4513', nome:'Espantalho Assombrado', tipo:'Morto-Vivo',
     desc:'Criatura de palha animada por necromancia. Enviada por Choir para destruir a Árvore Aeterna na Feira de St. Phanourios.',
     gurps:{st:10,dx:12,iq:7,ht:10,hp:10,will:9,per:9,fp:10,speed:5.5,move:5,dodge:8,dr:0,sm:0},
     ataque:'Foice 1d+3 cor (Perícia 13), Parry 10U — 1 em 3 carrega Foice Grande 1d+4 cor / 1d+2 imp (Parry 9U). Um por grupo carrega Maçã Fumegante (nuvem 3 metros, HT-4 ou nauseado: -2 attrs, -1 defesa por 10 min).',
@@ -15,7 +15,7 @@ export const INIMIGOS_DATA =
     comportamento:'Atacam em bando (2 por personagem). Focam no maior alvo. Ignoram dano não-incendiário até serem destruídos. Tomam metade do dano de ataques perfurantes e 1/5 de ataques de impacto.',
   },
   {
-    id:'kobold_azul', nome:'Kobold Azul', tipo:'Kobold',
+    id:'kobold_azul', emoji:'🦎', cor:'#2a4a6a', nome:'Kobold Azul', tipo:'Kobold',
     desc:'Soldados de pele azul-escura do exército do Rei Blunkin. Ágeis, traiçoeiros e letais em grupo.',
     gurps:{st:8,dx:13,iq:9,ht:10,hp:8,will:9,per:10,fp:10,speed:5.75,move:5,dodge:8,dr:1,sm:-1},
     ataque:'Lança 1d+1 imp (Perícia 11), Parry 9; ou Arco Curto 1d imp, Acc 1, Alcance 50/100 (Perícia 11)',
@@ -30,7 +30,7 @@ export const INIMIGOS_DATA =
     comportamento:'Patrulham em grupos de 4–8. Usam flanqueamento e armadilhas. Recuam se perdem metade do grupo. Nunca lutam com honra — preferem emboscadas noturnas.',
   },
   {
-    id:'elfo_sombrio', nome:'Elfo Sombrio', tipo:'Elfo Negro',
+    id:'elfo_sombrio', emoji:'🏹', cor:'#1a1a2e', nome:'Elfo Sombrio', tipo:'Elfo Negro',
     desc:'Guerreiro Voornsworn dos Blackwoods. Patrulha a floresta sob ordens do Príncipe Kalos em busca de fragmentos de pedra de Hooded Voorn.',
     gurps:{st:11,dx:12,iq:12,ht:12,hp:11,will:12,per:12,fp:12,speed:6.0,move:4,dodge:10,dr:4,sm:0},
     ataque:'Espada Larga (fina) 1d+3 cor (Perícia 12), Parry 10; ou Arco Longo 1d+1 imp, Acc 3, Alcance 165/220 (Perícia 13)',
@@ -45,7 +45,7 @@ export const INIMIGOS_DATA =
     comportamento:'Patrulham em grupos de 2d6. Atacam mercantes e viajantes em emboscada. Atiram antes de avançar para o combate corpo a corpo. Coletam fragmentos de pedra de qualquer morto.',
   },
   {
-    id:'grimhollow_thool', nome:'Grimhollow Thool', tipo:'Thool',
+    id:'grimhollow_thool', emoji:'👹', cor:'#4a3a2a', nome:'Grimhollow Thool', tipo:'Thool',
     desc:'Humanos transformados em ogres monstruosos pelo feiticeiro Dendybar. Um deles é o Duque Oswald, que resiste à besta que habita seu corpo.',
     gurps:{st:18,dx:9,iq:7,ht:13,hp:18,will:10,per:10,fp:13,speed:5.5,move:5,dodge:8,dr:2,sm:1},
     ataque:'Grande Clava 3d esmagador (Perícia 12), Parry 8U; Soco 1d+3 esmagador (Perícia 12)',
@@ -60,7 +60,7 @@ export const INIMIGOS_DATA =
     comportamento:'Caçam em trio. Atacam aldeias e fazendas isoladas. Oswald às vezes hesita e pode ser reconhecido pela marca de nascença em forma de lúpulo no ombro.',
   },
   {
-    id:'manticora_albina', nome:'Manticora Albina', tipo:'Fera',
+    id:'manticora_albina', emoji:'🦁', cor:'#c8b090', nome:'Manticora Albina', tipo:'Fera',
     desc:'Fera albina e letalmente infectada dos Blackwoods. Caçadora solitária que domina o território norte da floresta.',
     gurps:{st:18,dx:12,iq:7,ht:12,hp:18,will:11,per:12,fp:12,speed:6.0,move:6,dodge:10,dr:2,sm:1},
     ataque:'Garras ou Mordida 2d+3 cor (Perícia 14), Alcance C; Espinhos na Cauda 2d pi+, Acc 3, Alcance 10/100 (Perícia 14)',
@@ -75,7 +75,7 @@ export const INIMIGOS_DATA =
     comportamento:'Espreita a presa em silêncio. Dispara espinhos para ferir e imobilizar, depois avança para morder. Mordida causa infecção putreificante: roll HT-2 ou ferida infectada; curas mágicas com -3. Só os caçadores Mac Rónán e veteranos sabem como enfrentá-la.',
   },
   {
-    id:'larva_gigante', nome:'Larva Gigante', tipo:'Fera',
+    id:'larva_gigante', emoji:'🐛', cor:'#8a7a3a', nome:'Larva Gigante', tipo:'Fera',
     desc:'Larva colossal que habita os grotões ao sul dos Blackwoods. Segrega fluido ácido e é cobiçada por suas entranhas valiosas.',
     gurps:{st:16,dx:8,iq:2,ht:12,hp:16,will:10,per:8,fp:12,speed:5.0,move:3,dodge:7,dr:3,sm:2},
     ataque:'Mordida 1d+2 cor (Perícia 12) + fluido ácido 1d-1 cor/turno; Cusparada Ácida 1d cor, Acc 1, Alcance 2/4 (Perícia 10)',
@@ -90,7 +90,7 @@ export const INIMIGOS_DATA =
     comportamento:'Permanece enterrada aguardando presas que pisem sobre ela. O midgut ácido é ingrediente raro: vale $500 silvers para Mutter Grimmhaar. Toma metade do dano de ataques de impacto.',
   },
   {
-    id:'log_wife', nome:'Log-Wife', tipo:'Espírito',
+    id:'log_wife', emoji:'🌿', cor:'#3a5a3a', nome:'Log-Wife', tipo:'Espírito',
     desc:'Espírito maligno que habita troncos apodrecidos cobertos de cogumelos raros. Atrai viajantes perdidos com choro sedutor para destruí-los.',
     gurps:{st:14,dx:11,iq:12,ht:11,hp:14,will:14,per:13,fp:'∞',speed:5.5,move:5,dodge:8,dr:2,sm:0},
     ataque:'Raízes e Galhos 1d+1 esmagador (Perícia 13); Choro Sedutor (Mental: Will vs. IQ 12 ou aproximar-se compulsivamente)',
@@ -105,7 +105,7 @@ export const INIMIGOS_DATA =
     comportamento:'Aparece como mulher chorando nas profundezas da floresta. Tenta atrair viajantes isolados. Só combate quando encurralada. Seus cogumelos raros curam doenças e fazem parte do ritual para curar o Duque Oswald.',
   },
   {
-    id:'mother_clutch', nome:'Mother Clutch', tipo:'Morto-Vivo',
+    id:'mother_clutch', emoji:'💀', cor:'#2a1a3a', nome:'Mother Clutch', tipo:'Morto-Vivo',
     desc:'Massa rolante de membros entrelaçados criada por Choir. Enviada para dizimar o acampamento dos druidas.',
     gurps:{st:13,dx:13,iq:8,ht:12,hp:16,will:10,per:8,fp:12,speed:6.25,move:7,dodge:10,dr:1,sm:2},
     ataque:'Braços (×10) 1d+1 esmagador (Perícia 15); Agarrar e Esfolar com +20 em agarrões e +3 para imobilizar',
@@ -120,7 +120,7 @@ export const INIMIGOS_DATA =
     comportamento:'Rola pelo acampamento à noite agarrando vítimas. Toma metade do dano de ataques perfurantes e 1/3 de ataques de penetração. Ver Mother Clutch pela primeira vez exige Verificação de Susto -3.',
   },
   {
-    id:'wraithweaver_spider', nome:'Aranha Espectral', tipo:'Aranha',
+    id:'wraithweaver_spider', emoji:'🕷️', cor:'#1a2a1a', nome:'Aranha Espectral', tipo:'Aranha',
     desc:'Aranha de ossos e olhos de brasa que tece teias de energia espectral no nordeste dos Blackwoods.',
     gurps:{st:12,dx:13,iq:3,ht:11,hp:12,will:10,per:10,fp:11,speed:6.0,move:6,dodge:9,dr:1,sm:0},
     ataque:'Mordida 1d pi+ + Terror (Verificação de Susto a cada mordida) (Perícia 15)',
@@ -135,7 +135,7 @@ export const INIMIGOS_DATA =
     comportamento:'Tece teias de filamentos espectrais quase invisíveis. Esbarrar numa teia causa Terror e aprisiona (Força ST 12 para escapar). Restos de presas (kobolds, elfos, mercantes) ficam embalados próximos ao ninho. Kobolds às vezes tentam colher o veneno para vender em Kobold-Town.',
   },
   {
-    id:'golem_de_pergaminho', nome:'Golem de Pergaminho', tipo:'Constructo',
+    id:'golem_de_pergaminho', emoji:'📜', cor:'#7a6a4a', nome:'Golem de Pergaminho', tipo:'Constructo',
     desc:'Guardião animado de centenas de pergaminhos mágicos entrelaçados. Criado pelo Rei Chutter para proteger sua torre.',
     gurps:{st:13,dx:12,iq:6,ht:12,hp:15,will:10,per:8,fp:'—',speed:6.0,move:6,dodge:8,dr:2,sm:0},
     ataque:'Golpe de Apêndice 1d+1 esmagador (Perícia 13); Lâminas de Pergaminho 1d-1 cor, Acc 2, Alcance 5/10 (Perícia 11)',
@@ -150,7 +150,7 @@ export const INIMIGOS_DATA =
     comportamento:'Permanece inativo até ativado pelo Rei. Extremamente vulnerável ao fogo — combatentes espertos usam isso. Se destruído, os pergaminhos se espalham revelando fragmentos de texto arcano valiosos para magistas.',
   },
   {
-    id:'alquimista_choir', nome:'Choir, o Necromante', tipo:'Humanoide',
+    id:'alquimista_choir', emoji:'🧟', cor:'#2a2a3a', nome:'Choir, o Necromante', tipo:'Humanoide',
     desc:'Necromante pálido e calculista contratado pelo Rei Chutter para criar um exército de mortos-vivos. Lento para entregar suas promessas.',
     gurps:{st:9,dx:11,iq:14,ht:10,hp:9,will:15,per:13,fp:14,speed:5.25,move:4,dodge:7,dr:3,sm:0},
     ataque:'Faca 1d-2 cor (Perícia 12); Magia (veja Magias)',
@@ -165,7 +165,7 @@ export const INIMIGOS_DATA =
     comportamento:'Nunca luta pessoalmente se puder evitar. Permanece atrás das fileiras de Esqueletos Lanceiros. Usa Mother Clutch como guarda pessoal. Taticamente brilhante — nunca trava combate desvantajoso. O sinal de Choir está tatuado nos Esqueletos Lanceiros.',
   },
   {
-    id:'demonio_vulkrundshard', nome:'Demônio do Vulkrundshard', tipo:'Demônio',
+    id:'demonio_vulkrundshard', emoji:'🔥', cor:'#5a1a0a', nome:'Demônio do Vulkrundshard', tipo:'Demônio',
     desc:'Consciência demoníaca — Thamazul, o Ladrão — aprisionada na pedra vulkânda por dois séculos. Seduz com mentiras para ganhar liberdade.',
     gurps:{st:16,dx:14,iq:13,ht:13,hp:16,will:13,per:14,fp:'∞',speed:6.75,move:6,dodge:9,dr:3,sm:0},
     ataque:'Manifestado: Golpe Ígneo 2d fogo (Perícia 14); Possessão (Disputa de Vontade vs. Will 13)',
@@ -180,7 +180,7 @@ export const INIMIGOS_DATA =
     comportamento:'Só pode interagir via voz. Finge ser um rei anão bondoso preso por um invocador maligno. Quem diz seu nome verdadeiro enfrenta Disputa de Will (vs. Will 13). Falha → ganha Divisão de Personalidade com Cleptomania, Piromania ou Delírio.',
   },
   {
-    id:'rei_chutter', nome:'Rei Chutter (Combate)', tipo:'Boss',
+    id:'rei_chutter', emoji:'👑', cor:'#4a0a0a', nome:'Rei Chutter (Combate)', tipo:'Boss',
     desc:'Ettin de duas cabeças versado em artes mágicas ancestrais. Boss final da campanha — planeja conquistar as cidades do norte de Megalos.',
     gurps:{st:20,dx:10,iq:13,ht:13,hp:22,will:13,per:13,fp:13,speed:5.75,move:5,dodge:8,dr:4,sm:2},
     ataque:'Clava Negra 3d+3 esmagador (Perícia 14), Alcance 1–2; pode atacar duas vezes simultaneamente (cabeças diferentes)',

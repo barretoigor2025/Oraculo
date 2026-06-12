@@ -6,6 +6,8 @@
 <title>Arena v2</title>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script type="module">
+import { INIMIGOS_DATA } from './data/bestiary.js';
+window.INIMIGOS_DATA = INIMIGOS_DATA;
 import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import{getFirestore,doc,onSnapshot,updateDoc,increment}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 const _cfg=JSON.parse(localStorage.getItem('oraculo.fbConfig')||'null');
@@ -561,6 +563,36 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 <script>
 'use strict';
 
+// ── Bestiary helper ──────────────────────────────────────────────────────────
+function criarInimigo(bestiaryId, col, row, overrides){
+  const en = (window.INIMIGOS_DATA||[]).find(e=>e.id===bestiaryId);
+  if(!en){ console.warn('criarInimigo: id não encontrado →', bestiaryId); return null; }
+  const g = en.gurps || {};
+  return Object.assign({
+    id:          `${bestiaryId}_${col}_${row}`,
+    nome:        en.nome,
+    col, row,
+    emoji:       en.emoji || '💀',
+    cor:         en.cor   || '#4a0000',
+    imgSrc:      `sprites/inimigo_${bestiaryId}.png`,
+    imgSrcAtaque:`sprites/inimigo_${bestiaryId}.png`,
+    img:         null,
+    tipo:        'inimigo',
+    mov:         g.move  ?? 4,
+    hp:          g.hp    ?? 10,
+    maxHp:       g.hp    ?? 10,
+    sp:          (typeof g.fp === 'number' ? g.fp : 0),
+    maxSp:       (typeof g.fp === 'number' ? g.fp : 0),
+    portrait:    `portraits/enemy_${bestiaryId}_frente.png`,
+    ac:          g.dodge ?? 8,
+    dr:          g.dr    ?? 0,
+    bestiaryId,
+    habs:        en.habs        || [],
+    magias:      en.magias      || [],
+    comportamento: en.comportamento || '',
+  }, overrides||{});
+}
+
 // ── Dice helpers ──
 function parseNotacao(str){
   const m=str.match(/(\d+)d(\d+)([+-]\d+)?/);
@@ -860,9 +892,7 @@ let unidades = [
     hp:_hcd.hp, maxHp:_hcd.hp, sp:_hcd.sp, maxSp:_hcd.sp,
     portrait:`portraits/${_heroClassId}_${_heroGender}.png`,
     itens:_hcd.itens },
-  { id:'esp_0', nome:'Espantalho', col:6, row:3, emoji:'🌾', cor:'#8b4513',
-    imgSrc:'sprites/inimigo_espantalho_assombrado.png', img:null, tipo:'inimigo', mov:3,
-    hp:12, maxHp:12, sp:0, maxSp:0, portrait:null, ac:11 },
+  criarInimigo('espantalho_assombrado', 6, 3),
 ];
 
 // ══════════════════════════════════════════
