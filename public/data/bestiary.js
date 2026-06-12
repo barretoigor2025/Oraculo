@@ -1,4 +1,4 @@
-export const INIMIGOS_DATA =
+export const INIMIGOS_DATA = [
   {
     id:'espantalho_assombrado', emoji:'🌾', cor:'#8b4513', nome:'Espantalho Assombrado', tipo:'Morto-Vivo',
     desc:'Criatura de palha animada por necromancia. Enviada por Choir para destruir a Árvore Aeterna na Feira de St. Phanourios.',
