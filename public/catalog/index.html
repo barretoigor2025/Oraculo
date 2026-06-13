@@ -563,13 +563,20 @@
     .mv-frame-wrap { display:flex; flex-direction:column; align-items:center; gap:6px; }
     .mv-frame-label { font-size:9px; color:rgba(200,160,64,0.35); letter-spacing:1px; }
     .mv-spr {
-      --fw:512px; --fh:768px; --sc:0.28;
+      --fw:362px; --fh:450px; --sc:0.28;
       --dw:calc(var(--fw)*var(--sc)); --dh:calc(var(--fh)*var(--sc));
       width:var(--dw); height:var(--dh);
-      background-image:url('../sprites/run_sheet.png?v=2');
       background-size:calc(var(--fw)*4*var(--sc)) var(--dh);
       background-repeat:no-repeat;
     }
+    /* char selector */
+    .mv-selector { display:flex; flex-direction:column; gap:10px; }
+    .mv-sel-row  { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+    .mv-sel-label{ font-size:9px; letter-spacing:1px; color:rgba(200,160,64,0.45); text-transform:uppercase; width:52px; flex-shrink:0; }
+    .mv-sel-btn  { padding:4px 10px; font-size:10px; border:1px solid rgba(200,160,64,0.25); border-radius:6px;
+                   background:rgba(0,0,0,0.3); color:rgba(200,160,64,0.6); cursor:pointer; transition:all .15s; }
+    .mv-sel-btn:hover { border-color:rgba(200,160,64,0.5); color:#c8a040; }
+    .mv-sel-btn.active{ border-color:#c8a040; background:rgba(200,160,64,0.12); color:#f0cc70; font-weight:700; }
     .mv-spr.f0 { background-position:calc(var(--fw)*0*var(--sc)*-1) 0; }
     .mv-spr.f1 { background-position:calc(var(--fw)*1*var(--sc)*-1) 0; }
     .mv-spr.f2 { background-position:calc(var(--fw)*2*var(--sc)*-1) 0; }
@@ -1668,8 +1675,35 @@ let _mvOnActivate=null, _mvOnDeactivate=null;
 
 function buildMovimentacoesTab(){
   const tab = document.getElementById('movimentacoes-tab');
+
+  // sprite metadata: frame width always 362, heights vary
+  const MV_SPRITES = {
+    'arqueiro_m': {fw:362,fh:356}, 'arqueiro_f': {fw:362,fh:355},
+    'barbaro_m':  {fw:362,fh:442}, 'barbaro_f':  {fw:362,fh:437},
+    'clerigo_m':  {fw:362,fh:467}, 'clerigo_f':  {fw:362,fh:436},
+    'guerreiro_m':{fw:362,fh:378}, 'guerreiro_f':{fw:362,fh:395},
+    'ladino_m':   {fw:362,fh:359}, 'ladino_f':   {fw:362,fh:389},
+    'mago_m':     {fw:362,fh:450}, 'mago_f':     {fw:362,fh:445},
+  };
+  const MV_LABELS = {arqueiro:'🏹 Arqueiro',barbaro:'🪓 Bárbaro',clerigo:'✨ Clérigo',
+                     guerreiro:'⚔️ Guerreiro',ladino:'🗡️ Ladino',mago:'🔮 Mago'};
+
   tab.innerHTML = `
 <div class="mv-wrap">
+  <div>
+    <div class="mv-sec-title">Personagem</div>
+    <div class="mv-selector">
+      <div class="mv-sel-row">
+        <span class="mv-sel-label">Classe</span>
+        ${Object.entries(MV_LABELS).map(([id,lbl])=>`<button class="mv-sel-btn mv-cls-btn" data-cls="${id}">${lbl}</button>`).join('')}
+      </div>
+      <div class="mv-sel-row">
+        <span class="mv-sel-label">Gênero</span>
+        <button class="mv-sel-btn mv-gen-btn" data-gen="m">♂ Masculino</button>
+        <button class="mv-sel-btn mv-gen-btn" data-gen="f">♀ Feminino</button>
+      </div>
+    </div>
+  </div>
   <div>
     <div class="mv-sec-title">Frames individuais — 4 poses</div>
     <div class="mv-frames-row">
@@ -1716,7 +1750,7 @@ function buildMovimentacoesTab(){
     <div id="mv-map-wrap" style="position:relative;margin:0 auto;max-width:min(480px,100%);border-radius:12px;overflow:hidden;border:1px solid rgba(200,160,64,0.18);background:#0a0806;">
       <img src="../maps/feira-limpa.png" id="mv-map-img" style="display:block;width:100%;height:auto;user-select:none" draggable="false" alt="Mapa">
       <canvas id="mv-hex-canvas" style="position:absolute;top:0;left:0;pointer-events:none"></canvas>
-      <div id="mv-map-runner" style="position:absolute;background-image:url('../sprites/run_sheet.png?v=2');background-color:transparent;background-repeat:no-repeat;pointer-events:none;"></div>
+      <div id="mv-map-runner" style="position:absolute;background-color:transparent;background-repeat:no-repeat;pointer-events:none;"></div>
     </div>
   </div>
 </div>`;
@@ -1726,6 +1760,51 @@ function buildMovimentacoesTab(){
   const mvScene  = document.getElementById('mv-scene');
   let mvFps=8, mvEscala=28, mvTravSec=4;
   let mvTravDir=1, mvTravX=-160, mvLastSceneTime=null;
+
+  // ── character selector ──────────────────────────────────────────────
+  let mvCurCls='mago', mvCurGen='m';
+  const FRAME_W_MAP = MV_SPRITES; // alias used later for map calc
+
+  function mvSetSprite(key){
+    const d = MV_SPRITES[key];
+    if(!d) return;
+    const url = `./assets/sprites/${key}_run.png`;
+    allMvSprites.forEach(el=>{
+      el.style.backgroundImage = `url('${url}')`;
+      el.style.setProperty('--fw', d.fw+'px');
+      el.style.setProperty('--fh', d.fh+'px');
+    });
+    const mapRunner = document.getElementById('mv-map-runner');
+    if(mapRunner) mapRunner.style.backgroundImage = `url('${url}')`;
+    // store for map place calc
+    mvCurFW = d.fw; mvCurFH = d.fh;
+    mvTravX = -160; // reset scene traverse position
+  }
+  let mvCurFW = MV_SPRITES['mago_m'].fw;
+  let mvCurFH = MV_SPRITES['mago_m'].fh;
+
+  tab.querySelectorAll('.mv-cls-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      tab.querySelectorAll('.mv-cls-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      mvCurCls = btn.dataset.cls;
+      mvSetSprite(mvCurCls+'_'+mvCurGen);
+    });
+  });
+  tab.querySelectorAll('.mv-gen-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      tab.querySelectorAll('.mv-gen-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      mvCurGen = btn.dataset.gen;
+      mvSetSprite(mvCurCls+'_'+mvCurGen);
+    });
+  });
+  // set initial active buttons + sprite
+  if(tab.querySelector){
+    tab.querySelector('.mv-cls-btn[data-cls="mago"]').classList.add('active');
+    tab.querySelector('.mv-gen-btn[data-gen="m"]').classList.add('active');
+  }
+  mvSetSprite('mago_m');
 
   function applyMvAll(){
     const dur=(1/mvFps).toFixed(3)+'s'; const sc=mvEscala/100;
@@ -1759,7 +1838,7 @@ function buildMovimentacoesTab(){
 
   // ── Mapa hex ─────────────────────────────────────────────────────────
   const HR=55,CS=82,RS=95,OOFF=48,GX0=47,GY0=80,COLS=13,ROWS=13;
-  const MAP_W=1086,FRAME_W=512,FRAME_H=768,FRAMES=4;
+  const MAP_W=1086,FRAMES=4;
   const mvMapWrap   = document.getElementById('mv-map-wrap');
   const mvMapCanvas = document.getElementById('mv-hex-canvas');
   const mvMapRunner = document.getElementById('mv-map-runner');
@@ -1790,7 +1869,7 @@ function buildMovimentacoesTab(){
     }
   }
   function mvPlace(c,r,fl,instant){
-    const{x,y}=mvCtr(c,r); const fw=FRAME_W*mvSprSc,fh=FRAME_H*mvSprSc;
+    const{x,y}=mvCtr(c,r); const fw=mvCurFW*mvSprSc,fh=mvCurFH*mvSprSc;
     mvMapRunner.style.width=fw+'px'; mvMapRunner.style.height=fh+'px';
     mvMapRunner.style.backgroundSize=(fw*FRAMES)+'px '+fh+'px';
     mvMapRunner.style.transition=instant?'none':'left '+(mvStepDur*0.92)+'s linear,top '+(mvStepDur*0.92)+'s linear';
@@ -1798,7 +1877,7 @@ function buildMovimentacoesTab(){
     mvMapRunner.style.transform=fl?'scaleX(-1)':'none';
   }
   function mvAnimFr(ts){
-    if(ts-mvLastFrTime>=1000/mvFps){ mvLastFrTime=ts; mvFrIdx=(mvFrIdx+1)%FRAMES; mvMapRunner.style.backgroundPositionX=(-(FRAME_W*mvSprSc)*mvFrIdx)+'px'; }
+    if(ts-mvLastFrTime>=1000/mvFps){ mvLastFrTime=ts; mvFrIdx=(mvFrIdx+1)%FRAMES; mvMapRunner.style.backgroundPositionX=(-(mvCurFW*mvSprSc)*mvFrIdx)+'px'; }
     _mvMapRaf=requestAnimationFrame(mvAnimFr);
   }
   function mvNext(){
@@ -1883,7 +1962,7 @@ function updateCount(tab){
     npcs:    `${Object.keys(NPCS).length} personagens`,
     inimigos:`${INIMIGOS_DATA.length} criaturas`,
     magias:        `${MAGIAS_DATA.length} magias`,
-    movimentacoes: '1 animação',
+    movimentacoes: '12 sprites',
   };
   document.getElementById('count-label').textContent = labels[tab]||'';
 }
