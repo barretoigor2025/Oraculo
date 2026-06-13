@@ -581,11 +581,6 @@
     .mv-spr.f1 { background-position:calc(var(--fw)*1*var(--sc)*-1) 0; }
     .mv-spr.f2 { background-position:calc(var(--fw)*2*var(--sc)*-1) 0; }
     .mv-spr.f3 { background-position:calc(var(--fw)*3*var(--sc)*-1) 0; }
-    @keyframes mv-correr {
-      from { background-position:0 0; }
-      to   { background-position:calc(var(--fw)*4*var(--sc)*-1) 0; }
-    }
-    .mv-spr.anim    { animation:mv-correr var(--dur,0.5s) steps(4) infinite; }
     .mv-spr.espelha { transform:scaleX(-1); }
     .mv-controles {
       background:rgba(0,0,0,0.35); border:1px solid rgba(200,160,64,0.15);
@@ -1769,19 +1764,34 @@ function buildMovimentacoesTab(){
     const d = MV_SPRITES[key];
     if(!d) return;
     const url = `./assets/sprites/${key}_run.png`;
+    const sc = mvEscala/100;
     allMvSprites.forEach(el=>{
       el.style.backgroundImage = `url('${url}')`;
       el.style.setProperty('--fw', d.fw+'px');
       el.style.setProperty('--fh', d.fh+'px');
+      el.style.backgroundSize = (d.fw*4*sc)+'px '+(d.fh*sc)+'px';
+      el.style.width  = (d.fw*sc)+'px';
+      el.style.height = (d.fh*sc)+'px';
+    });
+    // update static frame previews (f0–f3)
+    const classMap = {f0:0,f1:1,f2:2,f3:3};
+    allMvSprites.forEach(el=>{
+      for(const [cls,n] of Object.entries(classMap)){
+        if(el.classList.contains(cls)){
+          el.style.backgroundPositionX = -(d.fw*sc*n)+'px';
+          break;
+        }
+      }
     });
     const mapRunner = document.getElementById('mv-map-runner');
     if(mapRunner) mapRunner.style.backgroundImage = `url('${url}')`;
-    // store for map place calc
     mvCurFW = d.fw; mvCurFH = d.fh;
-    mvTravX = -160; // reset scene traverse position
+    mvSceneFrIdx = 0;
+    mvTravX = -160;
   }
   let mvCurFW = MV_SPRITES['mago_m'].fw;
   let mvCurFH = MV_SPRITES['mago_m'].fh;
+  let mvSceneFrIdx=0, mvSceneLastFrTime=0;
 
   tab.querySelectorAll('.mv-cls-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
@@ -1806,12 +1816,13 @@ function buildMovimentacoesTab(){
   }
   mvSetSprite('mago_m');
 
+  // all .mv-spr.anim elements (live preview + scene runner)
+  const mvAnimEls = Array.from(tab.querySelectorAll('.mv-spr.anim'));
+
   function applyMvAll(){
-    const dur=(1/mvFps).toFixed(3)+'s'; const sc=mvEscala/100;
-    allMvSprites.forEach(el=>{
-      el.style.setProperty('--sc',sc);
-      if(el.classList.contains('anim')) el.style.setProperty('--dur',dur);
-    });
+    const sc=mvEscala/100;
+    allMvSprites.forEach(el=>el.style.setProperty('--sc',sc));
+    // update static frame previews background-size/position via --sc
     document.getElementById('mv-fps-val').textContent    = mvFps+' fps';
     document.getElementById('mv-escala-val').textContent = mvEscala+'%';
     document.getElementById('mv-trav-val').textContent   = mvTravSec+' s';
@@ -1820,14 +1831,22 @@ function buildMovimentacoesTab(){
   function animMvScene(ts){
     if(!mvLastSceneTime) mvLastSceneTime=ts;
     const dt=(ts-mvLastSceneTime)/1000; mvLastSceneTime=ts;
-    const sceneW=mvScene.clientWidth||400;
-    const sprW=parseFloat(getComputedStyle(mvRunner).width)||160;
-    const speed=(sceneW+sprW*2)/mvTravSec;
-    mvTravX+=speed*mvTravDir*dt;
+    const sc = mvEscala/100;
+    const sprW = mvCurFW * sc;
+    const sceneW = mvScene.clientWidth||400;
+    const speed = (sceneW+sprW*2)/mvTravSec;
+    mvTravX += speed*mvTravDir*dt;
     if(mvTravDir===1  && mvTravX> sceneW+sprW){ mvTravDir=-1; mvTravX=sceneW+sprW; }
     if(mvTravDir===-1 && mvTravX<-sprW)       { mvTravDir=1;  mvTravX=-sprW; }
-    mvRunner.style.left     =mvTravX+'px';
-    mvRunner.style.transform=mvTravDir===-1?'scaleX(-1)':'none';
+    mvRunner.style.left      = mvTravX+'px';
+    mvRunner.style.transform = mvTravDir===-1 ? 'scaleX(-1)' : 'none';
+    // JS frame cycling — works in all browsers
+    if(ts - mvSceneLastFrTime >= 1000/mvFps){
+      mvSceneLastFrTime = ts;
+      mvSceneFrIdx = (mvSceneFrIdx+1) % 4;
+      const bpx = -(mvCurFW * sc * mvSceneFrIdx) + 'px';
+      mvAnimEls.forEach(el => el.style.backgroundPositionX = bpx);
+    }
     _mvSceneRaf=requestAnimationFrame(animMvScene);
   }
 
