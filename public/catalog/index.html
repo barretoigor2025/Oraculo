@@ -781,7 +781,7 @@ function catLabel(c){
 }
 
 function portraitUrl(id, gender){
-  return `../portraits/${id}_${gender}.png`;
+  return `./assets/portraits/${id}_${gender}.png`;
 }
 
 function npcPortraitUrl(id){
@@ -1456,24 +1456,39 @@ window.openClassModal = function(id){
       <div class="css-title">Sprite de Mapa</div>
       <div class="class-sprites-grid">
         <div class="cs-item">
-          <img src="../sprites/${id}_m_frente.png" alt="♂ Frente"
+          <img src="./assets/sprites/${id}_m_frente.png" alt="♂ Frente"
             onerror="this.closest('.cs-item').style.display='none'">
           <div class="cs-label">♂ Frente</div>
         </div>
         <div class="cs-item">
-          <img src="../sprites/${id}_m_costas.png" alt="♂ Costas"
+          <img src="./assets/sprites/${id}_m_costas.png" alt="♂ Costas"
             onerror="this.closest('.cs-item').style.display='none'">
           <div class="cs-label">♂ Costas</div>
         </div>
         <div class="cs-item">
-          <img src="../sprites/${id}_f_frente.png" alt="♀ Frente"
+          <img src="./assets/sprites/${id}_f_frente.png" alt="♀ Frente"
             onerror="this.closest('.cs-item').style.display='none'">
           <div class="cs-label">♀ Frente</div>
         </div>
         <div class="cs-item">
-          <img src="../sprites/${id}_f_costas.png" alt="♀ Costas"
+          <img src="./assets/sprites/${id}_f_costas.png" alt="♀ Costas"
             onerror="this.closest('.cs-item').style.display='none'">
           <div class="cs-label">♀ Costas</div>
+        </div>
+      </div>
+    </div>
+    <div class="class-sprites-section">
+      <div class="css-title">Sprite Inconsciente</div>
+      <div class="class-sprites-grid">
+        <div class="cs-item">
+          <img src="./assets/sprites/${id}_m_inconsciente.png" alt="♂ Inconsciente"
+            onerror="this.closest('.cs-item').style.display='none'">
+          <div class="cs-label">♂ Inconsciente</div>
+        </div>
+        <div class="cs-item">
+          <img src="./assets/sprites/${id}_f_inconsciente.png" alt="♀ Inconsciente"
+            onerror="this.closest('.cs-item').style.display='none'">
+          <div class="cs-label">♀ Inconsciente</div>
         </div>
       </div>
     </div>`;
