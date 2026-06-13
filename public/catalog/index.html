@@ -384,6 +384,36 @@
     }
     .section-text span.em { color: var(--gold); font-style: italic; }
 
+    /* ── CLASS SPRITE SECTION ── */
+    .class-sprites-section {
+      padding: 12px 16px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .css-title {
+      font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 10px;
+    }
+    .class-sprites-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      align-items: end;
+    }
+    .cs-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .cs-item img {
+      width: 100%; height: auto; max-height: 220px;
+      object-fit: contain;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.25);
+      padding: 4px;
+    }
+    .cs-label {
+      font-size: 8px; color: var(--text-dim); letter-spacing: 1px;
+      text-transform: uppercase; text-align: center;
+    }
+
     #modal-close {
       display: block; width: calc(100% - 40px); margin: 0 20px 20px;
       padding: 10px; border-radius: 8px;
@@ -602,6 +632,10 @@
         grid-column: 1 / -1;
         margin-bottom: 0;
       }
+
+      /* sprites: 2x2 no mobile */
+      .class-sprites-grid { grid-template-columns: repeat(2, 1fr); }
+      .cs-item img { max-height: 160px; }
 
       /* movimentacoes: frames menores */
       .mv-spr {
@@ -1416,6 +1450,31 @@ window.openClassModal = function(id){
       <div class="section">
         <div class="section-title">Habilidades</div>
         <div class="habs-list">${habsHtml}</div>
+      </div>
+    </div>
+    <div class="class-sprites-section">
+      <div class="css-title">Sprite de Mapa</div>
+      <div class="class-sprites-grid">
+        <div class="cs-item">
+          <img src="../sprites/${id}_m_frente.png" alt="♂ Frente"
+            onerror="this.closest('.cs-item').style.display='none'">
+          <div class="cs-label">♂ Frente</div>
+        </div>
+        <div class="cs-item">
+          <img src="../sprites/${id}_m_costas.png" alt="♂ Costas"
+            onerror="this.closest('.cs-item').style.display='none'">
+          <div class="cs-label">♂ Costas</div>
+        </div>
+        <div class="cs-item">
+          <img src="../sprites/${id}_f_frente.png" alt="♀ Frente"
+            onerror="this.closest('.cs-item').style.display='none'">
+          <div class="cs-label">♀ Frente</div>
+        </div>
+        <div class="cs-item">
+          <img src="../sprites/${id}_f_costas.png" alt="♀ Costas"
+            onerror="this.closest('.cs-item').style.display='none'">
+          <div class="cs-label">♀ Costas</div>
+        </div>
       </div>
     </div>`;
   openModal();
