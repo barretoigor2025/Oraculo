@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teste de Animação — Corrida</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0e0c0a;
+    color: #e0d0a8;
+    font-family: 'Georgia', serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  h1 { color: #c8a040; font-size: 18px; letter-spacing: 2px; text-transform: uppercase; }
+  .label { font-size: 11px; color: rgba(200,170,100,0.5); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+
+  /* ── SPRITE SHEET ANIMATION ──────────────────────────────── */
+  /*
+    Sheet: 4 frames × 1024px = 4096px wide, 1536px tall
+    Display at 1/5 scale: 204.8 × 307.2 → arredondado para 200×300
+  */
+
+  .char {
+    --fw: 512px;    /* largura de 1 frame no sheet (metade do original) */
+    --fh: 768px;    /* altura do sheet */
+    --scale: 0.22;  /* fator de escala para tela */
+    --dw: calc(var(--fw) * var(--scale));  /* ~225px */
+    --dh: calc(var(--fh) * var(--scale));  /* ~338px */
+
+    width:  var(--dw);
+    height: var(--dh);
+    background-image: url('sprites/run_sheet.png');
+    background-size: calc(var(--fw) * 4 * var(--scale)) var(--dh);
+    background-position: 0 0;
+    background-repeat: no-repeat;
+    image-rendering: auto;
+  }
+
+  /* Animação: desloca o background em 4 passos discretos */
+  @keyframes run-right {
+    from { background-position: 0 0; }
+    to   { background-position: calc(var(--fw) * -4 * var(--scale)) 0; }
+  }
+
+  @keyframes run-left {
+    from { background-position: 0 0; }
+    to   { background-position: calc(var(--fw) * -4 * var(--scale)) 0; }
+  }
+
+  .char.running {
+    animation: run-right var(--fps, 0.5s) steps(4) infinite;
+  }
+
+  /* Direção: espelha horizontalmente */
+  .char.left {
+    transform: scaleX(-1);
+  }
+
+  /* ── CENÁRIO DE TRAVESSIA ─────────────────────────────────── */
+  .scene {
+    width: min(700px, 92vw);
+    height: 220px;
+    background: linear-gradient(180deg, #1a120a 0%, #2a1a0a 60%, #3a2210 100%);
+    border: 1px solid rgba(200,160,64,0.15);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* chão */
+  .scene::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 40px;
+    background: linear-gradient(180deg, rgba(80,50,20,0) 0%, rgba(60,40,15,0.9) 100%);
+    border-top: 1px solid rgba(200,160,64,0.1);
+  }
+
+  /* personagem que cruza a cena */
+  .crosser {
+    position: absolute;
+    bottom: 30px;
+    left: -250px;
+    animation:
+      run-right 0.5s steps(4) infinite,
+      cross-scene 3.5s linear infinite;
+  }
+
+  .crosser.return {
+    left: calc(100% + 250px);
+    transform: scaleX(-1);
+    animation:
+      run-right 0.5s steps(4) infinite,
+      cross-scene-back 3.5s linear infinite 1.75s;
+  }
+
+  @keyframes cross-scene {
+    from { left: -260px; }
+    to   { left: calc(100% + 20px); }
+  }
+
+  @keyframes cross-scene-back {
+    from { left: calc(100% + 260px); }
+    to   { left: -20px; }
+  }
+
+  /* ── CONTROLES ───────────────────────────────────────────── */
+  .controls {
+    display: flex; flex-direction: column; gap: 12px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(200,160,64,0.15);
+    border-radius: 10px;
+    padding: 16px 20px;
+    width: min(500px, 92vw);
+  }
+
+  .ctrl-row {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 11px; color: rgba(200,170,100,0.7);
+    letter-spacing: .8px;
+  }
+  .ctrl-row label { flex: 0 0 120px; text-transform: uppercase; }
+  input[type=range] { flex: 1; accent-color: #c8a040; }
+  .ctrl-val { flex: 0 0 40px; text-align: right; color: #c8a040; }
+
+  /* ── ESTÁTICOS ───────────────────────────────────────────── */
+  .frames-row {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  }
+  .frame-box {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .frame-box .char { border: 1px solid rgba(200,160,64,0.15); border-radius: 6px; }
+  .frame-box span { font-size: 9px; color: rgba(200,160,64,0.4); letter-spacing: 1px; }
+
+  /* ── Exibir frame específico ─────────────────────────────── */
+  .f0 { background-position: 0    0 !important; animation: none !important; }
+  .f1 { background-position: calc(var(--fw) * -1 * var(--scale)) 0 !important; animation: none !important; }
+  .f2 { background-position: calc(var(--fw) * -2 * var(--scale)) 0 !important; animation: none !important; }
+  .f3 { background-position: calc(var(--fw) * -3 * var(--scale)) 0 !important; animation: none !important; }
+</style>
+</head>
+<body>
+
+<h1>🏃 Animação de Corrida</h1>
+
+<!-- ── Frames individuais ── -->
+<div>
+  <div class="label">Frames individuais (4 poses)</div>
+  <div class="frames-row">
+    <div class="frame-box"><div class="char f0"></div><span>Frame 1</span></div>
+    <div class="frame-box"><div class="char f1"></div><span>Frame 2</span></div>
+    <div class="frame-box"><div class="char f2"></div><span>Frame 3</span></div>
+    <div class="frame-box"><div class="char f3"></div><span>Frame 4</span></div>
+  </div>
+</div>
+
+<!-- ── Animação ao vivo ── -->
+<div>
+  <div class="label">Animação ao vivo — Direita / Esquerda</div>
+  <div style="display:flex; gap:40px; align-items:flex-end; justify-content:center;">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+      <div class="char running" id="char-right"></div>
+      <span style="font-size:9px;color:rgba(200,160,64,0.4);letter-spacing:1px">→ DIREITA</span>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+      <div class="char running left" id="char-left"></div>
+      <span style="font-size:9px;color:rgba(200,160,64,0.4);letter-spacing:1px">← ESQUERDA</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Controles ── -->
+<div class="controls">
+  <div class="ctrl-row">
+    <label>Velocidade (FPS)</label>
+    <input type="range" id="fps-range" min="4" max="24" value="8" step="1">
+    <span class="ctrl-val" id="fps-val">8 fps</span>
+  </div>
+  <div class="ctrl-row">
+    <label>Escala</label>
+    <input type="range" id="scale-range" min="10" max="50" value="22" step="1">
+    <span class="ctrl-val" id="scale-val">22%</span>
+  </div>
+</div>
+
+<!-- ── Cena de travessia ── -->
+<div>
+  <div class="label">Cena — personagem atravessando</div>
+  <div class="scene">
+    <div class="char crosser"></div>
+  </div>
+</div>
+
+<script>
+  // ── Controle de FPS ──────────────────────────────────────
+  const fpsRange   = document.getElementById('fps-range');
+  const fpsVal     = document.getElementById('fps-val');
+  const scaleRange = document.getElementById('scale-range');
+  const scaleVal   = document.getElementById('scale-val');
+
+  function applyFps(fps){
+    const dur = (1 / fps).toFixed(3) + 's';
+    fpsVal.textContent = fps + ' fps';
+    document.querySelectorAll('.char.running').forEach(el=>{
+      el.style.setProperty('--fps', dur);
+    });
+    // crosser também
+    document.querySelector('.crosser').style.animationDuration = dur + ', 3.5s';
+  }
+
+  function applyScale(pct){
+    const s = pct / 100;
+    scaleVal.textContent = pct + '%';
+    document.querySelectorAll('.char').forEach(el=>{
+      el.style.setProperty('--scale', s);
+    });
+  }
+
+  fpsRange.addEventListener('input', ()=> applyFps(parseInt(fpsRange.value)));
+  scaleRange.addEventListener('input', ()=> applyScale(parseInt(scaleRange.value)));
+
+  applyFps(8);
+  applyScale(22);
+</script>
+</body>
+</html>
