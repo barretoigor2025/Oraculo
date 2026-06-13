@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movimento — Teste de Animação</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0e0c0a;
+  color: #e0d0a8;
+  font-family: 'Georgia', serif;
+  min-height: 100vh;
+  padding: 32px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 48px;
+}
+
+h1 {
+  font-size: 15px; letter-spacing: 3px; text-transform: uppercase;
+  color: #c8a040; font-weight: 400;
+}
+
+/* ── SEÇÃO ─────────────────────────────────────────────── */
+section {
+  width: min(800px, 100%);
+  display: flex; flex-direction: column; gap: 16px;
+}
+.sec-title {
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(200,160,64,0.45);
+  border-bottom: 1px solid rgba(200,160,64,0.12);
+  padding-bottom: 8px;
+}
+
+/* ── FRAMES INDIVIDUAIS ─────────────────────────────────── */
+.frames-row {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+}
+.frame-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.frame-label {
+  font-size: 9px; color: rgba(200,160,64,0.35); letter-spacing: 1px;
+}
+
+/* ── SPRITE BASE ────────────────────────────────────────── */
+.spr {
+  /* variáveis CSS que os controles vão alterar */
+  --fw: 512px;   /* largura de 1 frame no sheet */
+  --fh: 768px;   /* altura do sheet */
+  --sc: 0.28;    /* escala de exibição */
+
+  --dw: calc(var(--fw) * var(--sc));
+  --dh: calc(var(--fh) * var(--sc));
+
+  width:  var(--dw);
+  height: var(--dh);
+  background-image: url('sprites/run_sheet.png');
+  background-size: calc(var(--fw) * 4 * var(--sc)) var(--dh);
+  background-repeat: no-repeat;
+}
+
+/* frame fixo: f0..f3 */
+.spr.f0 { background-position: calc(var(--fw) * 0 * var(--sc) * -1) 0; }
+.spr.f1 { background-position: calc(var(--fw) * 1 * var(--sc) * -1) 0; }
+.spr.f2 { background-position: calc(var(--fw) * 2 * var(--sc) * -1) 0; }
+.spr.f3 { background-position: calc(var(--fw) * 3 * var(--sc) * -1) 0; }
+
+/* animação */
+@keyframes correr {
+  from { background-position: 0 0; }
+  to   { background-position: calc(var(--fw) * 4 * var(--sc) * -1) 0; }
+}
+.spr.anim {
+  animation: correr var(--dur, 0.5s) steps(4) infinite;
+}
+.spr.espelha { transform: scaleX(-1); }
+
+/* ── CONTROLES ──────────────────────────────────────────── */
+.controles {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(200,160,64,0.15);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.ctrl {
+  display: grid;
+  grid-template-columns: 130px 1fr 52px;
+  align-items: center; gap: 12px;
+}
+.ctrl label {
+  font-size: 10px; color: rgba(200,160,64,0.6);
+  letter-spacing: 1px; text-transform: uppercase;
+}
+input[type=range] {
+  accent-color: #c8a040; width: 100%;
+}
+.ctrl-val {
+  font-size: 11px; color: #c8a040; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── CENA DE TRAVESSIA ──────────────────────────────────── */
+.scene {
+  width: 100%;
+  height: 240px;
+  background: linear-gradient(180deg, #120e08 0%, #1e1408 55%, #2a1c0a 100%);
+  border: 1px solid rgba(200,160,64,0.12);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.scene-floor {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 44px;
+  background: linear-gradient(transparent, rgba(50,30,10,0.8));
+  border-top: 1px solid rgba(200,160,64,0.08);
+}
+
+.runner {
+  position: absolute;
+  bottom: 28px;
+  /* posição e direção controladas por JS */
+}
+</style>
+</head>
+<body>
+
+<h1>🏃 Movimento — Teste de Animação</h1>
+
+<!-- ── 1. Frames individuais ── -->
+<section>
+  <div class="sec-title">Frames individuais — 4 poses</div>
+  <div class="frames-row" id="frames-row">
+    <div class="frame-wrap"><div class="spr f0" id="sf0"></div><div class="frame-label">Frame 1</div></div>
+    <div class="frame-wrap"><div class="spr f1" id="sf1"></div><div class="frame-label">Frame 2</div></div>
+    <div class="frame-wrap"><div class="spr f2" id="sf2"></div><div class="frame-label">Frame 3</div></div>
+    <div class="frame-wrap"><div class="spr f3" id="sf3"></div><div class="frame-label">Frame 4</div></div>
+  </div>
+</section>
+
+<!-- ── 2. Controles ── -->
+<section>
+  <div class="sec-title">Controles</div>
+  <div class="controles">
+
+    <div class="ctrl">
+      <label>Velocidade (FPS)</label>
+      <input type="range" id="fps" min="2" max="20" value="8" step="1">
+      <span class="ctrl-val" id="fps-val">8 fps</span>
+    </div>
+
+    <div class="ctrl">
+      <label>Tamanho</label>
+      <input type="range" id="escala" min="12" max="55" value="28" step="1">
+      <span class="ctrl-val" id="escala-val">28%</span>
+    </div>
+
+    <div class="ctrl">
+      <label>Vel. travessia</label>
+      <input type="range" id="trav" min="1" max="12" value="4" step="0.5">
+      <span class="ctrl-val" id="trav-val">4 s</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── 3. Resultado animado ── -->
+<section>
+  <div class="sec-title">Resultado — animação ao vivo</div>
+  <div style="display:flex; gap:40px; justify-content:center; align-items:flex-end; flex-wrap:wrap;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div class="spr anim" id="anim-dir"></div>
+      <span style="font-size:9px;color:rgba(200,160,64,0.35);letter-spacing:1px">→ DIREITA</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div class="spr anim espelha" id="anim-esq"></div>
+      <span style="font-size:9px;color:rgba(200,160,64,0.35);letter-spacing:1px">← ESQUERDA</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── 4. Cena de travessia ── -->
+<section>
+  <div class="sec-title">Cena — atravessando o mapa</div>
+  <div class="scene" id="scene">
+    <div class="runner spr anim" id="runner"></div>
+    <div class="scene-floor"></div>
+  </div>
+</section>
+
+<script>
+  // ── Todos os sprites da página ──────────────────────────
+  const allSprites = document.querySelectorAll('.spr');
+  const runner     = document.getElementById('runner');
+  const scene      = document.getElementById('scene');
+
+  // ── Estado ──────────────────────────────────────────────
+  let fps      = 8;
+  let escala   = 28;
+  let travSec  = 4;
+
+  // ── Aplicar valores ─────────────────────────────────────
+  function applyAll(){
+    const dur = (1 / fps).toFixed(3) + 's';
+    const sc  = escala / 100;
+
+    allSprites.forEach(el => {
+      el.style.setProperty('--sc', sc);
+      if(el.classList.contains('anim'))
+        el.style.setProperty('--dur', dur);
+    });
+
+    document.getElementById('fps-val').textContent    = fps   + ' fps';
+    document.getElementById('escala-val').textContent = escala + '%';
+    document.getElementById('trav-val').textContent   = travSec + ' s';
+  }
+
+  // ── Traversal: personagem cruza a cena indo e voltando ──
+  let travDir   = 1;   // 1 = direita, -1 = esquerda
+  let travX     = -160;
+  let lastTime  = null;
+
+  function animScene(ts){
+    if(!lastTime) lastTime = ts;
+    const dt = (ts - lastTime) / 1000;
+    lastTime = ts;
+
+    const sceneW   = scene.clientWidth;
+    const sprW     = parseFloat(getComputedStyle(runner).width) || 160;
+    const speed    = (sceneW + sprW * 2) / travSec; // px/s
+
+    travX += speed * travDir * dt;
+
+    // Virar quando sair do outro lado
+    if(travDir === 1  && travX >  sceneW + sprW){ travDir = -1; travX = sceneW + sprW; }
+    if(travDir === -1 && travX < -sprW)          { travDir =  1; travX = -sprW; }
+
+    runner.style.left      = travX + 'px';
+    runner.style.transform = travDir === -1 ? 'scaleX(-1)' : 'none';
+
+    requestAnimationFrame(animScene);
+  }
+
+  // ── Listeners ───────────────────────────────────────────
+  document.getElementById('fps').addEventListener('input', e => {
+    fps = parseInt(e.target.value);
+    applyAll();
+  });
+  document.getElementById('escala').addEventListener('input', e => {
+    escala = parseInt(e.target.value);
+    applyAll();
+  });
+  document.getElementById('trav').addEventListener('input', e => {
+    travSec = parseFloat(e.target.value);
+    applyAll();
+  });
+
+  // ── Init ────────────────────────────────────────────────
+  applyAll();
+  requestAnimationFrame(animScene);
+</script>
+</body>
+</html>
