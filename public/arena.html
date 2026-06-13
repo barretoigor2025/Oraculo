@@ -1969,6 +1969,103 @@ function _cinSpawnGregoras() {
   setTimeout(() => animarMovimento(greg, gregoPath, _cinMostrarDialogo), 300);
 }
 
+// ── Cinematica de entrada (início de batalha) ─────────────────────────────
+function _cinematicaEntrada(onComplete) {
+  faseDoTurno = 'resolvendo';
+  renderActionRow();
+
+  const worldEl = document.getElementById('world');
+  const fw = 362, fh = 874;
+  const dispW = Math.round(HR * 3.2);  // ≈ 176 (igual à largura dos units)
+  const sc    = dispW / fw;
+  const dispH = Math.round(fh * sc);   // ≈ 425
+
+  const div = document.createElement('div');
+  div.id = '_greg-entrada';
+  div.style.cssText =
+    `position:absolute;z-index:50;pointer-events:none;` +
+    `width:${dispW}px;height:${dispH}px;` +
+    `background-image:url('sprites/npc_gregoras_pellos_run_costas.png');` +
+    `background-repeat:no-repeat;` +
+    `background-size:${Math.round(fw*4*sc)}px ${Math.round(fh*sc)}px;` +
+    `background-position:0 0;`;
+  worldEl.appendChild(div);
+
+  function placeAt(col, row) {
+    const c    = hexCentro(col, row);
+    const foot = c.y + OOFF * 0.3;
+    div.style.left = Math.round(c.x - dispW / 2) + 'px';
+    div.style.top  = Math.round(foot - dispH) + 'px';
+  }
+
+  const path = [
+    {col:6,row:13},{col:6,row:12},{col:6,row:11},{col:6,row:10},
+    {col:6,row:9},{col:6,row:8},{col:6,row:7},{col:6,row:6},{col:6,row:5}
+  ];
+
+  let stepIdx = 0, stepStart = null;
+  const stepDur = 440; // ms por hex
+  let frIdx = 0, lastFrTs = 0;
+  const FPS = 7;
+
+  placeAt(path[0].col, path[0].row);
+  renderUnits();
+
+  function loop(ts) {
+    // flipbook
+    if (ts - lastFrTs >= 1000 / FPS) {
+      lastFrTs = ts;
+      frIdx = (frIdx + 1) % 4;
+      div.style.backgroundPositionX = -(dispW * frIdx) + 'px';
+    }
+    // interpolação entre hexes
+    if (stepIdx < path.length - 1) {
+      if (!stepStart) stepStart = ts;
+      let t = Math.min((ts - stepStart) / stepDur, 1);
+      t = t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
+      const from = hexCentro(path[stepIdx].col,   path[stepIdx].row);
+      const to   = hexCentro(path[stepIdx+1].col, path[stepIdx+1].row);
+      const cx   = from.x + (to.x - from.x) * t;
+      const cy   = from.y + (to.y - from.y) * t;
+      const foot = cy + OOFF * 0.3;
+      div.style.left = Math.round(cx - dispW / 2) + 'px';
+      div.style.top  = Math.round(foot - dispH) + 'px';
+      if (t >= 1) { stepIdx++; stepStart = null; }
+    }
+    if (stepIdx < path.length - 1) {
+      requestAnimationFrame(loop);
+    } else {
+      placeAt(path[path.length-1].col, path[path.length-1].row);
+      _gregEntradaVirou(div, dispW, onComplete);
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+function _gregEntradaVirou(div, dispW, onComplete) {
+  // Pausa breve, então vira de frente para os heróis
+  setTimeout(() => {
+    const dw = dispW, dh = dispW; // 176×176 — igual ao tamanho dos units em jogo
+    div.style.backgroundImage    = "url('sprites/npc_gregoras_pellos.png')";
+    div.style.backgroundSize     = `${dw}px ${dh}px`;
+    div.style.backgroundPosition = '0 0';
+    div.style.width  = dw + 'px';
+    div.style.height = dh + 'px';
+    // Re-centra no hex de destino (pé no mesmo ponto, altura menor)
+    const c    = hexCentro(6, 5);
+    const foot = c.y + OOFF * 0.3;
+    div.style.left = Math.round(c.x - dw/2) + 'px';
+    div.style.top  = Math.round(foot - dh)  + 'px';
+    // Exibe letreiro com nome do vilão
+    setTimeout(() => {
+      mostrarLetreiro('GREGORAS PELLOS', 'Senhor da Feira Negra', '', 2500, () => {
+        div.remove();
+        onComplete?.();
+      });
+    }, 500);
+  }, 350);
+}
+
 async function _cinMostrarDialogo() {
   // Virar Gregoras para encarar os heróis
   const greg = unidades.find(u => u.id === '_greg_cin');
@@ -3137,7 +3234,7 @@ function init(){
   setTimeout(()=>{
     if(faseDoTurno==='idle'&&!_currentTurnPlayerId){
       const heroi=unidades.find(u=>u.tipo==='heroi'&&!u._fbId);
-      if(heroi) iniciarTurno(heroi);
+      if(heroi) _cinematicaEntrada(() => iniciarTurno(heroi));
     }
   }, 1200);
 }
