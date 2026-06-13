@@ -97,6 +97,10 @@ section {
   font-size: 10px; color: rgba(200,160,64,0.6);
   letter-spacing: 1px; text-transform: uppercase;
 }
+@media(max-width:520px){
+  .ctrl { grid-template-columns: 1fr 44px; row-gap: 2px; }
+  .ctrl label { grid-column: 1 / -1; }
+}
 input[type=range] {
   accent-color: #c8a040; width: 100%;
 }

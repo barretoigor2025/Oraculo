@@ -55,7 +55,8 @@
     }
     .header-top span { font-size: 10px; color: var(--text-dim); margin-left: auto; }
 
-    .tabs { display: flex; gap: 4px; }
+    .tabs { display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tabs::-webkit-scrollbar { display: none; }
     .tab-btn {
       padding: 8px 20px 10px;
       background: none; border: none;
@@ -64,6 +65,7 @@
       font-family: inherit; font-size: 12px;
       letter-spacing: 1.5px; text-transform: uppercase;
       cursor: pointer; transition: all .2s;
+      white-space: nowrap; flex-shrink: 0;
     }
     .tab-btn.active { color: var(--gold2); border-bottom-color: var(--gold); }
     .tab-btn:hover { color: var(--text); }
@@ -570,6 +572,48 @@
       border-top:1px solid rgba(200,160,64,0.08);
     }
     .mv-runner { position:absolute; bottom:28px; }
+
+    /* ── RESPONSIVIDADE GERAL ──────────────────────────────── */
+    @media(max-width:600px){
+      /* tabs menores */
+      .tab-btn { padding:8px 13px 10px; font-size:10px; letter-spacing:.8px; }
+
+      /* cards menores: 2 colunas fixas no mobile */
+      .card-grid { grid-template-columns: repeat(2, 1fr) !important; gap:10px; }
+
+      /* portrait no modal: altura reduzida */
+      .portrait-img-wrap { height:200px; }
+
+      /* modal: menos padding lateral */
+      #modal { padding:0 0 12px; }
+      .modal-class-info,
+      .modal-info-section { padding:12px 14px 8px; }
+
+      /* magias canvas cabe na tela */
+      .magias-sidebar { max-height:40vh; }
+
+      /* sliders de controle: label na linha acima do slider */
+      .mv-ctrl,
+      .ctrl {
+        grid-template-columns: 1fr 44px;
+      }
+      .mv-ctrl label,
+      .ctrl label {
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+      }
+
+      /* movimentacoes: frames menores */
+      .mv-spr {
+        --sc: 0.18;
+      }
+    }
+
+    @media(max-width:400px){
+      .header-top h1 { font-size:14px; letter-spacing:.8px; }
+      main { padding:14px 12px; }
+      .portrait-img-wrap { height:160px; }
+    }
   </style>
 </head>
 <body>
