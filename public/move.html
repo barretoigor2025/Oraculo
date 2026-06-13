@@ -271,46 +271,54 @@ input[type=range] {
 <section>
   <div class="sec-title">Mapa — Feira de St. Phanourios</div>
 
-  <!-- controle local -->
-  <div class="controles" style="max-width:460px; align-self:center; width:100%">
+  <!-- controles locais do mapa -->
+  <div class="controles" style="max-width:480px;align-self:center;width:100%">
     <div class="ctrl">
       <label>Passo (s/hex)</label>
-      <input type="range" id="map-step" min="0.2" max="2.5" value="0.7" step="0.1">
-      <span class="ctrl-val" id="map-step-val">0.7 s</span>
+      <input type="range" id="map-step" min="0.2" max="2.5" value="0.8" step="0.1">
+      <span class="ctrl-val" id="map-step-val">0.8 s</span>
     </div>
     <div class="ctrl">
       <label>Tam. personagem</label>
-      <input type="range" id="map-sc" min="8" max="28" value="15" step="1">
-      <span class="ctrl-val" id="map-sc-val">15%</span>
+      <input type="range" id="map-sc" min="8" max="30" value="16" step="1">
+      <span class="ctrl-val" id="map-sc-val">16%</span>
     </div>
   </div>
 
-  <div style="position:relative; margin:0 auto; max-width:min(460px, 100%)">
-    <!-- container do mapa -->
-    <div id="map-wrap" style="
-      position:relative;
-      border-radius:12px; overflow:hidden;
-      border:1px solid rgba(200,160,64,0.18);
-      background:#0a0806;
-    ">
-      <img src="maps/feira-limpa.png" id="map-img"
-        style="display:block; width:100%; height:auto; user-select:none"
-        draggable="false">
-      <canvas id="hex-canvas"
-        style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></canvas>
-      <!-- sprite do corredor -->
-      <div id="map-runner" class="spr anim"
-        style="position:absolute; pointer-events:none;
-               transition: left 0.65s linear, top 0.65s linear;"></div>
-    </div>
+  <!-- mapa -->
+  <div id="map-wrap" style="
+    position:relative; margin:0 auto;
+    max-width:min(480px,100%);
+    border-radius:12px; overflow:hidden;
+    border:1px solid rgba(200,160,64,0.18);
+    background:#0a0806;
+  ">
+    <!-- imagem do mapa: define a altura do container -->
+    <img src="maps/feira-limpa.png" id="map-img"
+      style="display:block;width:100%;height:auto;user-select:none"
+      draggable="false" alt="Feira de St. Phanourios">
+
+    <!-- grid hex desenhado por canvas em cima -->
+    <canvas id="hex-canvas"
+      style="position:absolute;top:0;left:0;pointer-events:none"></canvas>
+
+    <!-- personagem que caminha — NÃO usa classe .spr para evitar
+         conflito com o slider global; anima via inline style -->
+    <div id="map-runner" style="
+      position:absolute;
+      background-image:url('sprites/run_sheet.png');
+      background-repeat:no-repeat;
+      pointer-events:none;
+    "></div>
   </div>
 </section>
 
 <script>
 (function(){
-  // ── Constantes do grid (idênticas ao arena.html) ─────────
+  // ── Constantes (idênticas ao arena.html) ─────────────────
   const HR=55, CS=82, RS=95, OOFF=48, GX0=47, GY0=80, COLS=13, ROWS=13;
   const MAP_W=1086, MAP_H=1448;
+  const FRAME_W=512, FRAME_H=768, FRAMES=4;
 
   const wrap    = document.getElementById('map-wrap');
   const img     = document.getElementById('map-img');
@@ -321,13 +329,18 @@ input[type=range] {
   const scInp   = document.getElementById('map-sc');
   const scVal   = document.getElementById('map-sc-val');
 
-  let stepDur = 0.7;   // segundos por hex
-  let sprSc   = 0.15;  // escala do sprite
+  let stepDur = 0.8;
+  let sprSc   = 0.16;
+  let curCol  = 6, curRow = 6;
+  let timer   = null;
+  let animRaf = null;
+  let frameIdx = 0;
+  let lastFrameTime = 0;
 
-  // ── Escala dinâmica (mapa ocupa a largura do container) ──
-  function mapScale(){ return wrap.clientWidth / MAP_W; }
+  // ── Escala do mapa: largura real / largura original ───────
+  function mapScale(){ return wrap.getBoundingClientRect().width / MAP_W; }
 
-  // ── Centro pixel de um hex (na escala do container) ──────
+  // ── Centro de um hex em px (escala do container) ──────────
   function centro(col, row){
     const s = mapScale();
     return {
@@ -336,7 +349,7 @@ input[type=range] {
     };
   }
 
-  // ── Vizinhos válidos ─────────────────────────────────────
+  // ── Vizinhos válidos ──────────────────────────────────────
   function vizinhos(col, row){
     const odd = col % 2 === 1;
     return (odd ? [
@@ -346,57 +359,69 @@ input[type=range] {
     ]).filter(([c,r]) => c>=0 && c<COLS && r>=0 && r<ROWS);
   }
 
-  // ── Desenhar grid hexagonal no canvas ───────────────────
+  // ── Grid hex no canvas ────────────────────────────────────
   function drawGrid(){
-    const s  = mapScale();
-    const hr = HR * s;
-    canvas.width  = wrap.clientWidth;
-    canvas.height = wrap.clientHeight || img.clientHeight;
+    const rect = wrap.getBoundingClientRect();
+    const s    = rect.width / MAP_W;
+    const hr   = HR * s;
+    canvas.width  = Math.round(rect.width);
+    canvas.height = Math.round(rect.height);
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.strokeStyle = 'rgba(200,160,64,0.18)';
+    ctx.strokeStyle = 'rgba(200,160,64,0.20)';
     ctx.lineWidth   = 0.8;
-
     for(let col=0; col<COLS; col++){
       for(let row=0; row<ROWS; row++){
-        const {x, y} = centro(col, row);
+        const {x,y} = centro(col,row);
         ctx.beginPath();
-        for(let i=0; i<6; i++){
-          const a = Math.PI/3 * i;
-          i===0 ? ctx.moveTo(x+hr*Math.cos(a), y+hr*Math.sin(a))
-                : ctx.lineTo(x+hr*Math.cos(a), y+hr*Math.sin(a));
+        for(let i=0;i<6;i++){
+          const a = Math.PI/3*i;
+          i===0 ? ctx.moveTo(x+hr*Math.cos(a),y+hr*Math.sin(a))
+                : ctx.lineTo(x+hr*Math.cos(a),y+hr*Math.sin(a));
         }
-        ctx.closePath();
-        ctx.stroke();
+        ctx.closePath(); ctx.stroke();
       }
     }
   }
 
-  // ── Posicionar runner num hex ────────────────────────────
-  function placeRunner(col, row, faceLeft){
+  // ── Posicionar runner ─────────────────────────────────────
+  function placeRunner(col, row, faceLeft, instant){
     const {x, y} = centro(col, row);
-    const fw = 512 * sprSc;          // largura do frame exibido
-    const fh = 768 * sprSc;          // altura do frame exibido
+    const fw = FRAME_W * sprSc;
+    const fh = FRAME_H * sprSc;
     const left = x - fw / 2;
-    const top  = y - fh * 0.88;     // pés no centro do hex
+    const top  = y - fh * 0.88;
+    const sheetW = fw * FRAMES;
 
-    runner.style.setProperty('--sc', sprSc);
-    runner.style.left      = left + 'px';
-    runner.style.top       = top  + 'px';
-    runner.style.transform = faceLeft ? 'scaleX(-1)' : 'none';
+    runner.style.width            = fw + 'px';
+    runner.style.height           = fh + 'px';
+    runner.style.backgroundSize   = sheetW + 'px ' + fh + 'px';
+    runner.style.transition       = instant ? 'none'
+      : 'left ' + (stepDur*0.92) + 's linear, top ' + (stepDur*0.92) + 's linear';
+    runner.style.left             = left + 'px';
+    runner.style.top              = top  + 'px';
+    runner.style.transform        = faceLeft ? 'scaleX(-1)' : 'none';
   }
 
-  // ── Movimento aleatório ──────────────────────────────────
-  let curCol = 6, curRow = 6;
-  let moving = false;
-  let timer  = null;
+  // ── Animação de sprite (troca de frame via JS) ────────────
+  function animateSprite(ts){
+    const fps = parseInt(document.getElementById('fps').value) || 8;
+    const frameDur = 1000 / fps;
+    if(ts - lastFrameTime >= frameDur){
+      lastFrameTime = ts;
+      frameIdx = (frameIdx + 1) % FRAMES;
+      const fw = FRAME_W * sprSc;
+      runner.style.backgroundPositionX = (-fw * frameIdx) + 'px';
+    }
+    animRaf = requestAnimationFrame(animateSprite);
+  }
 
+  // ── Movimento aleatório ───────────────────────────────────
   function nextStep(){
     const opts = vizinhos(curCol, curRow);
     const [nc, nr] = opts[Math.floor(Math.random() * opts.length)];
-    const facingLeft = nc < curCol || (nc === curCol && Math.random() < 0.5);
-    placeRunner(nc, nr, facingLeft);
+    const faceLeft = nc < curCol;
+    placeRunner(nc, nr, faceLeft, false);
     curCol = nc; curRow = nr;
     timer = setTimeout(nextStep, stepDur * 1000);
   }
@@ -407,38 +432,29 @@ input[type=range] {
     sprSc   = parseFloat(scInp.value) / 100;
     stepVal.textContent = stepDur.toFixed(1) + ' s';
     scVal.textContent   = Math.round(sprSc*100) + '%';
-    runner.style.transitionDuration = stepDur * 0.95 + 's, ' + stepDur * 0.95 + 's';
-    // Resize canvas & reposition
     drawGrid();
-    placeRunner(curCol, curRow, false);
+    placeRunner(curCol, curRow, false, true);
   }
 
   stepInp.addEventListener('input', applyMapControls);
   scInp.addEventListener('input',   applyMapControls);
+  window.addEventListener('resize', ()=>{ drawGrid(); placeRunner(curCol, curRow, false, true); });
 
-  // ── Iniciar após a imagem carregar ────────────────────────
+  // ── Init — aguarda layout real do container ───────────────
   function init(){
-    drawGrid();
-    placeRunner(curCol, curRow, false);
-    timer = setTimeout(nextStep, stepDur * 1000);
+    // Aguarda 2 frames para garantir que img renderizou e wrap tem tamanho
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      applyMapControls();
+      placeRunner(curCol, curRow, false, true);
+      timer = setTimeout(nextStep, stepDur * 1000);
+      animRaf = requestAnimationFrame(animateSprite);
+    }));
   }
 
-  if(img.complete) init();
-  else img.addEventListener('load', init);
+  // Sempre usa window load para garantir que a imagem carregou e foi layoutada
+  if(document.readyState === 'complete') init();
+  else window.addEventListener('load', init);
 
-  // Redesenhar grid ao redimensionar
-  window.addEventListener('resize', ()=>{ drawGrid(); placeRunner(curCol, curRow, false); });
-
-  // Sincronizar FPS do sprite com o slider global
-  const fpsGlobal = document.getElementById('fps');
-  function syncFps(){
-    const dur = (1 / parseInt(fpsGlobal.value)).toFixed(3) + 's';
-    runner.style.setProperty('--dur', dur);
-  }
-  fpsGlobal.addEventListener('input', syncFps);
-  syncFps();
-
-  applyMapControls();
 })();
 </script>
 </body>
