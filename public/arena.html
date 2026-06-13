@@ -1676,14 +1676,16 @@ function renderUnits(){
     if(u.tipo==='inimigo'&&u.hp<=0) continue; // inimigo morto some imediatamente
     const{x,y}=unitPos(u);
     if(u.img){
-      const sw=HR*3.2,sh=HR*3.2,foot=y+OOFF*.3;
+      const sw=HR*3.2,foot=y+OOFF*.3;
       const clip=u.clipBottom||0;
-      const srcH=Math.round(u.img.naturalHeight*(1-clip));
-      const drawH=sh*(1-clip);
+      const srcW = u.frameW ?? u.img.naturalWidth;
+      const srcH = u.img.naturalHeight*(1-clip);
+      // Se frameW definido, mantém proporção do frame; caso contrário, quadrado (comportamento padrão)
+      const drawH = u.frameW ? sw*(u.img.naturalHeight/u.frameW)*(1-clip) : sw*(1-clip);
       ctxU.save();
       if(u===selUnit) ctxU.filter='drop-shadow(0 0 8px #ffd028) drop-shadow(0 0 14px #ffd02888)';
       if(u.flipH){ ctxU.translate(2*x,0); ctxU.scale(-1,1); }
-      ctxU.drawImage(u.img,0,0,u.img.naturalWidth,srcH,x-sw/2,foot-drawH,sw,drawH);
+      ctxU.drawImage(u.img,0,0,srcW,srcH,x-sw/2,foot-drawH,sw,drawH);
       ctxU.restore();
     } else {
       ctxU.beginPath(); ctxU.arc(x,y,HR*.45,0,Math.PI*2);
@@ -1973,47 +1975,50 @@ function _cinAnimarParaHex(unit, dc, dr, dur, onDone) {
 function _cinSpawnGregoras() {
   if (unidades.find(u => u.id === '_greg_cin')) return;
 
-  const greg = {
-    nome:'Gregoras Pellos', tipo:'aliado_cin',
-    emoji:'📜', col:1, row:9,
-    hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10,
-    cor:'#8899bb',
-    imgSrc:'sprites/npc_gregoras_pellos.png',
-    img:null, portrait:null, flipH:false,
-    _ax:null, _ay:null, clipBottom:0, itens:[], id:'_greg_cin',
-  };
+  const path = [
+    {col:1,row:9},{col:2,row:9},{col:3,row:8},{col:4,row:8},{col:5,row:7}
+  ];
 
-  const img = new Image();
-  img.onload = () => { greg.img = img; renderUnits(); };
-  img.onerror = () => { greg.img = null; renderUnits(); };
-  img.src = greg.imgSrc;
-
-  unidades.push(greg);
-  render();
-
-  const gregoPath = [{col:2,row:9},{col:3,row:8},{col:4,row:8},{col:5,row:7}];
-  setTimeout(() => animarMovimento(greg, gregoPath, _cinMostrarDialogo), 300);
+  _cinematicaEntrada(path, () => {
+    // Adiciona Gregoras ao canvas após entrar — usa sprite frente para dialog
+    const greg = {
+      nome:'Gregoras Pellos', tipo:'aliado_cin',
+      emoji:'📜', col:5, row:7,
+      hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10,
+      cor:'#8899bb',
+      imgSrc:'sprites/npc_gregoras_pellos_frente.png',
+      img:null, portrait:null, flipH:false, frameW:362,
+      _ax:null, _ay:null, clipBottom:0, itens:[], id:'_greg_cin',
+    };
+    const img = new Image();
+    img.onload = () => { greg.img = img; renderUnits(); };
+    img.onerror = () => { greg.img = null; renderUnits(); };
+    img.src = greg.imgSrc;
+    unidades.push(greg);
+    render();
+    setTimeout(_cinMostrarDialogo, 300);
+  });
 }
 
 // ── Cinematica de entrada (início de batalha) ─────────────────────────────
-function _cinematicaEntrada(onComplete) {
+function _cinematicaEntrada(path, onComplete) {
   faseDoTurno = 'resolvendo';
   renderActionRow();
 
   const worldEl = document.getElementById('world');
-  const fw = 362, fh = 874;
-  const dispW = Math.round(HR * 3.2);  // ≈ 176 (igual à largura dos units)
+  const fw = 362, fh = 1086;          // novo sprite costas: 724×1086, 2 frames
+  const dispW = Math.round(HR * 3.2);
   const sc    = dispW / fw;
-  const dispH = Math.round(fh * sc);   // ≈ 425
+  const dispH = Math.round(fh * sc);
 
   const div = document.createElement('div');
   div.id = '_greg-entrada';
   div.style.cssText =
     `position:absolute;z-index:50;pointer-events:none;` +
     `width:${dispW}px;height:${dispH}px;` +
-    `background-image:url('sprites/npc_gregoras_pellos_run_costas.png');` +
+    `background-image:url('sprites/npc_gregoras_pellos_costas.png');` +
     `background-repeat:no-repeat;` +
-    `background-size:${Math.round(fw*4*sc)}px ${Math.round(fh*sc)}px;` +
+    `background-size:${Math.round(fw*2*sc)}px ${dispH}px;` +
     `background-position:0 0;`;
   worldEl.appendChild(div);
 
@@ -2024,27 +2029,20 @@ function _cinematicaEntrada(onComplete) {
     div.style.top  = Math.round(foot - dispH) + 'px';
   }
 
-  const path = [
-    {col:6,row:13},{col:6,row:12},{col:6,row:11},{col:6,row:10},
-    {col:6,row:9},{col:6,row:8},{col:6,row:7},{col:6,row:6},{col:6,row:5}
-  ];
-
   let stepIdx = 0, stepStart = null;
-  const stepDur = 440; // ms por hex
+  const stepDur = 700; // mais devagar
   let frIdx = 0, lastFrTs = 0;
-  const FPS = 7;
+  const FPS = 5; // 2 frames
 
   placeAt(path[0].col, path[0].row);
   renderUnits();
 
   function loop(ts) {
-    // flipbook
     if (ts - lastFrTs >= 1000 / FPS) {
       lastFrTs = ts;
-      frIdx = (frIdx + 1) % 4;
+      frIdx = (frIdx + 1) % 2;
       div.style.backgroundPositionX = -(dispW * frIdx) + 'px';
     }
-    // interpolação entre hexes
     if (stepIdx < path.length - 1) {
       if (!stepStart) stepStart = ts;
       let t = Math.min((ts - stepStart) / stepDur, 1);
@@ -2062,27 +2060,27 @@ function _cinematicaEntrada(onComplete) {
       requestAnimationFrame(loop);
     } else {
       placeAt(path[path.length-1].col, path[path.length-1].row);
-      _gregEntradaVirou(div, dispW, onComplete);
+      _gregEntradaVirou(div, dispW, dispH, path[path.length-1], onComplete);
     }
   }
   requestAnimationFrame(loop);
 }
 
-function _gregEntradaVirou(div, dispW, onComplete) {
-  // Pausa breve, então vira de frente para os heróis
+function _gregEntradaVirou(div, dispW, dispH, destHex, onComplete) {
   setTimeout(() => {
-    const dw = dispW, dh = dispW; // 176×176 — igual ao tamanho dos units em jogo
-    div.style.backgroundImage    = "url('sprites/npc_gregoras_pellos.png')";
-    div.style.backgroundSize     = `${dw}px ${dh}px`;
+    // novo sprite frente: 724×1086, 2 frames — mesma proporção que costas
+    const fw = 362, fh = 1086;
+    const sc = dispW / fw;
+    const dh = Math.round(fh * sc);
+    div.style.backgroundImage    = "url('sprites/npc_gregoras_pellos_frente.png')";
+    div.style.backgroundSize     = `${Math.round(fw*2*sc)}px ${dh}px`;
     div.style.backgroundPosition = '0 0';
-    div.style.width  = dw + 'px';
+    div.style.width  = dispW + 'px';
     div.style.height = dh + 'px';
-    // Re-centra no hex de destino (pé no mesmo ponto, altura menor)
-    const c    = hexCentro(6, 5);
+    const c    = hexCentro(destHex.col, destHex.row);
     const foot = c.y + OOFF * 0.3;
-    div.style.left = Math.round(c.x - dw/2) + 'px';
-    div.style.top  = Math.round(foot - dh)  + 'px';
-    // Exibe letreiro com nome do vilão
+    div.style.left = Math.round(c.x - dispW/2) + 'px';
+    div.style.top  = Math.round(foot - dh) + 'px';
     setTimeout(() => {
       mostrarLetreiro('GREGORAS PELLOS', 'Senhor da Feira Negra', '', 2500, () => {
         div.remove();
@@ -3069,6 +3067,9 @@ function renderRemoteIntents(){
 function onRoomUpdate(room){
   if(!room||!room.players) return;
 
+  const myId=localStorage.getItem('oraculo.playerId');
+  const wasFirst=_firstRoomUpdate;
+
   // Navigate to narration when battle is over
   if(room.status==='narration'){
     window.location.href='narration.html';
@@ -3076,7 +3077,6 @@ function onRoomUpdate(room){
   }
 
   // Host: when all players confirmed post-battle, transition everyone to narration
-  // wasFirst guard prevents stale postBattleConfirmados from previous sessions
   if(!wasFirst && _fbIsHost && room.status==='battle' && room.postBattleConfirmados){
     const pids=Object.keys(room.players||{});
     const confirmed=Object.keys(room.postBattleConfirmados||{});
@@ -3092,9 +3092,6 @@ function onRoomUpdate(room){
       return;
     }
   }
-
-  const myId=localStorage.getItem('oraculo.playerId');
-  const wasFirst=_firstRoomUpdate;
 
   // Non-host: acionar cinematica de vitória quando host sinalizar (ignorar na primeira leitura para evitar estado stale)
   if (!_fbIsHost && !wasFirst && room.batalha?.cinematicaVitoria && !_cinematicaRodando) {
@@ -3268,7 +3265,7 @@ function init(){
   setTimeout(()=>{
     if(faseDoTurno==='idle'&&!_currentTurnPlayerId){
       const heroi=unidades.find(u=>u.tipo==='heroi'&&!u._fbId);
-      if(heroi) _cinematicaEntrada(() => iniciarTurno(heroi));
+      if(heroi) iniciarTurno(heroi);
     }
   }, 1200);
 }

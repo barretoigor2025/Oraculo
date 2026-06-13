@@ -630,12 +630,14 @@ function onRoomUpdate(room) {
   if (temGancho && narr.introConfirmados) {
     const jogadores = Object.keys(room.players || {});
     const confirmados = narr.introConfirmados;
-    if (jogadores.length > 0 && jogadores.every(pid => confirmados[pid])) {
+    // Solo (room.players vazio): basta este jogador ter confirmado
+    const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : []);
+    if (efetivos.length > 0 && efetivos.every(pid => confirmados[pid])) {
       window._fbSetStatus?.('battle');
       return;
     }
-    // Atualizar botão de espera para quem já confirmou
-    if (confirmados[_pid]) {
+    // Atualizar botão de espera para quem já confirmou (multiplayer)
+    if (jogadores.length > 0 && confirmados[_pid]) {
       const count = jogadores.filter(pid => confirmados[pid]).length;
       const btnEl = document.getElementById('intro-btn-continuar');
       if (btnEl) {
