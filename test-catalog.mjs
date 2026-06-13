@@ -19,8 +19,10 @@ globalThis.document = {
   body: {style:{overflow:''}}
 };
 globalThis.window          = globalThis;
+globalThis.addEventListener      = noop;
 globalThis.requestAnimationFrame = ()=>0;
 globalThis.cancelAnimationFrame  = noop;
+globalThis.getComputedStyle      = ()=>({width:'160px'});
 
 // ── Load data files ───────────────────────────────────────────────────
 function strip(src){

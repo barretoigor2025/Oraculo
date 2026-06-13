@@ -516,6 +516,60 @@
       text-transform:uppercase; color:var(--text-dim);
       padding-bottom:4px; border-bottom:1px solid var(--border);
     }
+
+    /* ── MOVIMENTAÇÕES TAB ── */
+    .mv-wrap {
+      max-width:800px; margin:0 auto; padding:20px;
+      display:flex; flex-direction:column; gap:32px;
+    }
+    .mv-sec-title {
+      font-size:9px; letter-spacing:2px; text-transform:uppercase;
+      color:rgba(200,160,64,0.45);
+      border-bottom:1px solid rgba(200,160,64,0.12); padding-bottom:8px; margin-bottom:12px;
+    }
+    .mv-frames-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .mv-frame-wrap { display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .mv-frame-label { font-size:9px; color:rgba(200,160,64,0.35); letter-spacing:1px; }
+    .mv-spr {
+      --fw:512px; --fh:768px; --sc:0.28;
+      --dw:calc(var(--fw)*var(--sc)); --dh:calc(var(--fh)*var(--sc));
+      width:var(--dw); height:var(--dh);
+      background-image:url('../sprites/run_sheet.png?v=2');
+      background-size:calc(var(--fw)*4*var(--sc)) var(--dh);
+      background-repeat:no-repeat;
+    }
+    .mv-spr.f0 { background-position:calc(var(--fw)*0*var(--sc)*-1) 0; }
+    .mv-spr.f1 { background-position:calc(var(--fw)*1*var(--sc)*-1) 0; }
+    .mv-spr.f2 { background-position:calc(var(--fw)*2*var(--sc)*-1) 0; }
+    .mv-spr.f3 { background-position:calc(var(--fw)*3*var(--sc)*-1) 0; }
+    @keyframes mv-correr {
+      from { background-position:0 0; }
+      to   { background-position:calc(var(--fw)*4*var(--sc)*-1) 0; }
+    }
+    .mv-spr.anim    { animation:mv-correr var(--dur,0.5s) steps(4) infinite; }
+    .mv-spr.espelha { transform:scaleX(-1); }
+    .mv-controles {
+      background:rgba(0,0,0,0.35); border:1px solid rgba(200,160,64,0.15);
+      border-radius:12px; padding:20px 24px; display:flex; flex-direction:column; gap:14px;
+    }
+    .mv-ctrl {
+      display:grid; grid-template-columns:130px 1fr 52px; align-items:center; gap:12px;
+    }
+    .mv-ctrl label { font-size:10px; color:rgba(200,160,64,0.6); letter-spacing:1px; text-transform:uppercase; }
+    .mv-ctrl input[type=range] { accent-color:#c8a040; width:100%; }
+    .mv-ctrl-val { font-size:11px; color:#c8a040; text-align:right; font-variant-numeric:tabular-nums; }
+    .mv-scene {
+      width:100%; height:240px;
+      background:linear-gradient(180deg,#120e08 0%,#1e1408 55%,#2a1c0a 100%);
+      border:1px solid rgba(200,160,64,0.12); border-radius:12px;
+      position:relative; overflow:hidden;
+    }
+    .mv-scene-floor {
+      position:absolute; bottom:0; left:0; right:0; height:44px;
+      background:linear-gradient(transparent,rgba(50,30,10,0.8));
+      border-top:1px solid rgba(200,160,64,0.08);
+    }
+    .mv-runner { position:absolute; bottom:28px; }
   </style>
 </head>
 <body>
@@ -530,6 +584,7 @@
     <button class="tab-btn" data-tab="npcs">NPCs</button>
     <button class="tab-btn" data-tab="inimigos">Inimigos</button>
     <button class="tab-btn" data-tab="magias">Magias</button>
+    <button class="tab-btn" data-tab="movimentacoes">Movimentações</button>
   </nav>
 </header>
 
@@ -546,7 +601,8 @@
   <div id="classes-tab"   class="tab-content active"></div>
   <div id="npcs-tab"      class="tab-content"></div>
   <div id="inimigos-tab"  class="tab-content"></div>
-  <div id="magias-tab"   class="tab-content"></div>
+  <div id="magias-tab"         class="tab-content"></div>
+  <div id="movimentacoes-tab"  class="tab-content"></div>
 </main>
 
 <!-- Modal -->
@@ -1488,6 +1544,185 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Escape') closeModal();
 });
 
+// ── MOVIMENTAÇÕES TAB ────────────────────────────────────────────────
+let _mvSceneRaf=null, _mvMapRaf=null, _mvMapTimer=null;
+let _mvOnActivate=null, _mvOnDeactivate=null;
+
+function buildMovimentacoesTab(){
+  const tab = document.getElementById('movimentacoes-tab');
+  tab.innerHTML = `
+<div class="mv-wrap">
+  <div>
+    <div class="mv-sec-title">Frames individuais — 4 poses</div>
+    <div class="mv-frames-row">
+      <div class="mv-frame-wrap"><div class="mv-spr f0"></div><div class="mv-frame-label">Frame 1</div></div>
+      <div class="mv-frame-wrap"><div class="mv-spr f1"></div><div class="mv-frame-label">Frame 2</div></div>
+      <div class="mv-frame-wrap"><div class="mv-spr f2"></div><div class="mv-frame-label">Frame 3</div></div>
+      <div class="mv-frame-wrap"><div class="mv-spr f3"></div><div class="mv-frame-label">Frame 4</div></div>
+    </div>
+  </div>
+  <div>
+    <div class="mv-sec-title">Controles</div>
+    <div class="mv-controles">
+      <div class="mv-ctrl"><label>Velocidade (FPS)</label><input type="range" id="mv-fps" min="2" max="20" value="8" step="1"><span class="mv-ctrl-val" id="mv-fps-val">8 fps</span></div>
+      <div class="mv-ctrl"><label>Tamanho</label><input type="range" id="mv-escala" min="12" max="55" value="28" step="1"><span class="mv-ctrl-val" id="mv-escala-val">28%</span></div>
+      <div class="mv-ctrl"><label>Vel. travessia</label><input type="range" id="mv-trav" min="1" max="12" value="4" step="0.5"><span class="mv-ctrl-val" id="mv-trav-val">4 s</span></div>
+    </div>
+  </div>
+  <div>
+    <div class="mv-sec-title">Resultado — animação ao vivo</div>
+    <div style="display:flex;gap:40px;justify-content:center;align-items:flex-end;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <div class="mv-spr anim"></div>
+        <span style="font-size:9px;color:rgba(200,160,64,0.35);letter-spacing:1px">→ DIREITA</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <div class="mv-spr anim espelha"></div>
+        <span style="font-size:9px;color:rgba(200,160,64,0.35);letter-spacing:1px">← ESQUERDA</span>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="mv-sec-title">Cena — atravessando</div>
+    <div class="mv-scene" id="mv-scene">
+      <div class="mv-runner mv-spr anim" id="mv-runner"></div>
+      <div class="mv-scene-floor"></div>
+    </div>
+  </div>
+  <div>
+    <div class="mv-sec-title">Mapa — Feira de St. Phanourios</div>
+    <div class="mv-controles" style="max-width:480px;align-self:center;width:100%">
+      <div class="mv-ctrl"><label>Passo (s/hex)</label><input type="range" id="mv-map-step" min="0.2" max="2.5" value="0.8" step="0.1"><span class="mv-ctrl-val" id="mv-map-step-val">0.8 s</span></div>
+      <div class="mv-ctrl"><label>Tam. personagem</label><input type="range" id="mv-map-sc" min="8" max="30" value="16" step="1"><span class="mv-ctrl-val" id="mv-map-sc-val">16%</span></div>
+    </div>
+    <div id="mv-map-wrap" style="position:relative;margin:0 auto;max-width:min(480px,100%);border-radius:12px;overflow:hidden;border:1px solid rgba(200,160,64,0.18);background:#0a0806;">
+      <img src="../maps/feira-limpa.png" id="mv-map-img" style="display:block;width:100%;height:auto;user-select:none" draggable="false" alt="Mapa">
+      <canvas id="mv-hex-canvas" style="position:absolute;top:0;left:0;pointer-events:none"></canvas>
+      <div id="mv-map-runner" style="position:absolute;background-image:url('../sprites/run_sheet.png?v=2');background-color:transparent;background-repeat:no-repeat;pointer-events:none;"></div>
+    </div>
+  </div>
+</div>`;
+
+  const allMvSprites = tab.querySelectorAll('.mv-spr');
+  const mvRunner = document.getElementById('mv-runner');
+  const mvScene  = document.getElementById('mv-scene');
+  let mvFps=8, mvEscala=28, mvTravSec=4;
+  let mvTravDir=1, mvTravX=-160, mvLastSceneTime=null;
+
+  function applyMvAll(){
+    const dur=(1/mvFps).toFixed(3)+'s'; const sc=mvEscala/100;
+    allMvSprites.forEach(el=>{
+      el.style.setProperty('--sc',sc);
+      if(el.classList.contains('anim')) el.style.setProperty('--dur',dur);
+    });
+    document.getElementById('mv-fps-val').textContent    = mvFps+' fps';
+    document.getElementById('mv-escala-val').textContent = mvEscala+'%';
+    document.getElementById('mv-trav-val').textContent   = mvTravSec+' s';
+  }
+
+  function animMvScene(ts){
+    if(!mvLastSceneTime) mvLastSceneTime=ts;
+    const dt=(ts-mvLastSceneTime)/1000; mvLastSceneTime=ts;
+    const sceneW=mvScene.clientWidth||400;
+    const sprW=parseFloat(getComputedStyle(mvRunner).width)||160;
+    const speed=(sceneW+sprW*2)/mvTravSec;
+    mvTravX+=speed*mvTravDir*dt;
+    if(mvTravDir===1  && mvTravX> sceneW+sprW){ mvTravDir=-1; mvTravX=sceneW+sprW; }
+    if(mvTravDir===-1 && mvTravX<-sprW)       { mvTravDir=1;  mvTravX=-sprW; }
+    mvRunner.style.left     =mvTravX+'px';
+    mvRunner.style.transform=mvTravDir===-1?'scaleX(-1)':'none';
+    _mvSceneRaf=requestAnimationFrame(animMvScene);
+  }
+
+  document.getElementById('mv-fps').addEventListener('input',e=>{mvFps=parseInt(e.target.value);applyMvAll();});
+  document.getElementById('mv-escala').addEventListener('input',e=>{mvEscala=parseInt(e.target.value);applyMvAll();});
+  document.getElementById('mv-trav').addEventListener('input',e=>{mvTravSec=parseFloat(e.target.value);applyMvAll();});
+  applyMvAll();
+
+  // ── Mapa hex ─────────────────────────────────────────────────────────
+  const HR=55,CS=82,RS=95,OOFF=48,GX0=47,GY0=80,COLS=13,ROWS=13;
+  const MAP_W=1086,FRAME_W=512,FRAME_H=768,FRAMES=4;
+  const mvMapWrap   = document.getElementById('mv-map-wrap');
+  const mvMapCanvas = document.getElementById('mv-hex-canvas');
+  const mvMapRunner = document.getElementById('mv-map-runner');
+  const mvStepInp   = document.getElementById('mv-map-step');
+  const mvStepVal   = document.getElementById('mv-map-step-val');
+  const mvScInp     = document.getElementById('mv-map-sc');
+  const mvScVal     = document.getElementById('mv-map-sc-val');
+  let mvStepDur=0.8, mvSprSc=0.16, mvCurCol=6, mvCurRow=6, mvFrIdx=0, mvLastFrTime=0;
+
+  function mvMS(){ return mvMapWrap.getBoundingClientRect().width/MAP_W; }
+  function mvCtr(c,r){ const s=mvMS(); return{x:(GX0+c*CS)*s,y:(GY0+r*RS+(c%2===1?OOFF:0))*s}; }
+  function mvViz(c,r){
+    const o=c%2===1;
+    return(o?[[c+1,r+1],[c-1,r],[c,r+1],[c,r-1],[c+1,r],[c-1,r+1]]:
+             [[c+1,r],[c-1,r-1],[c,r+1],[c,r-1],[c+1,r-1],[c-1,r]])
+      .filter(([a,b])=>a>=0&&a<COLS&&b>=0&&b<ROWS);
+  }
+  function mvDrawGrid(){
+    const rect=mvMapWrap.getBoundingClientRect(); const s=rect.width/MAP_W; const hr=HR*s;
+    mvMapCanvas.width=Math.round(rect.width); mvMapCanvas.height=Math.round(rect.height);
+    const ctx=mvMapCanvas.getContext('2d');
+    ctx.clearRect(0,0,mvMapCanvas.width,mvMapCanvas.height);
+    ctx.strokeStyle='rgba(200,160,64,0.20)'; ctx.lineWidth=0.8;
+    for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
+      const{x,y}=mvCtr(c,r); ctx.beginPath();
+      for(let i=0;i<6;i++){const a=Math.PI/3*i;i===0?ctx.moveTo(x+hr*Math.cos(a),y+hr*Math.sin(a)):ctx.lineTo(x+hr*Math.cos(a),y+hr*Math.sin(a));}
+      ctx.closePath(); ctx.stroke();
+    }
+  }
+  function mvPlace(c,r,fl,instant){
+    const{x,y}=mvCtr(c,r); const fw=FRAME_W*mvSprSc,fh=FRAME_H*mvSprSc;
+    mvMapRunner.style.width=fw+'px'; mvMapRunner.style.height=fh+'px';
+    mvMapRunner.style.backgroundSize=(fw*FRAMES)+'px '+fh+'px';
+    mvMapRunner.style.transition=instant?'none':'left '+(mvStepDur*0.92)+'s linear,top '+(mvStepDur*0.92)+'s linear';
+    mvMapRunner.style.left=(x-fw/2)+'px'; mvMapRunner.style.top=(y-fh*0.88)+'px';
+    mvMapRunner.style.transform=fl?'scaleX(-1)':'none';
+  }
+  function mvAnimFr(ts){
+    if(ts-mvLastFrTime>=1000/mvFps){ mvLastFrTime=ts; mvFrIdx=(mvFrIdx+1)%FRAMES; mvMapRunner.style.backgroundPositionX=(-(FRAME_W*mvSprSc)*mvFrIdx)+'px'; }
+    _mvMapRaf=requestAnimationFrame(mvAnimFr);
+  }
+  function mvNext(){
+    const opts=mvViz(mvCurCol,mvCurRow); const[nc,nr]=opts[Math.floor(Math.random()*opts.length)];
+    mvPlace(nc,nr,nc<mvCurCol,false); mvCurCol=nc; mvCurRow=nr;
+    _mvMapTimer=setTimeout(mvNext,mvStepDur*1000);
+  }
+  function mvApply(){
+    mvStepDur=parseFloat(mvStepInp.value); mvSprSc=parseFloat(mvScInp.value)/100;
+    mvStepVal.textContent=mvStepDur.toFixed(1)+' s'; mvScVal.textContent=Math.round(mvSprSc*100)+'%';
+    mvDrawGrid(); mvPlace(mvCurCol,mvCurRow,false,true);
+  }
+  mvStepInp.addEventListener('input',mvApply);
+  mvScInp.addEventListener('input',mvApply);
+  if(window.addEventListener) window.addEventListener('resize',()=>{
+    if(document.getElementById('movimentacoes-tab').classList.contains('active')){ mvDrawGrid(); mvPlace(mvCurCol,mvCurRow,false,true); }
+  });
+
+  let _mvMapInited=false;
+
+  _mvOnActivate=function(){
+    mvLastSceneTime=null;
+    if(!_mvSceneRaf) _mvSceneRaf=requestAnimationFrame(animMvScene);
+    if(!_mvMapInited){
+      _mvMapInited=true;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        mvApply(); mvPlace(mvCurCol,mvCurRow,false,true);
+        _mvMapTimer=setTimeout(mvNext,mvStepDur*1000);
+        _mvMapRaf=requestAnimationFrame(mvAnimFr);
+      }));
+    } else {
+      if(!_mvMapRaf)   _mvMapRaf=requestAnimationFrame(mvAnimFr);
+      if(!_mvMapTimer) _mvMapTimer=setTimeout(mvNext,mvStepDur*1000);
+    }
+  };
+  _mvOnDeactivate=function(){
+    if(_mvSceneRaf){cancelAnimationFrame(_mvSceneRaf);_mvSceneRaf=null;}
+    if(_mvMapRaf){cancelAnimationFrame(_mvMapRaf);_mvMapRaf=null;}
+    if(_mvMapTimer){clearTimeout(_mvMapTimer);_mvMapTimer=null;}
+  };
+}
+
 // ── TABS ──────────────────────────────────────────────────────────────
 
 document.querySelectorAll('.tab-btn').forEach(btn=>{
@@ -1501,6 +1736,9 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     // stop spell animation when leaving magias tab
     if(tab !== 'magias' && _spellRaf){ cancelAnimationFrame(_spellRaf); _spellRaf=null; }
     if(tab === 'magias' && _spellObj){ _startSpellAnim(_spellObj); }
+    // pause/resume movimentacoes animations
+    if(tab !== 'movimentacoes' && _mvOnDeactivate) _mvOnDeactivate();
+    if(tab === 'movimentacoes' && _mvOnActivate)   _mvOnActivate();
     updateCount(tab);
   });
 });
@@ -1526,7 +1764,8 @@ function updateCount(tab){
     classes: `${Object.keys(CLASSES_DATA).length} classes`,
     npcs:    `${Object.keys(NPCS).length} personagens`,
     inimigos:`${INIMIGOS_DATA.length} criaturas`,
-    magias:  `${MAGIAS_DATA.length} magias`,
+    magias:        `${MAGIAS_DATA.length} magias`,
+    movimentacoes: '1 animação',
   };
   document.getElementById('count-label').textContent = labels[tab]||'';
 }
@@ -1537,6 +1776,7 @@ buildClassesTab();
 buildNpcsTab();
 buildInimigosTab();
 buildMagiasTab();
+buildMovimentacoesTab();
 updateCount('classes');
 </script>
 </body>
