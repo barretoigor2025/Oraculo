@@ -59,7 +59,7 @@ section {
 
   width:  var(--dw);
   height: var(--dh);
-  background-image: url('sprites/run_sheet.png');
+  background-image: url('sprites/run_sheet.png?v=2');
   background-size: calc(var(--fw) * 4 * var(--sc)) var(--dh);
   background-repeat: no-repeat;
 }
@@ -306,7 +306,8 @@ input[type=range] {
          conflito com o slider global; anima via inline style -->
     <div id="map-runner" style="
       position:absolute;
-      background-image:url('sprites/run_sheet.png');
+      background-image:url('sprites/run_sheet.png?v=2');
+      background-color:transparent;
       background-repeat:no-repeat;
       pointer-events:none;
     "></div>
