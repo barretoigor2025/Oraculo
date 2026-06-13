@@ -1672,6 +1672,7 @@ function renderGrid(){
 function renderUnits(){
   ctxU.clearRect(0,0,MAP_W,MAP_H);
   for(const u of unidades){
+    if(!u) continue;
     if(u.tipo==='inimigo'&&u.hp<=0) continue; // inimigo morto some imediatamente
     const{x,y}=unitPos(u);
     if(u.img){
@@ -2974,6 +2975,7 @@ function _broadcastIntent(){
 
 // Carrega sprite com fallback: genero alternativo → sem genero → círculo
 function _loadSprite(u){
+  if(!u) return;
   const m=u.imgSrc.match(/sprites\/([a-z_]+)_([mf])_costas\.png/);
   if(!m){
     const img=new Image(); img.onload=()=>{u.img=img;renderUnits();}; img.onerror=()=>renderUnits(); img.src=u.imgSrc; return;
@@ -3247,6 +3249,12 @@ function init(){
     .then(d=>{ if(d?.hexes) terrenoData=d.hexes; render(); })
     .catch(()=>render());
   function startFbListener(){
+    // INIMIGOS_DATA now guaranteed (ES module ran before fbReady event)
+    unidades = unidades.filter(Boolean);
+    if(!unidades.some(u=>u.tipo==='inimigo')){
+      const e = criarInimigo('espantalho_assombrado',6,3);
+      if(e){ unidades.push(e); _loadSprite(e); }
+    }
     if(window._fbListenRoom) window._fbListenRoom(onRoomUpdate);
     // Registra posição inicial do herói local no Firebase
     const localHero=unidades.find(u=>u.tipo==='heroi'&&!u._fbId);
