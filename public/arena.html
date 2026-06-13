@@ -3267,8 +3267,10 @@ function init(){
 
 for(const u of unidades){ _loadSprite(u); }
 const mapaEl=document.getElementById('mapa');
-mapaEl.onload=init; mapaEl.onerror=init;
-if(mapaEl.complete&&mapaEl.naturalWidth>0) init();
+let _initFired=false;
+function _initOnce(){ if(!_initFired){ _initFired=true; init(); } }
+mapaEl.onload=_initOnce; mapaEl.onerror=_initOnce;
+_initOnce(); // não espera o mapa carregar — lógica de jogo inicia imediatamente
 let _resizeTimer;
 window.addEventListener('resize',()=>{ clearTimeout(_resizeTimer); _resizeTimer=setTimeout(initScale,80); });
 </script>
