@@ -79,7 +79,7 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 
 /* ── Painel inferior ── */
 #bottom-panel{
-  position:fixed; left:0; right:0;
+  position:fixed; left:0; right:0; bottom:0;
   background:linear-gradient(180deg,#14100a 0%,#0a0806 100%);
   border-top:2px solid rgba(190,135,35,0.45);
   display:flex; flex-direction:column;
@@ -527,12 +527,7 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
       </div>
     </div>
   </div>
-  <div id="action-row">
-    <button class="act-btn" id="btn-mover"  onclick="executarMovimento()"><span class="btn-icon">👢</span><span class="btn-label">MOVER</span></button>
-    <button class="act-btn" id="btn-atacar" onclick="abrirAtkPanel()"><span class="btn-icon">⚔️</span><span class="btn-label">ATACAR</span></button>
-    <button class="act-btn" id="btn-skill"  onclick="abrirSkillPanel()"><span class="btn-icon">📜</span><span class="btn-label">SKILL</span></button>
-    <button class="act-btn" id="btn-acao"   onclick="abrirAcao()"><span class="btn-icon">🧠</span><span class="btn-label">AÇÃO</span></button>
-  </div>
+  <div id="action-row"></div>
 </div>
 
 <div id="bag-modal">
@@ -3216,6 +3211,7 @@ function initScale(){
 function init(){
   initScale();
   renderBottomPanel();
+  renderActionRow();
   fetch('maps/feira-limpa-terreno.json')
     .then(r=>r.ok?r.json():null)
     .then(d=>{ if(d?.hexes) terrenoData=d.hexes; render(); })
