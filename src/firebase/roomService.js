@@ -65,6 +65,7 @@ export async function startNarration(roomId, cenaId = 'mhoried_market') {
       cenaId,
       modoImagem: 'exterior',
       dialogo: [],
+      introConfirmados: {},
       ts: Date.now(),
     },
     postBattleConfirmados: {},

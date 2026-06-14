@@ -538,7 +538,11 @@ html,body{
 import { NPCS, CENAS, CENAS_ORDEM } from './data/campaign.js';
 
 // ── Estado local ─────────────────────────────────────────────────
-const _pid = localStorage.getItem('oraculo.playerId') || '';
+const _pid = localStorage.getItem('oraculo.playerId') || (() => {
+  const id = crypto.randomUUID();
+  localStorage.setItem('oraculo.playerId', id);
+  return id;
+})();
 const _pname = localStorage.getItem('oraculo.playerName') || 'Aventureiro';
 const _isHost = localStorage.getItem('oraculo.isHost') !== '0';
 let _cenaAtual = 'mhoried_market';
@@ -631,7 +635,7 @@ function onRoomUpdate(room) {
     const jogadores = Object.keys(room.players || {});
     const confirmados = narr.introConfirmados;
     // Solo (room.players vazio): basta este jogador ter confirmado
-    const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : []);
+    const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : Object.keys(confirmados));
     if (efetivos.length > 0 && efetivos.every(pid => confirmados[pid])) {
       window._fbSetStatus?.('battle');
       return;
