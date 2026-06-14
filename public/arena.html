@@ -469,7 +469,7 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 <body>
 
 <div id="world">
-  <img id="mapa" src="maps/feira-limpa.png" alt="">
+  <img id="mapa" src="campaigns/mhoried/maps/feira-limpa.png" alt="">
   <canvas id="cv-terrain"></canvas>
   <canvas id="cv-sel"></canvas>
   <canvas id="cv-hex"></canvas>
@@ -569,8 +569,8 @@ function criarInimigo(bestiaryId, col, row, overrides){
     col, row,
     emoji:       en.emoji || '💀',
     cor:         en.cor   || '#4a0000',
-    imgSrc:      `sprites/inimigo_${bestiaryId}.png`,
-    imgSrcAtaque:`sprites/inimigo_${bestiaryId}.png`,
+    imgSrc:      `campaigns/mhoried/portraits/enemy_${bestiaryId}.png`,
+    imgSrcAtaque:`campaigns/mhoried/portraits/enemy_${bestiaryId}.png`,
     img:         null,
     tipo:        'inimigo',
     mov:         g.move  ?? 4,
@@ -578,7 +578,7 @@ function criarInimigo(bestiaryId, col, row, overrides){
     maxHp:       g.hp    ?? 10,
     sp:          (typeof g.fp === 'number' ? g.fp : 0),
     maxSp:       (typeof g.fp === 'number' ? g.fp : 0),
-    portrait:    `portraits/enemy_${bestiaryId}_frente.png`,
+    portrait:    `campaigns/mhoried/portraits/enemy_${bestiaryId}_frente.png`,
     ac:          g.dodge ?? 8,
     dr:          g.dr    ?? 0,
     bestiaryId,
@@ -881,11 +881,11 @@ const _hcd = _HERO_CLASS_DATA[_heroClassId] || _HERO_CLASS_DATA.mago;
 // ══════════════════════════════════════════
 let unidades = [
   { nome:_hcd.nome, col:_fbIsHost?4:6, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
-    imgSrc:`sprites/${_heroClassId}_${_heroGender}_costas.png`,
-    imgSrcAtaque:`sprites/${_heroClassId}_${_heroGender}.png`,
+    imgSrc:`campaigns/mhoried/sprites/${_heroClassId}_${_heroGender}_costas.png`,
+    imgSrcAtaque:`campaigns/mhoried/sprites/${_heroClassId}_${_heroGender}.png`,
     img:null, tipo:'heroi', mov:_hcd.mov,
     hp:_hcd.hp, maxHp:_hcd.hp, sp:_hcd.sp, maxSp:_hcd.sp,
-    portrait:`portraits/${_heroClassId}_${_heroGender}.png`,
+    portrait:`campaigns/mhoried/portraits/${_heroClassId}_${_heroGender}.png`,
     itens:_hcd.itens },
   criarInimigo('espantalho_assombrado', 6, 3),
 ];
@@ -1675,7 +1675,26 @@ function renderUnits(){
     if(!u) continue;
     if(u.tipo==='inimigo'&&u.hp<=0) continue; // inimigo morto some imediatamente
     const{x,y}=unitPos(u);
-    if(u.img){
+    if(u.img && u.tipo==='inimigo'){
+      // Portrait circular (medallion) para inimigos
+      const r = HR * 0.52;
+      const cx = x, cy = y;
+      const srcW = u.img.naturalWidth;
+      const srcH = u.img.naturalHeight;
+      const cropH = Math.round(srcH * 0.55);
+      ctxU.save();
+      ctxU.beginPath();
+      ctxU.arc(cx, cy - HR * 0.1, r, 0, Math.PI * 2);
+      ctxU.clip();
+      if(u===selUnit){ ctxU.shadowColor='#ffd028'; ctxU.shadowBlur=12; }
+      ctxU.drawImage(u.img, 0, 0, srcW, cropH, cx - r, cy - HR * 0.1 - r, r * 2, r * 2);
+      ctxU.restore();
+      ctxU.beginPath();
+      ctxU.arc(cx, cy - HR * 0.1, r, 0, Math.PI * 2);
+      ctxU.strokeStyle = u===selUnit ? '#ffd028' : 'rgba(200,60,30,0.8)';
+      ctxU.lineWidth = u===selUnit ? 3 : 2;
+      ctxU.stroke();
+    } else if(u.img){
       const sw=HR*3.2,foot=y+OOFF*.3;
       const clip=u.clipBottom||0;
       const srcW = u.frameW ?? u.img.naturalWidth;
@@ -1988,7 +2007,7 @@ function _cinSpawnGregoras() {
       emoji:'📜', col:6, row:3,
       hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10,
       cor:'#8899bb',
-      imgSrc:'sprites/npc_gregoras_pellos.png',
+      imgSrc:'campaigns/mhoried/sprites/npc_gregoras_pellos.png',
       img:null, portrait:null, flipH:false,
       _ax:null, _ay:null, clipBottom:0, itens:[], id:'_greg_cin',
     };
@@ -2018,7 +2037,7 @@ function _cinematicaEntrada(path, onComplete) {
   div.style.cssText =
     `position:absolute;z-index:50;pointer-events:none;` +
     `width:${dispW}px;height:${dispH}px;` +
-    `background-image:url('sprites/npc_gregoras_pellos_costas.png');` +
+    `background-image:url('campaigns/mhoried/sprites/npc_gregoras_pellos_costas.png');` +
     `background-repeat:no-repeat;` +
     `background-size:${Math.round(fw*2*sc)}px ${dispH}px;` +
     `background-position:0 0;`;
@@ -2074,7 +2093,7 @@ function _gregEntradaVirou(div, dispW, dispH, destHex, onComplete) {
     const fw = 362, fh = 1086;
     const sc = dispH / fh;
     const dw = Math.round(fw * sc); // mesmo dispW
-    div.style.backgroundImage    = "url('sprites/npc_gregoras_pellos_frente.png')";
+    div.style.backgroundImage    = "url('campaigns/mhoried/sprites/npc_gregoras_pellos_frente.png')";
     div.style.backgroundSize     = `${Math.round(fw*2*sc)}px ${dispH}px`;
     div.style.backgroundPosition = '0 0';
     div.style.width  = dw + 'px';
@@ -2257,7 +2276,7 @@ O QUE VOCÊ SABE (revele com relutância, aos poucos — nunca tudo de uma vez):
 REGRAS: Português brasileiro. Máximo 2-3 frases por resposta — você não discursa. Nunca quebre o personagem. Reaja ao que foi dito. Se pressionado demais, endurece — não cede por pressão de lábia, só por argumento real. Sem óculos, sem ajustar ombros de forma elegante — no máximo um gesto de impaciência.`;
 
   async function gregorasFala(userMsg) {
-    const el = appendMsg('greg', 'Gregoras Pellos', 'sprites/npc_gregoras_pellos.png', '...', true);
+    const el = appendMsg('greg', 'Gregoras Pellos', 'campaigns/mhoried/sprites/npc_gregoras_pellos.png', '...', true);
     const txtEl = el.querySelector('.cin-msg-txt');
 
     const apiKey = localStorage.getItem('oraculo.groqKey');
@@ -2346,7 +2365,7 @@ function _cinTransicaoCastelo() {
     ov.style.opacity = '1';
     setTimeout(() => {
       const img = document.createElement('img');
-      img.src = 'locations/mhoried_castelo_ext.png';
+      img.src = 'campaigns/mhoried/locations/mhoried_castelo_ext.png';
       img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;opacity:0;transition:opacity .65s;';
       ov.appendChild(img);
       requestAnimationFrame(() => {
@@ -2997,12 +3016,23 @@ function _broadcastIntent(){
 // Carrega sprite com fallback: genero alternativo → sem genero → círculo
 function _loadSprite(u){
   if(!u) return;
-  const m=u.imgSrc.match(/sprites\/([a-z_]+)_([mf])_costas\.png/);
+  const m=u.imgSrc.match(/campaigns\/mhoried\/sprites\/([a-z_]+)_([mf])_costas\.png/);
   if(!m){
-    const img=new Image(); img.onload=()=>{u.img=img;renderUnits();}; img.onerror=()=>renderUnits(); img.src=u.imgSrc; return;
+    const img=new Image();
+    img.onload=()=>{u.img=img;renderUnits();};
+    img.onerror=()=>{
+      if(u.tipo==='inimigo'&&u.bestiaryId){
+        const fb=new Image();
+        fb.onload=()=>{u.img=fb;renderUnits();};
+        fb.onerror=()=>renderUnits();
+        fb.src=`campaigns/mhoried/sprites/inimigo_${u.bestiaryId}.png`;
+      } else { renderUnits(); }
+    };
+    img.src=u.imgSrc;
+    return;
   }
   const[,cid,g]=m; const alt=g==='m'?'f':'m';
-  const queue=[`sprites/${cid}_${g}_costas.png`,`sprites/${cid}_${alt}_costas.png`,`sprites/${cid}_costas.png`];
+  const queue=[`campaigns/mhoried/sprites/${cid}_${g}_costas.png`,`campaigns/mhoried/sprites/${cid}_${alt}_costas.png`,`campaigns/mhoried/sprites/${cid}_costas.png`];
   let qi=0;
   (function tryNext(){
     if(qi>=queue.length){renderUnits();return;}
@@ -3135,11 +3165,11 @@ function onRoomUpdate(room){
       u={
         nome:p.name||cd.nome, col:p.x, row:p.y,
         emoji:cd.emoji, cor:cd.cor,
-        imgSrc:`sprites/${p.classId}_${g}_costas.png`,
+        imgSrc:`campaigns/mhoried/sprites/${p.classId}_${g}_costas.png`,
         img:null, tipo:'heroi', mov:cd.mov,
         hp:p.hp||cd.hp, maxHp:p.maxHp||cd.hp,
         sp:p.mana||cd.sp, maxSp:p.maxMana||cd.sp,
-        portrait:`portraits/${p.classId}_${g}.png`,
+        portrait:`campaigns/mhoried/portraits/${p.classId}_${g}.png`,
         itens:[], _fbId:p.id,
       };
       _loadSprite(u);
@@ -3264,7 +3294,7 @@ function init(){
   initScale();
   renderBottomPanel();
   renderActionRow();
-  fetch('maps/feira-limpa-terreno.json')
+  fetch('campaigns/mhoried/maps/feira-limpa-terreno.json')
     .then(r=>r.ok?r.json():null)
     .then(d=>{ if(d?.hexes) terrenoData=d.hexes; render(); })
     .catch(()=>render());

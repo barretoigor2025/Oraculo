@@ -371,7 +371,7 @@
 </div>
 
 <script type="module">
-import { NPCS } from './data/campaign.js';
+import { NPCS } from './campaigns/mhoried/data/campaign.js';
 
 // ── DATA ──────────────────────────────────────────────────────────────
 
@@ -495,11 +495,11 @@ function inimSpriteUrl(id, costas){
   const base = id.startsWith('goblin') ? id : id;
   // goblin files: goblin_arqueiro.png; inimigo files: inimigo_X.png
   const fname = id.startsWith('goblin') ? `${id}` : `inimigo_${id}`;
-  return costas ? `sprites/${fname}_costas.png` : `sprites/${fname}.png`;
+  return costas ? `campaigns/mhoried/sprites/${fname}_costas.png` : `campaigns/mhoried/sprites/${fname}.png`;
 }
 
 function classSpriteUrl(id, gender){
-  return `sprites/${id}_${gender}.png`;
+  return `campaigns/mhoried/sprites/${id}_${gender}.png`;
 }
 
 // ── BUILD CLASSES TAB ─────────────────────────────────────────────────

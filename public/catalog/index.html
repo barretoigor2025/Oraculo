@@ -694,8 +694,8 @@
 </div>
 
 <script type="module">
-import { NPCS }          from '../data/campaign.js?v=3';
-import { INIMIGOS_DATA } from '../data/bestiary.js?v=3';
+import { NPCS }          from '../campaigns/mhoried/data/campaign.js?v=4';
+import { INIMIGOS_DATA } from '../campaigns/mhoried/data/bestiary.js?v=4';
 
 // ── DATA ──────────────────────────────────────────────────────────────
 
@@ -787,7 +787,7 @@ function portraitUrl(id, gender){
 }
 
 function npcPortraitUrl(id){
-  return `../portraits/${id}.png`;
+  return `../campaigns/mhoried/portraits/${id}.png`;
 }
 
 function npcSpriteUrl(path){
@@ -796,12 +796,12 @@ function npcSpriteUrl(path){
 }
 
 function enemyPortraitUrl(id){
-  return `../portraits/enemy_${id}.png`;
+  return `../campaigns/mhoried/portraits/enemy_${id}.png`;
 }
 
 function inimSpriteUrl(id, costas){
   const fname = id.startsWith('goblin') ? id : `inimigo_${id}`;
-  return costas ? `../sprites/${fname}_costas.png` : `../sprites/${fname}.png`;
+  return costas ? `../campaigns/mhoried/sprites/${fname}_costas.png` : `../campaigns/mhoried/sprites/${fname}.png`;
 }
 
 // ── MAGIAS DATA ───────────────────────────────────────────────────────
@@ -1373,7 +1373,7 @@ function buildInimigosTab(){
 
   let cards = '<div class="card-grid">';
   for(const en of INIMIGOS_DATA){
-    const portrait = en.id === 'rei_chutter' ? '../portraits/npc_rei_chutter.png' : enemyPortraitUrl(en.id);
+    const portrait = en.id === 'rei_chutter' ? '../campaigns/mhoried/portraits/npc_rei_chutter.png' : enemyPortraitUrl(en.id);
     const spr = inimSpriteUrl(en.id, false);
     cards += `
       <div class="card" onclick="openEnemyModal('${en.id}')">
@@ -1502,8 +1502,8 @@ window.openNpcModal = function(id){
   if(!npc) return;
 
   const portraitSrc = npcPortraitUrl(npc.id);
-  const sprFrente   = `../sprites/${npc.id}_frente.png`;
-  const sprCostas   = `../sprites/${npc.id}_costas.png`;
+  const sprFrente   = `../campaigns/mhoried/sprites/${npc.id}_frente.png`;
+  const sprCostas   = `../campaigns/mhoried/sprites/${npc.id}_costas.png`;
   const fallbackSrc = npcSpriteUrl(npc.sprite);
 
   const sections = [
@@ -1574,8 +1574,8 @@ window.openEnemyModal = function(id){
   if(!en) return;
 
   const isRei      = id === 'rei_chutter';
-  const sheetFront = isRei ? '../portraits/npc_rei_chutter.png' : `../portraits/enemy_${id}_frente.png`;
-  const sheetBack  = isRei ? '../portraits/npc_rei_chutter.png' : `../portraits/enemy_${id}_costas.png`;
+  const sheetFront = isRei ? '../campaigns/mhoried/portraits/npc_rei_chutter.png' : `../campaigns/mhoried/portraits/enemy_${id}_frente.png`;
+  const sheetBack  = isRei ? '../campaigns/mhoried/portraits/npc_rei_chutter.png' : `../campaigns/mhoried/portraits/enemy_${id}_costas.png`;
   const sprFront   = inimSpriteUrl(id, false);
   const sprBack    = inimSpriteUrl(id, true);
 
