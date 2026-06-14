@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oráculo — Sala de Controle da Campanha</title>
+  <style>
+    :root {
+      --bg: #0d0d0f;
+      --panel: #13141a;
+      --border: #2a2d3a;
+      --accent: #c8973a;
+      --accent2: #7a5c2a;
+      --done: #3a7a5c;
+      --done-bg: #0f2a1e;
+      --done-text: #5ecfa0;
+      --pending: #7a3a3a;
+      --pending-bg: #2a0f0f;
+      --pending-text: #cf8080;
+      --text: #ccc;
+      --text-dim: #666;
+      --tag-bg: #1e2030;
+      --act1: #3a6e7a;
+      --act2: #5a3a7a;
+      --act3: #7a3a50;
+      --act4: #7a5a3a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0d0d0f 0%, #1a1208 100%);
+      border-bottom: 2px solid var(--accent2);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    header h1 span { color: var(--text-dim); font-weight: 300; font-size: 1rem; }
+
+    .global-progress {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .global-bar-wrap {
+      width: 220px;
+      background: #1a1a1a;
+      border-radius: 6px;
+      height: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .global-bar { height: 100%; background: var(--accent); border-radius: 6px; transition: width .4s; }
+    .global-label { font-size: .85rem; color: var(--accent); font-weight: 600; white-space: nowrap; }
+
+    /* Filtros */
+    .filters {
+      display: flex;
+      gap: 10px;
+      padding: 16px 32px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .filters button {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: .8rem;
+      transition: all .2s;
+    }
+
+    .filters button.active, .filters button:hover {
+      background: var(--accent);
+      color: #111;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Layout principal */
+    .main {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 120px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 24px 0;
+      position: sticky;
+      top: 0;
+      height: calc(100vh - 120px);
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      padding: 0 20px 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: .88rem;
+      transition: all .15s;
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar a:hover { background: #1a1d26; color: var(--text); }
+    .sidebar a.act1 { border-left-color: var(--act1); }
+    .sidebar a.act2 { border-left-color: var(--act2); }
+    .sidebar a.act3 { border-left-color: var(--act3); }
+    .sidebar a.act4 { border-left-color: var(--act4); }
+
+    .sidebar .mini-bar-wrap {
+      flex: 1;
+      height: 4px;
+      background: #1a1a1a;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .sidebar .mini-bar { height: 100%; border-radius: 3px; }
+    .act1 .mini-bar { background: var(--act1); }
+    .act2 .mini-bar { background: var(--act2); }
+    .act3 .mini-bar { background: var(--act3); }
+    .act4 .mini-bar { background: var(--act4); }
+
+    /* Content */
+    .content {
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    /* Act section */
+    .act-section { scroll-margin-top: 20px; }
+
+    .act-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .act-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+    }
+
+    .act-badge.a1 { background: var(--act1); color: #fff; }
+    .act-badge.a2 { background: var(--act2); color: #fff; }
+    .act-badge.a3 { background: var(--act3); color: #fff; }
+    .act-badge.a4 { background: var(--act4); color: #fff; }
+
+    .act-title-wrap { flex: 1; }
+    .act-title-wrap h2 { font-size: 1.15rem; color: var(--accent); }
+    .act-title-wrap p { font-size: .8rem; color: var(--text-dim); margin-top: 2px; }
+
+    .act-progress {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      min-width: 140px;
+    }
+
+    .act-bar-wrap {
+      width: 140px;
+      height: 8px;
+      background: #1a1a1a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .act-bar { height: 100%; border-radius: 4px; }
+    .a1 .act-bar, .act-bar.a1 { background: var(--act1); }
+    .a2 .act-bar, .act-bar.a2 { background: var(--act2); }
+    .a3 .act-bar, .act-bar.a3 { background: var(--act3); }
+    .a4 .act-bar, .act-bar.a4 { background: var(--act4); }
+    .act-pct { font-size: .78rem; color: var(--text-dim); }
+
+    /* Category */
+    .category {
+      margin-bottom: 20px;
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .category-header h3 {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+    }
+
+    .cat-icon { font-size: 1rem; }
+
+    /* Grid de itens */
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: all .15s;
+      cursor: default;
+    }
+
+    .item.done {
+      background: var(--done-bg);
+      border-color: #1f4a35;
+    }
+
+    .item.pending {
+      background: var(--pending-bg);
+      border-color: #3a1f1f;
+    }
+
+    .item:hover { transform: translateY(-1px); }
+
+    .item-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .7rem;
+      flex-shrink: 0;
+    }
+
+    .done .item-check { background: var(--done); color: #fff; }
+    .pending .item-check { background: var(--pending); color: #fff; }
+
+    .item-label {
+      font-size: .82rem;
+      line-height: 1.3;
+    }
+
+    .done .item-label { color: var(--done-text); }
+    .pending .item-label { color: var(--pending-text); }
+
+    .item-sub {
+      font-size: .7rem;
+      color: var(--text-dim);
+      margin-top: 1px;
+    }
+
+    /* Tags */
+    .tag {
+      display: inline-block;
+      font-size: .65rem;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: var(--tag-bg);
+      color: var(--text-dim);
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    .tag.opcional { color: #7a6a4a; background: #1a1608; }
+
+    /* Stats bar */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .stat-card .num {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .stat-card .label {
+      font-size: .75rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-card .sub {
+      font-size: .78rem;
+      color: var(--done-text);
+      margin-top: 4px;
+    }
+
+    /* Divisão de grupos */
+    .group-divider {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      padding: 4px 0;
+      margin: 12px 0 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Responsive */
+    @media (max-width: 800px) {
+      .main { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .content { padding: 16px; }
+      header { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>ORÁCULO <span>/ Beast of Black Keep — Sala de Controle</span></h1>
+  </div>
+  <div class="global-progress">
+    <span class="global-label" id="global-label">Calculando...</span>
+    <div class="global-bar-wrap">
+      <div class="global-bar" id="global-bar" style="width:0%"></div>
+    </div>
+  </div>
+</header>
+
+<div class="filters">
+  <button class="active" onclick="filterItems('all', this)">Todos</button>
+  <button onclick="filterItems('pending', this)">Pendentes</button>
+  <button onclick="filterItems('done', this)">Concluídos</button>
+</div>
+
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h3>Atos da Campanha</h3>
+    <a href="#ato1" class="act1">
+      <span>Ato 1</span>
+      <div class="mini-bar-wrap"><div class="mini-bar" id="sb-bar1"></div></div>
+      <span id="sb-pct1" style="font-size:.75rem;min-width:32px;text-align:right"></span>
+    </a>
+    <a href="#ato2" class="act2">
+      <span>Ato 2</span>
+      <div class="mini-bar-wrap"><div class="mini-bar" id="sb-bar2"></div></div>
+      <span id="sb-pct2" style="font-size:.75rem;min-width:32px;text-align:right"></span>
+    </a>
+    <a href="#ato3" class="act3">
+      <span>Ato 3</span>
+      <div class="mini-bar-wrap"><div class="mini-bar" id="sb-bar3"></div></div>
+      <span id="sb-pct3" style="font-size:.75rem;min-width:32px;text-align:right"></span>
+    </a>
+    <a href="#ato4" class="act4">
+      <span>Ato 4</span>
+      <div class="mini-bar-wrap"><div class="mini-bar" id="sb-bar4"></div></div>
+      <span id="sb-pct4" style="font-size:.75rem;min-width:32px;text-align:right"></span>
+    </a>
+  </aside>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- STATS GLOBAIS -->
+    <div class="stats-row" id="stats-row"></div>
+
+    <!-- ===== ATO 1 ===== -->
+    <section class="act-section" id="ato1">
+      <div class="act-header">
+        <div class="act-badge a1">Ato<br>1</div>
+        <div class="act-title-wrap">
+          <h2>Mhoried — Festival e Ataque Inicial</h2>
+          <p>Cenas 1–4 &nbsp;·&nbsp; Festival, espantalhos, investigação e gancho principal</p>
+        </div>
+        <div class="act-progress">
+          <div class="act-bar-wrap"><div class="act-bar a1" id="bar1"></div></div>
+          <span class="act-pct" id="pct1"></span>
+        </div>
+      </div>
+
+      <!-- CENÁRIOS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">🗺️</span><h3>Cenários / Locais</h3></div>
+        <div class="items-grid" id="cat-ato1-cenarios">
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Mercado de Mhoried</div><div class="item-sub">Ext 1 · Ext 2 · Int</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Castelo de Mhoried</div><div class="item-sub">Exterior</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Campo pós-ataque</div><div class="item-sub">Barracas destruídas, restos de espantalhos</div></div></div>
+        </div>
+      </div>
+
+      <!-- MAPAS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">⚔️</span><h3>Mapas de Batalha</h3></div>
+        <div class="items-grid">
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Mercado — Harrowed Scarecrows</div><div class="item-sub">feira-limpa.png</div></div></div>
+        </div>
+      </div>
+
+      <!-- NPCs -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">👤</span><h3>NPCs</h3></div>
+        <div class="items-grid">
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Catherine Laskaris</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Gregoras Pellos</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Bishop Methodios</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Hobbleboot Sam</div><div class="item-sub">Portrait + Sprite</div></div></div>
+        </div>
+      </div>
+
+      <!-- INIMIGOS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">💀</span><h3>Inimigos</h3></div>
+        <div class="items-grid">
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Harrowed Scarecrow</div><div class="item-sub">Portrait + Sprite (frente + costas)</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ATO 2 ===== -->
+    <section class="act-section" id="ato2">
+      <div class="act-header">
+        <div class="act-badge a2">Ato<br>2</div>
+        <div class="act-title-wrap">
+          <h2>Entrada na Blackwoods — Exploração Sandbox</h2>
+          <p>Cenas 5–20 &nbsp;·&nbsp; Floresta amaldiçoada, NPCs, dungeons e ingredientes da cura</p>
+        </div>
+        <div class="act-progress">
+          <div class="act-bar-wrap"><div class="act-bar a2" id="bar2"></div></div>
+          <span class="act-pct" id="pct2"></span>
+        </div>
+      </div>
+
+      <!-- CENÁRIOS OBRIGATÓRIOS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">🗺️</span><h3>Cenários / Locais — Obrigatórios</h3></div>
+        <div class="items-grid">
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Entrada da Blackwoods</div><div class="item-sub">Arco de pedra coberto de musgo</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Carroça Tombada</div><div class="item-sub">Estrada da floresta</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Encruzilhada</div><div class="item-sub">Placa velha, trilhas com musgo</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Cnoc na Ríthe</div><div class="item-sub">Acampamento druídico</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Kobold-Town — Exterior</div><div class="item-sub">Vista da vila nas colinas</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Kobold-Town — Loja de Murznut</div><div class="item-sub">Interior da loja</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Kobold-Town — Casa de Blunkin</div><div class="item-sub">Interior com jaulas no 2º andar</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Crone's Hovel — Exterior</div><div class="item-sub">Cabana podre, clareira crepuscular</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Crone's Hovel — Interior</div><div class="item-sub">Caldeirão, ossos, jaula, baú</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Cabana do Antlered Man</div><div class="item-sub">Telhado de chifres/antlers</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Drowned Grove — Exterior</div><div class="item-sub">Castellet no lago escuro</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Wane-Deep — Interior submerso</div><div class="item-sub">Cômodos da ruína aquática</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Manticore Hunting Grounds</div><div class="item-sub">Território da manticore albina</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Great Grub Carcass</div><div class="item-sub">Muralha com larva gigante podre</div></div></div>
+        </div>
+      </div>
+
+      <!-- CENÁRIOS OPCIONAIS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">🗺️</span><h3>Cenários / Locais — Opcionais</h3></div>
+        <div class="items-grid">
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Dark Elf Camp <span class="tag opcional">opcional</span></div><div class="item-sub">Ruínas com estátua de Hooded Voorn</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Weeper's Well <span class="tag opcional">opcional</span></div><div class="item-sub">Poço élfico antigo que chora</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Sepultura de Jariella <span class="tag opcional">opcional</span></div><div class="item-sub">Flores azuis/brancas e espada Selvimar</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Ruins of Simithari <span class="tag opcional">opcional</span></div><div class="item-sub">Ruínas élficas com corvos</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Vulkrundshard Deposit <span class="tag opcional">opcional</span></div><div class="item-sub">Pedra negra incandescente</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Twinfold Hollow <span class="tag opcional">opcional</span></div><div class="item-sub">Floresta viva, campo de Starshade</div></div></div>
+        </div>
+      </div>
+
+      <!-- MAPAS DE BATALHA -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">⚔️</span><h3>Mapas de Batalha</h3></div>
+        <div class="items-grid">
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Encruzilhada — Blackwoods Boar</div><div class="item-sub">Tático do javali</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Cnoc na Ríthe — Ataque Noturno</div><div class="item-sub">Mother Clutch + 12 esqueletos</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Kobold-Town — Resgate</div><div class="item-sub">Infiltração / combate</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Drowned Grove / Wane-Deep</div><div class="item-sub">Combate aquático</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Manticore — Clareira de emboscada</div><div class="item-sub">Carcaça pendurada como isca</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Great Grub Carcass / Log-Wife</div><div class="item-sub">Terreno afundando</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Crone's Hovel <span class="tag opcional">opcional</span></div><div class="item-sub">Se virar combate</div></div></div>
+        </div>
+      </div>
+
+      <!-- NPCs OBRIGATÓRIOS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">👤</span><h3>NPCs</h3></div>
+        <div class="group-divider">Obrigatórios</div>
+        <div class="items-grid">
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Muirenn</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Mac Rónán</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Blunkin Brain-Smasher</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Dvalinn (anão)</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Mutter Grimmhaar</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Wulfram (Antlered Man)</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Ruzalka</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Valmorien</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Ysoria</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Prince Kalos</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Fariborz Piromante</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Jariella</div><div class="item-sub">Portrait + Sprite + Espírito</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Finn Willowheel</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Aelar Eisenli</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Morwenna</div><div class="item-sub">Prisioneira da bruxa · Portrait + Sprite</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Father Halric</div><div class="item-sub">Herbalista · Portrait + Sprite</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Azzika Fren</div><div class="item-sub">Dark elf · Portrait + Sprite</div></div></div>
+        </div>
+        <div class="group-divider" style="margin-top:16px">Opcionais</div>
+        <div class="items-grid">
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Choir (Necromante)</div><div class="item-sub">Portrait + Sprite <span class="tag opcional">opcional</span></div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Drizzle (kobold)</div><div class="item-sub">Portrait + Sprite <span class="tag opcional">opcional</span></div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Murznut (kobold)</div><div class="item-sub">Portrait + Sprite <span class="tag opcional">opcional</span></div></div></div>
+        </div>
+      </div>
+
+      <!-- INIMIGOS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">💀</span><h3>Inimigos / Sprites</h3></div>
+        <div class="items-grid">
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Blackwoods Boar</div><div class="item-sub">Sprite (frente + costas)</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Dark Elf Warrior</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Wraithweaver Spider</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Albino Manticore</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Barkthresher</div><div class="item-sub">Sprite (frente + costas)</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Skeletal Spearman</div><div class="item-sub">Sprite (frente + costas)</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Mother Clutch</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Kobold Azul</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Mud Crab / Caranguejo Gigante</div><div class="item-sub">Sprite (frente + costas)</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Quay Grabber</div><div class="item-sub">Sprite (frente + costas)</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Crab Zombie</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Log-Wife</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Marrowwither</div><div class="item-sub">Sprite (frente + costas)</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Larva Gigante</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Demônio Vulkrundshard</div><div class="item-sub">Portrait + Sprite <span class="tag opcional">opcional</span></div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ATO 3 ===== -->
+    <section class="act-section" id="ato3">
+      <div class="act-header">
+        <div class="act-badge a3">Ato<br>3</div>
+        <div class="act-title-wrap">
+          <h2>Gloamreach — Covil dos Thools</h2>
+          <p>Cenas 21–23 &nbsp;·&nbsp; Ravina, dungeon dos Thools, identificação de Oswald</p>
+        </div>
+        <div class="act-progress">
+          <div class="act-bar-wrap"><div class="act-bar a3" id="bar3"></div></div>
+          <span class="act-pct" id="pct3"></span>
+        </div>
+      </div>
+
+      <!-- CENÁRIOS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">🗺️</span><h3>Cenários / Locais</h3></div>
+        <div class="items-grid">
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Entrada da Ravina</div><div class="item-sub">Escadaria descendo ao templo élfico</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Entrada da Dungeon</div><div class="item-sub">Templo élfico misturado com caverna</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Chapel of Sighing Bronze</div><div class="item-sub">Laboratório dos alquimistas de Choir</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Hall of Thrones</div><div class="item-sub">Tronos anões, cristais de espionagem</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Thools' Lair</div><div class="item-sub">Sala principal dos Thools</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Forge and Bone Pit</div><div class="item-sub">Forja mágica e buraco perigoso</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Moat Room</div><div class="item-sub">Sala com água e portal</div></div></div>
+        </div>
+      </div>
+
+      <!-- MAPAS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">⚔️</span><h3>Mapas de Batalha</h3></div>
+        <div class="items-grid">
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Gloamreach — Mapa Completo</div><div class="item-sub">7 áreas da dungeon</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Sala dos Alquimistas</div><div class="item-sub">5 alquimistas + 2 esqueletos</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Sala dos Thools</div><div class="item-sub">Batalha final dos Thools</div></div></div>
+        </div>
+      </div>
+
+      <!-- NPCs -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">👤</span><h3>NPCs</h3></div>
+        <div class="items-grid">
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Duque Oswald (forma Thool)</div><div class="item-sub">Portrait + Sprite</div></div></div>
+        </div>
+      </div>
+
+      <!-- INIMIGOS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">💀</span><h3>Inimigos</h3></div>
+        <div class="items-grid">
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Grimhollow Thool</div><div class="item-sub">Portrait + Sprite</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Alquimista de Choir</div><div class="item-sub">Portrait + Sprite</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ATO 4 ===== -->
+    <section class="act-section" id="ato4">
+      <div class="act-header">
+        <div class="act-badge a4">Ato<br>4</div>
+        <div class="act-title-wrap">
+          <h2>Startower of Limm — Torre Final de King Chutter</h2>
+          <p>Cenas 24–25 &nbsp;·&nbsp; Portal, torre na montanha, boss final</p>
+        </div>
+        <div class="act-progress">
+          <div class="act-bar-wrap"><div class="act-bar a4" id="bar4"></div></div>
+          <span class="act-pct" id="pct4"></span>
+        </div>
+      </div>
+
+      <!-- CENÁRIOS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">🗺️</span><h3>Cenários / Locais</h3></div>
+        <div class="items-grid">
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Portal no Moat Room</div><div class="item-sub">Água com reflexo amarelo</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Startower — Exterior</div><div class="item-sub">Torre nas Granite Mountains</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Startower — Interior</div><div class="item-sub">Biblioteca / observatório</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Parapeito da Torre</div><div class="item-sub">Batalha final no topo</div></div></div>
+        </div>
+      </div>
+
+      <!-- MAPAS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">⚔️</span><h3>Mapas de Batalha</h3></div>
+        <div class="items-grid">
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Startower Interior — Fase 1</div><div class="item-sub">Golens de pergaminho</div></div></div>
+          <div class="item pending"><div class="item-check">✗</div><div><div class="item-label">Parapeito — Fase 2 (boss)</div><div class="item-sub">King Chutter, chão escorregadio</div></div></div>
+        </div>
+      </div>
+
+      <!-- NPCs -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">👤</span><h3>NPCs / Boss</h3></div>
+        <div class="items-grid">
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">King Chutter</div><div class="item-sub">Portrait + Sprite</div></div></div>
+        </div>
+      </div>
+
+      <!-- INIMIGOS -->
+      <div class="category">
+        <div class="category-header"><span class="cat-icon">💀</span><h3>Inimigos</h3></div>
+        <div class="items-grid">
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">King Chutter</div><div class="item-sub">Sprite de batalha</div></div></div>
+          <div class="item done"><div class="item-check">✓</div><div><div class="item-label">Golem de Pergaminho</div><div class="item-sub">Portrait + Sprite</div></div></div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+  // Conta itens por ato e calcula progresso
+  function calcProgress(actId) {
+    const section = document.getElementById(actId);
+    if (!section) return { done: 0, total: 0 };
+    const items = section.querySelectorAll('.item');
+    const done = section.querySelectorAll('.item.done').length;
+    return { done, total: items.length };
+  }
+
+  function updateBars() {
+    const acts = [
+      { id: 'ato1', bar: 'bar1', pct: 'pct1', sb: '1' },
+      { id: 'ato2', bar: 'bar2', pct: 'pct2', sb: '2' },
+      { id: 'ato3', bar: 'bar3', pct: 'pct3', sb: '3' },
+      { id: 'ato4', bar: 'bar4', pct: 'pct4', sb: '4' },
+    ];
+
+    let totalDone = 0, totalAll = 0;
+
+    acts.forEach(a => {
+      const { done, total } = calcProgress(a.id);
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      document.getElementById(a.bar).style.width = pct + '%';
+      document.getElementById(a.pct).textContent = `${done}/${total} (${pct}%)`;
+      document.getElementById('sb-bar' + a.sb).style.width = pct + '%';
+      document.getElementById('sb-pct' + a.sb).textContent = pct + '%';
+      totalDone += done;
+      totalAll += total;
+    });
+
+    const globalPct = totalAll > 0 ? Math.round((totalDone / totalAll) * 100) : 0;
+    document.getElementById('global-bar').style.width = globalPct + '%';
+    document.getElementById('global-label').textContent = `${totalDone}/${totalAll} itens (${globalPct}%)`;
+
+    // Stats cards
+    const pending = totalAll - totalDone;
+    document.getElementById('stats-row').innerHTML = `
+      <div class="stat-card">
+        <div class="num">${totalAll}</div>
+        <div class="label">Total de itens</div>
+        <div class="sub">Toda a campanha</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:var(--done-text)">${totalDone}</div>
+        <div class="label">Concluídos</div>
+        <div class="sub">${globalPct}% da campanha</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:var(--pending-text)">${pending}</div>
+        <div class="label">Pendentes</div>
+        <div class="sub">${100 - globalPct}% restante</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:var(--act1)">${calcProgress('ato1').done}/${calcProgress('ato1').total}</div>
+        <div class="label">Ato 1</div>
+        <div class="sub">Mhoried</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:var(--act2)">${calcProgress('ato2').done}/${calcProgress('ato2').total}</div>
+        <div class="label">Ato 2</div>
+        <div class="sub">Blackwoods</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:var(--act3)">${calcProgress('ato3').done}/${calcProgress('ato3').total}</div>
+        <div class="label">Ato 3</div>
+        <div class="sub">Gloamreach</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" style="color:var(--act4)">${calcProgress('ato4').done}/${calcProgress('ato4').total}</div>
+        <div class="label">Ato 4</div>
+        <div class="sub">Startower</div>
+      </div>
+    `;
+  }
+
+  function filterItems(mode, btn) {
+    document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.item').forEach(el => {
+      if (mode === 'all') el.style.display = '';
+      else if (mode === 'done') el.style.display = el.classList.contains('done') ? '' : 'none';
+      else if (mode === 'pending') el.style.display = el.classList.contains('pending') ? '' : 'none';
+    });
+  }
+
+  updateBars();
+</script>
+
+</body>
+</html>
