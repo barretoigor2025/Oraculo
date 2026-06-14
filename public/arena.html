@@ -8,6 +8,8 @@
 <script type="module">
 import { INIMIGOS_DATA } from './campaigns/mhoried/data/bestiary.js?v=3';
 window.INIMIGOS_DATA = INIMIGOS_DATA;
+import { NPCS as _NPCS_DATA } from './campaigns/mhoried/data/campaign.js?v=4';
+window._campanhaNPCs = _NPCS_DATA;
 import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import{getFirestore,doc,onSnapshot,updateDoc,increment}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 const _cfg=JSON.parse(localStorage.getItem('oraculo.fbConfig')||'null');
@@ -1991,124 +1993,123 @@ function _cinAnimarParaHex(unit, dc, dr, dur, onDone) {
   })(t0);
 }
 
-function _cinSpawnGregoras() {
-  if (unidades.find(u => u.id === '_greg_cin')) return;
-
-  const path = [
-    {col:6,row:13},{col:6,row:12},{col:6,row:11},{col:6,row:10},
-    {col:6,row:9},{col:6,row:8},{col:6,row:7},{col:6,row:6},
-    {col:6,row:5},{col:6,row:4},{col:6,row:3}
-  ];
-
-  _cinematicaEntrada(path, () => {
-    // Adiciona Gregoras ao canvas após entrar — usa sprite frente para dialog
-    const greg = {
-      nome:'Gregoras Pellos', tipo:'aliado_cin',
-      emoji:'📜', col:6, row:3,
-      hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10,
-      cor:'#8899bb',
-      imgSrc:'campaigns/mhoried/sprites/npc_gregoras_pellos.png',
-      img:null, portrait:null, flipH:false,
-      _ax:null, _ay:null, clipBottom:0, itens:[], id:'_greg_cin',
-    };
-    const img = new Image();
-    img.onload = () => { greg.img = img; renderUnits(); };
-    img.onerror = () => { greg.img = null; renderUnits(); };
-    img.src = greg.imgSrc;
-    unidades.push(greg);
-    render();
-    setTimeout(_cinMostrarDialogo, 300);
-  });
+// ── NPC sprites para cinematica ───────────────────────────────────────────
+// NPCs com sprite-sheet de caminhada (2 frames: costas/frente separados)
+const _NPC_CIN_DATA = {
+  npc_gregoras_pellos: {
+    nome:'Gregoras Pellos', titulo:'Senhor da Feira Negra',
+    spriteCostas:'campaigns/mhoried/sprites/npc_gregoras_pellos_costas.png',
+    spriteFrente:'campaigns/mhoried/sprites/npc_gregoras_pellos_frente.png',
+    frameW:362, frameH:1086, nFrames:2,
+  },
+};
+// NPCs sem sheet usam sprite único escalado (200×300)
+function _npcCinData(npcId) {
+  if (_NPC_CIN_DATA[npcId]) return _NPC_CIN_DATA[npcId];
+  const sprite = `campaigns/mhoried/sprites/${npcId}.png`;
+  const nome = (window._campanhaNPCs?.[npcId]?.nome) ||
+    npcId.replace(/^npc_/,'').replace(/_/g,' ')
+      .replace(/\b\w/g,c=>c.toUpperCase());
+  return { nome, titulo:'', spriteCostas:sprite, spriteFrente:sprite, frameW:200, frameH:300, nFrames:1 };
 }
 
-// ── Cinematica de entrada (início de batalha) ─────────────────────────────
-function _cinematicaEntrada(path, onComplete) {
+// ── Entrada cinematográfica genérica ─────────────────────────────────────
+// npcId: 'npc_gregoras_pellos' etc.
+// path:  [{col,row}, ...] do ponto de entrada até o destino
+// onChegou: callback após animação + letreiro
+function _cinEntradaNPC(npcId, path, onChegou) {
+  const unitId = '_cin_' + npcId;
+  if (unidades.find(u => u.id === unitId)) return;
+
+  const nd = _npcCinData(npcId);
+  const worldEl = document.getElementById('world');
+
   faseDoTurno = 'resolvendo';
   renderActionRow();
 
-  const worldEl = document.getElementById('world');
-  const fw = 362, fh = 1086;          // costas: 724×1086, 2 frames
-  const dispH = Math.round(HR * 3.2); // mesma altura dos units — 176px map
-  const sc    = dispH / fh;           // escala por altura, não largura
-  const dispW = Math.round(fw * sc);  // ~59px map
+  const dispH  = Math.round(HR * 3.2);
+  const sc     = dispH / nd.frameH;
+  const dispW  = Math.round(nd.frameW * sc);
 
   const div = document.createElement('div');
-  div.id = '_greg-entrada';
+  div.id = '_cin_div_' + npcId;
   div.style.cssText =
     `position:absolute;z-index:50;pointer-events:none;` +
     `width:${dispW}px;height:${dispH}px;` +
-    `background-image:url('campaigns/mhoried/sprites/npc_gregoras_pellos_costas.png');` +
+    `background-image:url('${nd.spriteCostas}');` +
     `background-repeat:no-repeat;` +
-    `background-size:${Math.round(fw*2*sc)}px ${dispH}px;` +
+    `background-size:${Math.round(nd.frameW*nd.nFrames*sc)}px ${dispH}px;` +
     `background-position:0 0;`;
   worldEl.appendChild(div);
 
-  function placeAt(col, row) {
-    const c    = hexCentro(col, row);
-    const foot = c.y + OOFF * 0.3;
-    div.style.left = Math.round(c.x - dispW / 2) + 'px';
-    div.style.top  = Math.round(foot - dispH) + 'px';
+  function placeAt(col, row){
+    const c = hexCentro(col, row);
+    div.style.left = Math.round(c.x - dispW/2) + 'px';
+    div.style.top  = Math.round(c.y + OOFF*.3 - dispH) + 'px';
   }
 
-  let stepIdx = 0, stepStart = null;
-  const stepDur = 700; // mais devagar
-  let frIdx = 0, lastFrTs = 0;
-  const FPS = 5; // 2 frames
-
+  let stepIdx=0, stepStart=null, frIdx=0, lastFrTs=0;
+  const stepDur=700, FPS=5;
   placeAt(path[0].col, path[0].row);
   renderUnits();
 
-  function loop(ts) {
-    if (ts - lastFrTs >= 1000 / FPS) {
-      lastFrTs = ts;
-      frIdx = (frIdx + 1) % 2;
-      div.style.backgroundPositionX = -(dispW * frIdx) + 'px';
+  function loop(ts){
+    if(nd.nFrames>1 && ts-lastFrTs>=1000/FPS){
+      lastFrTs=ts; frIdx=(frIdx+1)%nd.nFrames;
+      div.style.backgroundPositionX=-(dispW*frIdx)+'px';
     }
-    if (stepIdx < path.length - 1) {
-      if (!stepStart) stepStart = ts;
-      let t = Math.min((ts - stepStart) / stepDur, 1);
-      t = t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
-      const from = hexCentro(path[stepIdx].col,   path[stepIdx].row);
-      const to   = hexCentro(path[stepIdx+1].col, path[stepIdx+1].row);
-      const cx   = from.x + (to.x - from.x) * t;
-      const cy   = from.y + (to.y - from.y) * t;
-      const foot = cy + OOFF * 0.3;
-      div.style.left = Math.round(cx - dispW / 2) + 'px';
-      div.style.top  = Math.round(foot - dispH) + 'px';
-      if (t >= 1) { stepIdx++; stepStart = null; }
+    if(stepIdx<path.length-1){
+      if(!stepStart) stepStart=ts;
+      let t=Math.min((ts-stepStart)/stepDur,1);
+      t=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+      const from=hexCentro(path[stepIdx].col,path[stepIdx].row);
+      const to=hexCentro(path[stepIdx+1].col,path[stepIdx+1].row);
+      const cx=from.x+(to.x-from.x)*t, cy=from.y+(to.y-from.y)*t;
+      div.style.left=Math.round(cx-dispW/2)+'px';
+      div.style.top=Math.round(cy+OOFF*.3-dispH)+'px';
+      if(t>=1){stepIdx++;stepStart=null;}
     }
-    if (stepIdx < path.length - 1) {
-      requestAnimationFrame(loop);
-    } else {
+    if(stepIdx<path.length-1){ requestAnimationFrame(loop); return; }
+
+    // Chegou — virar para frente
+    placeAt(path[path.length-1].col, path[path.length-1].row);
+    setTimeout(()=>{
+      div.style.backgroundImage=`url('${nd.spriteFrente}')`;
+      div.style.backgroundPosition='0 0';
       placeAt(path[path.length-1].col, path[path.length-1].row);
-      _gregEntradaVirou(div, dispW, dispH, path[path.length-1], onComplete);
-    }
+      setTimeout(()=>{
+        mostrarLetreiro(nd.nome.toUpperCase(), nd.titulo, '', 2500, ()=>{
+          div.remove();
+          // Adiciona unit estático ao canvas
+          const unit={
+            nome:nd.nome, tipo:'aliado_cin',
+            emoji:'👤', col:path[path.length-1].col, row:path[path.length-1].row,
+            hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10, cor:'#8899bb',
+            imgSrc:nd.spriteFrente,
+            img:null, portrait:null, flipH:false,
+            _ax:null, _ay:null, clipBottom:0, itens:[], id:unitId,
+          };
+          _loadSprite(unit);
+          unidades.push(unit);
+          render();
+          if(onChegou) setTimeout(()=>onChegou(unit), 300);
+        });
+      }, 500);
+    }, 350);
   }
   requestAnimationFrame(loop);
 }
+window._cinEntradaNPC = _cinEntradaNPC;
 
-function _gregEntradaVirou(div, dispW, dispH, destHex, onComplete) {
-  setTimeout(() => {
-    // frente: mesma escala do costas (dispH = HR*3.2 / sc = dispH/fh)
-    const fw = 362, fh = 1086;
-    const sc = dispH / fh;
-    const dw = Math.round(fw * sc); // mesmo dispW
-    div.style.backgroundImage    = "url('campaigns/mhoried/sprites/npc_gregoras_pellos_frente.png')";
-    div.style.backgroundSize     = `${Math.round(fw*2*sc)}px ${dispH}px`;
-    div.style.backgroundPosition = '0 0';
-    div.style.width  = dw + 'px';
-    div.style.height = dispH + 'px';
-    const c    = hexCentro(destHex.col, destHex.row);
-    const foot = c.y + OOFF * 0.3;
-    div.style.left = Math.round(c.x - dw/2) + 'px';
-    div.style.top  = Math.round(foot - dispH) + 'px';
-    setTimeout(() => {
-      mostrarLetreiro('GREGORAS PELLOS', 'Senhor da Feira Negra', '', 2500, () => {
-        div.remove();
-        onComplete?.();
-      });
-    }, 500);
-  }, 350);
+function _cinSpawnGregoras() {
+  _cinEntradaNPC('npc_gregoras_pellos', [
+    {col:6,row:13},{col:6,row:12},{col:6,row:11},{col:6,row:10},
+    {col:6,row:9},{col:6,row:8},{col:6,row:7},{col:6,row:6},
+    {col:6,row:5},{col:6,row:4},{col:6,row:3}
+  ], (unit) => {
+    if(unit) unit.id = '_greg_cin'; // compat com _cinMostrarDialogo
+    setTimeout(_cinMostrarDialogo, 0);
+  });
 }
 
 async function _cinMostrarDialogo() {
