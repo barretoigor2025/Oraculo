@@ -569,9 +569,8 @@ function criarInimigo(bestiaryId, col, row, overrides){
     col, row,
     emoji:       en.emoji || '💀',
     cor:         en.cor   || '#4a0000',
-    imgSrc:      `portraits/enemy_${bestiaryId}_frente.png`,
-    imgSrcAtaque:`portraits/enemy_${bestiaryId}_frente.png`,
-    frameW:      362,
+    imgSrc:      `sprites/inimigo_${bestiaryId}.png`,
+    imgSrcAtaque:`sprites/inimigo_${bestiaryId}.png`,
     img:         null,
     tipo:        'inimigo',
     mov:         g.move  ?? 4,
@@ -1681,8 +1680,8 @@ function renderUnits(){
       const clip=u.clipBottom||0;
       const srcW = u.frameW ?? u.img.naturalWidth;
       const srcH = u.img.naturalHeight*(1-clip);
-      // Se frameW definido, mantém proporção do frame (cap 2× para retratos altos); caso contrário, quadrado
-      const drawH = u.frameW ? Math.min(sw*(u.img.naturalHeight/u.frameW),sw*2)*(1-clip) : sw*(1-clip);
+      // Se frameW definido, mantém proporção do frame; caso contrário, quadrado (comportamento padrão)
+      const drawH = u.frameW ? sw*(u.img.naturalHeight/u.frameW)*(1-clip) : sw*(1-clip);
       ctxU.save();
       if(u===selUnit) ctxU.filter='drop-shadow(0 0 8px #ffd028) drop-shadow(0 0 14px #ffd02888)';
       if(u.flipH){ ctxU.translate(2*x,0); ctxU.scale(-1,1); }
@@ -3000,17 +2999,7 @@ function _loadSprite(u){
   if(!u) return;
   const m=u.imgSrc.match(/sprites\/([a-z_]+)_([mf])_costas\.png/);
   if(!m){
-    const img=new Image();
-    img.onload=()=>{u.img=img;renderUnits();};
-    img.onerror=()=>{
-      if(u.bestiaryId){
-        const fb=new Image();
-        fb.onload=()=>{u.img=fb;delete u.frameW;renderUnits();};
-        fb.onerror=()=>renderUnits();
-        fb.src=`sprites/inimigo_${u.bestiaryId}.png`;
-      } else renderUnits();
-    };
-    img.src=u.imgSrc; return;
+    const img=new Image(); img.onload=()=>{u.img=img;renderUnits();}; img.onerror=()=>renderUnits(); img.src=u.imgSrc; return;
   }
   const[,cid,g]=m; const alt=g==='m'?'f':'m';
   const queue=[`sprites/${cid}_${g}_costas.png`,`sprites/${cid}_${alt}_costas.png`,`sprites/${cid}_costas.png`];
