@@ -569,8 +569,9 @@ function criarInimigo(bestiaryId, col, row, overrides){
     col, row,
     emoji:       en.emoji || '💀',
     cor:         en.cor   || '#4a0000',
-    imgSrc:      `sprites/inimigo_${bestiaryId}.png`,
-    imgSrcAtaque:`sprites/inimigo_${bestiaryId}.png`,
+    imgSrc:      `portraits/enemy_${bestiaryId}_frente.png`,
+    imgSrcAtaque:`portraits/enemy_${bestiaryId}_frente.png`,
+    frameW:      362,
     img:         null,
     tipo:        'inimigo',
     mov:         g.move  ?? 4,
@@ -1680,8 +1681,8 @@ function renderUnits(){
       const clip=u.clipBottom||0;
       const srcW = u.frameW ?? u.img.naturalWidth;
       const srcH = u.img.naturalHeight*(1-clip);
-      // Se frameW definido, mantém proporção do frame; caso contrário, quadrado (comportamento padrão)
-      const drawH = u.frameW ? sw*(u.img.naturalHeight/u.frameW)*(1-clip) : sw*(1-clip);
+      // Se frameW definido, mantém proporção do frame (cap 2× para retratos altos); caso contrário, quadrado
+      const drawH = u.frameW ? Math.min(sw*(u.img.naturalHeight/u.frameW),sw*2)*(1-clip) : sw*(1-clip);
       ctxU.save();
       if(u===selUnit) ctxU.filter='drop-shadow(0 0 8px #ffd028) drop-shadow(0 0 14px #ffd02888)';
       if(u.flipH){ ctxU.translate(2*x,0); ctxU.scale(-1,1); }
@@ -1976,14 +1977,16 @@ function _cinSpawnGregoras() {
   if (unidades.find(u => u.id === '_greg_cin')) return;
 
   const path = [
-    {col:1,row:9},{col:2,row:9},{col:3,row:8},{col:4,row:8},{col:5,row:7}
+    {col:6,row:13},{col:6,row:12},{col:6,row:11},{col:6,row:10},
+    {col:6,row:9},{col:6,row:8},{col:6,row:7},{col:6,row:6},
+    {col:6,row:5},{col:6,row:4},{col:6,row:3}
   ];
 
   _cinematicaEntrada(path, () => {
     // Adiciona Gregoras ao canvas após entrar — usa sprite frente para dialog
     const greg = {
       nome:'Gregoras Pellos', tipo:'aliado_cin',
-      emoji:'📜', col:5, row:7,
+      emoji:'📜', col:6, row:3,
       hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10,
       cor:'#8899bb',
       imgSrc:'sprites/npc_gregoras_pellos.png',
@@ -2176,6 +2179,21 @@ async function _cinMostrarDialogo() {
     bp.style.height = '100%';
   });
 
+  // ── Mobile keyboard: shrink panel so input stays visible ──
+  function _onVVResize() {
+    if (!window.visualViewport) return;
+    const vvH = window.visualViewport.height;
+    const winH = window.innerHeight;
+    const kbH  = Math.max(0, winH - vvH);
+    bp.style.height = (vvH) + 'px';
+    bp.style.top    = '0px';
+    bp.style.bottom = kbH > 0 ? kbH + 'px' : '';
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', _onVVResize);
+    window.visualViewport.addEventListener('scroll', _onVVResize);
+  }
+
   const logEl   = document.getElementById('cin-conv-log');
   const input   = document.getElementById('cin-conv-input');
   const btnSend = document.getElementById('cin-conv-send');
@@ -2306,7 +2324,13 @@ REGRAS: Português brasileiro. Máximo 2-3 frases por resposta — você não di
 
   btnSend.addEventListener('click', enviarFala);
   input.addEventListener('keydown', e => { if(e.key==='Enter') enviarFala(); });
-  btnSair.addEventListener('click', _cinTransicaoCastelo);
+  btnSair.addEventListener('click', () => {
+    if (window.visualViewport && typeof _onVVResize === 'function') {
+      window.visualViewport.removeEventListener('resize', _onVVResize);
+      window.visualViewport.removeEventListener('scroll', _onVVResize);
+    }
+    _cinTransicaoCastelo();
+  });
 
   // Narrativa introdutória e primeira fala de Gregoras
   await new Promise(r => setTimeout(r, 400));
@@ -2976,7 +3000,17 @@ function _loadSprite(u){
   if(!u) return;
   const m=u.imgSrc.match(/sprites\/([a-z_]+)_([mf])_costas\.png/);
   if(!m){
-    const img=new Image(); img.onload=()=>{u.img=img;renderUnits();}; img.onerror=()=>renderUnits(); img.src=u.imgSrc; return;
+    const img=new Image();
+    img.onload=()=>{u.img=img;renderUnits();};
+    img.onerror=()=>{
+      if(u.bestiaryId){
+        const fb=new Image();
+        fb.onload=()=>{u.img=fb;delete u.frameW;renderUnits();};
+        fb.onerror=()=>renderUnits();
+        fb.src=`sprites/inimigo_${u.bestiaryId}.png`;
+      } else renderUnits();
+    };
+    img.src=u.imgSrc; return;
   }
   const[,cid,g]=m; const alt=g==='m'?'f':'m';
   const queue=[`sprites/${cid}_${g}_costas.png`,`sprites/${cid}_${alt}_costas.png`,`sprites/${cid}_costas.png`];
