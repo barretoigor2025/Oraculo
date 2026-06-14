@@ -1986,8 +1986,8 @@ function _cinSpawnGregoras() {
       emoji:'📜', col:5, row:7,
       hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10,
       cor:'#8899bb',
-      imgSrc:'sprites/npc_gregoras_pellos_frente.png',
-      img:null, portrait:null, flipH:false, frameW:362,
+      imgSrc:'sprites/npc_gregoras_pellos.png',
+      img:null, portrait:null, flipH:false,
       _ax:null, _ay:null, clipBottom:0, itens:[], id:'_greg_cin',
     };
     const img = new Image();
@@ -2006,10 +2006,10 @@ function _cinematicaEntrada(path, onComplete) {
   renderActionRow();
 
   const worldEl = document.getElementById('world');
-  const fw = 362, fh = 1086;          // novo sprite costas: 724×1086, 2 frames
-  const dispW = Math.round(HR * 3.2);
-  const sc    = dispW / fw;
-  const dispH = Math.round(fh * sc);
+  const fw = 362, fh = 1086;          // costas: 724×1086, 2 frames
+  const dispH = Math.round(HR * 3.2); // mesma altura dos units — 176px map
+  const sc    = dispH / fh;           // escala por altura, não largura
+  const dispW = Math.round(fw * sc);  // ~59px map
 
   const div = document.createElement('div');
   div.id = '_greg-entrada';
@@ -2068,19 +2068,19 @@ function _cinematicaEntrada(path, onComplete) {
 
 function _gregEntradaVirou(div, dispW, dispH, destHex, onComplete) {
   setTimeout(() => {
-    // novo sprite frente: 724×1086, 2 frames — mesma proporção que costas
+    // frente: mesma escala do costas (dispH = HR*3.2 / sc = dispH/fh)
     const fw = 362, fh = 1086;
-    const sc = dispW / fw;
-    const dh = Math.round(fh * sc);
+    const sc = dispH / fh;
+    const dw = Math.round(fw * sc); // mesmo dispW
     div.style.backgroundImage    = "url('sprites/npc_gregoras_pellos_frente.png')";
-    div.style.backgroundSize     = `${Math.round(fw*2*sc)}px ${dh}px`;
+    div.style.backgroundSize     = `${Math.round(fw*2*sc)}px ${dispH}px`;
     div.style.backgroundPosition = '0 0';
-    div.style.width  = dispW + 'px';
-    div.style.height = dh + 'px';
+    div.style.width  = dw + 'px';
+    div.style.height = dispH + 'px';
     const c    = hexCentro(destHex.col, destHex.row);
     const foot = c.y + OOFF * 0.3;
-    div.style.left = Math.round(c.x - dispW/2) + 'px';
-    div.style.top  = Math.round(foot - dh) + 'px';
+    div.style.left = Math.round(c.x - dw/2) + 'px';
+    div.style.top  = Math.round(foot - dispH) + 'px';
     setTimeout(() => {
       mostrarLetreiro('GREGORAS PELLOS', 'Senhor da Feira Negra', '', 2500, () => {
         div.remove();
