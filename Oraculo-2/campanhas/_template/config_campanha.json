@@ -1,0 +1,10 @@
+{
+  "id": "_template",
+  "nome": "Template de Campanha",
+  "versao": "0.1.0",
+  "status": "rascunho",
+  "descricao": "Modelo base para novas campanhas.",
+  "material_original": "material_original/campanha_original.pdf",
+  "roteiro_principal": "roteiro/roteiro_jogavel.md",
+  "catalogo": "../../catalogo/_template"
+}
