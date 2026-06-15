@@ -26,6 +26,7 @@
     border: 1px solid rgba(200,160,64,0.18);
     border-radius: 10px;
     box-shadow: 0 0 60px rgba(0,0,0,0.9);
+    max-width: 100%;
   }
   canvas#cv { display: block; }
   #chars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -36,17 +37,17 @@
   }
   .standee img {
     display: block; width: auto;
-    filter: drop-shadow(0 6px 18px rgba(0,0,0,0.9));
+    filter: drop-shadow(0 4px 14px rgba(0,0,0,0.92));
   }
   .standee-label {
-    font-size: 9px; color: rgba(200,175,100,0.8);
-    letter-spacing: .8px; text-transform: uppercase; text-align: center;
-    white-space: nowrap; margin-top: 3px;
+    font-size: 8px; color: rgba(220,195,130,0.85);
+    letter-spacing: .8px; text-transform: uppercase;
+    white-space: nowrap; margin-top: 2px;
     text-shadow: 0 1px 4px rgba(0,0,0,0.95);
   }
   .standee-sub {
-    font-size: 8px; color: rgba(190,165,90,0.38);
-    letter-spacing: .5px; text-align: center;
+    font-size: 7px; color: rgba(190,165,90,0.4);
+    letter-spacing: .4px;
     text-shadow: 0 1px 3px rgba(0,0,0,0.9);
   }
   a.back {
@@ -60,7 +61,7 @@
 </head>
 <body>
 <h1>Standees — Mhoried</h1>
-<div class="subtitle">Proporção relativa de cada classe no tabuleiro hexagonal (escala ×2)</div>
+<div class="subtitle">Porte relativo de cada classe · malha hexagonal escala ×2</div>
 <div id="wrap">
   <canvas id="cv"></canvas>
   <div id="chars"></div>
@@ -68,24 +69,35 @@
 <a class="back" href="catalog.html">← Catálogo</a>
 
 <script>
-// ── Constantes do tabuleiro (mesmas do arena.html × 2) ───────────────────
-// arena.html: HR=55, CS=82, RS=95, OOFF=48
-const SCALE = 2;
-const HR    = 55 * SCALE;      // 110  – raio do hex
-const CS    = 82 * SCALE;      // 164  – espaçamento entre colunas
-const RS    = 95 * SCALE;      // 190  – espaçamento entre linhas
-const OOFF  = 48 * SCALE;      // 96   – offset de colunas ímpares
+// ── Geometria idêntica ao arena.html, escala ×2 ──────────────────────────
+const SC   = 2;
+const HR   = 55 * SC;    // 110 – raio hex
+const CS   = 82 * SC;    // 164 – espaço entre colunas
+const RS   = 95 * SC;    // 190 – espaço entre linhas
+const OOFF = 48 * SC;    //  96 – offset coluna ímpar
 
-// Largura do sprite no arena: HR*3.2. Aqui usamos a mesma fórmula.
-const SW    = Math.round(HR * 3.2); // 352px – largura do sprite no canvas
+// Grid exibido: 8 colunas × 4 linhas (chars nas linhas 0 e 2)
+const GRID_COLS = 8;
+const GRID_ROWS = 4;
+const CHAR_COLS = 6;   // cols 0-5 ocupadas por personagens
+const ROW_M  = 0;      // linha Masculino
+const ROW_F  = 2;      // linha Feminino
 
-// Altura máxima de display (Bárbaro M, o mais alto, armazenado em 400px)
-const MAX_H = Math.round(SW * 0.78); // 274px
+// Origem do grid — garante espaço para o personagem mais alto acima da linha 0
+const CHAR_MAX_DISP = 260;  // altura máxima de display (Bárbaro M)
+const GX0 = HR + 20;        // 130
+const GY0 = CHAR_MAX_DISP + 20;  // 280
 
-// Escala de altura: cada classe tem sua altura armazenada; aplicamos o
-// mesmo fator que transformaria Bárbaro M (400px) em MAX_H (274px)
-const H_SCALE = MAX_H / 400; // ≈ 0.685
+// Centro do hex (col, row)
+const hexCx = col       => GX0 + col * CS;
+const hexCy = (col,row) => GY0 + row * RS + (col % 2 === 1 ? OOFF : 0);
+// Pé do personagem: ligeiramente abaixo do centro (como no arena)
+const footX = col       => hexCx(col);
+const footY = (col,row) => hexCy(col, row) + Math.round(HR * 0.35);
 
+// ── Alturas dos sprites (armazenadas nos arquivos PNG) ───────────────────
+// Foram definidas com hierarquia: Bárbaro > Guerreiro > Arqueiro > Ladino > Mago ≥ Clérigo
+// Aqui comprimimos o range de display para evitar diferenças absurdas
 const CLASSES = [
   { id:'barbaro',   nome:'Bárbaro',   hm:400, hf:375 },
   { id:'guerreiro', nome:'Guerreiro', hm:355, hf:330 },
@@ -95,124 +107,106 @@ const CLASSES = [
   { id:'clerigo',   nome:'Clérigo',   hm:252, hf:234 },
 ];
 
-// ── Layout ────────────────────────────────────────────────────────────────
-const NCOLS     = 6;
-const LABEL_H   = 38;   // espaço para nome + gênero abaixo do pé
+// Mapeamento linear das alturas armazenadas [234,400] → display [215,275]
+// Reduz o ratio de 1.71 para ~1.28, mantendo a hierarquia visível
+const SH_MIN = 234, SH_MAX = 400;
+const DH_MIN = 215, DH_MAX = 275;
+function dispH(storedH) {
+  return Math.round(DH_MIN + (storedH - SH_MIN) / (SH_MAX - SH_MIN) * (DH_MAX - DH_MIN));
+}
 
-// x do centro de cada coluna (hex[0] a hex[5])
-const GX0 = HR + 20;          // margem esquerda
-const hexCx = col => GX0 + col * CS;
+// ── Dimensões do canvas ───────────────────────────────────────────────────
+// Largura: col 0 até col GRID_COLS-1
+const CANVAS_W = GX0 + (GRID_COLS - 1) * CS + HR + 30;
+// Altura: cobre até linha GRID_ROWS-1 (ímpar = maior y) + labels
+const bottomHex = GY0 + (GRID_ROWS - 1) * RS + OOFF + HR;  // fundo do hex mais baixo
+const bottomLabel = footY(1, ROW_F) + 34;                   // labels da linha F (col ímpar)
+const CANVAS_H = Math.max(bottomHex, bottomLabel) + 30;
 
-// Linha 0 (Masculino): hex center y
-// Deve ter espaço suficiente acima para o personagem mais alto
-const FOOT_OFFSET = Math.round(HR * 0.38);  // pé ligeiramente abaixo do centro
-const GY_M = MAX_H + 30 + FOOT_OFFSET;      // y do hex center linha M
-// ex: 274 + 30 + 42 = 346
-
-// Linha 1 (Feminino): separadas por espaço visual
-const ROW_GAP = MAX_H + LABEL_H + 40;       // espaço entre pés: 274+38+40=352
-const GY_F    = GY_M + ROW_GAP;             // y do hex center linha F
-
-// pé dos personagens (foot = centro hex + FOOT_OFFSET)
-const footM = GY_M + FOOT_OFFSET;
-const footF = GY_F + FOOT_OFFSET;
-
-// Dimensões do canvas
-const CANVAS_W = 2 * GX0 + (NCOLS - 1) * CS;
-const CANVAS_H = footF + LABEL_H + 30;
-
-// ── Canvas ────────────────────────────────────────────────────────────────
+// ── Canvas + DOM ──────────────────────────────────────────────────────────
 const cv   = document.getElementById('cv');
 const wrap = document.getElementById('wrap');
 cv.width  = CANVAS_W;
 cv.height = CANVAS_H;
 wrap.style.width  = CANVAS_W + 'px';
 wrap.style.height = CANVAS_H + 'px';
-
 const ctx = cv.getContext('2d');
 
-// Background
+// Fundo: imagem do mercado
 const bg = new Image();
 bg.src = 'catalogo/mhoried/cenarios/batalha_hex/feira_phanourios/imagem/feira-limpa.png';
-bg.onload = drawAll;
+bg.onload  = drawAll;
 bg.onerror = drawAll;
 
-// ── Desenho do hex ────────────────────────────────────────────────────────
+// ── Funções de desenho ────────────────────────────────────────────────────
 function hexPath(x, y) {
   ctx.beginPath();
   for (let i = 0; i < 6; i++) {
-    const a  = Math.PI / 3 * i;
-    const px = x + HR * Math.cos(a);
-    const py = y + HR * Math.sin(a);
-    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    const a = Math.PI / 3 * i;
+    i === 0
+      ? ctx.moveTo(x + HR * Math.cos(a), y + HR * Math.sin(a))
+      : ctx.lineTo(x + HR * Math.cos(a), y + HR * Math.sin(a));
   }
   ctx.closePath();
 }
 
-// ── Base de mármore (elipse isométrica) ──────────────────────────────────
+function isCharHex(col, row) {
+  return (row === ROW_M || row === ROW_F) && col < CHAR_COLS;
+}
+
 function drawMarbleBase(x, y) {
-  const rx = HR * 0.70;
-  const ry = HR * 0.20;
-
-  // Sombra
+  const rx = HR * 0.65, ry = HR * 0.20;
+  // Sombra projetada
   ctx.beginPath();
-  ctx.ellipse(x, y + ry * 0.7, rx * 1.08, ry * 0.5, 0, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.ellipse(x, y + ry * 0.8, rx * 1.06, ry * 0.45, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
   ctx.fill();
-
-  // Corpo da base com gradiente de mármore escuro
-  const g = ctx.createRadialGradient(x - rx * 0.28, y - ry * 0.25, 0, x, y, rx);
-  g.addColorStop(0,   '#484848');
-  g.addColorStop(0.2, '#2c2c2c');
-  g.addColorStop(0.6, '#141414');
-  g.addColorStop(1,   '#060606');
+  // Base com gradiente
+  const g = ctx.createRadialGradient(x - rx * 0.28, y - ry * 0.3, 0, x, y, rx);
+  g.addColorStop(0, '#4c4c4c');
+  g.addColorStop(0.3, '#282828');
+  g.addColorStop(0.7, '#121212');
+  g.addColorStop(1,   '#050505');
   ctx.beginPath();
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
   ctx.fillStyle = g;
   ctx.fill();
-
-  // Veias brancas (determinísticas por posição)
+  // Veias brancas (determinísticas)
   ctx.save();
   ctx.beginPath();
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
   ctx.clip();
-  const seed = Math.round(x * 17 + y * 11);
-  for (let v = 0; v < 7; v++) {
-    const r0 = ((seed * 1103515245 + v * 12345)   >>> 0) / 4294967296;
-    const r1 = ((seed * 214013     + v * 2531011)  >>> 0) / 4294967296;
-    const r2 = ((seed * 69621      + v * 1234567)  >>> 0) / 4294967296;
-    const x0  = x + (r0 - 0.5) * rx * 2.1;
-    const y0  = y + (r1 - 0.5) * ry * 2.1;
-    const x1  = x + (r2 - 0.5) * rx * 2.1;
-    const y1  = y + ((r1 + 0.4) % 1 - 0.5) * ry * 2.1;
+  const seed = (x * 17 + y * 11) | 0;
+  for (let v = 0; v < 8; v++) {
+    const r0 = ((seed * 1103515245 + v * 12345)  >>> 0) / 4294967296;
+    const r1 = ((seed * 214013    + v * 2531011)  >>> 0) / 4294967296;
+    const r2 = ((seed * 69621     + v * 1234567)  >>> 0) / 4294967296;
     ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.strokeStyle = `rgba(218,218,218,${0.035 + v * 0.016})`;
-    ctx.lineWidth = 0.4 + r0 * 0.9;
+    ctx.moveTo(x + (r0 - .5) * rx * 2, y + (r1 - .5) * ry * 2);
+    ctx.lineTo(x + (r2 - .5) * rx * 2, y + ((r1 + .5) % 1 - .5) * ry * 2);
+    ctx.strokeStyle = `rgba(220,220,220,${.03 + v * .016})`;
+    ctx.lineWidth = .4 + r0 * .8;
     ctx.stroke();
   }
   ctx.restore();
-
-  // Borda brilhante
+  // Borda
   ctx.beginPath();
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(160,160,160,0.22)';
+  ctx.strokeStyle = 'rgba(150,150,150,0.2)';
   ctx.lineWidth = 1;
   ctx.stroke();
 }
 
-// ── Renderização completa ─────────────────────────────────────────────────
 function drawAll() {
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
-  // Fundo: imagem do mercado (recortada para cobrir o canvas)
+  // ── Fundo ────────────────────────────────────────────────────────────
   if (bg.complete && bg.naturalWidth > 0) {
     const bsr = bg.naturalWidth / bg.naturalHeight;
     const csr = CANVAS_W / CANVAS_H;
     let bw, bh, bx, by;
     if (bsr > csr) { bh = CANVAS_H; bw = bh * bsr; bx = (CANVAS_W - bw) / 2; by = 0; }
-    else           { bw = CANVAS_W; bh = bw / bsr; bx = 0; by = (CANVAS_H - bh) / 2; }
+    else           { bw = CANVAS_W; bh = bw / bsr;  bx = 0; by = (CANVAS_H - bh) / 2; }
     ctx.drawImage(bg, bx, by, bw, bh);
     ctx.fillStyle = 'rgba(8,6,4,0.60)';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
@@ -221,58 +215,54 @@ function drawAll() {
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
   }
 
-  // Hexes e bases de mármore para ambas as linhas
-  for (const [row, gy, fy, rowLabel] of [
-    [0, GY_M, footM, '♂ Masculino'],
-    [1, GY_F, footF, '♀ Feminino'],
-  ]) {
-    for (let col = 0; col < NCOLS; col++) {
+  // ── Malha hexagonal completa ─────────────────────────────────────────
+  for (let row = 0; row < GRID_ROWS; row++) {
+    for (let col = 0; col < GRID_COLS; col++) {
       const cx = hexCx(col);
+      const cy = hexCy(col, row);
+      const charHex = isCharHex(col, row);
 
-      // Hex fill (levíssimo)
-      hexPath(cx, gy);
-      ctx.fillStyle = 'rgba(255,220,120,0.04)';
+      // Fill: hexes de personagem levemente iluminados
+      hexPath(cx, cy);
+      if (charHex) {
+        ctx.fillStyle = row === ROW_M
+          ? 'rgba(80,120,200,0.06)'   // azulado para Masculino
+          : 'rgba(200,80,120,0.06)';  // rosado para Feminino
+      } else {
+        ctx.fillStyle = 'rgba(255,210,80,0.03)';
+      }
       ctx.fill();
 
-      // Hex outline
-      hexPath(cx, gy);
-      ctx.strokeStyle = 'rgba(200,160,64,0.30)';
-      ctx.lineWidth = 1.5;
+      // Outline
+      hexPath(cx, cy);
+      ctx.strokeStyle = charHex
+        ? 'rgba(200,160,64,0.45)'
+        : 'rgba(200,160,64,0.16)';
+      ctx.lineWidth = charHex ? 1.5 : 1;
       ctx.stroke();
-
-      // Base de mármore no ponto do pé
-      drawMarbleBase(cx, fy);
     }
-
-    // Label de linha (canto esquerdo)
-    ctx.font = '10px Georgia';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = 'rgba(200,165,80,0.30)';
-    ctx.fillText(rowLabel, 4, gy + HR + 14);
   }
 
-  // Linha divisória entre M e F
-  const midY = (footM + GY_F - HR) / 2;
-  ctx.beginPath();
-  ctx.moveTo(GX0 - HR - 10, midY);
-  ctx.lineTo(CANVAS_W - GX0 + HR + 10, midY);
-  ctx.strokeStyle = 'rgba(200,160,64,0.10)';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([4, 8]);
-  ctx.stroke();
-  ctx.setLineDash([]);
+  // ── Bases de mármore nos hexes de personagem ─────────────────────────
+  for (let row of [ROW_M, ROW_F]) {
+    for (let col = 0; col < CHAR_COLS; col++) {
+      drawMarbleBase(footX(col), footY(col, row));
+    }
+  }
 
-  // Overlay de informações (título + escala)
-  ctx.font = 'bold 11px Georgia';
-  ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(200,165,80,0.5)';
-  ctx.fillText('HR = 55px × 2 (escala arena)', CANVAS_W / 2, CANVAS_H - 10);
+  // ── Label de linha ────────────────────────────────────────────────────
+  ctx.font = '9px Georgia';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(200,165,80,0.32)';
+  const labelX = GX0 - HR - 8;
+  ctx.fillText('♂', labelX, hexCy(0, ROW_M) + 5);
+  ctx.fillText('♀', labelX, hexCy(0, ROW_F) + 5);
 
-  // Posiciona as imagens HTML
+  // ── Posiciona os <img> dos personagens ───────────────────────────────
   placeStandees();
 }
 
-// ── Posicionamento HTML dos sprites ──────────────────────────────────────
+// ── HTML overlay: sprites ─────────────────────────────────────────────────
 function spritePath(id, g) {
   return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png`;
 }
@@ -282,26 +272,27 @@ function placeStandees() {
   container.innerHTML = '';
 
   const rows = [
-    { g:'m', fy: footM, label:'Masculino' },
-    { g:'f', fy: footF, label:'Feminino'  },
+    { g:'m', row: ROW_M, label:'Masculino' },
+    { g:'f', row: ROW_F, label:'Feminino'  },
   ];
 
-  rows.forEach(row => {
+  rows.forEach(({ g, row, label }) => {
     CLASSES.forEach((cls, col) => {
-      const cx      = hexCx(col);
-      const storedH = row.g === 'm' ? cls.hm : cls.hf;
-      const dispH   = Math.round(storedH * H_SCALE);
+      const storedH = g === 'm' ? cls.hm : cls.hf;
+      const dh  = dispH(storedH);
+      const cx  = footX(col);
+      const fy  = footY(col, row);
 
       const div = document.createElement('div');
-      div.className = 'standee';
+      div.className  = 'standee';
       div.style.left = cx + 'px';
-      div.style.top  = (row.fy - dispH - 2) + 'px';   // imagem acima do pé
+      div.style.top  = (fy - dh - 2) + 'px';
 
       const img = document.createElement('img');
-      img.src    = spritePath(cls.id, row.g);
-      img.alt    = `${cls.nome} ${row.label}`;
-      img.style.height = dispH + 'px';
-      img.onerror = () => { img.style.opacity = '0.08'; };
+      img.src          = spritePath(cls.id, g);
+      img.alt          = `${cls.nome} ${label}`;
+      img.style.height = dh + 'px';
+      img.onerror = () => { img.style.opacity = '0.06'; };
 
       const lbl = document.createElement('div');
       lbl.className   = 'standee-label';
@@ -309,7 +300,7 @@ function placeStandees() {
 
       const sub = document.createElement('div');
       sub.className   = 'standee-sub';
-      sub.textContent = row.label;
+      sub.textContent = label;
 
       div.append(img, lbl, sub);
       container.appendChild(div);
