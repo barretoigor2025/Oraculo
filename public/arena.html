@@ -470,7 +470,7 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 <body>
 
 <div id="world">
-  <img id="mapa" src="campaigns/mhoried/maps/feira-limpa.png" alt="">
+  <img id="mapa" src="catalogo/mhoried/cenarios/batalha_hex/feira_phanourios/imagem/feira-limpa.png" alt="">
   <canvas id="cv-terrain"></canvas>
   <canvas id="cv-sel"></canvas>
   <canvas id="cv-hex"></canvas>
@@ -882,11 +882,11 @@ const _hcd = _HERO_CLASS_DATA[_heroClassId] || _HERO_CLASS_DATA.mago;
 // ══════════════════════════════════════════
 let unidades = [
   { nome:_hcd.nome, col:_fbIsHost?4:6, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
-    imgSrc:`campaigns/mhoried/sprites/${_heroClassId}_${_heroGender}_costas.png`,
-    imgSrcAtaque:`campaigns/mhoried/sprites/${_heroClassId}_${_heroGender}.png`,
+    imgSrc:`catalogo/mhoried/classes/${_heroClassId}/sprites/costas/${_heroClassId}_${_heroGender}_costas.png`,
+    imgSrcAtaque:`catalogo/mhoried/classes/${_heroClassId}/sprites/frente/${_heroClassId}_${_heroGender}_frente.png`,
     img:null, tipo:'heroi', mov:_hcd.mov,
     hp:_hcd.hp, maxHp:_hcd.hp, sp:_hcd.sp, maxSp:_hcd.sp,
-    portrait:`campaigns/mhoried/portraits/${_heroClassId}_${_heroGender}.png`,
+    portrait:`catalogo/mhoried/classes/${_heroClassId}/retrato/${_heroClassId}_${_heroGender}_retrato.png`,
     itens:_hcd.itens },
   criarInimigo('espantalho_assombrado', 6, 3),
 ];
@@ -1997,15 +1997,15 @@ function _cinAnimarParaHex(unit, dc, dr, dur, onDone) {
 const _NPC_CIN_DATA = {
   npc_gregoras_pellos: {
     nome:'Gregoras Pellos', titulo:'Senhor da Feira Negra',
-    spriteCostas:'campaigns/mhoried/sprites/npc_gregoras_pellos_costas.png',
-    spriteFrente:'campaigns/mhoried/sprites/npc_gregoras_pellos_frente.png',
+    spriteCostas:'catalogo/mhoried/npcs/npc_gregoras_pellos/sprites/costas/npc_gregoras_pellos_costas.png',
+    spriteFrente:'catalogo/mhoried/npcs/npc_gregoras_pellos/sprites/frente/npc_gregoras_pellos_frente.png',
     frameW:362, frameH:1086, nFrames:2,
   },
 };
 // NPCs sem sheet usam sprite único escalado (200×300)
 function _npcCinData(npcId) {
   if (_NPC_CIN_DATA[npcId]) return _NPC_CIN_DATA[npcId];
-  const sprite = `campaigns/mhoried/sprites/${npcId}.png`;
+  const sprite = `catalogo/mhoried/npcs/${npcId}/sprites/frente/${npcId}_frente.png`;
   const nome = (window._campanhaNPCs?.[npcId]?.nome) ||
     npcId.replace(/^npc_/,'').replace(/_/g,' ')
       .replace(/\b\w/g,c=>c.toUpperCase());
@@ -2276,7 +2276,7 @@ O QUE VOCÊ SABE (revele com relutância, aos poucos — nunca tudo de uma vez):
 REGRAS: Português brasileiro. Máximo 2-3 frases por resposta — você não discursa. Nunca quebre o personagem. Reaja ao que foi dito. Se pressionado demais, endurece — não cede por pressão de lábia, só por argumento real. Sem óculos, sem ajustar ombros de forma elegante — no máximo um gesto de impaciência.`;
 
   async function gregorasFala(userMsg) {
-    const el = appendMsg('greg', 'Gregoras Pellos', 'campaigns/mhoried/sprites/npc_gregoras_pellos.png', '...', true);
+    const el = appendMsg('greg', 'Gregoras Pellos', 'catalogo/mhoried/npcs/npc_gregoras_pellos/retrato/npc_gregoras_pellos_retrato.png', '...', true);
     const txtEl = el.querySelector('.cin-msg-txt');
 
     const apiKey = localStorage.getItem('oraculo.groqKey');
@@ -2365,7 +2365,7 @@ function _cinTransicaoCastelo() {
     ov.style.opacity = '1';
     setTimeout(() => {
       const img = document.createElement('img');
-      img.src = 'campaigns/mhoried/locations/mhoried_castelo_ext.png';
+      img.src = 'catalogo/mhoried/cenarios/conversacao/castelo_mhoried/imagem/castelo_ext.png';
       img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;opacity:0;transition:opacity .65s;';
       ov.appendChild(img);
       requestAnimationFrame(() => {
@@ -3032,7 +3032,11 @@ function _loadSprite(u){
     return;
   }
   const[,cid,g]=m; const alt=g==='m'?'f':'m';
-  const queue=[`campaigns/mhoried/sprites/${cid}_${g}_costas.png`,`campaigns/mhoried/sprites/${cid}_${alt}_costas.png`,`campaigns/mhoried/sprites/${cid}_costas.png`];
+  const queue=[
+    `catalogo/mhoried/classes/${cid}/sprites/costas/${cid}_${g}_costas.png`,
+    `catalogo/mhoried/classes/${cid}/sprites/costas/${cid}_${alt}_costas.png`,
+    `catalogo/mhoried/classes/${cid}/sprites/costas/${cid}_costas.png`,
+  ];
   let qi=0;
   (function tryNext(){
     if(qi>=queue.length){renderUnits();return;}
@@ -3165,11 +3169,11 @@ function onRoomUpdate(room){
       u={
         nome:p.name||cd.nome, col:p.x, row:p.y,
         emoji:cd.emoji, cor:cd.cor,
-        imgSrc:`campaigns/mhoried/sprites/${p.classId}_${g}_costas.png`,
+        imgSrc:`catalogo/mhoried/classes/${p.classId}/sprites/costas/${p.classId}_${g}_costas.png`,
         img:null, tipo:'heroi', mov:cd.mov,
         hp:p.hp||cd.hp, maxHp:p.maxHp||cd.hp,
         sp:p.mana||cd.sp, maxSp:p.maxMana||cd.sp,
-        portrait:`campaigns/mhoried/portraits/${p.classId}_${g}.png`,
+        portrait:`catalogo/mhoried/classes/${p.classId}/retrato/${p.classId}_${g}_retrato.png`,
         itens:[], _fbId:p.id,
       };
       _loadSprite(u);
@@ -3294,7 +3298,7 @@ function init(){
   initScale();
   renderBottomPanel();
   renderActionRow();
-  fetch('campaigns/mhoried/maps/feira-limpa-terreno.json')
+  fetch('catalogo/mhoried/cenarios/batalha_hex/feira_phanourios/imagem/feira-limpa-terreno.json')
     .then(r=>r.ok?r.json():null)
     .then(d=>{ if(d?.hexes) terrenoData=d.hexes; render(); })
     .catch(()=>render());
