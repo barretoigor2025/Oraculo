@@ -55,15 +55,15 @@
     }
     .header-top span { font-size: 10px; color: var(--text-dim); margin-left: auto; }
 
-    .tabs { display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tabs { display: flex; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .tabs::-webkit-scrollbar { display: none; }
     .tab-btn {
-      padding: 8px 20px 10px;
+      padding: 8px 14px 10px;
       background: none; border: none;
       border-bottom: 2px solid transparent;
       color: var(--text-dim);
-      font-family: inherit; font-size: 12px;
-      letter-spacing: 1.5px; text-transform: uppercase;
+      font-family: inherit; font-size: 11px;
+      letter-spacing: 1px; text-transform: uppercase;
       cursor: pointer; transition: all .2s;
       white-space: nowrap; flex-shrink: 0;
     }
@@ -831,32 +831,68 @@ function buildRoteiroTab(){
 
 function buildChecklistTab(){
   const tab = document.getElementById('checklist-tab');
-  tab.innerHTML = '<div class="section-header"><h2>✓ Checklist de Assets</h2></div><div id="ck-body" style="min-height:200px;display:flex;align-items:center;justify-content:center;color:rgba(190,165,90,.4);font-size:13px">Verificando...</div>';
-
   const prefix = '../campaigns/mhoried/';
 
   const sections = [
     {
-      titulo: 'Retratos NPC',
-      items: Object.keys(NPCS).map(id=>({nome:NPCS[id].nome||id, path:`${prefix}portraits/${id}.png`})),
+      titulo: '🖼️ Retratos NPC',
+      dica: 'portraits/{id}.png — retrato de rosto (400×500)',
+      items: Object.keys(NPCS).map(id=>({
+        nome: NPCS[id].nome || id,
+        sub:  id,
+        path: `${prefix}portraits/${id}.png`,
+      })),
     },
     {
-      titulo: 'Retratos Inimigos',
-      items: INIMIGOS_DATA.map(e=>({nome:e.nome||e.id, path:`${prefix}portraits/enemy_${e.id}.png`})),
+      titulo: '👾 Retratos Inimigos',
+      dica: 'portraits/enemy_{id}.png — retrato de rosto (400×500)',
+      items: INIMIGOS_DATA.map(e=>({
+        nome: e.nome || e.id,
+        sub:  `enemy_${e.id}`,
+        path: `${prefix}portraits/enemy_${e.id}.png`,
+      })),
     },
     {
-      titulo: 'Sprites de Classe (M)',
-      items: Object.keys(CLASSES_DATA).map(id=>({nome:CLASSES_DATA[id].nome+' M', path:`${prefix}sprites/${id}_m_costas.png`})),
+      titulo: '🧙 Sprites de Classe — Masculino',
+      dica: 'sprites/{classe}_m_costas.png — sprite sheet 4 frames (362×H)',
+      items: Object.keys(CLASSES_DATA).map(id=>({
+        nome: CLASSES_DATA[id].nome,
+        sub:  `${id}_m_costas.png`,
+        path: `${prefix}sprites/${id}_m_costas.png`,
+      })),
     },
     {
-      titulo: 'Sprites de Classe (F)',
-      items: Object.keys(CLASSES_DATA).map(id=>({nome:CLASSES_DATA[id].nome+' F', path:`${prefix}sprites/${id}_f_costas.png`})),
+      titulo: '🧙 Sprites de Classe — Feminino',
+      dica: 'sprites/{classe}_f_costas.png — sprite sheet 4 frames (362×H)',
+      items: Object.keys(CLASSES_DATA).map(id=>({
+        nome: CLASSES_DATA[id].nome,
+        sub:  `${id}_f_costas.png`,
+        path: `${prefix}sprites/${id}_f_costas.png`,
+      })),
     },
     {
-      titulo: 'Imagens de Cenário',
-      items: Object.keys(CENAS).map(id=>({nome:CENAS[id].titulo||id, path:`${prefix}locations/${id}.png`})),
+      titulo: '🗺️ Imagens de Cenário',
+      dica: 'locations/{id}.png — arte de localização (16:9 recomendado)',
+      items: Object.values(CENAS)
+        .sort((a,b)=>(a.ato||0)-(b.ato||0)||(a.ordemNarrativa||99)-(b.ordemNarrativa||99))
+        .map(c=>({
+          nome: c.titulo || c.id,
+          sub:  `Ato ${c.ato||1}${c.batalha?' · ⚔️':''}`,
+          path: `${prefix}locations/${c.id}.png`,
+        })),
     },
-  ];
+    {
+      titulo: '🗺️ Mapas de Batalha',
+      dica: 'maps/{id}.png — mapa hexagonal de batalha',
+      items: Object.values(CENAS)
+        .filter(c=>c.batalha && c.mapaId)
+        .map(c=>({
+          nome: c.titulo || c.id,
+          sub:  c.mapaId,
+          path: `${prefix}maps/${c.mapaId}.png`,
+        })),
+    },
+  ].filter(s=>s.items.length>0);
 
   function probeImg(path){
     return new Promise(resolve=>{
@@ -867,38 +903,64 @@ function buildChecklistTab(){
     });
   }
 
+  tab.innerHTML = `
+    <div class="section-header"><h2>✓ Checklist de Assets</h2><span class="count-badge" id="ck-pct">verificando…</span></div>
+    <div id="ck-body">
+      <div style="padding:40px;text-align:center;color:rgba(190,165,90,.4);font-size:13px">⏳ Verificando arquivos…</div>
+    </div>`;
+
   async function build(){
     let totalOk=0, totalMiss=0;
     let html = '';
+
     for(const sec of sections){
       const results = await Promise.all(sec.items.map(item=>probeImg(item.path)));
       const ok   = results.filter(Boolean).length;
       const miss = results.length - ok;
       totalOk   += ok;
       totalMiss += miss;
-      const scoreClass = miss===0 ? 'ck-score-ok' : 'ck-score-miss';
+      const allOk = miss === 0;
+
       html += `<div class="ck-section">
         <div class="ck-section-title">
           ${sec.titulo}
-          <span class="ck-section-score ${scoreClass}">${ok}/${results.length}</span>
-        </div>`;
+          <span class="ck-section-score ${allOk?'ck-score-ok':'ck-score-miss'}">${ok}/${results.length}</span>
+        </div>
+        <div style="font-size:9px;color:rgba(190,165,90,.35);margin-bottom:8px;font-style:italic">${sec.dica}</div>`;
+
       sec.items.forEach((item,i)=>{
         const found = results[i];
-        html += `<div class="ck-item${found?'':' ck-missing'}">
-          <span class="ck-icon">${found?'✅':'❌'}</span>
-          <div>
-            <div class="ck-nome">${item.nome}</div>
-            <div class="ck-path">${item.path}</div>
-          </div>
-        </div>`;
+        if(!found){
+          html += `<div class="ck-item ck-missing">
+            <span class="ck-icon">❌</span>
+            <div>
+              <div class="ck-nome">${item.nome}</div>
+              <div class="ck-path">${item.sub}</div>
+            </div>
+          </div>`;
+        } else {
+          html += `<div class="ck-item">
+            <span class="ck-icon">✅</span>
+            <div><div class="ck-nome">${item.nome}</div></div>
+          </div>`;
+        }
       });
       html += '</div>';
     }
-    const pct = Math.round(totalOk/(totalOk+totalMiss)*100);
-    document.getElementById('ck-body').outerHTML = `
-      <div class="ck-summary" style="color:${totalMiss===0?'#4caf50':pct>=70?'#c8a040':'#f44336'}">
-        ${totalOk} / ${totalOk+totalMiss} assets presentes (${pct}%)
-      </div>${html}`;
+
+    const pct = totalOk+totalMiss > 0 ? Math.round(totalOk/(totalOk+totalMiss)*100) : 100;
+    const cor = totalMiss===0 ? '#4caf50' : pct>=70 ? '#c8a040' : '#f44336';
+
+    document.getElementById('ck-pct').textContent = `${pct}% completo`;
+    document.getElementById('ck-pct').style.color = cor;
+
+    const missingBlock = totalMiss > 0
+      ? `<div class="ck-summary" style="color:${cor};margin-bottom:16px">
+           ❌ ${totalMiss} arquivo${totalMiss>1?'s':''} faltando — ${totalOk} presentes
+         </div>`
+      : `<div class="ck-summary" style="color:#4caf50;margin-bottom:16px">✅ Todos os assets presentes!</div>`;
+
+    document.getElementById('ck-body').innerHTML = missingBlock + html;
   }
 
   build();
@@ -1281,8 +1343,6 @@ document.addEventListener('keydown', e=>{
 
 // ── TABS ──────────────────────────────────────────────────────────────
 
-let _checklistBuilt = false;
-
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const tab = btn.dataset.tab;
@@ -1291,7 +1351,6 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById(`${tab}-tab`).classList.add('active');
     document.getElementById('filter-bar').style.display = tab==='npcs' ? 'flex' : 'none';
-    if(tab==='checklist' && !_checklistBuilt){ _checklistBuilt=true; buildChecklistTab(); }
     updateCount(tab);
   });
 });
@@ -1332,6 +1391,7 @@ buildNpcsTab();
 buildInimigosTab();
 buildCenariosTab();
 buildRoteiroTab();
+buildChecklistTab();
 updateCount('classes');
 </script>
 </body>
