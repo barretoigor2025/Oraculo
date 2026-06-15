@@ -220,20 +220,21 @@
     .modal-header {
       display: flex; gap: 0;
       border-bottom: 1px solid var(--border);
-      min-height: 160px;
+      align-items: flex-start;
     }
     .modal-sprites {
       display: flex; flex-direction: column; gap: 0;
       background: rgba(0,0,0,0.4);
       flex-shrink: 0;
-      min-width: 120px; max-width: 200px;
+      min-width: 100px; max-width: 180px;
+      align-self: stretch;
     }
     .modal-sprite-wrap {
       display: flex; align-items: flex-end; justify-content: center;
-      flex: 1; padding: 6px 4px;
+      flex: 1; padding: 6px 4px; min-height: 60px;
     }
     .modal-sprite-wrap img {
-      max-height: 140px; max-width: 100%;
+      max-height: 160px; max-width: 100%;
       object-fit: contain; object-position: bottom;
     }
     .sprite-label {
@@ -242,7 +243,7 @@
       border-top: 1px solid var(--border);
     }
     .modal-title-area {
-      flex: 1; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px;
+      flex: 1; padding: 14px 16px 14px; display: flex; flex-direction: column; gap: 6px;
     }
     .modal-name {
       font-size: clamp(16px, 3vw, 22px);
@@ -725,10 +726,8 @@ window.openClassModal = function(id){
     </div>`).join('');
 
   const standeePairs = ['m','f'].map(g=>`
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3);${g==='m'?'border-right:1px solid var(--border)':''}">
-      <div class="modal-sprite-wrap">
-        <img src="${classStandee(id,g)}" alt="${g==='m'?'Masculino':'Feminino'}" onerror="this.style.opacity='.15'">
-      </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(0,0,0,0.3);${g==='m'?'border-right:1px solid var(--border)':''}">
+      <img src="${classStandee(id,g)}" alt="${g==='m'?'Masculino':'Feminino'}" style="max-height:180px;max-width:100%;object-fit:contain;object-position:bottom;padding:4px 2px" onerror="this.style.opacity='.15'">
       <div class="sprite-label">${g==='m'?'Masculino':'Feminino'}</div>
     </div>`).join('');
 
@@ -764,8 +763,8 @@ window.openNpcModal = function(id){
   if(!npc) return;
 
   const npcStUrl = npcStandeeUrl(npc.id);
-  const npcStSlot = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3)">
-    <div class="modal-sprite-wrap"><img src="${npcStUrl}" alt="Standee" onerror="this.style.opacity='.15'"></div>
+  const npcStSlot = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(0,0,0,0.3)">
+    <img src="${npcStUrl}" alt="Standee" style="max-height:180px;max-width:100%;object-fit:contain;object-position:bottom;padding:4px 6px" onerror="this.style.opacity='.15'">
     <div class="sprite-label">Standee</div>
   </div>`;
 
@@ -799,8 +798,8 @@ window.openEnemyModal = function(id){
   if(!en) return;
 
   const sprStand = inimStandeeUrl(id);
-  const enStSlot = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3)">
-    <div class="modal-sprite-wrap"><img src="${sprStand}" alt="Standee" onerror="this.style.opacity='.15'"></div>
+  const enStSlot = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(0,0,0,0.3)">
+    <img src="${sprStand}" alt="Standee" style="max-height:180px;max-width:100%;object-fit:contain;object-position:bottom;padding:4px 6px" onerror="this.style.opacity='.15'">
     <div class="sprite-label">Standee</div>
   </div>`;
 
