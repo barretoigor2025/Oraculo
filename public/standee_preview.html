@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview Standees — Mhoried</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0806;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; padding: 16px;
+    font-family: 'Georgia', serif;
+  }
+  h1 {
+    color: #c8a040; font-size: 13px; letter-spacing: 2px;
+    text-transform: uppercase; font-weight: 400;
+    margin-bottom: 5px; text-align: center;
+  }
+  .subtitle {
+    color: rgba(190,165,90,0.38); font-size: 9px; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 14px; text-align: center;
+  }
+  #wrap {
+    position: relative; overflow: hidden;
+    border: 1px solid rgba(200,160,64,0.18);
+    border-radius: 10px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.9);
+  }
+  canvas#cv { display: block; }
+  #chars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  .standee {
+    position: absolute;
+    display: flex; flex-direction: column; align-items: center;
+    transform: translateX(-50%);
+  }
+  .standee img {
+    display: block; width: auto;
+    filter: drop-shadow(0 6px 18px rgba(0,0,0,0.9));
+  }
+  .standee-label {
+    font-size: 9px; color: rgba(200,175,100,0.8);
+    letter-spacing: .8px; text-transform: uppercase; text-align: center;
+    white-space: nowrap; margin-top: 3px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.95);
+  }
+  .standee-sub {
+    font-size: 8px; color: rgba(190,165,90,0.38);
+    letter-spacing: .5px; text-align: center;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  }
+  a.back {
+    display: inline-block; margin-top: 12px;
+    font-size: 10px; color: rgba(190,165,90,0.5);
+    text-decoration: none; letter-spacing: 1px;
+    border: 1px solid rgba(200,160,64,0.18); border-radius: 20px; padding: 4px 14px;
+  }
+  a.back:hover { color: #c8a040; }
+</style>
+</head>
+<body>
+<h1>Standees — Mhoried</h1>
+<div class="subtitle">Proporção relativa de cada classe no tabuleiro hexagonal (escala ×2)</div>
+<div id="wrap">
+  <canvas id="cv"></canvas>
+  <div id="chars"></div>
+</div>
+<a class="back" href="catalog.html">← Catálogo</a>
+
+<script>
+// ── Constantes do tabuleiro (mesmas do arena.html × 2) ───────────────────
+// arena.html: HR=55, CS=82, RS=95, OOFF=48
+const SCALE = 2;
+const HR    = 55 * SCALE;      // 110  – raio do hex
+const CS    = 82 * SCALE;      // 164  – espaçamento entre colunas
+const RS    = 95 * SCALE;      // 190  – espaçamento entre linhas
+const OOFF  = 48 * SCALE;      // 96   – offset de colunas ímpares
+
+// Largura do sprite no arena: HR*3.2. Aqui usamos a mesma fórmula.
+const SW    = Math.round(HR * 3.2); // 352px – largura do sprite no canvas
+
+// Altura máxima de display (Bárbaro M, o mais alto, armazenado em 400px)
+const MAX_H = Math.round(SW * 0.78); // 274px
+
+// Escala de altura: cada classe tem sua altura armazenada; aplicamos o
+// mesmo fator que transformaria Bárbaro M (400px) em MAX_H (274px)
+const H_SCALE = MAX_H / 400; // ≈ 0.685
+
+const CLASSES = [
+  { id:'barbaro',   nome:'Bárbaro',   hm:400, hf:375 },
+  { id:'guerreiro', nome:'Guerreiro', hm:355, hf:330 },
+  { id:'arqueiro',  nome:'Arqueiro',  hm:315, hf:292 },
+  { id:'ladino',    nome:'Ladino',    hm:286, hf:266 },
+  { id:'mago',      nome:'Mago',      hm:270, hf:252 },
+  { id:'clerigo',   nome:'Clérigo',   hm:252, hf:234 },
+];
+
+// ── Layout ────────────────────────────────────────────────────────────────
+const NCOLS     = 6;
+const LABEL_H   = 38;   // espaço para nome + gênero abaixo do pé
+
+// x do centro de cada coluna (hex[0] a hex[5])
+const GX0 = HR + 20;          // margem esquerda
+const hexCx = col => GX0 + col * CS;
+
+// Linha 0 (Masculino): hex center y
+// Deve ter espaço suficiente acima para o personagem mais alto
+const FOOT_OFFSET = Math.round(HR * 0.38);  // pé ligeiramente abaixo do centro
+const GY_M = MAX_H + 30 + FOOT_OFFSET;      // y do hex center linha M
+// ex: 274 + 30 + 42 = 346
+
+// Linha 1 (Feminino): separadas por espaço visual
+const ROW_GAP = MAX_H + LABEL_H + 40;       // espaço entre pés: 274+38+40=352
+const GY_F    = GY_M + ROW_GAP;             // y do hex center linha F
+
+// pé dos personagens (foot = centro hex + FOOT_OFFSET)
+const footM = GY_M + FOOT_OFFSET;
+const footF = GY_F + FOOT_OFFSET;
+
+// Dimensões do canvas
+const CANVAS_W = 2 * GX0 + (NCOLS - 1) * CS;
+const CANVAS_H = footF + LABEL_H + 30;
+
+// ── Canvas ────────────────────────────────────────────────────────────────
+const cv   = document.getElementById('cv');
+const wrap = document.getElementById('wrap');
+cv.width  = CANVAS_W;
+cv.height = CANVAS_H;
+wrap.style.width  = CANVAS_W + 'px';
+wrap.style.height = CANVAS_H + 'px';
+
+const ctx = cv.getContext('2d');
+
+// Background
+const bg = new Image();
+bg.src = 'catalogo/mhoried/cenarios/batalha_hex/feira_phanourios/imagem/feira-limpa.png';
+bg.onload = drawAll;
+bg.onerror = drawAll;
+
+// ── Desenho do hex ────────────────────────────────────────────────────────
+function hexPath(x, y) {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a  = Math.PI / 3 * i;
+    const px = x + HR * Math.cos(a);
+    const py = y + HR * Math.sin(a);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+}
+
+// ── Base de mármore (elipse isométrica) ──────────────────────────────────
+function drawMarbleBase(x, y) {
+  const rx = HR * 0.70;
+  const ry = HR * 0.20;
+
+  // Sombra
+  ctx.beginPath();
+  ctx.ellipse(x, y + ry * 0.7, rx * 1.08, ry * 0.5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fill();
+
+  // Corpo da base com gradiente de mármore escuro
+  const g = ctx.createRadialGradient(x - rx * 0.28, y - ry * 0.25, 0, x, y, rx);
+  g.addColorStop(0,   '#484848');
+  g.addColorStop(0.2, '#2c2c2c');
+  g.addColorStop(0.6, '#141414');
+  g.addColorStop(1,   '#060606');
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  // Veias brancas (determinísticas por posição)
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.clip();
+  const seed = Math.round(x * 17 + y * 11);
+  for (let v = 0; v < 7; v++) {
+    const r0 = ((seed * 1103515245 + v * 12345)   >>> 0) / 4294967296;
+    const r1 = ((seed * 214013     + v * 2531011)  >>> 0) / 4294967296;
+    const r2 = ((seed * 69621      + v * 1234567)  >>> 0) / 4294967296;
+    const x0  = x + (r0 - 0.5) * rx * 2.1;
+    const y0  = y + (r1 - 0.5) * ry * 2.1;
+    const x1  = x + (r2 - 0.5) * rx * 2.1;
+    const y1  = y + ((r1 + 0.4) % 1 - 0.5) * ry * 2.1;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.strokeStyle = `rgba(218,218,218,${0.035 + v * 0.016})`;
+    ctx.lineWidth = 0.4 + r0 * 0.9;
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Borda brilhante
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(160,160,160,0.22)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// ── Renderização completa ─────────────────────────────────────────────────
+function drawAll() {
+  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // Fundo: imagem do mercado (recortada para cobrir o canvas)
+  if (bg.complete && bg.naturalWidth > 0) {
+    const bsr = bg.naturalWidth / bg.naturalHeight;
+    const csr = CANVAS_W / CANVAS_H;
+    let bw, bh, bx, by;
+    if (bsr > csr) { bh = CANVAS_H; bw = bh * bsr; bx = (CANVAS_W - bw) / 2; by = 0; }
+    else           { bw = CANVAS_W; bh = bw / bsr; bx = 0; by = (CANVAS_H - bh) / 2; }
+    ctx.drawImage(bg, bx, by, bw, bh);
+    ctx.fillStyle = 'rgba(8,6,4,0.60)';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  } else {
+    ctx.fillStyle = '#0e0b07';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+  }
+
+  // Hexes e bases de mármore para ambas as linhas
+  for (const [row, gy, fy, rowLabel] of [
+    [0, GY_M, footM, '♂ Masculino'],
+    [1, GY_F, footF, '♀ Feminino'],
+  ]) {
+    for (let col = 0; col < NCOLS; col++) {
+      const cx = hexCx(col);
+
+      // Hex fill (levíssimo)
+      hexPath(cx, gy);
+      ctx.fillStyle = 'rgba(255,220,120,0.04)';
+      ctx.fill();
+
+      // Hex outline
+      hexPath(cx, gy);
+      ctx.strokeStyle = 'rgba(200,160,64,0.30)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Base de mármore no ponto do pé
+      drawMarbleBase(cx, fy);
+    }
+
+    // Label de linha (canto esquerdo)
+    ctx.font = '10px Georgia';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(200,165,80,0.30)';
+    ctx.fillText(rowLabel, 4, gy + HR + 14);
+  }
+
+  // Linha divisória entre M e F
+  const midY = (footM + GY_F - HR) / 2;
+  ctx.beginPath();
+  ctx.moveTo(GX0 - HR - 10, midY);
+  ctx.lineTo(CANVAS_W - GX0 + HR + 10, midY);
+  ctx.strokeStyle = 'rgba(200,160,64,0.10)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 8]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Overlay de informações (título + escala)
+  ctx.font = 'bold 11px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(200,165,80,0.5)';
+  ctx.fillText('HR = 55px × 2 (escala arena)', CANVAS_W / 2, CANVAS_H - 10);
+
+  // Posiciona as imagens HTML
+  placeStandees();
+}
+
+// ── Posicionamento HTML dos sprites ──────────────────────────────────────
+function spritePath(id, g) {
+  return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png`;
+}
+
+function placeStandees() {
+  const container = document.getElementById('chars');
+  container.innerHTML = '';
+
+  const rows = [
+    { g:'m', fy: footM, label:'Masculino' },
+    { g:'f', fy: footF, label:'Feminino'  },
+  ];
+
+  rows.forEach(row => {
+    CLASSES.forEach((cls, col) => {
+      const cx      = hexCx(col);
+      const storedH = row.g === 'm' ? cls.hm : cls.hf;
+      const dispH   = Math.round(storedH * H_SCALE);
+
+      const div = document.createElement('div');
+      div.className = 'standee';
+      div.style.left = cx + 'px';
+      div.style.top  = (row.fy - dispH - 2) + 'px';   // imagem acima do pé
+
+      const img = document.createElement('img');
+      img.src    = spritePath(cls.id, row.g);
+      img.alt    = `${cls.nome} ${row.label}`;
+      img.style.height = dispH + 'px';
+      img.onerror = () => { img.style.opacity = '0.08'; };
+
+      const lbl = document.createElement('div');
+      lbl.className   = 'standee-label';
+      lbl.textContent = cls.nome;
+
+      const sub = document.createElement('div');
+      sub.className   = 'standee-sub';
+      sub.textContent = row.label;
+
+      div.append(img, lbl, sub);
+      container.appendChild(div);
+    });
+  });
+}
+</script>
+</body>
+</html>
