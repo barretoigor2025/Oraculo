@@ -1,0 +1,22 @@
+{
+  "id": "npc_exemplo",
+  "nome": "NPC Exemplo",
+  "tipo": "npc",
+  "descricao_curta": "Modelo de NPC.",
+  "papel_no_roteiro": "apoio | aliado | neutro | antagonista",
+  "status": {
+    "hp": 0,
+    "mp": 0,
+    "ataque": 0,
+    "defesa": 0,
+    "magia": 0,
+    "movimento": 0,
+    "iniciativa": 0
+  },
+  "assets": {
+    "retrato": "retrato/npc_exemplo_retrato.png",
+    "sprite_frente": "sprites/frente/npc_exemplo_frente.png",
+    "sprite_costas": "sprites/costas/npc_exemplo_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_exemplo_peca.png"
+  }
+}
