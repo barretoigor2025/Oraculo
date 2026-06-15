@@ -474,175 +474,77 @@
       border-left:2px solid rgba(200,160,64,0.3); line-height:1.4;
     }
 
-    /* ── MAGIAS TAB ── */
-    .magias-layout {
-      display:flex; gap:16px; align-items:flex-start;
+    /* ── CAMPAIGN PICKER ── */
+    #campaign-picker{
+      position:fixed;inset:0;z-index:9999;
+      background:radial-gradient(ellipse at 50% 40%,#1a1208 0%,#0c0a06 100%);
+      display:flex;align-items:center;justify-content:center;
     }
-    @media(max-width:600px){ .magias-layout { flex-direction:column; } }
+    #cp-inner{text-align:center;padding:24px;}
+    #cp-title{font-size:28px;font-weight:700;color:#c8a040;letter-spacing:2px;margin-bottom:6px;}
+    #cp-subtitle{font-size:12px;color:rgba(190,165,90,.5);letter-spacing:2px;text-transform:uppercase;margin-bottom:32px;}
+    #cp-cards{display:flex;flex-direction:column;gap:12px;max-width:340px;}
+    .cp-card{
+      padding:16px 20px;background:rgba(190,140,35,.08);
+      border:1px solid rgba(190,140,35,.3);border-radius:12px;
+      cursor:pointer;text-align:left;transition:all .2s;
+    }
+    .cp-card:hover{background:rgba(190,140,35,.18);border-color:rgba(190,140,35,.7);}
+    .cp-card-nome{font-size:15px;font-weight:700;color:#d4a84b;margin-bottom:4px;}
+    .cp-card-desc{font-size:11px;color:rgba(190,165,90,.55);}
 
-    .magias-sidebar {
-      flex:0 0 180px; display:flex; flex-direction:column; gap:12px;
-      max-height:calc(100vh - 140px); overflow-y:auto;
+    /* ── CENÁRIOS TAB ── */
+    .cenario-card{
+      background:rgba(20,16,8,.6);border:1px solid rgba(190,140,35,.2);
+      border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .2s;
     }
-    .mg-group-title {
-      font-size:8px; letter-spacing:1.5px; text-transform:uppercase;
-      color:var(--text-dim); padding:4px 8px 2px;
-      border-bottom:1px solid var(--border);
-    }
-    .spell-btn {
-      display:flex; align-items:center; gap:7px;
-      padding:6px 10px; border-radius:7px; width:100%;
-      background:rgba(0,0,0,0.2); border:1px solid var(--border);
-      color:var(--text-dim); font-family:inherit; font-size:11px;
-      text-align:left; cursor:pointer; transition:all .15s;
-    }
-    .spell-btn:hover { background:rgba(200,160,64,0.08); color:var(--text); }
-    .spell-btn.active {
-      background:rgba(200,160,64,0.12); color:var(--gold2);
-      border-color:rgba(200,160,64,0.4);
-    }
-    .spell-btn .sb-icon { font-size:14px; flex-shrink:0; }
+    .cenario-card:hover{border-color:rgba(190,140,35,.6);}
+    .cenario-img{width:100%;height:120px;object-fit:cover;display:block;background:#0c0a06;}
+    .cenario-body{padding:10px 12px;}
+    .cenario-nome{font-size:13px;font-weight:700;color:#d4a84b;margin-bottom:2px;}
+    .cenario-sub{font-size:10px;color:rgba(190,165,90,.5);margin-bottom:6px;}
+    .cenario-tags{display:flex;gap:5px;flex-wrap:wrap;}
+    .cenario-tag{font-size:9px;padding:2px 7px;border-radius:20px;border:1px solid;font-weight:600;letter-spacing:.3px;}
+    .cenario-tag.batalha{color:rgba(220,120,80,.9);border-color:rgba(220,120,80,.3);background:rgba(220,120,80,.1);}
+    .cenario-tag.npc{color:rgba(140,200,140,.8);border-color:rgba(140,200,140,.25);background:rgba(140,200,140,.08);}
+    .cenario-tag.ato{color:rgba(140,160,220,.8);border-color:rgba(140,160,220,.25);background:rgba(140,160,220,.08);}
 
-    .magias-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:12px; }
+    /* ── ROTEIRO TAB ── */
+    .rot-ato{margin-bottom:28px;}
+    .rot-ato-titulo{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:rgba(190,140,35,.5);padding:8px 0;border-bottom:1px solid rgba(190,140,35,.15);margin-bottom:12px;}
+    .rot-cena{background:rgba(20,16,8,.5);border:1px solid rgba(190,140,35,.15);border-radius:8px;padding:12px 14px;margin-bottom:8px;}
+    .rot-cena-num{font-size:9px;color:rgba(190,140,35,.4);letter-spacing:.5px;margin-bottom:3px;}
+    .rot-cena-titulo{font-size:13px;font-weight:700;color:#d4a84b;margin-bottom:5px;}
+    .rot-cena-texto{font-size:11px;color:rgba(190,165,100,.7);line-height:1.5;}
+    .rot-cena-badges{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;}
+    .rot-badge{font-size:9px;padding:2px 8px;border-radius:20px;border:1px solid rgba(190,140,35,.25);color:rgba(190,165,90,.65);}
+    .rot-badge.batalha{border-color:rgba(220,100,80,.3);color:rgba(220,120,80,.8);}
+    .rot-badge.npc{border-color:rgba(100,200,100,.25);color:rgba(140,210,140,.75);}
 
-    #spell-canvas {
-      width:100%; border-radius:10px;
-      border:1px solid rgba(200,160,64,0.15);
-      background:#080606; display:block;
-    }
-
-    .spell-info-box {
-      background:var(--bg3); border:1px solid var(--border);
-      border-radius:10px; padding:14px 16px;
-    }
-    .si-nome { font-size:16px; color:var(--gold2); margin-bottom:4px; }
-    .si-tags { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
-    .si-tag {
-      font-size:8px; padding:2px 8px; border-radius:10px;
-      background:rgba(200,160,64,0.1); color:var(--gold);
-      border:1px solid rgba(200,160,64,0.2);
-      letter-spacing:.8px; text-transform:uppercase;
-    }
-    .si-desc { font-size:12px; color:var(--text); line-height:1.6; }
-
-    .spell-tweaks {
-      background:var(--bg3); border:1px solid var(--border);
-      border-radius:10px; padding:12px 16px;
-      display:grid; grid-template-columns:1fr 1fr; gap:10px;
-    }
-    .twk-label {
-      font-size:9px; letter-spacing:1px; text-transform:uppercase;
-      color:var(--text-dim); margin-bottom:4px;
-    }
-    .twk-row { display:flex; flex-direction:column; }
-    input[type=range].twk-range {
-      width:100%; accent-color:var(--gold);
-    }
-    input[type=color].twk-color {
-      width:100%; height:28px; border-radius:5px;
-      border:1px solid var(--border); cursor:pointer;
-      background:none;
-    }
-    .twk-section-title {
-      grid-column:1/-1; font-size:8px; letter-spacing:1.5px;
-      text-transform:uppercase; color:var(--text-dim);
-      padding-bottom:4px; border-bottom:1px solid var(--border);
-    }
-
-    /* ── MOVIMENTAÇÕES TAB ── */
-    .mv-wrap {
-      max-width:800px; margin:0 auto; padding:20px;
-      display:flex; flex-direction:column; gap:32px;
-    }
-    .mv-sec-title {
-      font-size:9px; letter-spacing:2px; text-transform:uppercase;
-      color:rgba(200,160,64,0.45);
-      border-bottom:1px solid rgba(200,160,64,0.12); padding-bottom:8px; margin-bottom:12px;
-    }
-    .mv-frames-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-    .mv-frame-wrap { display:flex; flex-direction:column; align-items:center; gap:6px; }
-    .mv-frame-label { font-size:9px; color:rgba(200,160,64,0.35); letter-spacing:1px; }
-    .mv-spr {
-      --fw:362px; --fh:450px; --sc:0.28;
-      --dw:calc(var(--fw)*var(--sc)); --dh:calc(var(--fh)*var(--sc));
-      width:var(--dw); height:var(--dh);
-      background-size:calc(var(--fw)*4*var(--sc)) var(--dh);
-      background-repeat:no-repeat;
-    }
-    /* char selector */
-    .mv-selector { display:flex; flex-direction:column; gap:10px; }
-    .mv-sel-row  { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
-    .mv-sel-label{ font-size:9px; letter-spacing:1px; color:rgba(200,160,64,0.45); text-transform:uppercase; width:52px; flex-shrink:0; }
-    .mv-sel-btn  { padding:4px 10px; font-size:10px; border:1px solid rgba(200,160,64,0.25); border-radius:6px;
-                   background:rgba(0,0,0,0.3); color:rgba(200,160,64,0.6); cursor:pointer; transition:all .15s; }
-    .mv-sel-btn:hover { border-color:rgba(200,160,64,0.5); color:#c8a040; }
-    .mv-sel-btn.active{ border-color:#c8a040; background:rgba(200,160,64,0.12); color:#f0cc70; font-weight:700; }
-    .mv-spr.f0 { background-position:calc(var(--fw)*0*var(--sc)*-1) 0; }
-    .mv-spr.f1 { background-position:calc(var(--fw)*1*var(--sc)*-1) 0; }
-    .mv-spr.f2 { background-position:calc(var(--fw)*2*var(--sc)*-1) 0; }
-    .mv-spr.f3 { background-position:calc(var(--fw)*3*var(--sc)*-1) 0; }
-    .mv-spr.espelha { transform:scaleX(-1); }
-    .mv-controles {
-      background:rgba(0,0,0,0.35); border:1px solid rgba(200,160,64,0.15);
-      border-radius:12px; padding:20px 24px; display:flex; flex-direction:column; gap:14px;
-    }
-    .mv-ctrl {
-      display:grid; grid-template-columns:130px 1fr 52px; align-items:center; gap:12px;
-    }
-    .mv-ctrl label { font-size:10px; color:rgba(200,160,64,0.6); letter-spacing:1px; text-transform:uppercase; }
-    .mv-ctrl input[type=range] { accent-color:#c8a040; width:100%; }
-    .mv-ctrl-val { font-size:11px; color:#c8a040; text-align:right; font-variant-numeric:tabular-nums; }
-    .mv-scene {
-      width:100%; height:240px;
-      background:linear-gradient(180deg,#120e08 0%,#1e1408 55%,#2a1c0a 100%);
-      border:1px solid rgba(200,160,64,0.12); border-radius:12px;
-      position:relative; overflow:hidden;
-    }
-    .mv-scene-floor {
-      position:absolute; bottom:0; left:0; right:0; height:44px;
-      background:linear-gradient(transparent,rgba(50,30,10,0.8));
-      border-top:1px solid rgba(200,160,64,0.08);
-    }
-    .mv-runner { position:absolute; bottom:28px; }
+    /* ── CHECKLIST TAB ── */
+    .ck-section{margin-bottom:20px;}
+    .ck-section-title{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(190,140,35,.5);padding:6px 0;border-bottom:1px solid rgba(190,140,35,.12);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+    .ck-section-score{font-size:11px;font-weight:700;}
+    .ck-score-ok{color:#4caf50;}
+    .ck-score-miss{color:#f44336;}
+    .ck-item{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+    .ck-icon{font-size:14px;flex-shrink:0;width:18px;text-align:center;}
+    .ck-nome{font-size:11px;color:rgba(220,195,140,.85);flex:1;}
+    .ck-path{font-size:9px;color:rgba(190,165,90,.35);margin-top:1px;}
+    .ck-missing .ck-nome{color:rgba(220,120,80,.8);}
+    .ck-missing .ck-path{color:rgba(220,120,80,.3);}
+    .ck-summary{font-size:13px;font-weight:700;padding:14px;background:rgba(20,16,8,.5);border:1px solid rgba(190,140,35,.2);border-radius:10px;margin-bottom:20px;text-align:center;}
 
     /* ── RESPONSIVIDADE GERAL ──────────────────────────────── */
     @media(max-width:600px){
-      /* tabs menores */
       .tab-btn { padding:8px 13px 10px; font-size:10px; letter-spacing:.8px; }
-
-      /* cards menores: 2 colunas fixas no mobile */
       .card-grid { grid-template-columns: repeat(2, 1fr) !important; gap:10px; }
-
-      /* portrait no modal: altura reduzida */
       .portrait-img-wrap { height:200px; }
-
-      /* modal: menos padding lateral */
       #modal { padding:0 0 12px; }
       .modal-class-info,
       .modal-info-section { padding:12px 14px 8px; }
-
-      /* magias canvas cabe na tela */
-      .magias-sidebar { max-height:40vh; }
-
-      /* sliders de controle: label na linha acima do slider */
-      .mv-ctrl,
-      .ctrl {
-        grid-template-columns: 1fr 44px;
-      }
-      .mv-ctrl label,
-      .ctrl label {
-        grid-column: 1 / -1;
-        margin-bottom: 0;
-      }
-
-      /* sprites: 2x2 no mobile */
       .class-sprites-grid { grid-template-columns: repeat(2, 1fr); }
       .cs-item img { max-height: 160px; }
-
-      /* movimentacoes: frames menores */
-      .mv-spr {
-        --sc: 0.18;
-      }
     }
 
     @media(max-width:400px){
@@ -651,20 +553,32 @@
       .portrait-img-wrap { height:160px; }
     }
   </style>
+
 </head>
+
 <body>
+
+<div id="campaign-picker" style="display:none">
+  <div id="cp-inner">
+    <div id="cp-title">⚔️ Oráculo</div>
+    <div id="cp-subtitle">Selecione a Campanha</div>
+    <div id="cp-cards"></div>
+  </div>
+</div>
 
 <header>
   <div class="header-top">
-    <h1>⚔️ Oráculo — Catálogo de Personagens</h1>
+    <h1 id="catalog-title">⚔️ Oráculo — Catálogo</h1>
     <span id="count-label"></span>
+    <button id="btn-trocar-camp" onclick="document.getElementById('campaign-picker').style.display='flex'" style="font-size:10px;padding:4px 10px;background:rgba(190,140,35,.1);border:1px solid rgba(190,140,35,.25);border-radius:20px;color:rgba(190,165,90,.6);cursor:pointer;margin-left:8px">⟳ Campanha</button>
   </div>
   <nav class="tabs">
     <button class="tab-btn active" data-tab="classes">Classes</button>
     <button class="tab-btn" data-tab="npcs">NPCs</button>
     <button class="tab-btn" data-tab="inimigos">Inimigos</button>
-    <button class="tab-btn" data-tab="magias">Magias</button>
-    <button class="tab-btn" data-tab="movimentacoes">Movimentações</button>
+    <button class="tab-btn" data-tab="cenarios">Cenários</button>
+    <button class="tab-btn" data-tab="roteiro">Roteiro</button>
+    <button class="tab-btn" data-tab="checklist">✓ Check</button>
   </nav>
 </header>
 
@@ -681,8 +595,9 @@
   <div id="classes-tab"   class="tab-content active"></div>
   <div id="npcs-tab"      class="tab-content"></div>
   <div id="inimigos-tab"  class="tab-content"></div>
-  <div id="magias-tab"         class="tab-content"></div>
-  <div id="movimentacoes-tab"  class="tab-content"></div>
+  <div id="cenarios-tab"  class="tab-content"></div>
+  <div id="roteiro-tab"   class="tab-content"></div>
+  <div id="checklist-tab" class="tab-content"></div>
 </main>
 
 <!-- Modal -->
@@ -694,8 +609,8 @@
 </div>
 
 <script type="module">
-import { NPCS }          from '../campaigns/mhoried/data/campaign.js?v=4';
-import { INIMIGOS_DATA } from '../campaigns/mhoried/data/bestiary.js?v=4';
+import { NPCS, CENAS }   from '../campaigns/mhoried/data/campaign.js?v=4';
+import { INIMIGOS_DATA }  from '../campaigns/mhoried/data/bestiary.js?v=4';
 
 // ── DATA ──────────────────────────────────────────────────────────────
 
@@ -804,490 +719,190 @@ function inimSpriteUrl(id, costas){
   return costas ? `../campaigns/mhoried/sprites/${fname}_costas.png` : `../campaigns/mhoried/sprites/${fname}.png`;
 }
 
-// ── MAGIAS DATA ───────────────────────────────────────────────────────
+// ── CAMPANHAS ─────────────────────────────────────────────────────────
 
-const MAGIAS_DATA = [
-  // Jogadores
-  {id:'bola_de_fogo',      nome:'Bola de Fogo',       icon:'🔥', fonte:'Mago',          escola:'Fogo',
-   desc:'Projétil incandescente que explode em área circular (raio 2).',
-   anim:{tipo:'projetil', cor:'#ff6020', cor2:'#ffaa00', raio:62, vel:2.8}},
-  {id:'confusao',          nome:'Confusão',            icon:'🌀', fonte:'Mago',          escola:'Mental',
-   desc:'Nuvem psíquica que confunde todos inimigos numa área (raio 1).',
-   anim:{tipo:'area',     cor:'#9944cc', cor2:'#cc66ff', raio:50, vel:1.8}},
-  {id:'escudo_arcano',     nome:'Escudo Arcano',       icon:'🛡️', fonte:'Mago',          escola:'Proteção',
-   desc:'Barreira mágica translúcida que bloqueia ataques.',
-   anim:{tipo:'auto',     cor:'#4488ff', cor2:'#88bbff', raio:42, vel:2.0}},
-  {id:'curar_ferimentos',  nome:'Curar Ferimentos',    icon:'💚', fonte:'Clérigo',       escola:'Cura',
-   desc:'Luz divina restaura 1d8+2 PV no alvo tocado.',
-   anim:{tipo:'cura',     cor:'#44cc66', cor2:'#aaffcc', raio:44, vel:1.6}},
-
-  // Log-Wife
-  {id:'fascinacao_canto',  nome:'Fascinação (Canto)',  icon:'🎵', fonte:'Log-Wife',      escola:'Mental',
-   desc:'Canto hipnótico força aproximação compulsiva — Will vs. IQ 12.',
-   anim:{tipo:'onda',     cor:'#ff88cc', cor2:'#ffddee', raio:55, vel:1.5}},
-  {id:'criar_ilusao',      nome:'Criar Ilusão',        icon:'🪞', fonte:'Log-Wife',      escola:'Ilusão',
-   desc:'Ilusão visual perfeita toma forma de mulher humana.',
-   anim:{tipo:'ilusao',   cor:'#88aacc', cor2:'#cce8ff', raio:48, vel:1.8}},
-  {id:'drenar_hp',         nome:'Drenar HP',           icon:'🩸', fonte:'Log-Wife',      escola:'Necromancia',
-   desc:'Suga pontos de vida do alvo para o conjurador.',
-   anim:{tipo:'drain',    cor:'#cc2244', cor2:'#882233', raio:40, vel:2.2}},
-
-  // Choir
-  {id:'animar_morto',      nome:'Animar Morto',        icon:'💀', fonte:'Choir',         escola:'Necromancia',
-   desc:'Anima corpos sem vida como servos mortos-vivos obedientes.',
-   anim:{tipo:'invocacao', cor:'#44bb44', cor2:'#1a3a1a', raio:50, vel:1.4}},
-  {id:'controlar_morto',   nome:'Controlar Morto-Vivo',icon:'🧟', fonte:'Choir',         escola:'Necromancia',
-   desc:'Toma controle de mortos-vivos existentes como servos.',
-   anim:{tipo:'raio',     cor:'#55bb55', cor2:'#226622', raio:10, vel:3.5}},
-  {id:'criar_espirito',    nome:'Criar Espírito',      icon:'👻', fonte:'Choir',         escola:'Necromancia',
-   desc:'Conjura espírito etéreo de um corpo recente.',
-   anim:{tipo:'invocacao', cor:'#aaccff', cor2:'#224488', raio:46, vel:1.5}},
-  {id:'drenar_forca_vital',nome:'Drenar Força Vital',  icon:'⚫', fonte:'Choir',         escola:'Necromancia',
-   desc:'Drena toda a vitalidade do alvo de uma só vez.',
-   anim:{tipo:'drain',    cor:'#7722aa', cor2:'#331166', raio:55, vel:2.5}},
-  {id:'medo_choir',        nome:'Medo',                icon:'😱', fonte:'Choir',         escola:'Mental',
-   desc:'Incute pavor sobrenatural no alvo, causando fuga.',
-   anim:{tipo:'onda',     cor:'#334455', cor2:'#1a1a33', raio:50, vel:2.0}},
-  {id:'escuridao',         nome:'Escuridão',           icon:'⬛', fonte:'Choir',         escola:'Elemental',
-   desc:'Cria nuvem de trevas absolutas que bloqueia toda visão.',
-   anim:{tipo:'area',     cor:'#111133', cor2:'#334466', raio:65, vel:1.4}},
-  {id:'protecao_magica',   nome:'Proteção Mágica',     icon:'🔵', fonte:'Choir',         escola:'Proteção',
-   desc:'Escudo pessoal contra magias inimigas.',
-   anim:{tipo:'auto',     cor:'#2255aa', cor2:'#4488cc', raio:45, vel:2.0}},
-  {id:'sentir_vida',       nome:'Sentir Vida',         icon:'🌡️', fonte:'Choir',         escola:'Detecção',
-   desc:'Detecta toda criatura viva num raio amplo.',
-   anim:{tipo:'pulso',    cor:'#ffdd44', cor2:'#ffaa00', raio:80, vel:1.2}},
-
-  // Demônio Vulkrundshard
-  {id:'possessao_mental',  nome:'Possessão Mental',    icon:'🔴', fonte:'Vulkrundshard', escola:'Mental',
-   desc:'Toma posse da mente de quem pronunciar o nome verdadeiro.',
-   anim:{tipo:'drain',    cor:'#cc3300', cor2:'#ff5522', raio:55, vel:2.8}},
-  {id:'ilusao_sonora',     nome:'Criar Ilusão Sonora', icon:'🔊', fonte:'Vulkrundshard', escola:'Ilusão',
-   desc:'Cria sons e vozes ilusórios enganadores à distância.',
-   anim:{tipo:'onda',     cor:'#aaaaff', cor2:'#8888cc', raio:60, vel:2.0}},
-  {id:'induzir_medo',      nome:'Induzir Medo',        icon:'👁️', fonte:'Vulkrundshard', escola:'Mental',
-   desc:'Implanta terror irracional diretamente na mente do alvo.',
-   anim:{tipo:'raio',     cor:'#663322', cor2:'#aa5533', raio:10, vel:4.0}},
-
-  // Rei Chutter
-  {id:'escudo_magico',     nome:'Escudo Mágico',       icon:'🛡️', fonte:'Rei Chutter',  escola:'Proteção',
-   desc:'Escudo dourado de magia ancestral de alta potência.',
-   anim:{tipo:'auto',     cor:'#ccaa22', cor2:'#ffdd66', raio:56, vel:2.0}},
-  {id:'armadilha_runica',  nome:'Armadilha Rúnica',    icon:'⚡', fonte:'Rei Chutter',  escola:'Arcano',
-   desc:'Glifo mágico traçado no chão que explode ao ativar.',
-   anim:{tipo:'glifo',    cor:'#ff4422', cor2:'#ffaa00', raio:50, vel:1.5}},
-  {id:'explosao',          nome:'Explosão',            icon:'💥', fonte:'Rei Chutter',  escola:'Fogo',
-   desc:'Grande explosão de energia arcana em área ampla.',
-   anim:{tipo:'projetil', cor:'#ff8800', cor2:'#ffee00', raio:70, vel:3.0}},
-  {id:'maldicao_enfr',     nome:'Maldição Enfraquecedora',icon:'💔',fonte:'Rei Chutter',escola:'Maldição',
-   desc:'Maldição que enfraquece todos os atributos do alvo.',
-   anim:{tipo:'raio',     cor:'#884422', cor2:'#cc8844', raio:12, vel:2.5}},
-  {id:'medo_em_massa',     nome:'Medo em Massa',       icon:'😨', fonte:'Rei Chutter',  escola:'Mental',
-   desc:'Pavor sobrenatural que afeta todos inimigos numa grande área.',
-   anim:{tipo:'area',     cor:'#223344', cor2:'#445566', raio:78, vel:1.2}},
-  {id:'dominio_kobolds',   nome:'Domínio (Kobolds)',   icon:'👑', fonte:'Rei Chutter',  escola:'Mental',
-   desc:'Controle absoluto sobre todos os kobolds na área.',
-   anim:{tipo:'pulso',    cor:'#884400', cor2:'#ccaa22', raio:72, vel:1.5}},
+const CAMPANHAS = [
+  {
+    id: 'mhoried',
+    nome: 'A Besta do Forte Sombrio',
+    desc: 'Campanha de fantasia sombria — Mhoried, planícies do Norte',
+    prefix: '../campaigns/mhoried/',
+  },
 ];
 
-// ── SPELL CANVAS ANIMATION ────────────────────────────────────────────
-
-let _spellRaf = null;
-let _spellT   = 0;
-let _spellObj = null;
-
-function _animSpell(){
-  const canvas = document.getElementById('spell-canvas');
-  if(!canvas || !_spellObj) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const A = _spellObj.anim;
-
-  _spellT = (_spellT + 0.007 * A.vel) % 1;
-  const t = _spellT;
-
-  // ── Background ─────────────────────────────────────
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#060404';
-  ctx.fillRect(0, 0, W, H);
-
-  // grid
-  ctx.strokeStyle = 'rgba(80,60,30,0.12)';
-  ctx.lineWidth = 1;
-  for(let x = 0; x < W; x += 24){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for(let y = 0; y < H; y += 24){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-
-  const cx = 68, cy = H/2 - 2; // caster center
-  const tx2 = W - 68, ty2 = H/2 - 2; // target center
-
-  // ── Draw spell effect ──────────────────────────────
-  _drawSpellFx(ctx, A, t, cx, cy, tx2, ty2, W, H);
-
-  // ── Caster glyph ──────────────────────────────────
-  ctx.font = '34px serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('🧙', cx, cy);
-
-  // ── Target glyph ──────────────────────────────────
-  const targetIcon = (['cura','auto'].includes(A.tipo)) ? '🧙' : '💀';
-  ctx.fillText(targetIcon, tx2, ty2);
-
-  // ── Labels ────────────────────────────────────────
-  ctx.font = '9px sans-serif';
-  ctx.fillStyle = 'rgba(160,130,60,0.5)';
-  ctx.textAlign = 'center';
-  ctx.fillText('CONJURADOR', cx, H - 8);
-  ctx.fillText((['cura','auto'].includes(A.tipo)) ? 'ALIADO' : 'ALVO', tx2, H - 8);
-
-  _spellRaf = requestAnimationFrame(_animSpell);
+function initCampanhaPicker(){
+  const saved = localStorage.getItem('oraculo.catalog.campanha');
+  if(saved){
+    document.getElementById('campaign-picker').style.display = 'none';
+    document.getElementById('catalog-title').textContent = '⚔️ Oráculo — ' + (CAMPANHAS.find(c=>c.id===saved)?.nome || saved);
+    return;
+  }
+  const cards = document.getElementById('cp-cards');
+  cards.innerHTML = CAMPANHAS.map(c=>`
+    <div class="cp-card" onclick="escolherCampanha('${c.id}')">
+      <div class="cp-card-nome">${c.nome}</div>
+      <div class="cp-card-desc">${c.desc}</div>
+    </div>`).join('');
+  document.getElementById('campaign-picker').style.display = 'flex';
 }
 
-function _drawSpellFx(ctx, A, t, cx, cy, tx, ty, W, H){
-  const c1 = A.cor, c2 = A.cor2 || A.cor, r = A.raio;
+window.escolherCampanha = function(id){
+  localStorage.setItem('oraculo.catalog.campanha', id);
+  document.getElementById('campaign-picker').style.display = 'none';
+  const camp = CAMPANHAS.find(c=>c.id===id);
+  document.getElementById('catalog-title').textContent = '⚔️ Oráculo — ' + (camp?.nome || id);
+};
 
-  // helper: radial gradient fill
-  const radFill = (x,y,ri,ro,colorIn,colorOut,alpha=1)=>{
-    const g = ctx.createRadialGradient(x,y,ri,x,y,ro);
-    g.addColorStop(0, colorIn);
-    g.addColorStop(1, colorOut);
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(x,y,ro,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha = 1;
-  };
+// ── BUILD CENÁRIOS TAB ────────────────────────────────────────────────
 
-  // helper: hex color to rgba string
-  const hex2rgba = (hex,a)=>{
-    const n = parseInt(hex.replace('#',''),16);
-    return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
-  };
-
-  if(A.tipo === 'projetil'){
-    // 0–0.22 casting glow, 0.22–0.65 travel, 0.65–0.88 impact, 0.88–1 fade
-    if(t < 0.22){
-      const p = t/0.22;
-      radFill(cx,cy, 0, r*0.45*p, hex2rgba(c1,0.9), hex2rgba(c1,0), p*0.8);
-      // charging sparks
-      for(let i=0;i<5;i++){
-        const a = (i/5)*Math.PI*2 + t*20;
-        const sr = 20*p; const sx=cx+Math.cos(a)*sr, sy=cy+Math.sin(a)*sr;
-        radFill(sx,sy,0,4,hex2rgba(c2,0.9),hex2rgba(c2,0),p);
-      }
-    } else if(t < 0.65){
-      const p = (t-0.22)/0.43;
-      const px = cx + (tx-cx)*p, py = cy + (ty-cy)*p;
-      // trail
-      for(let i=5;i>0;i--){
-        const tp = Math.max(0, p - i*0.06);
-        const trx = cx+(tx-cx)*tp, try2 = cy+(ty-cy)*tp;
-        radFill(trx,try2, 0, r*0.18*(i/5), hex2rgba(c1,0.7), hex2rgba(c1,0), (i/5)*0.5);
-      }
-      // head
-      radFill(px,py, 0, r*0.22, '#ffffff', hex2rgba(c1,0.9), 1);
-      radFill(px,py, r*0.22, r*0.36, hex2rgba(c1,0.8), hex2rgba(c1,0), 1);
-    } else if(t < 0.88){
-      const p = (t-0.65)/0.23;
-      radFill(tx,ty, 0, r*p,     '#ffffff',       hex2rgba(c1,0), (1-p)*0.9+0.1);
-      radFill(tx,ty, 0, r*p*0.6, hex2rgba(c2,0.8),hex2rgba(c2,0),(1-p*0.7));
-      ctx.strokeStyle = c1; ctx.lineWidth = 2;
-      ctx.globalAlpha = (1-p)*0.6;
-      ctx.beginPath(); ctx.arc(tx,ty,r*p*1.3,0,Math.PI*2); ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-
-  } else if(A.tipo === 'area'){
-    // 0–0.3 cast, 0.3–0.75 expand, 0.75–1 fade
-    const cx2 = (cx+tx)/2, cy2 = (cy+ty)/2; // area centered between
-    if(t < 0.3){
-      const p = t/0.3;
-      radFill(cx,cy, 0, 28*p, hex2rgba(c1,0.7), hex2rgba(c1,0), p);
-    } else if(t < 0.75){
-      const p = (t-0.3)/0.45;
-      const er = r*p;
-      radFill(cx2,cy2, 0, er, hex2rgba(c1,0.18), hex2rgba(c1,0), 1);
-      ctx.strokeStyle = c1; ctx.lineWidth = 2;
-      ctx.globalAlpha = 1-p*0.7;
-      ctx.beginPath(); ctx.arc(cx2,cy2,er,0,Math.PI*2); ctx.stroke();
-      ctx.globalAlpha = 1;
-      if(p>0.3){
-        ctx.strokeStyle = c2; ctx.lineWidth = 1;
-        ctx.globalAlpha = (p-0.3)*0.7;
-        ctx.beginPath(); ctx.arc(cx2,cy2,er*0.6,0,Math.PI*2); ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
-    } else {
-      const p = (t-0.75)/0.25;
-      radFill(cx2,cy2, 0, r*(1+p*0.3), hex2rgba(c1,0.1*(1-p)), hex2rgba(c1,0), 1-p);
-    }
-
-  } else if(A.tipo === 'auto'){
-    // pulsing shield around caster
-    const pulse = 0.5+0.5*Math.sin(t*Math.PI*6);
-    const sr = r*0.55 + pulse*6;
-    radFill(cx,cy, sr-4, sr+16, hex2rgba(c1,0.6), hex2rgba(c1,0), 1);
-    ctx.strokeStyle = c1; ctx.lineWidth = 2.5;
-    ctx.globalAlpha = 0.5+pulse*0.4;
-    ctx.beginPath(); ctx.arc(cx,cy,sr,0,Math.PI*2); ctx.stroke();
-    ctx.globalAlpha = 1;
-    // expansion ring
-    const rr = r*0.55 + (t%0.5)*r*1.6;
-    ctx.strokeStyle = c2; ctx.lineWidth = 1.5;
-    ctx.globalAlpha = Math.max(0, 0.6 - (t%0.5)*2);
-    ctx.beginPath(); ctx.arc(cx,cy,rr,0,Math.PI*2); ctx.stroke();
-    ctx.globalAlpha = 1;
-
-  } else if(A.tipo === 'drain'){
-    // 0–0.2 target glows, 0.2–0.8 particles flow target→caster, 0.8–1 absorb
-    if(t < 0.2){
-      const p = t/0.2;
-      radFill(tx,ty, 0, 30*p, hex2rgba(c1,0.8), hex2rgba(c1,0), p);
-    } else if(t < 0.8){
-      const prog = (t-0.2)/0.6;
-      for(let i=0;i<7;i++){
-        const phase = ((i/7) + prog) % 1;
-        const px2 = tx + (cx-tx)*phase;
-        const py2 = ty + (cy-ty)*phase + Math.sin(phase*Math.PI*5)*(10*(1-phase));
-        const a2 = Math.sin(phase*Math.PI)*0.9;
-        radFill(px2,py2, 0, 6, hex2rgba(c1,a2), hex2rgba(c1,0), a2);
-      }
-      radFill(cx,cy, 0, 22*prog, hex2rgba(c2,0.6), hex2rgba(c2,0), prog*0.8);
-    } else {
-      const p = (t-0.8)/0.2;
-      radFill(cx,cy, 0, r*0.4*(1-p), hex2rgba(c1,0.8), hex2rgba(c1,0), 1-p);
-    }
-
-  } else if(A.tipo === 'onda'){
-    // cast + concentric rings moving caster→target
-    if(t < 0.25){
-      radFill(cx,cy, 0, 24*(t/0.25), hex2rgba(c1,0.7), hex2rgba(c1,0), t/0.25);
-    } else {
-      const prog = (t-0.25)/0.75;
-      for(let i=0;i<4;i++){
-        const rp = (prog + i*0.22) % 1;
-        const rx2 = cx + (tx-cx)*rp, ry2 = cy + (ty-cy)*rp;
-        const ringR = 16*(1-rp*0.5);
-        ctx.strokeStyle = c1; ctx.lineWidth = 2;
-        ctx.globalAlpha = (1-rp)*0.85;
-        ctx.save();
-        ctx.translate(rx2,ry2); ctx.scale(0.28,1);
-        ctx.beginPath(); ctx.arc(0,0,ringR,0,Math.PI*2); ctx.stroke();
-        ctx.restore();
-        ctx.globalAlpha = 1;
-      }
-    }
-
-  } else if(A.tipo === 'raio'){
-    // instant beam flashing caster→target
-    const flash = Math.abs(Math.sin(t*Math.PI*3));
-    ctx.strokeStyle = c1; ctx.lineWidth = r*0.18;
-    ctx.globalAlpha = flash * 0.85;
-    ctx.shadowBlur = 16; ctx.shadowColor = c2;
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(tx,ty); ctx.stroke();
-    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5;
-    ctx.globalAlpha = flash * 0.4;
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(tx,ty); ctx.stroke();
-    ctx.globalAlpha = 1;
-
-  } else if(A.tipo === 'cura'){
-    // green light expands from caster toward target
-    if(t < 0.25){
-      const p = t/0.25;
-      radFill(cx,cy, 0, 30*p, hex2rgba(c1,0.8), hex2rgba(c1,0), p);
-    } else if(t < 0.7){
-      const p = (t-0.25)/0.45;
-      // rising crosses (particles)
-      for(let i=0;i<6;i++){
-        const phase = ((i/6)+p) % 1;
-        const px2 = cx + (tx-cx)*phase + Math.sin(phase*15+i)*8;
-        const py2 = cy + (ty-cy)*phase - phase*20;
-        ctx.fillStyle = hex2rgba(c2, Math.sin(phase*Math.PI)*0.9);
-        ctx.font = '14px sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('+', px2, py2);
-      }
-      radFill(tx,ty, 0, 28*p, hex2rgba(c1,0.5), hex2rgba(c1,0), p*0.8);
-    } else {
-      const p = (t-0.7)/0.3;
-      radFill(tx,ty, 0, r*0.5*(1-p), hex2rgba(c2,0.9), hex2rgba(c2,0), 1-p);
-    }
-
-  } else if(A.tipo === 'pulso'){
-    // expanding pulse rings from caster outward
-    for(let i=0;i<3;i++){
-      const pt = (t + i/3) % 1;
-      const er = r*1.2*pt;
-      ctx.strokeStyle = c1; ctx.lineWidth = 2;
-      ctx.globalAlpha = (1-pt)*0.7;
-      ctx.beginPath(); ctx.arc(cx,cy,er,0,Math.PI*2); ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-    radFill(cx,cy, 0, 28, hex2rgba(c1,0.5), hex2rgba(c1,0), 0.4+0.3*Math.sin(t*Math.PI*4));
-
-  } else if(A.tipo === 'ilusao'){
-    // shimmer: flickering copies offset from caster to target
-    const ghost = Math.abs(Math.sin(t*Math.PI*4));
-    for(let i=0;i<3;i++){
-      const off = (i-1)*12*(1-ghost);
-      ctx.globalAlpha = ghost * 0.4;
-      ctx.font = '34px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('🧙', tx+off, ty);
-    }
-    ctx.globalAlpha = 1;
-    const sr2 = 36 + Math.sin(t*Math.PI*5)*6;
-    ctx.strokeStyle = c1; ctx.lineWidth = 2; ctx.setLineDash([4,4]);
-    ctx.globalAlpha = 0.5+ghost*0.4;
-    ctx.beginPath(); ctx.arc(tx,ty,sr2,0,Math.PI*2); ctx.stroke();
-    ctx.setLineDash([]); ctx.globalAlpha = 1;
-
-  } else if(A.tipo === 'invocacao'){
-    // summon circle beneath target that pulses up
-    const ring = 30 + Math.sin(t*Math.PI*3)*6;
-    ctx.strokeStyle = c1; ctx.lineWidth = 2;
-    ctx.globalAlpha = 0.7;
-    ctx.beginPath(); ctx.arc(tx,ty+10,ring,0,Math.PI*2); ctx.stroke();
-    for(let i=0;i<6;i++){
-      const a = (i/6)*Math.PI*2 + t*Math.PI;
-      const lx = tx+Math.cos(a)*ring, ly = ty+10+Math.sin(a)*ring;
-      ctx.strokeStyle = c2; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(tx,ty+10); ctx.lineTo(lx,ly); ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-    radFill(tx,ty+10, 0, ring*0.5, hex2rgba(c1,0.3), hex2rgba(c1,0), Math.abs(Math.sin(t*Math.PI*2)));
-
-  } else if(A.tipo === 'glifo'){
-    // rune draws then explodes
-    if(t < 0.5){
-      const p = t/0.5;
-      // draw triangle rune progressively
-      const gr = 35;
-      const pts = [[tx,ty-gr],[tx+gr*0.87,ty+gr*0.5],[tx-gr*0.87,ty+gr*0.5]];
-      ctx.strokeStyle = c1; ctx.lineWidth = 2.5;
-      ctx.globalAlpha = 0.8;
-      const totalLen = 3;
-      const drawn = p * totalLen;
-      for(let seg=0;seg<3;seg++){
-        if(drawn < seg) break;
-        const segP = Math.min(1,(drawn-seg));
-        const p1 = pts[seg], p2 = pts[(seg+1)%3];
-        ctx.beginPath(); ctx.moveTo(p1[0],p1[1]);
-        ctx.lineTo(p1[0]+(p2[0]-p1[0])*segP, p1[1]+(p2[1]-p1[1])*segP);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-    } else {
-      const p = (t-0.5)/0.5;
-      radFill(tx,ty, 0, r*p, '#ffffff', hex2rgba(c1,0), (1-p)*0.95);
-      ctx.strokeStyle = c2; ctx.lineWidth = 2;
-      ctx.globalAlpha = (1-p)*0.6;
-      ctx.beginPath(); ctx.arc(tx,ty,r*p*1.4,0,Math.PI*2); ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-  }
-}
-
-function _startSpellAnim(spell){
-  if(_spellRaf) cancelAnimationFrame(_spellRaf);
-  _spellT = 0;
-  _spellObj = spell;
-  _animSpell();
-}
-
-// ── BUILD MAGIAS TAB ──────────────────────────────────────────────────
-
-function buildMagiasTab(){
-  const tab = document.getElementById('magias-tab');
-
-  // Group spells by fonte
-  const groups = {};
-  for(const m of MAGIAS_DATA){
-    (groups[m.fonte] = groups[m.fonte]||[]).push(m);
-  }
-
-  let sideHtml = '';
-  for(const [fonte, spells] of Object.entries(groups)){
-    sideHtml += `<div class="mg-group-title">${fonte}</div>`;
-    for(const sp of spells){
-      sideHtml += `<button class="spell-btn" data-sid="${sp.id}" onclick="selectSpell('${sp.id}')">
-        <span class="sb-icon">${sp.icon}</span>${sp.nome}
-      </button>`;
-    }
-  }
-
-  tab.innerHTML = `
-    <div class="section-header">
-      <h2>Magias &amp; Efeitos</h2>
-      <span class="count-badge">${MAGIAS_DATA.length} magias</span>
-    </div>
-    <div class="magias-layout">
-      <div class="magias-sidebar" id="magias-sidebar">${sideHtml}</div>
-      <div class="magias-main">
-        <canvas id="spell-canvas" width="520" height="200"></canvas>
-        <div class="spell-info-box" id="spell-info">
-          <div class="si-nome">← Selecione uma magia</div>
-          <div class="si-desc" style="color:var(--text-dim);font-size:11px;margin-top:4px">Clique em uma magia na lista para ver o efeito visual animado.</div>
+function buildCenariosTab(){
+  const tab = document.getElementById('cenarios-tab');
+  const cenas = Object.values(CENAS).sort((a,b)=>(a.ato||0)-(b.ato||0)||(a.ordemNarrativa||99)-(b.ordemNarrativa||99));
+  const atos = {};
+  for(const c of cenas){ const a=c.ato||1; (atos[a]=atos[a]||[]).push(c); }
+  let html = `<div class="section-header"><h2>Cenários</h2><span class="count-badge">${cenas.length} locais</span></div>`;
+  for(const [ato, lista] of Object.entries(atos)){
+    html += `<div style="margin-bottom:24px"><div class="rot-ato-titulo">Ato ${ato}</div>
+    <div class="card-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">`;
+    for(const c of lista){
+      const imgUrl = `../campaigns/mhoried/locations/${c.id}.png`;
+      const tags = [];
+      if(c.batalha) tags.push('<span class="cenario-tag batalha">⚔️ Batalha</span>');
+      if(c.npcEntrada) tags.push(`<span class="cenario-tag npc">👤 NPC</span>`);
+      tags.push(`<span class="cenario-tag ato">Ato ${c.ato||1}</span>`);
+      html += `<div class="cenario-card" onclick="openCenarioModal('${c.id}')">
+        <img class="cenario-img" src="${imgUrl}" onerror="this.style.background='#1a1208'" alt="">
+        <div class="cenario-body">
+          <div class="cenario-nome">${c.titulo||c.id}</div>
+          <div class="cenario-sub">${c.local||''}</div>
+          <div class="cenario-tags">${tags.join('')}</div>
         </div>
-        <div class="spell-tweaks" id="spell-tweaks" style="display:none">
-          <div class="twk-section-title">⚙️ Ajustes Visuais</div>
-          <div class="twk-row">
-            <div class="twk-label">Velocidade</div>
-            <input type="range" class="twk-range" id="twk-vel" min="0.3" max="6" step="0.1" oninput="_twkUpdate()">
-          </div>
-          <div class="twk-row">
-            <div class="twk-label">Tamanho</div>
-            <input type="range" class="twk-range" id="twk-raio" min="15" max="110" step="1" oninput="_twkUpdate()">
-          </div>
-          <div class="twk-row">
-            <div class="twk-label">Cor Principal</div>
-            <input type="color" class="twk-color" id="twk-cor1" oninput="_twkUpdate()">
-          </div>
-          <div class="twk-row">
-            <div class="twk-label">Cor Secundária</div>
-            <input type="color" class="twk-color" id="twk-cor2" oninput="_twkUpdate()">
-          </div>
-        </div>
-      </div>
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+  tab.innerHTML = html;
+}
+
+window.openCenarioModal = function(id){
+  const c = CENAS[id];
+  if(!c) return;
+  const imgUrl = `../campaigns/mhoried/locations/${id}.png`;
+  document.getElementById('modal-inner').innerHTML = `
+    <img src="${imgUrl}" onerror="this.style.display='none'" style="width:100%;max-height:220px;object-fit:cover;border-radius:8px 8px 0 0">
+    <div class="modal-class-info">
+      <div class="modal-class-name">${c.titulo||id}</div>
+      <div style="font-size:11px;color:rgba(190,165,90,.5);margin-bottom:10px">${c.local||''} · Ato ${c.ato||1}</div>
+      ${c.descricao ? `<div style="font-size:12px;color:rgba(190,165,100,.8);line-height:1.6;margin-bottom:10px">${c.descricao}</div>` : ''}
+      ${c.batalha ? `<div style="margin-bottom:8px"><span class="cenario-tag batalha" style="display:inline-block">⚔️ Cena de Batalha</span></div>` : ''}
+      ${c.npcEntrada ? `<div style="font-size:11px;color:rgba(140,210,140,.8)">👤 NPC de entrada: ${c.npcEntrada}</div>` : ''}
     </div>`;
+  document.getElementById('modal-overlay').classList.add('active');
+};
+
+// ── BUILD ROTEIRO TAB ─────────────────────────────────────────────────
+
+function buildRoteiroTab(){
+  const tab = document.getElementById('roteiro-tab');
+  const cenas = Object.values(CENAS).sort((a,b)=>(a.ato||0)-(b.ato||0)||(a.ordemNarrativa||99)-(b.ordemNarrativa||99));
+  const atos = {};
+  for(const c of cenas){ const a=c.ato||1; (atos[a]=atos[a]||[]).push(c); }
+  const atoNomes = {1:'Ato I — O Mercado Sombrio',2:'Ato II — O Caminho ao Norte',3:'Ato III — O Forte',4:'Ato IV — A Besta'};
+  let html = `<div class="section-header"><h2>Roteiro da Campanha</h2><span class="count-badge">${cenas.length} cenas</span></div>`;
+  for(const [ato, lista] of Object.entries(atos)){
+    html += `<div class="rot-ato"><div class="rot-ato-titulo">${atoNomes[ato]||'Ato '+ato}</div>`;
+    lista.forEach((c,i)=>{
+      const badges = [];
+      if(c.batalha) badges.push('<span class="rot-badge batalha">⚔️ Batalha</span>');
+      if(c.npcEntrada) badges.push(`<span class="rot-badge npc">👤 ${c.npcEntrada}</span>`);
+      html += `<div class="rot-cena">
+        <div class="rot-cena-num">Cena ${c.ordemNarrativa||i+1}</div>
+        <div class="rot-cena-titulo">${c.titulo||c.id}</div>
+        ${c.descricao?`<div class="rot-cena-texto">${c.descricao}</div>`:''}
+        <div class="rot-cena-badges">${badges.join('')}</div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  tab.innerHTML = html;
 }
 
-window.selectSpell = function(id){
-  const sp = MAGIAS_DATA.find(m=>m.id===id);
-  if(!sp) return;
-  _spellObj = JSON.parse(JSON.stringify(sp)); // working copy
+// ── BUILD CHECKLIST TAB ───────────────────────────────────────────────
 
-  // Update sidebar highlight
-  document.querySelectorAll('.spell-btn').forEach(b=>b.classList.toggle('active', b.dataset.sid===id));
+function buildChecklistTab(){
+  const tab = document.getElementById('checklist-tab');
+  tab.innerHTML = '<div class="section-header"><h2>✓ Checklist de Assets</h2></div><div id="ck-body" style="min-height:200px;display:flex;align-items:center;justify-content:center;color:rgba(190,165,90,.4);font-size:13px">Verificando...</div>';
 
-  // Update info box
-  const info = document.getElementById('spell-info');
-  info.innerHTML = `
-    <div class="si-nome">${sp.icon} ${sp.nome}</div>
-    <div class="si-tags">
-      <span class="si-tag">${sp.escola}</span>
-      <span class="si-tag">${sp.fonte}</span>
-      <span class="si-tag">${sp.anim.tipo}</span>
-    </div>
-    <div class="si-desc">${sp.desc}</div>`;
+  const prefix = '../campaigns/mhoried/';
 
-  // Update tweaks
-  const tweaks = document.getElementById('spell-tweaks');
-  tweaks.style.display = '';
-  document.getElementById('twk-vel').value  = sp.anim.vel;
-  document.getElementById('twk-raio').value = sp.anim.raio;
-  document.getElementById('twk-cor1').value = sp.anim.cor;
-  document.getElementById('twk-cor2').value = sp.anim.cor2 || sp.anim.cor;
+  const sections = [
+    {
+      titulo: 'Retratos NPC',
+      items: Object.keys(NPCS).map(id=>({nome:NPCS[id].nome||id, path:`${prefix}portraits/${id}.png`})),
+    },
+    {
+      titulo: 'Retratos Inimigos',
+      items: INIMIGOS_DATA.map(e=>({nome:e.nome||e.id, path:`${prefix}portraits/enemy_${e.id}.png`})),
+    },
+    {
+      titulo: 'Sprites de Classe (M)',
+      items: Object.keys(CLASSES_DATA).map(id=>({nome:CLASSES_DATA[id].nome+' M', path:`${prefix}sprites/${id}_m_costas.png`})),
+    },
+    {
+      titulo: 'Sprites de Classe (F)',
+      items: Object.keys(CLASSES_DATA).map(id=>({nome:CLASSES_DATA[id].nome+' F', path:`${prefix}sprites/${id}_f_costas.png`})),
+    },
+    {
+      titulo: 'Imagens de Cenário',
+      items: Object.keys(CENAS).map(id=>({nome:CENAS[id].titulo||id, path:`${prefix}locations/${id}.png`})),
+    },
+  ];
 
-  _startSpellAnim(_spellObj);
-};
+  function probeImg(path){
+    return new Promise(resolve=>{
+      const img = new Image();
+      img.onload  = ()=>resolve(true);
+      img.onerror = ()=>resolve(false);
+      img.src = path;
+    });
+  }
 
-window._twkUpdate = function(){
-  if(!_spellObj) return;
-  _spellObj.anim.vel  = parseFloat(document.getElementById('twk-vel').value);
-  _spellObj.anim.raio = parseFloat(document.getElementById('twk-raio').value);
-  _spellObj.anim.cor  = document.getElementById('twk-cor1').value;
-  _spellObj.anim.cor2 = document.getElementById('twk-cor2').value;
-};
+  async function build(){
+    let totalOk=0, totalMiss=0;
+    let html = '';
+    for(const sec of sections){
+      const results = await Promise.all(sec.items.map(item=>probeImg(item.path)));
+      const ok   = results.filter(Boolean).length;
+      const miss = results.length - ok;
+      totalOk   += ok;
+      totalMiss += miss;
+      const scoreClass = miss===0 ? 'ck-score-ok' : 'ck-score-miss';
+      html += `<div class="ck-section">
+        <div class="ck-section-title">
+          ${sec.titulo}
+          <span class="ck-section-score ${scoreClass}">${ok}/${results.length}</span>
+        </div>`;
+      sec.items.forEach((item,i)=>{
+        const found = results[i];
+        html += `<div class="ck-item${found?'':' ck-missing'}">
+          <span class="ck-icon">${found?'✅':'❌'}</span>
+          <div>
+            <div class="ck-nome">${item.nome}</div>
+            <div class="ck-path">${item.path}</div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    const pct = Math.round(totalOk/(totalOk+totalMiss)*100);
+    document.getElementById('ck-body').outerHTML = `
+      <div class="ck-summary" style="color:${totalMiss===0?'#4caf50':pct>=70?'#c8a040':'#f44336'}">
+        ${totalOk} / ${totalOk+totalMiss} assets presentes (${pct}%)
+      </div>${html}`;
+  }
+
+  build();
+}
 
 // ── BUILD CLASSES TAB ─────────────────────────────────────────────────
 
@@ -1664,282 +1279,9 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Escape') closeModal();
 });
 
-// ── MOVIMENTAÇÕES TAB ────────────────────────────────────────────────
-let _mvSceneRaf=null, _mvMapRaf=null, _mvMapTimer=null;
-let _mvOnActivate=null, _mvOnDeactivate=null;
-
-function buildMovimentacoesTab(){
-  const tab = document.getElementById('movimentacoes-tab');
-
-  // sprite metadata: frame width always 362, heights vary
-  const MV_SPRITES = {
-    'arqueiro_m': {fw:362,fh:356}, 'arqueiro_f': {fw:362,fh:355},
-    'barbaro_m':  {fw:362,fh:442}, 'barbaro_f':  {fw:362,fh:437},
-    'clerigo_m':  {fw:362,fh:819}, 'clerigo_f':  {fw:362,fh:436},
-    'guerreiro_m':{fw:362,fh:465}, 'guerreiro_f':{fw:362,fh:395},
-    'ladino_m':   {fw:362,fh:359}, 'ladino_f':   {fw:362,fh:389},
-    'mago_m':     {fw:362,fh:450}, 'mago_f':     {fw:362,fh:445},
-  };
-  const MV_LABELS = {arqueiro:'🏹 Arqueiro',barbaro:'🪓 Bárbaro',clerigo:'✨ Clérigo',
-                     guerreiro:'⚔️ Guerreiro',ladino:'🗡️ Ladino',mago:'🔮 Mago'};
-
-  tab.innerHTML = `
-<div class="mv-wrap">
-  <div>
-    <div class="mv-sec-title">Personagem</div>
-    <div class="mv-selector">
-      <div class="mv-sel-row">
-        <span class="mv-sel-label">Classe</span>
-        ${Object.entries(MV_LABELS).map(([id,lbl])=>`<button class="mv-sel-btn mv-cls-btn" data-cls="${id}">${lbl}</button>`).join('')}
-      </div>
-      <div class="mv-sel-row">
-        <span class="mv-sel-label">Gênero</span>
-        <button class="mv-sel-btn mv-gen-btn" data-gen="m">♂ Masculino</button>
-        <button class="mv-sel-btn mv-gen-btn" data-gen="f">♀ Feminino</button>
-      </div>
-    </div>
-  </div>
-  <div>
-    <div class="mv-sec-title">Frames individuais — 4 poses</div>
-    <div class="mv-frames-row">
-      <div class="mv-frame-wrap"><div class="mv-spr f0"></div><div class="mv-frame-label">Frame 1</div></div>
-      <div class="mv-frame-wrap"><div class="mv-spr f1"></div><div class="mv-frame-label">Frame 2</div></div>
-      <div class="mv-frame-wrap"><div class="mv-spr f2"></div><div class="mv-frame-label">Frame 3</div></div>
-      <div class="mv-frame-wrap"><div class="mv-spr f3"></div><div class="mv-frame-label">Frame 4</div></div>
-    </div>
-  </div>
-  <div>
-    <div class="mv-sec-title">Controles</div>
-    <div class="mv-controles">
-      <div class="mv-ctrl"><label>Velocidade (FPS)</label><input type="range" id="mv-fps" min="2" max="20" value="8" step="1"><span class="mv-ctrl-val" id="mv-fps-val">8 fps</span></div>
-      <div class="mv-ctrl"><label>Tamanho</label><input type="range" id="mv-escala" min="12" max="55" value="28" step="1"><span class="mv-ctrl-val" id="mv-escala-val">28%</span></div>
-      <div class="mv-ctrl"><label>Vel. travessia</label><input type="range" id="mv-trav" min="1" max="12" value="4" step="0.5"><span class="mv-ctrl-val" id="mv-trav-val">4 s</span></div>
-    </div>
-  </div>
-  <div>
-    <div class="mv-sec-title">Resultado — animação ao vivo</div>
-    <div style="display:flex;gap:40px;justify-content:center;align-items:flex-end;flex-wrap:wrap;">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-        <div class="mv-spr anim"></div>
-        <span style="font-size:9px;color:rgba(200,160,64,0.35);letter-spacing:1px">→ DIREITA</span>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-        <div class="mv-spr anim espelha"></div>
-        <span style="font-size:9px;color:rgba(200,160,64,0.35);letter-spacing:1px">← ESQUERDA</span>
-      </div>
-    </div>
-  </div>
-  <div>
-    <div class="mv-sec-title">Cena — atravessando</div>
-    <div class="mv-scene" id="mv-scene">
-      <div class="mv-runner mv-spr anim" id="mv-runner"></div>
-      <div class="mv-scene-floor"></div>
-    </div>
-  </div>
-  <div>
-    <div class="mv-sec-title">Mapa — Feira de St. Phanourios</div>
-    <div class="mv-controles" style="max-width:480px;align-self:center;width:100%">
-      <div class="mv-ctrl"><label>Passo (s/hex)</label><input type="range" id="mv-map-step" min="0.2" max="2.5" value="0.8" step="0.1"><span class="mv-ctrl-val" id="mv-map-step-val">0.8 s</span></div>
-      <div class="mv-ctrl"><label>Tam. personagem</label><input type="range" id="mv-map-sc" min="8" max="30" value="16" step="1"><span class="mv-ctrl-val" id="mv-map-sc-val">16%</span></div>
-    </div>
-    <div id="mv-map-wrap" style="position:relative;margin:0 auto;max-width:min(480px,100%);border-radius:12px;overflow:hidden;border:1px solid rgba(200,160,64,0.18);background:#0a0806;">
-      <img src="../maps/feira-limpa.png" id="mv-map-img" style="display:block;width:100%;height:auto;user-select:none" draggable="false" alt="Mapa">
-      <canvas id="mv-hex-canvas" style="position:absolute;top:0;left:0;pointer-events:none"></canvas>
-      <div id="mv-map-runner" style="position:absolute;background-color:transparent;background-repeat:no-repeat;pointer-events:none;"></div>
-    </div>
-  </div>
-</div>`;
-
-  const allMvSprites = tab.querySelectorAll('.mv-spr');
-  const mvRunner = document.getElementById('mv-runner');
-  const mvScene  = document.getElementById('mv-scene');
-  let mvFps=8, mvEscala=28, mvTravSec=4;
-  let mvTravDir=1, mvTravX=-160, mvLastSceneTime=null;
-
-  // ── character selector ──────────────────────────────────────────────
-  let mvCurCls='mago', mvCurGen='m';
-  const FRAME_W_MAP = MV_SPRITES; // alias used later for map calc
-
-  function mvSetSprite(key){
-    const d = MV_SPRITES[key];
-    if(!d) return;
-    const url = `./assets/sprites/${key}_run.png`;
-    const sc = mvEscala/100;
-    allMvSprites.forEach(el=>{
-      el.style.backgroundImage = `url('${url}')`;
-      el.style.setProperty('--fw', d.fw+'px');
-      el.style.setProperty('--fh', d.fh+'px');
-      el.style.backgroundSize = (d.fw*4*sc)+'px '+(d.fh*sc)+'px';
-      el.style.width  = (d.fw*sc)+'px';
-      el.style.height = (d.fh*sc)+'px';
-    });
-    // update static frame previews (f0–f3)
-    const classMap = {f0:0,f1:1,f2:2,f3:3};
-    allMvSprites.forEach(el=>{
-      for(const [cls,n] of Object.entries(classMap)){
-        if(el.classList.contains(cls)){
-          el.style.backgroundPositionX = -(d.fw*sc*n)+'px';
-          break;
-        }
-      }
-    });
-    const mapRunner = document.getElementById('mv-map-runner');
-    if(mapRunner) mapRunner.style.backgroundImage = `url('${url}')`;
-    mvCurFW = d.fw; mvCurFH = d.fh;
-    mvSceneFrIdx = 0;
-    mvTravX = -160;
-  }
-  let mvCurFW = MV_SPRITES['mago_m'].fw;
-  let mvCurFH = MV_SPRITES['mago_m'].fh;
-  let mvSceneFrIdx=0, mvSceneLastFrTime=0;
-
-  tab.querySelectorAll('.mv-cls-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      tab.querySelectorAll('.mv-cls-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      mvCurCls = btn.dataset.cls;
-      mvSetSprite(mvCurCls+'_'+mvCurGen);
-    });
-  });
-  tab.querySelectorAll('.mv-gen-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      tab.querySelectorAll('.mv-gen-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      mvCurGen = btn.dataset.gen;
-      mvSetSprite(mvCurCls+'_'+mvCurGen);
-    });
-  });
-  // set initial active buttons + sprite
-  if(tab.querySelector){
-    tab.querySelector('.mv-cls-btn[data-cls="mago"]').classList.add('active');
-    tab.querySelector('.mv-gen-btn[data-gen="m"]').classList.add('active');
-  }
-  mvSetSprite('mago_m');
-
-  // all .mv-spr.anim elements (live preview + scene runner)
-  const mvAnimEls = Array.from(tab.querySelectorAll('.mv-spr.anim'));
-
-  function applyMvAll(){
-    const sc=mvEscala/100;
-    allMvSprites.forEach(el=>el.style.setProperty('--sc',sc));
-    // update static frame previews background-size/position via --sc
-    document.getElementById('mv-fps-val').textContent    = mvFps+' fps';
-    document.getElementById('mv-escala-val').textContent = mvEscala+'%';
-    document.getElementById('mv-trav-val').textContent   = mvTravSec+' s';
-  }
-
-  function animMvScene(ts){
-    if(!mvLastSceneTime) mvLastSceneTime=ts;
-    const dt=(ts-mvLastSceneTime)/1000; mvLastSceneTime=ts;
-    const sc = mvEscala/100;
-    const sprW = mvCurFW * sc;
-    const sceneW = mvScene.clientWidth||400;
-    const speed = (sceneW+sprW*2)/mvTravSec;
-    mvTravX += speed*mvTravDir*dt;
-    if(mvTravDir===1  && mvTravX> sceneW+sprW){ mvTravDir=-1; mvTravX=sceneW+sprW; }
-    if(mvTravDir===-1 && mvTravX<-sprW)       { mvTravDir=1;  mvTravX=-sprW; }
-    mvRunner.style.left      = mvTravX+'px';
-    mvRunner.style.transform = mvTravDir===-1 ? 'scaleX(-1)' : 'none';
-    // JS frame cycling — works in all browsers
-    if(ts - mvSceneLastFrTime >= 1000/mvFps){
-      mvSceneLastFrTime = ts;
-      mvSceneFrIdx = (mvSceneFrIdx+1) % 4;
-      const bpx = -(mvCurFW * sc * mvSceneFrIdx) + 'px';
-      mvAnimEls.forEach(el => el.style.backgroundPositionX = bpx);
-    }
-    _mvSceneRaf=requestAnimationFrame(animMvScene);
-  }
-
-  document.getElementById('mv-fps').addEventListener('input',e=>{mvFps=parseInt(e.target.value);applyMvAll();});
-  document.getElementById('mv-escala').addEventListener('input',e=>{mvEscala=parseInt(e.target.value);applyMvAll();});
-  document.getElementById('mv-trav').addEventListener('input',e=>{mvTravSec=parseFloat(e.target.value);applyMvAll();});
-  applyMvAll();
-
-  // ── Mapa hex ─────────────────────────────────────────────────────────
-  const HR=55,CS=82,RS=95,OOFF=48,GX0=47,GY0=80,COLS=13,ROWS=13;
-  const MAP_W=1086,FRAMES=4;
-  const mvMapWrap   = document.getElementById('mv-map-wrap');
-  const mvMapCanvas = document.getElementById('mv-hex-canvas');
-  const mvMapRunner = document.getElementById('mv-map-runner');
-  const mvStepInp   = document.getElementById('mv-map-step');
-  const mvStepVal   = document.getElementById('mv-map-step-val');
-  const mvScInp     = document.getElementById('mv-map-sc');
-  const mvScVal     = document.getElementById('mv-map-sc-val');
-  let mvStepDur=0.8, mvSprSc=0.16, mvCurCol=6, mvCurRow=6, mvFrIdx=0, mvLastFrTime=0;
-
-  function mvMS(){ return mvMapWrap.getBoundingClientRect().width/MAP_W; }
-  function mvCtr(c,r){ const s=mvMS(); return{x:(GX0+c*CS)*s,y:(GY0+r*RS+(c%2===1?OOFF:0))*s}; }
-  function mvViz(c,r){
-    const o=c%2===1;
-    return(o?[[c+1,r+1],[c-1,r],[c,r+1],[c,r-1],[c+1,r],[c-1,r+1]]:
-             [[c+1,r],[c-1,r-1],[c,r+1],[c,r-1],[c+1,r-1],[c-1,r]])
-      .filter(([a,b])=>a>=0&&a<COLS&&b>=0&&b<ROWS);
-  }
-  function mvDrawGrid(){
-    const rect=mvMapWrap.getBoundingClientRect(); const s=rect.width/MAP_W; const hr=HR*s;
-    mvMapCanvas.width=Math.round(rect.width); mvMapCanvas.height=Math.round(rect.height);
-    const ctx=mvMapCanvas.getContext('2d');
-    ctx.clearRect(0,0,mvMapCanvas.width,mvMapCanvas.height);
-    ctx.strokeStyle='rgba(200,160,64,0.20)'; ctx.lineWidth=0.8;
-    for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
-      const{x,y}=mvCtr(c,r); ctx.beginPath();
-      for(let i=0;i<6;i++){const a=Math.PI/3*i;i===0?ctx.moveTo(x+hr*Math.cos(a),y+hr*Math.sin(a)):ctx.lineTo(x+hr*Math.cos(a),y+hr*Math.sin(a));}
-      ctx.closePath(); ctx.stroke();
-    }
-  }
-  function mvPlace(c,r,fl,instant){
-    const{x,y}=mvCtr(c,r); const fw=mvCurFW*mvSprSc,fh=mvCurFH*mvSprSc;
-    mvMapRunner.style.width=fw+'px'; mvMapRunner.style.height=fh+'px';
-    mvMapRunner.style.backgroundSize=(fw*FRAMES)+'px '+fh+'px';
-    mvMapRunner.style.transition=instant?'none':'left '+(mvStepDur*0.92)+'s linear,top '+(mvStepDur*0.92)+'s linear';
-    mvMapRunner.style.left=(x-fw/2)+'px'; mvMapRunner.style.top=(y-fh*0.88)+'px';
-    mvMapRunner.style.transform=fl?'scaleX(-1)':'none';
-  }
-  function mvAnimFr(ts){
-    if(ts-mvLastFrTime>=1000/mvFps){ mvLastFrTime=ts; mvFrIdx=(mvFrIdx+1)%FRAMES; mvMapRunner.style.backgroundPositionX=(-(mvCurFW*mvSprSc)*mvFrIdx)+'px'; }
-    _mvMapRaf=requestAnimationFrame(mvAnimFr);
-  }
-  function mvNext(){
-    const opts=mvViz(mvCurCol,mvCurRow); const[nc,nr]=opts[Math.floor(Math.random()*opts.length)];
-    mvPlace(nc,nr,nc<mvCurCol,false); mvCurCol=nc; mvCurRow=nr;
-    _mvMapTimer=setTimeout(mvNext,mvStepDur*1000);
-  }
-  function mvApply(){
-    mvStepDur=parseFloat(mvStepInp.value); mvSprSc=parseFloat(mvScInp.value)/100;
-    mvStepVal.textContent=mvStepDur.toFixed(1)+' s'; mvScVal.textContent=Math.round(mvSprSc*100)+'%';
-    mvDrawGrid(); mvPlace(mvCurCol,mvCurRow,false,true);
-  }
-  mvStepInp.addEventListener('input',mvApply);
-  mvScInp.addEventListener('input',mvApply);
-  if(window.addEventListener) window.addEventListener('resize',()=>{
-    if(document.getElementById('movimentacoes-tab').classList.contains('active')){ mvDrawGrid(); mvPlace(mvCurCol,mvCurRow,false,true); }
-  });
-
-  let _mvMapInited=false;
-
-  _mvOnActivate=function(){
-    mvLastSceneTime=null;
-    if(!_mvSceneRaf) _mvSceneRaf=requestAnimationFrame(animMvScene);
-    if(!_mvMapInited){
-      _mvMapInited=true;
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        mvApply(); mvPlace(mvCurCol,mvCurRow,false,true);
-        _mvMapTimer=setTimeout(mvNext,mvStepDur*1000);
-        _mvMapRaf=requestAnimationFrame(mvAnimFr);
-      }));
-    } else {
-      if(!_mvMapRaf)   _mvMapRaf=requestAnimationFrame(mvAnimFr);
-      if(!_mvMapTimer) _mvMapTimer=setTimeout(mvNext,mvStepDur*1000);
-    }
-  };
-  _mvOnDeactivate=function(){
-    if(_mvSceneRaf){cancelAnimationFrame(_mvSceneRaf);_mvSceneRaf=null;}
-    if(_mvMapRaf){cancelAnimationFrame(_mvMapRaf);_mvMapRaf=null;}
-    if(_mvMapTimer){clearTimeout(_mvMapTimer);_mvMapTimer=null;}
-  };
-}
-
 // ── TABS ──────────────────────────────────────────────────────────────
+
+let _checklistBuilt = false;
 
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -1949,12 +1291,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById(`${tab}-tab`).classList.add('active');
     document.getElementById('filter-bar').style.display = tab==='npcs' ? 'flex' : 'none';
-    // stop spell animation when leaving magias tab
-    if(tab !== 'magias' && _spellRaf){ cancelAnimationFrame(_spellRaf); _spellRaf=null; }
-    if(tab === 'magias' && _spellObj){ _startSpellAnim(_spellObj); }
-    // pause/resume movimentacoes animations
-    if(tab !== 'movimentacoes' && _mvOnDeactivate) _mvOnDeactivate();
-    if(tab === 'movimentacoes' && _mvOnActivate)   _mvOnActivate();
+    if(tab==='checklist' && !_checklistBuilt){ _checklistBuilt=true; buildChecklistTab(); }
     updateCount(tab);
   });
 });
@@ -1977,22 +1314,24 @@ document.querySelectorAll('.filter-btn').forEach(btn=>{
 
 function updateCount(tab){
   const labels = {
-    classes: `${Object.keys(CLASSES_DATA).length} classes`,
-    npcs:    `${Object.keys(NPCS).length} personagens`,
-    inimigos:`${INIMIGOS_DATA.length} criaturas`,
-    magias:        `${MAGIAS_DATA.length} magias`,
-    movimentacoes: '12 sprites',
+    classes:  `${Object.keys(CLASSES_DATA).length} classes`,
+    npcs:     `${Object.keys(NPCS).length} personagens`,
+    inimigos: `${INIMIGOS_DATA.length} criaturas`,
+    cenarios: `${Object.keys(CENAS).length} cenários`,
+    roteiro:  `${Object.keys(CENAS).length} cenas`,
+    checklist:'assets',
   };
   document.getElementById('count-label').textContent = labels[tab]||'';
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────
 
+initCampanhaPicker();
 buildClassesTab();
 buildNpcsTab();
 buildInimigosTab();
-buildMagiasTab();
-buildMovimentacoesTab();
+buildCenariosTab();
+buildRoteiroTab();
 updateCount('classes');
 </script>
 </body>
