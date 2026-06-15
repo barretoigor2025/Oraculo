@@ -1,0 +1,13 @@
+{
+  "id": "npc_mutter_grimmhaar",
+  "nome": "Mutter Grimmhaar",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_mutter_grimmhaar_retrato.png",
+    "sprite_frente": "sprites/frente/npc_mutter_grimmhaar_frente.png",
+    "sprite_costas": "sprites/costas/npc_mutter_grimmhaar_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_mutter_grimmhaar_peca.png"
+  }
+}

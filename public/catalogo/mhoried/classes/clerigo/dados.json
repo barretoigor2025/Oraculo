@@ -1,0 +1,32 @@
+{
+  "id": "clerigo",
+  "nome": "Clérigo",
+  "emoji": "✨",
+  "desc": "Canal de poder divino. Cura aliados e combate mortos-vivos.",
+  "habilidades_base": [
+    "Magia Sagrada",
+    "Cura",
+    "Teologia",
+    "Liderança"
+  ],
+  "atributos_primarios": [
+    "WILL",
+    "HT"
+  ],
+  "variacoes_genero": [
+    "clerigo_f",
+    "clerigo_m"
+  ],
+  "_campanha": "mhoried",
+  "_tipo_entidade": "classe",
+  "assets": {
+    "retrato_f": "retrato/clerigo_f_retrato.png",
+    "retrato_m": "retrato/clerigo_m_retrato.png",
+    "sprite_frente_f": "sprites/frente/clerigo_f_frente.png",
+    "sprite_frente_m": "sprites/frente/clerigo_m_frente.png",
+    "sprite_costas_f": "sprites/costas/clerigo_f_costas.png",
+    "sprite_costas_m": "sprites/costas/clerigo_m_costas.png",
+    "peca_f": "peca_tabuleiro/clerigo_f_peca.png",
+    "peca_m": "peca_tabuleiro/clerigo_m_peca.png"
+  }
+}

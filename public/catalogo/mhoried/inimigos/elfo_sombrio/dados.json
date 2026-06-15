@@ -1,0 +1,56 @@
+{
+  "id": "elfo_sombrio",
+  "emoji": "🏹",
+  "cor": "#1a1a2e",
+  "nome": "Elfo Sombrio",
+  "tipo": "Elfo Negro",
+  "desc": "Guerreiro Voornsworn dos Blackwoods. Patrulha a floresta sob ordens do Príncipe Kalos em busca de fragmentos de pedra de Hooded Voorn.",
+  "gurps": {
+    "st": 11,
+    "dx": 12,
+    "iq": 12,
+    "ht": 12,
+    "hp": 11,
+    "will": 12,
+    "per": 12,
+    "fp": 12,
+    "speed": 6.0,
+    "move": 4,
+    "dodge": 10,
+    "dr": 4,
+    "sm": 0
+  },
+  "ataque": "Espada Larga (fina) 1d+3 cor (Perícia 12), Parry 10; ou Arco Longo 1d+1 imp, Acc 3, Alcance 165/220 (Perícia 13)",
+  "tracos": [
+    "Reflexos de Combate",
+    "Elfo Negro",
+    "Limiar de Dor Elevado",
+    "Visão Noturna 3",
+    "Senso de Dever (companheiros)"
+  ],
+  "habs": [
+    "Arco-13",
+    "Luta-13",
+    "Espada Larga-12",
+    "Saque Rápido-13",
+    "Faca-13",
+    "Busca-13",
+    "Rastreamento de Sombras-12",
+    "Furtividade-12"
+  ],
+  "magias": [],
+  "objetivo": "Recuperar os fragmentos de pedra de Hooded Voorn e levar ao Príncipe Kalos. Qualquer interferência deve ser eliminada.",
+  "emocoes": "Arrogância racial intensa. Desprezo por humanos e não-elfos. Lealdade fanática ao grupo e ao Príncipe.",
+  "raiva": "Ser tratado como inferior. Ser chamado de \"elfo comum\". Ameaça ao Príncipe Kalos. Perda de companheiros em combate.",
+  "convicoes": "Elfos Sombrios são superiores a qualquer outra raça. Hooded Voorn deve ser restaurado para guiar o povo das trevas.",
+  "fala_batalha": "\"Intrusos nos Blackwoods... vocês assinaram sua sentença.\" — \"Matá-los e recuperar os fragmentos!\" — \"Elfos não recuam ante vermes humanos.\"",
+  "comportamento": "Patrulham em grupos de 2d6. Atacam mercantes e viajantes em emboscada. Atiram antes de avançar para o combate corpo a corpo. Coletam fragmentos de pedra de qualquer morto.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/elfo_sombrio_retrato.png",
+    "sprite_frente": "sprites/frente/elfo_sombrio_frente.png",
+    "sprite_costas": "sprites/costas/elfo_sombrio_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/elfo_sombrio_peca.png"
+  }
+}

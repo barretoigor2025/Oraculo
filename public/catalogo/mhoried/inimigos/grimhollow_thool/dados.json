@@ -1,0 +1,54 @@
+{
+  "id": "grimhollow_thool",
+  "emoji": "👹",
+  "cor": "#4a3a2a",
+  "nome": "Grimhollow Thool",
+  "tipo": "Thool",
+  "desc": "Humanos transformados em ogres monstruosos pelo feiticeiro Dendybar. Um deles é o Duque Oswald, que resiste à besta que habita seu corpo.",
+  "gurps": {
+    "st": 18,
+    "dx": 9,
+    "iq": 7,
+    "ht": 13,
+    "hp": 18,
+    "will": 10,
+    "per": 10,
+    "fp": 13,
+    "speed": 5.5,
+    "move": 5,
+    "dodge": 8,
+    "dr": 2,
+    "sm": 1
+  },
+  "ataque": "Grande Clava 3d esmagador (Perícia 12), Parry 8U; Soco 1d+3 esmagador (Perícia 12)",
+  "tracos": [
+    "SM +1 (grande)",
+    "Pele Resistente (DR 2)",
+    "Limiar de Dor Elevado",
+    "Difícil de Matar 2",
+    "Berserker (ao ver próprio sangue)",
+    "Voz Perturbadora",
+    "Amnésia (fragmentos de memória humana)"
+  ],
+  "habs": [
+    "Luta-12",
+    "Armas Primitivas-12",
+    "Sobrevivência (Floresta)-12",
+    "Rastreamento-13"
+  ],
+  "magias": [],
+  "objetivo": "Obedecer ao Rei Chutter. Aterrorizar viajantes. Proteger o Gloamreach. Oswald às vezes resiste, buscando a si mesmo.",
+  "emocoes": "Fúria animal misturada com confusão profunda — fragmentos de memória humana perturbam os instintos bestiais. Medo de magia. Oswald sente saudade e culpa.",
+  "raiva": "Barulho alto. Magia. Ser confrontado com memórias humanas (especialmente Oswald). Intrusos no território do Gloamreach.",
+  "convicoes": "Os Blackwoods são seu domínio. O Rei Chutter fornece propósito onde não havia nenhum. [Oswald]: \"Preciso lembrar quem sou.\"",
+  "fala_batalha": "\"Fora daqui!\" — \"[Rugido incoerente]\" — \"Por Chutter!\" [Oswald: \"Eu... não quero... ir embora!\"]",
+  "comportamento": "Caçam em trio. Atacam aldeias e fazendas isoladas. Oswald às vezes hesita e pode ser reconhecido pela marca de nascença em forma de lúpulo no ombro.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/grimhollow_thool_retrato.png",
+    "sprite_frente": "sprites/frente/grimhollow_thool_frente.png",
+    "sprite_costas": "sprites/costas/grimhollow_thool_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/grimhollow_thool_peca.png"
+  }
+}

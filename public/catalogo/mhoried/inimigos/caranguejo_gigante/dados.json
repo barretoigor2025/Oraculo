@@ -1,0 +1,51 @@
+{
+  "id": "caranguejo_gigante",
+  "emoji": "🦀",
+  "cor": "#3a2a5a",
+  "nome": "Caranguejo Gigante",
+  "tipo": "Criatura Aquática",
+  "desc": "Mudwallower — caranguejo colossal de 2m de largura com carapaça azul-violeta espinhosa. Duas garras assimétricas, a maior capaz de esmagar pedra. Guarda Weeper's Well com o Quay Grabber.",
+  "gurps": {
+    "st": 18,
+    "dx": 9,
+    "iq": 2,
+    "ht": 14,
+    "hp": 20,
+    "will": 8,
+    "per": 10,
+    "fp": 14,
+    "speed": 5.75,
+    "move": 5,
+    "dodge": 8,
+    "dr": 6,
+    "sm": 1
+  },
+  "ataque": "Garra Grande 2d+3 esmagador (Perícia 11), Alcance 1 — aplica imobilização; Garra Pequena 1d+2 cortante (Perícia 12)",
+  "tracos": [
+    "SM +1",
+    "DR 6 (carapaça)",
+    "Imune a veneno",
+    "Sem Fala",
+    "Lateral (move lateral sem penalidade, move frente/trás com -2)",
+    "Visão 360° (olhos em pedúnculo)"
+  ],
+  "habs": [
+    "Luta-11",
+    "Nadar-12"
+  ],
+  "magias": [],
+  "objetivo": "Território — atacar qualquer presença na água ou beira d'água.",
+  "emocoes": "Nenhuma. Instinto puro.",
+  "raiva": "Qualquer perturbação no território.",
+  "convicoes": "Nenhuma.",
+  "fala_batalha": "[Estalo de garras. Rangido de carapaça.]",
+  "comportamento": "Lento mas difícil de matar (DR 6). A garra grande imobiliza — sem soltar até matar ou ST 18 para escapar. Em grupo com o Quay Grabber, um segura enquanto o outro bate.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/caranguejo_gigante_retrato.png",
+    "sprite_frente": "sprites/frente/caranguejo_gigante_frente.png",
+    "sprite_costas": "sprites/costas/caranguejo_gigante_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/caranguejo_gigante_peca.png"
+  }
+}

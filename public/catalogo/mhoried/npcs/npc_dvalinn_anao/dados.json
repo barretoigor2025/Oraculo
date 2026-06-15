@@ -1,0 +1,13 @@
+{
+  "id": "npc_dvalinn_anao",
+  "nome": "Dvalinn, o Anão",
+  "categoria": "aliado",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_dvalinn_anao_retrato.png",
+    "sprite_frente": "sprites/frente/npc_dvalinn_anao_frente.png",
+    "sprite_costas": "sprites/costas/npc_dvalinn_anao_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_dvalinn_anao_peca.png"
+  }
+}

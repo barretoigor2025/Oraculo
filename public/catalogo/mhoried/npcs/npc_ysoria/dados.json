@@ -1,0 +1,13 @@
+{
+  "id": "npc_ysoria",
+  "nome": "Ysoria",
+  "categoria": "hostil",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_ysoria_retrato.png",
+    "sprite_frente": "sprites/frente/npc_ysoria_frente.png",
+    "sprite_costas": "sprites/costas/npc_ysoria_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_ysoria_peca.png"
+  }
+}

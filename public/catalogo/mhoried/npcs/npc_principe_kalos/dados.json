@@ -1,0 +1,13 @@
+{
+  "id": "npc_principe_kalos",
+  "nome": "Príncipe Kalos",
+  "categoria": "neutro_hostil",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_principe_kalos_retrato.png",
+    "sprite_frente": "sprites/frente/npc_principe_kalos_frente.png",
+    "sprite_costas": "sprites/costas/npc_principe_kalos_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_principe_kalos_peca.png"
+  }
+}

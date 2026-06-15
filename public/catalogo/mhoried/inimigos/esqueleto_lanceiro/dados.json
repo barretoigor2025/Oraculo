@@ -1,0 +1,51 @@
+{
+  "id": "esqueleto_lanceiro",
+  "emoji": "💀",
+  "cor": "#3a4a2a",
+  "nome": "Esqueleto Lanceiro",
+  "tipo": "Morto-Vivo",
+  "desc": "Guerreiro morto animado por necromancia, ossos esverdeados com pátina de morte. Fragmentos de armadura medieval ainda no corpo. Olhos de fogo esverdeado. Guarda postos e entradas sem descanso.",
+  "gurps": {
+    "st": 11,
+    "dx": 11,
+    "iq": 8,
+    "ht": 12,
+    "hp": 11,
+    "will": 10,
+    "per": 10,
+    "fp": 12,
+    "speed": 5.75,
+    "move": 5,
+    "dodge": 8,
+    "dr": 3,
+    "sm": 0
+  },
+  "ataque": "Lança 1d+1 perfurante (Perícia 12), Alcance 1–2; pode usar como arma de arremesso (Alcance 3)",
+  "tracos": [
+    "Não-Vivo (imune a veneno/sangramento)",
+    "Sem Fadiga",
+    "Visão no Escuro",
+    "Sem Emoções",
+    "Obedece a Choir"
+  ],
+  "habs": [
+    "Luta-12",
+    "Lanças-12",
+    "Armadura Leve-12"
+  ],
+  "magias": [],
+  "objetivo": "Guardar o posto atribuído. Atacar qualquer intruso não autorizado.",
+  "emocoes": "Sem emoções.",
+  "raiva": "Qualquer intruso.",
+  "convicoes": "Nenhuma.",
+  "fala_batalha": "[Rangido de ossos. Nenhuma vocalização.]",
+  "comportamento": "Posição defensiva — ataca quem se aproxima. Não persegue além de 10 metros do posto. Em grupo, tentam cercar o alvo.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/esqueleto_lanceiro_retrato.png",
+    "sprite_frente": "sprites/frente/esqueleto_lanceiro_frente.png",
+    "sprite_costas": "sprites/costas/esqueleto_lanceiro_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/esqueleto_lanceiro_peca.png"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "id": "rei_chutter",
+  "emoji": "👑",
+  "cor": "#4a0a0a",
+  "nome": "Rei Chutter (Combate)",
+  "tipo": "Boss",
+  "desc": "Ettin de duas cabeças versado em artes mágicas ancestrais. Boss final da campanha — planeja conquistar as cidades do norte de Megalos.",
+  "gurps": {
+    "st": 20,
+    "dx": 10,
+    "iq": 13,
+    "ht": 13,
+    "hp": 22,
+    "will": 13,
+    "per": 13,
+    "fp": 13,
+    "speed": 5.75,
+    "move": 5,
+    "dodge": 8,
+    "dr": 4,
+    "sm": 2
+  },
+  "ataque": "Clava Negra 3d+3 esmagador (Perícia 14), Alcance 1–2; pode atacar duas vezes simultaneamente (cabeças diferentes)",
+  "tracos": [
+    "SM +2 (colossal)",
+    "Cabeça Extra (duas cabeças — nunca surpreso)",
+    "Magery 2",
+    "Ataque Extra 1 (duas armas ao mesmo tempo)",
+    "Limiar de Dor Elevado",
+    "Difícil de Matar 3",
+    "Difícil de Subjugar 3",
+    "Status 4 (Rei)",
+    "Voz Perturbadora",
+    "Obsessão (conquistar cidades do norte)"
+  ],
+  "habs": [
+    "Liderança-15",
+    "Estratégia-14",
+    "Luta-14",
+    "Armas Pesadas-14",
+    "Intimidação-16",
+    "Ocultismo-13"
+  ],
+  "magias": [
+    "Escudo Mágico-16",
+    "Armadilha Rúnica-14",
+    "Explosão-14",
+    "Maldição Enfraquecedora-15",
+    "Medo em Massa-13",
+    "Domínio (Kobolds)-13"
+  ],
+  "objetivo": "Conquistar as cidades do norte começando por Mhoried. Controlar a rota comercial do norte de Megalos. Usar os Thools, kobolds, Choir e qualquer aliado como peões.",
+  "emocoes": "Arrogância monumental. As duas cabeças frequentemente discordam: uma é mais calculista, a outra mais impulsiva. Prazer genuíno em poder. Desprezo profundo pelos que o subestimam.",
+  "raiva": "Ser desafiado diretamente. Qualquer um que destrua seus planos. Ser comparado a um \"monstro comum\".",
+  "convicoes": "\"Eu sou o legítimo rei destas terras. Os humanos das cidades vivem sob minha graça. A magia ancestral revelou-me meu destino.\"",
+  "fala_batalha": "\"[Cab. A] Matem-nos!\" / \"[Cab. B] Não, capturem — podem ser úteis!\" — \"Eu sou REI destes Blackwoods!\" — \"Vocês interromperam séculos de planejamento!\" — \"Vocês não são dignos nem de servir como adubo!\"",
+  "comportamento": "Luta usando as duas cabeças de forma complementar — uma foca em magia, a outra no combate físico. Usa Grimhollow Thools como escudos. Recua para a torre nas Montanhas de Granito se muito ferido. O portal no templo dos Thools é seu escape final.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/rei_chutter_retrato.png",
+    "sprite_frente": "sprites/frente/rei_chutter_frente.png",
+    "sprite_costas": "sprites/costas/rei_chutter_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/rei_chutter_peca.png"
+  }
+}

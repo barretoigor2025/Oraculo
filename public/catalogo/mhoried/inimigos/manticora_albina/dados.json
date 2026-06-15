@@ -1,0 +1,57 @@
+{
+  "id": "manticora_albina",
+  "emoji": "🦁",
+  "cor": "#c8b090",
+  "nome": "Manticora Albina",
+  "tipo": "Fera",
+  "desc": "Fera albina e letalmente infectada dos Blackwoods. Caçadora solitária que domina o território norte da floresta.",
+  "gurps": {
+    "st": 18,
+    "dx": 12,
+    "iq": 7,
+    "ht": 12,
+    "hp": 18,
+    "will": 11,
+    "per": 12,
+    "fp": 12,
+    "speed": 6.0,
+    "move": 6,
+    "dodge": 10,
+    "dr": 2,
+    "sm": 1
+  },
+  "ataque": "Garras ou Mordida 2d+3 cor (Perícia 14), Alcance C; Espinhos na Cauda 2d pi+, Acc 3, Alcance 10/100 (Perícia 14)",
+  "tracos": [
+    "Fria",
+    "SM +1",
+    "Reflexos de Combate",
+    "Voz Perturbadora",
+    "Limiar de Dor Elevado",
+    "Visão Noturna 5",
+    "Garras Afiadas",
+    "Dentes Afiados",
+    "Salto Superior 1"
+  ],
+  "habs": [
+    "Luta-14",
+    "Ataque Inato-14",
+    "Furtividade-12",
+    "Sobrevivência (Floresta)-12",
+    "Rastreamento-13"
+  ],
+  "magias": [],
+  "objetivo": "Caçar e se alimentar. Proteger seu território no norte dos Blackwoods.",
+  "emocoes": "Predatória e calculista. Nenhuma emoção além do instinto de caça. Irritação quando perturbada ou quando perde uma presa.",
+  "raiva": "Invasão do território. Ser atingida. Perder presa que parecia garantida.",
+  "convicoes": "Nenhuma — instinto puro de predador apex.",
+  "fala_batalha": "[Rugido aterrorizante — exige Verificação de Susto -3]",
+  "comportamento": "Espreita a presa em silêncio. Dispara espinhos para ferir e imobilizar, depois avança para morder. Mordida causa infecção putreificante: roll HT-2 ou ferida infectada; curas mágicas com -3. Só os caçadores Mac Rónán e veteranos sabem como enfrentá-la.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/manticora_albina_retrato.png",
+    "sprite_frente": "sprites/frente/manticora_albina_frente.png",
+    "sprite_costas": "sprites/costas/manticora_albina_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/manticora_albina_peca.png"
+  }
+}

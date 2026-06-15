@@ -1,0 +1,13 @@
+{
+  "id": "npc_muirenn",
+  "nome": "Muirenn",
+  "categoria": "aliado",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_muirenn_retrato.png",
+    "sprite_frente": "sprites/frente/npc_muirenn_frente.png",
+    "sprite_costas": "sprites/costas/npc_muirenn_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_muirenn_peca.png"
+  }
+}

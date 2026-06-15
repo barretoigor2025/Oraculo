@@ -1,0 +1,13 @@
+{
+  "id": "npc_jariella",
+  "nome": "Jariella",
+  "categoria": "hostil",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_jariella_retrato.png",
+    "sprite_frente": "sprites/frente/npc_jariella_frente.png",
+    "sprite_costas": "sprites/costas/npc_jariella_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_jariella_peca.png"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "quay_grabber",
+  "emoji": "🪝",
+  "cor": "#2a4a3a",
+  "nome": "Quay Grabber",
+  "tipo": "Criatura Aquática",
+  "desc": "Troll aquático-terrestre de Weeper's Well — pele verde-musgo com algas, braços desproporcionalmente longos, carrega gancho enferrujado. Guarda as ruínas submersas de Castellet Malvoisin.",
+  "gurps": {
+    "st": 17,
+    "dx": 10,
+    "iq": 5,
+    "ht": 14,
+    "hp": 19,
+    "will": 8,
+    "per": 12,
+    "fp": 14,
+    "speed": 6.0,
+    "move": 6,
+    "dodge": 9,
+    "dr": 3,
+    "sm": 1
+  },
+  "ataque": "Gancho 2d cortante (Perícia 12), Alcance 1–2; Garra 1d+2 esmagador (Perícia 12)",
+  "tracos": [
+    "SM +1",
+    "Regenera 2 HP/turno (exceto de fogo/ácido)",
+    "Anfibie (move 7 na água)",
+    "Visão no Escuro",
+    "Agarrar melhorado (ST efetiva 20 quando agarrado)"
+  ],
+  "habs": [
+    "Luta-12",
+    "Natação-15",
+    "Rastreamento-13"
+  ],
+  "magias": [],
+  "objetivo": "Defender o território aquático. Dracar qualquer intruso para baixo d'água.",
+  "emocoes": "Instinto territorial. Predador paciente que espera.",
+  "raiva": "Presença na água ou beira do poço.",
+  "convicoes": "Nenhuma.",
+  "fala_batalha": "[Borbulhar d'água. Gorgolejo profundo.]",
+  "comportamento": "Ataca do fundo — puxando pernas de quem estiver nas águas rasas. Em terra fica lento. Regenera rápido — precisa de fogo ou ácido para dano permanente.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/quay_grabber_retrato.png",
+    "sprite_frente": "sprites/frente/quay_grabber_frente.png",
+    "sprite_costas": "sprites/costas/quay_grabber_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/quay_grabber_peca.png"
+  }
+}
