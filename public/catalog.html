@@ -931,14 +931,41 @@ function buildChecklistTab(){
   const npcList = Object.values(NPCS);
   const inimList = INIMIGOS_COMPLETO || INIMIGOS_DATA;
   const classes = Object.keys(CLASSES_DATA);
+  const CAT = 'catalogo/mhoried/';
+
+  // Cenários por Ato
+  const cenasList = CENAS_ORDEM.map(id=>CENAS[id]).filter(Boolean);
+  const atoMap = {};
+  for(const c of cenasList){
+    const a = c.ato || 1;
+    if(!atoMap[a]) atoMap[a] = [];
+    atoMap[a].push({
+      nome: c.titulo,
+      sub: `${c.id}.png`,
+      path: `${CAT}cenarios/${c.id}/imagem/${c.id}.png`,
+    });
+    if(c.temBatalha){
+      atoMap[a].push({
+        nome: `${c.titulo} — mapa batalha`,
+        sub: `${c.id}_mapa.png`,
+        path: `${CAT}cenarios/${c.id}/mapa/${c.id}_mapa.png`,
+      });
+    }
+  }
+  const cenarioSections = Object.keys(atoMap).sort((a,b)=>+a-+b).map(ato=>({
+    titulo: `🗺️ Ato ${ato} — Cenários`,
+    dica: `cenarios/{id}/imagem/{id}.png  |  mapa: cenarios/{id}/mapa/{id}_mapa.png`,
+    items: atoMap[ato],
+  }));
 
   const sections = [
+    ...cenarioSections,
     {
       titulo: '🖼️ Retratos NPC',
       dica: 'npcs/{id}/retrato/{id}_retrato.png',
       items: npcList.map(n=>({
         nome: n.nome||n.id, sub: `${n.id}_retrato.png`,
-        path: `catalogo/mhoried/npcs/${n.id}/retrato/${n.id}_retrato.png`,
+        path: `${CAT}npcs/${n.id}/retrato/${n.id}_retrato.png`,
       })),
     },
     {
@@ -946,7 +973,7 @@ function buildChecklistTab(){
       dica: 'inimigos/{id}/retrato/{id}_retrato.png',
       items: inimList.map(e=>({
         nome: e.nome||e.id, sub: `${e.id}_retrato.png`,
-        path: `catalogo/mhoried/inimigos/${e.id}/retrato/${e.id}_retrato.png`,
+        path: `${CAT}inimigos/${e.id}/retrato/${e.id}_retrato.png`,
       })),
     },
     {
@@ -954,7 +981,7 @@ function buildChecklistTab(){
       dica: 'classes/{id}/retrato/{id}_m_retrato.png',
       items: classes.map(id=>({
         nome: CLASSES_DATA[id].nome, sub: `${id}_m_retrato.png`,
-        path: `catalogo/mhoried/classes/${id}/retrato/${id}_m_retrato.png`,
+        path: `${CAT}classes/${id}/retrato/${id}_m_retrato.png`,
       })),
     },
     {
@@ -962,7 +989,7 @@ function buildChecklistTab(){
       dica: 'classes/{id}/retrato/{id}_f_retrato.png',
       items: classes.map(id=>({
         nome: CLASSES_DATA[id].nome, sub: `${id}_f_retrato.png`,
-        path: `catalogo/mhoried/classes/${id}/retrato/${id}_f_retrato.png`,
+        path: `${CAT}classes/${id}/retrato/${id}_f_retrato.png`,
       })),
     },
   ];
