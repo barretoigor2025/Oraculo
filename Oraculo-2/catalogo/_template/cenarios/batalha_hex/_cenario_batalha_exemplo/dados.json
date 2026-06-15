@@ -1,0 +1,18 @@
+{
+  "id": "cenario_batalha_exemplo",
+  "nome": "Cenario de Batalha Exemplo",
+  "tipo": "batalha_hex",
+  "descricao": "Modelo de cenario para combate com hexagonos.",
+  "assets": {
+    "imagem": "imagem/cenario_batalha_exemplo.png",
+    "preview": "preview/cenario_batalha_exemplo_preview.png",
+    "grid": "grid/cenario_batalha_exemplo_grid.json"
+  },
+  "arena": {
+    "usa_hex": true,
+    "largura": 0,
+    "altura": 0,
+    "pontos_spawn_herois": [],
+    "pontos_spawn_inimigos": []
+  }
+}
