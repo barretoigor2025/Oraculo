@@ -55,11 +55,11 @@
     }
     .header-top span { font-size: 10px; color: var(--text-dim); margin-left: auto; }
 
-    .tabs {
-      display: flex; gap: 4px;
-    }
+    .tabs { display: flex; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
     .tab-btn {
-      padding: 8px 20px 10px;
+      padding: 8px 14px 10px;
+      white-space: nowrap; flex-shrink: 0;
       background: none; border: none;
       border-bottom: 2px solid transparent;
       color: var(--text-dim);
@@ -128,6 +128,30 @@
     .card-sprite .no-img {
       font-size: 48px; opacity: 0.3;
       position: absolute; bottom: 12px;
+    }
+    .card-portrait {
+      position: relative;
+      height: 200px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.3);
+    }
+    .card-portrait img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: 50% 15%;
+      display: block;
+      transition: opacity .2s;
+    }
+    .card-portrait .no-img {
+      font-size: 48px; opacity: 0.3;
+      position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    }
+    .card-portrait::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 50px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.6));
+      pointer-events: none;
     }
     .cat-badge {
       position: absolute; top: 6px; right: 6px;
@@ -331,6 +355,50 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: rgba(200,160,64,0.3); border-radius: 2px; }
+
+    /* ── CENÁRIOS TAB ── */
+    .cenario-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+    .cenario-card { background:rgba(20,16,8,.6); border:1px solid rgba(190,140,35,.2); border-radius:10px; overflow:hidden; }
+    .cenario-img { width:100%; height:110px; object-fit:cover; display:block; background:#0c0a06; }
+    .cenario-body { padding:8px 10px; }
+    .cenario-nome { font-size:12px; font-weight:700; color:#d4a84b; margin-bottom:2px; }
+    .cenario-sub { font-size:10px; color:rgba(190,165,90,.5); margin-bottom:5px; }
+    .cenario-tags { display:flex; gap:4px; flex-wrap:wrap; }
+    .cenario-tag { font-size:9px; padding:2px 6px; border-radius:20px; border:1px solid; font-weight:600; }
+    .cenario-tag.batalha { color:rgba(220,120,80,.9); border-color:rgba(220,120,80,.3); background:rgba(220,120,80,.1); }
+    .cenario-tag.npc { color:rgba(140,200,140,.8); border-color:rgba(140,200,140,.25); background:rgba(140,200,140,.08); }
+    .cenario-tag.ato { color:rgba(140,160,220,.8); border-color:rgba(140,160,220,.25); background:rgba(140,160,220,.08); }
+
+    /* ── ROTEIRO TAB ── */
+    .rot-ato { margin-bottom:24px; }
+    .rot-ato-titulo { font-size:10px; text-transform:uppercase; letter-spacing:2px; color:rgba(190,140,35,.5); padding:6px 0; border-bottom:1px solid rgba(190,140,35,.15); margin-bottom:10px; }
+    .rot-cena { background:rgba(20,16,8,.5); border:1px solid rgba(190,140,35,.15); border-radius:8px; padding:10px 12px; margin-bottom:6px; }
+    .rot-cena-num { font-size:9px; color:rgba(190,140,35,.4); letter-spacing:.5px; margin-bottom:2px; }
+    .rot-cena-titulo { font-size:12px; font-weight:700; color:#d4a84b; margin-bottom:4px; }
+    .rot-cena-texto { font-size:11px; color:rgba(190,165,100,.7); line-height:1.5; }
+    .rot-cena-badges { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
+    .rot-badge { font-size:9px; padding:2px 7px; border-radius:20px; border:1px solid rgba(190,140,35,.25); color:rgba(190,165,90,.65); }
+    .rot-badge.batalha { border-color:rgba(220,100,80,.3); color:rgba(220,120,80,.8); }
+    .rot-badge.npc { border-color:rgba(100,200,100,.25); color:rgba(140,210,140,.75); }
+
+    /* ── CHECKLIST TAB ── */
+    .ck-section { margin-bottom:20px; }
+    .ck-section-title { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:rgba(190,140,35,.5); padding:6px 0; border-bottom:1px solid rgba(190,140,35,.12); margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; }
+    .ck-section-score { font-size:11px; font-weight:700; }
+    .ck-score-ok { color:#4caf50; }
+    .ck-score-miss { color:#f44336; }
+    .ck-item { display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+    .ck-icon { font-size:14px; flex-shrink:0; width:18px; text-align:center; }
+    .ck-nome { font-size:11px; color:rgba(220,195,140,.85); flex:1; }
+    .ck-path { font-size:9px; color:rgba(190,165,90,.35); margin-top:1px; }
+    .ck-missing .ck-nome { color:rgba(220,120,80,.8); }
+    .ck-missing .ck-path { color:rgba(220,120,80,.3); }
+    .ck-summary { font-size:13px; font-weight:700; padding:14px; background:rgba(20,16,8,.5); border:1px solid rgba(190,140,35,.2); border-radius:10px; margin-bottom:20px; text-align:center; }
+
+    @media(max-width:600px){
+      .tab-btn { padding:8px 11px 10px; font-size:10px; }
+      .card-grid { grid-template-columns: repeat(2, 1fr) !important; gap:10px; }
+    }
   </style>
 </head>
 <body>
@@ -344,6 +412,9 @@
     <button class="tab-btn active" data-tab="classes">Classes</button>
     <button class="tab-btn" data-tab="npcs">NPCs</button>
     <button class="tab-btn" data-tab="inimigos">Inimigos</button>
+    <button class="tab-btn" data-tab="cenarios">Cenários</button>
+    <button class="tab-btn" data-tab="roteiro">Roteiro</button>
+    <button class="tab-btn" data-tab="checklist">✓ Check</button>
   </nav>
 </header>
 
@@ -357,9 +428,12 @@
 </div>
 
 <main>
-  <div id="classes-tab" class="tab-content active"></div>
-  <div id="npcs-tab"    class="tab-content"></div>
-  <div id="inimigos-tab" class="tab-content"></div>
+  <div id="classes-tab"   class="tab-content active"></div>
+  <div id="npcs-tab"      class="tab-content"></div>
+  <div id="inimigos-tab"  class="tab-content"></div>
+  <div id="cenarios-tab"  class="tab-content"></div>
+  <div id="roteiro-tab"   class="tab-content"></div>
+  <div id="checklist-tab" class="tab-content"></div>
 </main>
 
 <!-- Modal -->
@@ -372,6 +446,7 @@
 
 <script type="module">
 import { NPCS, INIMIGOS_DATA as INIMIGOS_COMPLETO } from './catalogo/mhoried/loader.js';
+import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js';
 
 // ── DATA ──────────────────────────────────────────────────────────────
 
@@ -555,8 +630,8 @@ function buildNpcsTab(){
     const snippet = (npc.descFisica||npc.nome||'').slice(0,80).replace(/`/g,'') + '…';
     cards += `
       <div class="card" data-cat="${npc.categoria}" onclick="openNpcModal('${npc.id}')">
-        <div class="card-sprite">
-          <span class="cat-badge cat-${npc.categoria}">${catLabel(npc.categoria)}</span>
+        <div class="card-portrait" style="background:rgba(0,0,0,.35)">
+          <span class="cat-badge cat-${npc.categoria}" style="top:6px;left:6px;right:auto">${catLabel(npc.categoria)}</span>
           <img src="${sprUrl}" alt="${npc.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
           <span class="no-img" style="display:none">🧙</span>
         </div>
@@ -582,8 +657,8 @@ function buildInimigosTab(){
     const spr = inimRetratoUrl(en.id);
     cards += `
       <div class="card" onclick="openEnemyModal('${en.id}')">
-        <div class="card-sprite" style="background:rgba(60,10,0,.25)">
-          <span class="cat-badge cat-inimigo">${en.tipo}</span>
+        <div class="card-portrait" style="background:rgba(60,10,0,.25)">
+          <span class="cat-badge cat-inimigo" style="top:6px;left:6px;right:auto">${en.tipo}</span>
           <img src="${spr}" alt="${en.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
           <span class="no-img" style="display:none">💀</span>
         </div>
@@ -761,8 +836,164 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Escape') closeModal();
 });
 
+// ── BUILD CENÁRIOS TAB ────────────────────────────────────────────────
+
+function buildCenariosTab(){
+  const tab = document.getElementById('cenarios-tab');
+  const cenas = CENAS_ORDEM.map(id=>CENAS[id]).filter(Boolean);
+  const header = `<div class="section-header"><h2>Cenários da Campanha</h2><span class="count-badge">${cenas.length} cenários</span></div>`;
+  let html = '<div class="cenario-grid">';
+  for(const c of cenas){
+    const imgSrc = `catalogo/mhoried/cenarios/${c.id}.png`;
+    html += `<div class="cenario-card">
+      <img class="cenario-img" src="${imgSrc}" alt="${c.titulo}" onerror="this.style.display='none'">
+      <div class="cenario-body">
+        <div class="cenario-nome">${c.titulo||c.id}</div>
+        <div class="cenario-sub">Ato ${c.ato||1}</div>
+        <div class="cenario-tags">
+          <span class="cenario-tag ato">Ato ${c.ato||1}</span>
+          ${c.temBatalha?'<span class="cenario-tag batalha">⚔️ Batalha</span>':''}
+          ${(c.npcsPresentes||[]).length>0?'<span class="cenario-tag npc">👥 NPCs</span>':''}
+        </div>
+      </div>
+    </div>`;
+  }
+  html += '</div>';
+  tab.innerHTML = header + html;
+}
+
+// ── BUILD ROTEIRO TAB ─────────────────────────────────────────────────
+
+function buildRoteiroTab(){
+  const tab = document.getElementById('roteiro-tab');
+  const cenas = CENAS_ORDEM.map(id=>CENAS[id]).filter(Boolean);
+  const atos = {};
+  for(const c of cenas){
+    const a = c.ato||1;
+    if(!atos[a]) atos[a] = [];
+    atos[a].push(c);
+  }
+  const header = `<div class="section-header"><h2>Roteiro da Campanha</h2><span class="count-badge">${cenas.length} cenas</span></div>`;
+  let html = '';
+  for(const [ato, lista] of Object.entries(atos)){
+    html += `<div class="rot-ato">
+      <div class="rot-ato-titulo">Ato ${ato}</div>`;
+    lista.forEach((c,i)=>{
+      html += `<div class="rot-cena">
+        <div class="rot-cena-num">Cena ${i+1}</div>
+        <div class="rot-cena-titulo">${c.titulo||c.id}</div>
+        <div class="rot-cena-texto">${(c.textoIntro||'').slice(0,200)}</div>
+        <div class="rot-cena-badges">
+          ${c.temBatalha?'<span class="rot-badge batalha">⚔️ Batalha</span>':''}
+          ${(c.npcsPresentes||[]).map(n=>`<span class="rot-badge npc">👤 ${n}</span>`).join('')}
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  tab.innerHTML = header + html;
+}
+
+// ── BUILD CHECKLIST TAB ───────────────────────────────────────────────
+
+function buildChecklistTab(){
+  const tab = document.getElementById('checklist-tab');
+  const npcList = Object.values(NPCS);
+  const inimList = INIMIGOS_COMPLETO || INIMIGOS_DATA;
+  const classes = Object.keys(CLASSES_DATA);
+
+  const sections = [
+    {
+      titulo: '🖼️ Retratos NPC',
+      dica: 'npcs/{id}/retrato/{id}_retrato.png',
+      items: npcList.map(n=>({
+        nome: n.nome||n.id, sub: `${n.id}_retrato.png`,
+        path: `catalogo/mhoried/npcs/${n.id}/retrato/${n.id}_retrato.png`,
+      })),
+    },
+    {
+      titulo: '👾 Retratos Inimigos',
+      dica: 'inimigos/{id}/retrato/{id}_retrato.png',
+      items: inimList.map(e=>({
+        nome: e.nome||e.id, sub: `${e.id}_retrato.png`,
+        path: `catalogo/mhoried/inimigos/${e.id}/retrato/${e.id}_retrato.png`,
+      })),
+    },
+    {
+      titulo: '🧙 Retratos de Classe — Masculino',
+      dica: 'classes/{id}/retrato/{id}_m_retrato.png',
+      items: classes.map(id=>({
+        nome: CLASSES_DATA[id].nome, sub: `${id}_m_retrato.png`,
+        path: `catalogo/mhoried/classes/${id}/retrato/${id}_m_retrato.png`,
+      })),
+    },
+    {
+      titulo: '🧙 Retratos de Classe — Feminino',
+      dica: 'classes/{id}/retrato/{id}_f_retrato.png',
+      items: classes.map(id=>({
+        nome: CLASSES_DATA[id].nome, sub: `${id}_f_retrato.png`,
+        path: `catalogo/mhoried/classes/${id}/retrato/${id}_f_retrato.png`,
+      })),
+    },
+  ];
+
+  function probeImg(path){
+    return new Promise(resolve=>{
+      const img = new Image();
+      img.onload  = ()=>resolve(true);
+      img.onerror = ()=>resolve(false);
+      img.src = path;
+    });
+  }
+
+  tab.innerHTML = `
+    <div class="section-header"><h2>✓ Checklist de Assets</h2><span class="count-badge" id="ck-pct">verificando…</span></div>
+    <div id="ck-body"><div style="padding:40px;text-align:center;color:rgba(190,165,90,.4);font-size:13px">⏳ Verificando arquivos…</div></div>`;
+
+  async function build(){
+    let totalOk=0, totalMiss=0;
+    let html='';
+    for(const sec of sections){
+      const results = await Promise.all(sec.items.map(it=>probeImg(it.path)));
+      const ok = results.filter(Boolean).length;
+      const miss = results.length - ok;
+      totalOk += ok; totalMiss += miss;
+      html += `<div class="ck-section">
+        <div class="ck-section-title">
+          ${sec.titulo}
+          <span class="ck-section-score ${miss===0?'ck-score-ok':'ck-score-miss'}">${ok}/${results.length}</span>
+        </div>
+        <div style="font-size:9px;color:rgba(190,165,90,.35);margin-bottom:8px;font-style:italic">${sec.dica}</div>`;
+      sec.items.forEach((item,i)=>{
+        if(!results[i]){
+          html += `<div class="ck-item ck-missing">
+            <span class="ck-icon">❌</span>
+            <div><div class="ck-nome">${item.nome}</div><div class="ck-path">${item.sub}</div></div>
+          </div>`;
+        } else {
+          html += `<div class="ck-item">
+            <span class="ck-icon">✅</span>
+            <div><div class="ck-nome">${item.nome}</div></div>
+          </div>`;
+        }
+      });
+      html += '</div>';
+    }
+    const pct = totalOk+totalMiss>0 ? Math.round(totalOk/(totalOk+totalMiss)*100) : 100;
+    const cor = totalMiss===0 ? '#4caf50' : pct>=70 ? '#c8a040' : '#f44336';
+    document.getElementById('ck-pct').textContent = `${pct}% completo`;
+    document.getElementById('ck-pct').style.color = cor;
+    const summary = totalMiss>0
+      ? `<div class="ck-summary" style="color:${cor}">❌ ${totalMiss} arquivo${totalMiss>1?'s':''} faltando — ${totalOk} presentes</div>`
+      : `<div class="ck-summary" style="color:#4caf50">✅ Todos os assets presentes!</div>`;
+    document.getElementById('ck-body').innerHTML = summary + html;
+  }
+  build();
+}
+
 // ── TABS ──────────────────────────────────────────────────────────────
 
+let checklistBuilt = false;
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const tab = btn.dataset.tab;
@@ -771,6 +1002,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById(`${tab}-tab`).classList.add('active');
     document.getElementById('filter-bar').style.display = tab==='npcs' ? 'flex' : 'none';
+    if(tab==='checklist' && !checklistBuilt){ buildChecklistTab(); checklistBuilt=true; }
     updateCount(tab);
   });
 });
@@ -805,6 +1037,8 @@ function updateCount(tab){
 buildClassesTab();
 buildNpcsTab();
 buildInimigosTab();
+buildCenariosTab();
+buildRoteiroTab();
 updateCount('classes');
 </script>
 </body>
