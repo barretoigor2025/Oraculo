@@ -1,0 +1,13 @@
+{
+  "id": "npc_catherine_laskaris",
+  "nome": "Duquesa Catherine Laskaris",
+  "categoria": "aliado",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_catherine_laskaris_retrato.png",
+    "sprite_frente": "sprites/frente/npc_catherine_laskaris_frente.png",
+    "sprite_costas": "sprites/costas/npc_catherine_laskaris_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_catherine_laskaris_peca.png"
+  }
+}

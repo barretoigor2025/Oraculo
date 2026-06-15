@@ -1,0 +1,50 @@
+{
+  "id": "marrowwither",
+  "emoji": "🪱",
+  "cor": "#4a3a2a",
+  "nome": "Marrowwither",
+  "tipo": "Parasita",
+  "desc": "Criatura amorfa criada por Choir — saco de carne viva com múltiplas bocas e tentáculos rápidos. Habita o larder subterrâneo das ruínas de Simithari.",
+  "gurps": {
+    "st": 12,
+    "dx": 10,
+    "iq": 3,
+    "ht": 13,
+    "hp": 14,
+    "will": 8,
+    "per": 12,
+    "fp": 13,
+    "speed": 5.75,
+    "move": 5,
+    "dodge": 8,
+    "dr": 1,
+    "sm": 0
+  },
+  "ataque": "Tentáculo 1d contundente (Perícia 12), Alcance 1; pode agarrar e tentar sufocar (ST 12)",
+  "tracos": [
+    "Sem Esqueleto (ignora corte, vulnerável a esmagamento)",
+    "Visão Fraca",
+    "Sem Fala",
+    "Cria Choir — ataca intrusos automaticamente",
+    "Secreta líquido viscoso (penalidade -2 em agarrar)"
+  ],
+  "habs": [
+    "Luta-12",
+    "Agarrar-13"
+  ],
+  "magias": [],
+  "objetivo": "Defender o larder. Consumir qualquer matéria orgânica presente.",
+  "emocoes": "Sem emoções — impulso de devorar.",
+  "raiva": "Qualquer presença no larder.",
+  "convicoes": "Nenhuma.",
+  "fala_batalha": "[Som úmido de sucção. Tentáculos se estendendo.]",
+  "comportamento": "Avança silenciosamente no escuro — sem olhos, detecta calor. Em grupo, cercam antes de atacar. Difícil de matar por corte (usa esmagamento).",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/marrowwither_retrato.png",
+    "sprite_frente": "sprites/frente/marrowwither_frente.png",
+    "sprite_costas": "sprites/costas/marrowwither_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/marrowwither_peca.png"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "npc_blunkin_esmaga_cranios",
+  "nome": "Blunkin Esmaga-Crânios",
+  "categoria": "neutro_hostil",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_blunkin_esmaga_cranios_retrato.png",
+    "sprite_frente": "sprites/frente/npc_blunkin_esmaga_cranios_frente.png",
+    "sprite_costas": "sprites/costas/npc_blunkin_esmaga_cranios_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_blunkin_esmaga_cranios_peca.png"
+  }
+}

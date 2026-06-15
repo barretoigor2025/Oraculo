@@ -1,0 +1,51 @@
+{
+  "id": "golem_de_pergaminho",
+  "emoji": "📜",
+  "cor": "#7a6a4a",
+  "nome": "Golem de Pergaminho",
+  "tipo": "Constructo",
+  "desc": "Guardião animado de centenas de pergaminhos mágicos entrelaçados. Criado pelo Rei Chutter para proteger sua torre.",
+  "gurps": {
+    "st": 13,
+    "dx": 12,
+    "iq": 6,
+    "ht": 12,
+    "hp": 15,
+    "will": 10,
+    "per": 8,
+    "fp": "—",
+    "speed": 6.0,
+    "move": 6,
+    "dodge": 8,
+    "dr": 2,
+    "sm": 0
+  },
+  "ataque": "Golpe de Apêndice 1d+1 esmagador (Perícia 13); Lâminas de Pergaminho 1d-1 cor, Acc 2, Alcance 5/10 (Perícia 11)",
+  "tracos": [
+    "Não-Vivo (Constructo)",
+    "Sem Sangue, Sem Cérebro, Sem Vitais",
+    "Tolerância a Ferimentos (Homogêneo)",
+    "Resistente a Magia (não-destrutiva)",
+    "Vulnerabilidade (Fogo ×3)",
+    "Obedece apenas ao Rei Chutter"
+  ],
+  "habs": [
+    "Luta-13",
+    "Arremesso-11"
+  ],
+  "magias": [],
+  "objetivo": "Proteger o Rei Chutter. Obedecer comandos gravados nos pergaminhos que o compõem.",
+  "emocoes": "Sem emoções — executa comandos gravados nos pergaminhos. Reage defensivamente a qualquer ameaça ao mestre.",
+  "raiva": "Qualquer ameaça ao Rei Chutter. Invasão da torre sem autorização.",
+  "convicoes": "Nenhuma — vinculado por encantamento aos pergaminhos do Rei.",
+  "fala_batalha": "[Frêmito de pergaminhos se desenrolando. Nenhuma vocalização.]",
+  "comportamento": "Permanece inativo até ativado pelo Rei. Extremamente vulnerável ao fogo — combatentes espertos usam isso. Se destruído, os pergaminhos se espalham revelando fragmentos de texto arcano valiosos para magistas.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/golem_de_pergaminho_retrato.png",
+    "sprite_frente": "sprites/frente/golem_de_pergaminho_frente.png",
+    "sprite_costas": "sprites/costas/golem_de_pergaminho_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/golem_de_pergaminho_peca.png"
+  }
+}

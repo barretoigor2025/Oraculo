@@ -1,0 +1,13 @@
+{
+  "id": "npc_murznut",
+  "nome": "Murznut (Kobold)",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_murznut_retrato.png",
+    "sprite_frente": "sprites/frente/npc_murznut_frente.png",
+    "sprite_costas": "sprites/costas/npc_murznut_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_murznut_peca.png"
+  }
+}

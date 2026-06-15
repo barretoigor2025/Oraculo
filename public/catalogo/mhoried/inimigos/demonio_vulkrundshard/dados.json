@@ -1,0 +1,56 @@
+{
+  "id": "demonio_vulkrundshard",
+  "emoji": "🔥",
+  "cor": "#5a1a0a",
+  "nome": "Demônio do Vulkrundshard",
+  "tipo": "Demônio",
+  "desc": "Consciência demoníaca — Thamazul, o Ladrão — aprisionada na pedra vulkânda por dois séculos. Seduz com mentiras para ganhar liberdade.",
+  "gurps": {
+    "st": 16,
+    "dx": 14,
+    "iq": 13,
+    "ht": 13,
+    "hp": 16,
+    "will": 13,
+    "per": 14,
+    "fp": "∞",
+    "speed": 6.75,
+    "move": 6,
+    "dodge": 9,
+    "dr": 3,
+    "sm": 0
+  },
+  "ataque": "Manifestado: Golpe Ígneo 2d fogo (Perícia 14); Possessão (Disputa de Vontade vs. Will 13)",
+  "tracos": [
+    "Aprisionado no Vulkrundshard (não pode agir fisicamente)",
+    "Possessão Mental",
+    "Ilusão de Voz (finge ser rei anão bondoso)",
+    "Mentiroso Compulsivo",
+    "Imune a dano não-mágico",
+    "Resistente a Magia de Banimento"
+  ],
+  "habs": [
+    "Enganação-16",
+    "Persuasão-15",
+    "Leitura de Contexto-14"
+  ],
+  "magias": [
+    "Possessão Mental-13",
+    "Criar Ilusão Sonora-14",
+    "Induzir Medo-13"
+  ],
+  "objetivo": "Libertar-se do Vulkrundshard usando humanos como instrumentos. Uma vez livre, semear caos pelos territórios do norte. Fariborz o busca para usar em seus planos de fogo.",
+  "emocoes": "Fúria serena contida por dois séculos de prisão. Calculismo frio disfarçado de benevolência. Desejo ardente de liberdade acima de tudo.",
+  "raiva": "Ser ignorado. Ser atacado com magia de banimento. Ter sua verdadeira natureza descoberta antes do momento certo.",
+  "convicoes": "Todos os mortais são peças no tabuleiro. Liberdade é o único objetivo verdadeiro. Qualquer meio justifica o fim.",
+  "fala_batalha": "\"Pobre criatura aprisionada... tão parecido comigo...\" — \"Diga-me seu nome, somente seu nome...\" — [Descoberto] \"Então você é esperto. Pena.\" — \"Dois séculos de espera... posso esperar mais um pouco.\"",
+  "comportamento": "Só pode interagir via voz. Finge ser um rei anão bondoso preso por um invocador maligno. Quem diz seu nome verdadeiro enfrenta Disputa de Will (vs. Will 13). Falha → ganha Divisão de Personalidade com Cleptomania, Piromania ou Delírio.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/demonio_vulkrundshard_retrato.png",
+    "sprite_frente": "sprites/frente/demonio_vulkrundshard_frente.png",
+    "sprite_costas": "sprites/costas/demonio_vulkrundshard_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/demonio_vulkrundshard_peca.png"
+  }
+}

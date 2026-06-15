@@ -1,0 +1,13 @@
+{
+  "id": "npc_krink",
+  "nome": "Krink (Kobold)",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_krink_retrato.png",
+    "sprite_frente": "sprites/frente/npc_krink_frente.png",
+    "sprite_costas": "sprites/costas/npc_krink_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_krink_peca.png"
+  }
+}

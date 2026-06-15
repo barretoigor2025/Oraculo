@@ -1,0 +1,13 @@
+{
+  "id": "npc_wulfram_chifrado",
+  "nome": "Wulfram, o Chifrado",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_wulfram_chifrado_retrato.png",
+    "sprite_frente": "sprites/frente/npc_wulfram_chifrado_frente.png",
+    "sprite_costas": "sprites/costas/npc_wulfram_chifrado_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_wulfram_chifrado_peca.png"
+  }
+}

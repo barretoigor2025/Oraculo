@@ -1,0 +1,13 @@
+{
+  "id": "npc_choir_necromante",
+  "nome": "Choir, o Necromante (NPC)",
+  "categoria": "vilao",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_choir_necromante_retrato.png",
+    "sprite_frente": "sprites/frente/npc_choir_necromante_frente.png",
+    "sprite_costas": "sprites/costas/npc_choir_necromante_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_choir_necromante_peca.png"
+  }
+}

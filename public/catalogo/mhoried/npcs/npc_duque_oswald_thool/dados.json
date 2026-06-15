@@ -1,0 +1,13 @@
+{
+  "id": "npc_duque_oswald_thool",
+  "nome": "Duque Oswald (Thool)",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_duque_oswald_thool_retrato.png",
+    "sprite_frente": "sprites/frente/npc_duque_oswald_thool_frente.png",
+    "sprite_costas": "sprites/costas/npc_duque_oswald_thool_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_duque_oswald_thool_peca.png"
+  }
+}

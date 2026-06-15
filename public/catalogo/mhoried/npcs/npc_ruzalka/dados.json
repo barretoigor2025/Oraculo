@@ -1,0 +1,13 @@
+{
+  "id": "npc_ruzalka",
+  "nome": "Ruzalka",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_ruzalka_retrato.png",
+    "sprite_frente": "sprites/frente/npc_ruzalka_frente.png",
+    "sprite_costas": "sprites/costas/npc_ruzalka_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_ruzalka_peca.png"
+  }
+}

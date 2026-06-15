@@ -1,0 +1,54 @@
+{
+  "id": "kobold_azul",
+  "emoji": "🦎",
+  "cor": "#2a4a6a",
+  "nome": "Kobold Azul",
+  "tipo": "Kobold",
+  "desc": "Soldados de pele azul-escura do exército do Rei Blunkin. Ágeis, traiçoeiros e letais em grupo.",
+  "gurps": {
+    "st": 8,
+    "dx": 13,
+    "iq": 9,
+    "ht": 10,
+    "hp": 8,
+    "will": 9,
+    "per": 10,
+    "fp": 10,
+    "speed": 5.75,
+    "move": 5,
+    "dodge": 8,
+    "dr": 1,
+    "sm": -1
+  },
+  "ataque": "Lança 1d+1 imp (Perícia 11), Parry 9; ou Arco Curto 1d imp, Acc 1, Alcance 50/100 (Perícia 11)",
+  "tracos": [
+    "SM -1 (pequeno)",
+    "Visão Noturna 3",
+    "Ganância",
+    "Covardia (12 ou menos)",
+    "Instinto de Bando (recua se sozinho)"
+  ],
+  "habs": [
+    "Furtividade-13",
+    "Arco-11",
+    "Lança-11",
+    "Sobrevivência (Floresta)-12",
+    "Rastreamento-11",
+    "Armadilhas-11"
+  ],
+  "magias": [],
+  "objetivo": "Servir ao Rei Blunkin (que obedece ao Rei Chutter). Expandir território kobold. Capturar prisioneiros para trabalho forçado.",
+  "emocoes": "Medo de criaturas maiores, orgulho tribal ao lutar em grupo. Obediência hierárquica absoluta. Rancor profundo por humanos.",
+  "raiva": "Humilhação diante de outros kobolds. Ameaça ao líder. Invasão do território.",
+  "convicoes": "Os Blackwoods pertencem ao Rei Blunkin. Humanos são inimigos ou escravos. A força justifica o domínio.",
+  "fala_batalha": "\"Apanhe o intruso!\" — \"Pelo Rei Blunkin!\" — \"São fracos! Atacar!\" — \"Recuar! Muitos demais!\"",
+  "comportamento": "Patrulham em grupos de 4–8. Usam flanqueamento e armadilhas. Recuam se perdem metade do grupo. Nunca lutam com honra — preferem emboscadas noturnas.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/kobold_azul_retrato.png",
+    "sprite_frente": "sprites/frente/kobold_azul_frente.png",
+    "sprite_costas": "sprites/costas/kobold_azul_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/kobold_azul_peca.png"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "npc_drizzle",
+  "nome": "Drizzle (Kobold)",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_drizzle_retrato.png",
+    "sprite_frente": "sprites/frente/npc_drizzle_frente.png",
+    "sprite_costas": "sprites/costas/npc_drizzle_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_drizzle_peca.png"
+  }
+}

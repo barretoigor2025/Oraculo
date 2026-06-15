@@ -1,0 +1,34 @@
+{
+  "id": "mhoried",
+  "nome": "Beast of Black Keep",
+  "subtitulo": "A Campanha de Mhoried",
+  "versao": "2.0",
+  "sistema": "GURPS 4e",
+  "catalogo": "catalogo/mhoried",
+  "ambientacao": "Fantasia medieval em Megalos — reino de Mhoried, floresta Blackwoods e adjacências.",
+  "descricao": "Os heróis chegam à Feira de St. Phanourios em Mhoried e descobrem uma ameaça crescente: o Rei Chutter, ettin de duas cabeças, lidera kobolds, Thools e o necromante Choir em planos de conquista. O Duque Oswald desapareceu. A Duquesa Catherine pede ajuda. Os Blackwoods escondem segredos antigos.",
+  "num_jogadores": "2-5",
+  "nivel_dificuldade": "intermediario",
+  "estimativa_sessoes": "8-12",
+  "mapa_principal": "campaigns/mhoried/maps/feira-limpa.png",
+  "entidades": {
+    "inimigos": [
+      "espantalho_assombrado","kobold_azul","elfo_sombrio","grimhollow_thool",
+      "manticora_albina","larva_gigante","log_wife","mother_clutch",
+      "wraithweaver_spider","golem_de_pergaminho","alquimista_choir",
+      "demonio_vulkrundshard","marrowwither","barkthresher","quay_grabber",
+      "caranguejo_gigante","javali_ensandecido","esqueleto_lanceiro","rei_chutter"
+    ],
+    "npcs": [
+      "npc_catherine_laskaris","npc_gregoras_pellos","npc_hobbleboot_sam",
+      "npc_finn_willowheel","npc_ruzalka","npc_principe_kalos","npc_valmorien",
+      "npc_ysoria","npc_wulfram_chifrado","npc_fariborz_piromante",
+      "npc_mutter_grimmhaar","npc_mac_ronan","npc_muirenn","npc_dvalinn_anao",
+      "npc_blunkin_esmaga_cranios","npc_duque_oswald_thool","npc_rei_chutter",
+      "npc_aelar_eisenli","npc_jariella","npc_choir_necromante",
+      "npc_bishop_methodios","npc_morwenna","npc_krink","npc_drizzle",
+      "npc_murznut","npc_father_halric"
+    ],
+    "classes": ["guerreiro","arqueiro","mago","clerigo","ladino","barbaro"]
+  }
+}

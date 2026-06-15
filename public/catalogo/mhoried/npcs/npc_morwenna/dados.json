@@ -1,0 +1,13 @@
+{
+  "id": "npc_morwenna",
+  "nome": "Morwenna",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_morwenna_retrato.png",
+    "sprite_frente": "sprites/frente/npc_morwenna_frente.png",
+    "sprite_costas": "sprites/costas/npc_morwenna_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_morwenna_peca.png"
+  }
+}

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checklist de Assets — mhoried</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0e0c0a; --bg2: #181410; --gold: #c8a040; --gold2: #e8c060;
+    --text: #e0d0a8; --text-dim: rgba(200,180,128,0.55);
+    --border: rgba(200,160,64,0.18);
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Georgia','Times New Roman',serif; min-height: 100vh; }
+  header {
+    background: linear-gradient(180deg,#0a0806 0%,var(--bg2) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 14px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-top { display: flex; align-items: center; gap: 14px; }
+  .header-top h1 { font-size: clamp(14px,3vw,19px); color: var(--gold2); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 400; }
+  .header-top a { font-size: 10px; color: var(--text-dim); text-decoration: none; margin-left: auto; border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; white-space: nowrap; }
+  .header-top a:hover { color: var(--text); }
+  main { padding: 20px; max-width: 720px; }
+  .section-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+  .section-header h2 { font-size: 13px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); }
+  .count-badge { font-size: 10px; color: var(--text-dim); }
+  .ck-section { margin-bottom: 20px; }
+  .ck-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(190,140,35,.5); padding: 6px 0; border-bottom: 1px solid rgba(190,140,35,.12); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .ck-section-score { font-size: 11px; font-weight: 700; }
+  .ck-score-ok { color: #4caf50; }
+  .ck-score-miss { color: #f44336; }
+  .ck-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .ck-icon { font-size: 14px; flex-shrink: 0; width: 18px; text-align: center; }
+  .ck-nome { font-size: 11px; color: rgba(220,195,140,.85); flex: 1; }
+  .ck-path { font-size: 9px; color: rgba(190,165,90,.35); margin-top: 1px; }
+  .ck-missing .ck-nome { color: rgba(220,120,80,.8); }
+  .ck-missing .ck-path { color: rgba(220,120,80,.3); }
+  .ck-summary { font-size: 13px; font-weight: 700; padding: 14px; background: rgba(20,16,8,.5); border: 1px solid rgba(190,140,35,.2); border-radius: 10px; margin-bottom: 20px; text-align: center; }
+  .ck-hint { font-size: 9px; color: rgba(190,165,90,.35); margin-bottom: 8px; font-style: italic; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: rgba(200,160,64,0.3); border-radius: 2px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-top">
+    <h1>✓ Checklist — mhoried</h1>
+    <a href="../../../catalog.html">← Catálogo</a>
+  </div>
+</header>
+<main>
+  <div class="section-header">
+    <h2>✓ Checklist de Assets</h2>
+    <span class="count-badge" id="ck-pct">verificando…</span>
+  </div>
+  <div id="ck-body">
+    <div style="padding:40px;text-align:center;color:rgba(190,165,90,.4);font-size:13px">⏳ Verificando arquivos…</div>
+  </div>
+</main>
+
+<script type="module">
+import { NPCS, INIMIGOS_DATA } from '../loader.js';
+import { CENAS, CENAS_ORDEM } from '../campanha/roteiro/campaign.js';
+
+const CAT = '../../../catalogo/mhoried/';
+const CLASSES = ['guerreiro','arqueiro','mago','clerigo','ladino','barbaro'];
+const CLASSE_NOMES = {guerreiro:'Guerreiro',arqueiro:'Arqueiro',mago:'Mago',clerigo:'Clérigo',ladino:'Ladino',barbaro:'Bárbaro'};
+
+// ── Cenários por Ato ──────────────────────────────────────────────────
+const cenasList = CENAS_ORDEM.map(id => CENAS[id]).filter(Boolean);
+const atoMap = {};
+for(const c of cenasList){
+  const a = c.ato || 1;
+  if(!atoMap[a]) atoMap[a] = [];
+  atoMap[a].push({
+    nome: c.titulo,
+    sub: `${c.id}.png`,
+    path: `${CAT}cenarios/${c.id}/imagem/${c.id}.png`,
+  });
+  if(c.temBatalha){
+    atoMap[a].push({
+      nome: `${c.titulo} — mapa batalha`,
+      sub: `${c.id}_mapa.png`,
+      path: `${CAT}cenarios/${c.id}/mapa/${c.id}_mapa.png`,
+    });
+  }
+}
+
+const cenarioSections = Object.keys(atoMap).sort((a,b)=>+a-+b).map(ato=>({
+  titulo: `🗺️ Ato ${ato} — Cenários`,
+  dica: `cenarios/{id}/imagem/{id}.png  |  mapa: cenarios/{id}/mapa/{id}_mapa.png`,
+  items: atoMap[ato],
+}));
+
+// ── Retratos ──────────────────────────────────────────────────────────
+const sections = [
+  ...cenarioSections,
+  {
+    titulo: '🖼️ Retratos NPC',
+    dica: 'npcs/{id}/retrato/{id}_retrato.png',
+    items: Object.values(NPCS).map(n=>({
+      nome: n.nome||n.id, sub: `${n.id}_retrato.png`,
+      path: `${CAT}npcs/${n.id}/retrato/${n.id}_retrato.png`,
+    })),
+  },
+  {
+    titulo: '👾 Retratos Inimigos',
+    dica: 'inimigos/{id}/retrato/{id}_retrato.png',
+    items: INIMIGOS_DATA.map(e=>({
+      nome: e.nome||e.id, sub: `${e.id}_retrato.png`,
+      path: `${CAT}inimigos/${e.id}/retrato/${e.id}_retrato.png`,
+    })),
+  },
+  {
+    titulo: '🧙 Retratos de Classe — Masculino',
+    dica: 'classes/{id}/retrato/{id}_m_retrato.png',
+    items: CLASSES.map(id=>({
+      nome: CLASSE_NOMES[id]||id, sub: `${id}_m_retrato.png`,
+      path: `${CAT}classes/${id}/retrato/${id}_m_retrato.png`,
+    })),
+  },
+  {
+    titulo: '🧙 Retratos de Classe — Feminino',
+    dica: 'classes/{id}/retrato/{id}_f_retrato.png',
+    items: CLASSES.map(id=>({
+      nome: CLASSE_NOMES[id]||id, sub: `${id}_f_retrato.png`,
+      path: `${CAT}classes/${id}/retrato/${id}_f_retrato.png`,
+    })),
+  },
+  // ── Standees ──
+  {
+    titulo: '♟️ Standee — Inimigos',
+    dica: 'inimigos/{id}/peca_tabuleiro/{id}_peca.png',
+    items: INIMIGOS_DATA.map(e=>({ nome:e.nome||e.id, sub:`${e.id}_peca.png`, path:`${CAT}inimigos/${e.id}/peca_tabuleiro/${e.id}_peca.png` })),
+  },
+  {
+    titulo: '♟️ Standee — NPCs',
+    dica: 'npcs/{id}/peca_tabuleiro/{id}_peca.png',
+    items: Object.values(NPCS).map(n=>({ nome:n.nome||n.id, sub:`${n.id}_peca.png`, path:`${CAT}npcs/${n.id}/peca_tabuleiro/${n.id}_peca.png` })),
+  },
+  {
+    titulo: '♟️ Standee — Classes (M)',
+    dica: 'classes/{id}/peca_tabuleiro/{id}_m_peca.png',
+    items: CLASSES.map(id=>({ nome:CLASSE_NOMES[id]||id, sub:`${id}_m_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_m_peca.png` })),
+  },
+  {
+    titulo: '♟️ Standee — Classes (F)',
+    dica: 'classes/{id}/peca_tabuleiro/{id}_f_peca.png',
+    items: CLASSES.map(id=>({ nome:CLASSE_NOMES[id]||id, sub:`${id}_f_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_f_peca.png` })),
+  },
+];
+
+// ── Verificação ───────────────────────────────────────────────────────
+function probeImg(path){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload  = ()=>resolve(true);
+    img.onerror = ()=>resolve(false);
+    img.src = path;
+  });
+}
+
+async function build(){
+  let totalOk=0, totalMiss=0;
+  let html='';
+
+  for(const sec of sections){
+    const results = await Promise.all(sec.items.map(it=>probeImg(it.path)));
+    const ok   = results.filter(Boolean).length;
+    const miss = results.length - ok;
+    totalOk += ok; totalMiss += miss;
+
+    html += `<div class="ck-section">
+      <div class="ck-section-title">
+        ${sec.titulo}
+        <span class="ck-section-score ${miss===0?'ck-score-ok':'ck-score-miss'}">${ok}/${results.length}</span>
+      </div>
+      <div class="ck-hint">${sec.dica}</div>`;
+
+    sec.items.forEach((item,i)=>{
+      if(!results[i]){
+        html += `<div class="ck-item ck-missing">
+          <span class="ck-icon">❌</span>
+          <div><div class="ck-nome">${item.nome}</div><div class="ck-path">${item.sub}</div></div>
+        </div>`;
+      } else {
+        html += `<div class="ck-item">
+          <span class="ck-icon">✅</span>
+          <div><div class="ck-nome">${item.nome}</div></div>
+        </div>`;
+      }
+    });
+    html += '</div>';
+  }
+
+  const pct = totalOk+totalMiss>0 ? Math.round(totalOk/(totalOk+totalMiss)*100) : 100;
+  const cor = totalMiss===0 ? '#4caf50' : pct>=70 ? '#c8a040' : '#f44336';
+  document.getElementById('ck-pct').textContent = `${pct}% completo`;
+  document.getElementById('ck-pct').style.color = cor;
+  const summary = totalMiss>0
+    ? `<div class="ck-summary" style="color:${cor}">❌ ${totalMiss} arquivo${totalMiss>1?'s':''} faltando — ${totalOk} presentes</div>`
+    : `<div class="ck-summary" style="color:#4caf50">✅ Todos os assets presentes!</div>`;
+  document.getElementById('ck-body').innerHTML = summary + html;
+}
+
+build();
+</script>
+</body>
+</html>

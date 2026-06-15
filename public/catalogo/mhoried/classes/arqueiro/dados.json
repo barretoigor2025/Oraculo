@@ -1,0 +1,32 @@
+{
+  "id": "arqueiro",
+  "nome": "Arqueiro",
+  "emoji": "🏹",
+  "desc": "Especialista em combate à distância. Alta precisão e furtividade.",
+  "habilidades_base": [
+    "Arco",
+    "Furtividade",
+    "Rastreamento",
+    "Sobrevivência"
+  ],
+  "atributos_primarios": [
+    "DX",
+    "PER"
+  ],
+  "variacoes_genero": [
+    "arqueiro_f",
+    "arqueiro_m"
+  ],
+  "_campanha": "mhoried",
+  "_tipo_entidade": "classe",
+  "assets": {
+    "retrato_f": "retrato/arqueiro_f_retrato.png",
+    "retrato_m": "retrato/arqueiro_m_retrato.png",
+    "sprite_frente_f": "sprites/frente/arqueiro_f_frente.png",
+    "sprite_frente_m": "sprites/frente/arqueiro_m_frente.png",
+    "sprite_costas_f": "sprites/costas/arqueiro_f_costas.png",
+    "sprite_costas_m": "sprites/costas/arqueiro_m_costas.png",
+    "peca_f": "peca_tabuleiro/arqueiro_f_peca.png",
+    "peca_m": "peca_tabuleiro/arqueiro_m_peca.png"
+  }
+}
