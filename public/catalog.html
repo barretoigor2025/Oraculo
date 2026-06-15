@@ -594,7 +594,7 @@ function classSpriteUrl(id, gender){
 }
 function classFrente(id, g){ return `catalogo/mhoried/classes/${id}/sprites/frente/${id}_${g}_frente.png`; }
 function classCostas(id, g){ return `catalogo/mhoried/classes/${id}/sprites/costas/${id}_${g}_costas.png`; }
-function classStandee(id)   { return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_peca.png`; }
+function classStandee(id, g){ return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png`; }
 
 function npcRetratoUrl(id){
   return `catalogo/mhoried/npcs/${id}/retrato/${id}_retrato.png`;
@@ -724,18 +724,18 @@ window.openClassModal = function(id){
       </div>
     </div>`).join('');
 
-  const spritePairs = ['m','f'].map(g=>`
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3);border-right:1px solid var(--border)">
+  const standeePairs = ['m','f'].map(g=>`
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3);${g==='m'?'border-right:1px solid var(--border)':''}">
       <div class="modal-sprite-wrap">
-        <img src="${classSpriteUrl(id,g)}" alt="${g}" onerror="this.style.display='none'">
+        <img src="${classStandee(id,g)}" alt="${g==='m'?'Masculino':'Feminino'}" onerror="this.style.opacity='.15'">
       </div>
       <div class="sprite-label">${g==='m'?'Masculino':'Feminino'}</div>
     </div>`).join('');
 
   document.getElementById('modal-inner').innerHTML = `
     <div class="modal-header">
-      <div class="modal-sprites" style="flex-direction:row;min-width:200px;max-width:240px">
-        ${spritePairs}
+      <div class="modal-sprites" style="flex-direction:row;min-width:160px;max-width:200px">
+        ${standeePairs}
       </div>
       <div class="modal-title-area">
         <div class="modal-name">${cls.icon} ${cls.nome}</div>
@@ -755,21 +755,6 @@ window.openClassModal = function(id){
         <div class="section-title">Habilidades</div>
         <div class="habs-list">${habsHtml}</div>
       </div>
-      <div class="section">
-        <div class="section-title">Sprites de Jogo</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${['m','f'].map(g=>[
-            ['Frente '+g.toUpperCase(), classFrente(id,g)],
-            ['Costas '+g.toUpperCase(), classCostas(id,g)],
-          ]).flat().concat([['Standee', classStandee(id)]]).map(([lbl,url])=>`
-            <div style="text-align:center;min-width:60px">
-              <div style="background:rgba(0,0,0,.3);border-radius:6px;padding:6px;margin-bottom:3px;height:130px;display:flex;align-items:flex-end;justify-content:center">
-                <img src="${url}" style="max-height:118px;max-width:80px;object-fit:contain" onerror="this.style.opacity='.15'">
-              </div>
-              <div style="font-size:8px;color:var(--text-dim);letter-spacing:.5px;text-transform:uppercase">${lbl}</div>
-            </div>`).join('')}
-        </div>
-      </div>
     </div>`;
   openModal();
 };
@@ -778,17 +763,11 @@ window.openNpcModal = function(id){
   const npc = NPCS[id];
   if(!npc) return;
 
-  const npcFrUrl  = npcSpriteUrl(npc.id, false);
-  const npcCoUrl  = npcSpriteUrl(npc.id, true);
-  const npcStUrl  = npcStandeeUrl(npc.id);
-
-  function sprSlot(url, label, border=true){
-    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3);${border?'border-right:1px solid var(--border)':''}">
-      <div class="modal-sprite-wrap"><img src="${url}" alt="${label}" onerror="this.style.opacity='.15'"></div>
-      <div class="sprite-label">${label}</div>
-    </div>`;
-  }
-  const sprPairs = sprSlot(npcFrUrl,'Frente') + sprSlot(npcCoUrl,'Costas') + sprSlot(npcStUrl,'Standee',false);
+  const npcStUrl = npcStandeeUrl(npc.id);
+  const npcStSlot = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3)">
+    <div class="modal-sprite-wrap"><img src="${npcStUrl}" alt="Standee" onerror="this.style.opacity='.15'"></div>
+    <div class="sprite-label">Standee</div>
+  </div>`;
 
   const sections = [
     npc.descFisica     && ['Aparência Física',  npc.descFisica],
@@ -803,7 +782,7 @@ window.openNpcModal = function(id){
 
   document.getElementById('modal-inner').innerHTML = `
     <div class="modal-header">
-      <div class="modal-sprites" style="flex-direction:row;min-width:200px;max-width:260px">${sprPairs}</div>
+      <div class="modal-sprites" style="min-width:90px;max-width:120px">${npcStSlot}</div>
       <div class="modal-title-area">
         <div class="modal-name">${npc.nome}</div>
         <div class="modal-cat"><span class="cat-badge cat-${npc.categoria}">${catLabel(npc.categoria)}</span></div>
@@ -819,21 +798,15 @@ window.openEnemyModal = function(id){
   const en = listaInimigos.find(e=>e.id===id);
   if(!en) return;
 
-  const spr      = inimSpriteUrl(id, false);
-  const sprBack  = inimSpriteUrl(id, true);
   const sprStand = inimStandeeUrl(id);
-
-  function enSlot(url, label, border=true){
-    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3);${border?'border-right:1px solid var(--border)':''}">
-      <div class="modal-sprite-wrap"><img src="${url}" alt="${label}" onerror="this.style.opacity='.15'"></div>
-      <div class="sprite-label">${label}</div>
-    </div>`;
-  }
-  const sprPairs = enSlot(spr,'Frente') + enSlot(sprBack,'Costas') + enSlot(sprStand,'Standee',false);
+  const enStSlot = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3)">
+    <div class="modal-sprite-wrap"><img src="${sprStand}" alt="Standee" onerror="this.style.opacity='.15'"></div>
+    <div class="sprite-label">Standee</div>
+  </div>`;
 
   document.getElementById('modal-inner').innerHTML = `
     <div class="modal-header">
-      <div class="modal-sprites" style="flex-direction:row;min-width:200px;max-width:260px">${sprPairs}</div>
+      <div class="modal-sprites" style="min-width:90px;max-width:120px">${enStSlot}</div>
       <div class="modal-title-area">
         <div class="modal-name">💀 ${en.nome}</div>
         <div class="modal-cat"><span class="cat-badge cat-inimigo">${en.tipo}</span></div>
@@ -1009,31 +982,11 @@ function buildChecklistTab(){
         path: `${CAT}classes/${id}/retrato/${id}_f_retrato.png`,
       })),
     },
-    // ── Sprites de Jogo ──
-    {
-      titulo: '🏃 Sprites Frente — Inimigos',
-      dica: 'inimigos/{id}/sprites/frente/{id}_frente.png',
-      items: inimList.map(e=>({ nome:e.nome||e.id, sub:`${e.id}_frente.png`, path:`${CAT}inimigos/${e.id}/sprites/frente/${e.id}_frente.png` })),
-    },
-    {
-      titulo: '🔄 Sprites Costas — Inimigos',
-      dica: 'inimigos/{id}/sprites/costas/{id}_costas.png',
-      items: inimList.map(e=>({ nome:e.nome||e.id, sub:`${e.id}_costas.png`, path:`${CAT}inimigos/${e.id}/sprites/costas/${e.id}_costas.png` })),
-    },
+    // ── Standees ──
     {
       titulo: '♟️ Standee — Inimigos',
       dica: 'inimigos/{id}/peca_tabuleiro/{id}_peca.png',
       items: inimList.map(e=>({ nome:e.nome||e.id, sub:`${e.id}_peca.png`, path:`${CAT}inimigos/${e.id}/peca_tabuleiro/${e.id}_peca.png` })),
-    },
-    {
-      titulo: '🏃 Sprites Frente — NPCs',
-      dica: 'npcs/{id}/sprites/frente/{id}_frente.png',
-      items: npcList.map(n=>({ nome:n.nome||n.id, sub:`${n.id}_frente.png`, path:`${CAT}npcs/${n.id}/sprites/frente/${n.id}_frente.png` })),
-    },
-    {
-      titulo: '🔄 Sprites Costas — NPCs',
-      dica: 'npcs/{id}/sprites/costas/{id}_costas.png',
-      items: npcList.map(n=>({ nome:n.nome||n.id, sub:`${n.id}_costas.png`, path:`${CAT}npcs/${n.id}/sprites/costas/${n.id}_costas.png` })),
     },
     {
       titulo: '♟️ Standee — NPCs',
@@ -1041,19 +994,14 @@ function buildChecklistTab(){
       items: npcList.map(n=>({ nome:n.nome||n.id, sub:`${n.id}_peca.png`, path:`${CAT}npcs/${n.id}/peca_tabuleiro/${n.id}_peca.png` })),
     },
     {
-      titulo: '🏃 Sprites Frente — Classes',
-      dica: 'classes/{id}/sprites/frente/{id}_{m|f}_frente.png',
-      items: classes.flatMap(id=>['m','f'].map(g=>({ nome:`${CLASSES_DATA[id].nome} (${g.toUpperCase()})`, sub:`${id}_${g}_frente.png`, path:`${CAT}classes/${id}/sprites/frente/${id}_${g}_frente.png` }))),
+      titulo: '♟️ Standee — Classes (M)',
+      dica: 'classes/{id}/peca_tabuleiro/{id}_m_peca.png',
+      items: classes.map(id=>({ nome:CLASSES_DATA[id].nome, sub:`${id}_m_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_m_peca.png` })),
     },
     {
-      titulo: '🔄 Sprites Costas — Classes',
-      dica: 'classes/{id}/sprites/costas/{id}_{m|f}_costas.png',
-      items: classes.flatMap(id=>['m','f'].map(g=>({ nome:`${CLASSES_DATA[id].nome} (${g.toUpperCase()})`, sub:`${id}_${g}_costas.png`, path:`${CAT}classes/${id}/sprites/costas/${id}_${g}_costas.png` }))),
-    },
-    {
-      titulo: '♟️ Standee — Classes',
-      dica: 'classes/{id}/peca_tabuleiro/{id}_peca.png',
-      items: classes.map(id=>({ nome:CLASSES_DATA[id].nome, sub:`${id}_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_peca.png` })),
+      titulo: '♟️ Standee — Classes (F)',
+      dica: 'classes/{id}/peca_tabuleiro/{id}_f_peca.png',
+      items: classes.map(id=>({ nome:CLASSES_DATA[id].nome, sub:`${id}_f_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_f_peca.png` })),
     },
   ];
 
