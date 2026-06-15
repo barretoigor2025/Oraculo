@@ -1,0 +1,13 @@
+{
+  "id": "npc_fariborz_piromante",
+  "nome": "Fariborz, o Piromante",
+  "categoria": "neutro_hostil",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_fariborz_piromante_retrato.png",
+    "sprite_frente": "sprites/frente/npc_fariborz_piromante_frente.png",
+    "sprite_costas": "sprites/costas/npc_fariborz_piromante_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_fariborz_piromante_peca.png"
+  }
+}

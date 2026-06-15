@@ -371,7 +371,7 @@
 </div>
 
 <script type="module">
-import { NPCS } from './campaigns/mhoried/data/campaign.js';
+import { NPCS, INIMIGOS_DATA as INIMIGOS_COMPLETO } from './catalogo/mhoried/loader.js';
 
 // ── DATA ──────────────────────────────────────────────────────────────
 
@@ -490,16 +490,26 @@ function spriteUrl(path){
   return path;
 }
 
+function inimRetratoUrl(id){
+  return `catalogo/mhoried/inimigos/${id}/retrato/${id}_retrato.png`;
+}
+
 function inimSpriteUrl(id, costas){
-  const prefix = id.startsWith('goblin') ? '' : 'inimigo_';
-  const base = id.startsWith('goblin') ? id : id;
-  // goblin files: goblin_arqueiro.png; inimigo files: inimigo_X.png
-  const fname = id.startsWith('goblin') ? `${id}` : `inimigo_${id}`;
-  return costas ? `campaigns/mhoried/sprites/${fname}_costas.png` : `campaigns/mhoried/sprites/${fname}.png`;
+  if(costas) return `catalogo/mhoried/inimigos/${id}/sprites/costas/${id}_costas.png`;
+  return `catalogo/mhoried/inimigos/${id}/sprites/frente/${id}_frente.png`;
 }
 
 function classSpriteUrl(id, gender){
-  return `campaigns/mhoried/sprites/${id}_${gender}.png`;
+  return `catalogo/mhoried/classes/${id}/retrato/${id}_${gender}_retrato.png`;
+}
+
+function npcRetratoUrl(id){
+  return `catalogo/mhoried/npcs/${id}/retrato/${id}_retrato.png`;
+}
+
+function npcSpriteUrl(id, costas){
+  if(costas) return `catalogo/mhoried/npcs/${id}/sprites/costas/${id}_costas.png`;
+  return `catalogo/mhoried/npcs/${id}/sprites/frente/${id}_frente.png`;
 }
 
 // ── BUILD CLASSES TAB ─────────────────────────────────────────────────
@@ -541,8 +551,8 @@ function buildNpcsTab(){
 
   let cards = '<div class="card-grid" id="npc-grid">';
   for(const npc of npcList){
-    const sprUrl = npc.sprite;
-    const snippet = (npc.descFisica||'').slice(0,80).replace(/`/g,'') + '…';
+    const sprUrl = npc.retrato || npcSpriteUrl(npc.id, false);
+    const snippet = (npc.descFisica||npc.nome||'').slice(0,80).replace(/`/g,'') + '…';
     cards += `
       <div class="card" data-cat="${npc.categoria}" onclick="openNpcModal('${npc.id}')">
         <div class="card-sprite">
@@ -564,11 +574,12 @@ function buildNpcsTab(){
 
 function buildInimigosTab(){
   const tab = document.getElementById('inimigos-tab');
-  const header = `<div class="section-header"><h2>Inimigos &amp; Criaturas</h2><span class="count-badge">${INIMIGOS_DATA.length} tipos</span></div>`;
+  const listaInimigos = INIMIGOS_COMPLETO || INIMIGOS_DATA;
+  const header = `<div class="section-header"><h2>Inimigos &amp; Criaturas</h2><span class="count-badge">${listaInimigos.length} tipos</span></div>`;
 
   let cards = '<div class="card-grid">';
-  for(const en of INIMIGOS_DATA){
-    const spr = inimSpriteUrl(en.id, false);
+  for(const en of listaInimigos){
+    const spr = inimRetratoUrl(en.id);
     cards += `
       <div class="card" onclick="openEnemyModal('${en.id}')">
         <div class="card-sprite" style="background:rgba(60,10,0,.25)">
@@ -654,12 +665,17 @@ window.openNpcModal = function(id){
   const npc = NPCS[id];
   if(!npc) return;
 
-  const backSpr = npc.sprite ? npc.sprite.replace('.png','_costas.png') : '';
+  const npcFrUrl = npc.retrato || npcSpriteUrl(npc.id, false);
+  const npcCoUrl = npc.costas  || npcSpriteUrl(npc.id, true);
 
   const sprPairs = `
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3);border-right:1px solid var(--border)">
-      <div class="modal-sprite-wrap"><img src="${npc.sprite}" alt="frente" onerror="this.style.display='none'"></div>
+      <div class="modal-sprite-wrap"><img src="${npcFrUrl}" alt="frente" onerror="this.style.display='none'"></div>
       <div class="sprite-label">Frente</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,0.3)">
+      <div class="modal-sprite-wrap"><img src="${npcCoUrl}" alt="costas" onerror="this.style.display='none'"></div>
+      <div class="sprite-label">Costas</div>
     </div>`;
 
   const sections = [
@@ -687,7 +703,8 @@ window.openNpcModal = function(id){
 };
 
 window.openEnemyModal = function(id){
-  const en = INIMIGOS_DATA.find(e=>e.id===id);
+  const listaInimigos = INIMIGOS_COMPLETO || INIMIGOS_DATA;
+  const en = listaInimigos.find(e=>e.id===id);
   if(!en) return;
 
   const spr      = inimSpriteUrl(id, false);

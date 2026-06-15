@@ -1,0 +1,52 @@
+{
+  "id": "larva_gigante",
+  "emoji": "🐛",
+  "cor": "#8a7a3a",
+  "nome": "Larva Gigante",
+  "tipo": "Fera",
+  "desc": "Larva colossal que habita os grotões ao sul dos Blackwoods. Segrega fluido ácido e é cobiçada por suas entranhas valiosas.",
+  "gurps": {
+    "st": 16,
+    "dx": 8,
+    "iq": 2,
+    "ht": 12,
+    "hp": 16,
+    "will": 10,
+    "per": 8,
+    "fp": 12,
+    "speed": 5.0,
+    "move": 3,
+    "dodge": 7,
+    "dr": 3,
+    "sm": 2
+  },
+  "ataque": "Mordida 1d+2 cor (Perícia 12) + fluido ácido 1d-1 cor/turno; Cusparada Ácida 1d cor, Acc 1, Alcance 2/4 (Perícia 10)",
+  "tracos": [
+    "SM +2 (enorme)",
+    "Quitina Grossa (DR 3)",
+    "Tolerância a Ferimentos (Homogêneo, Sem Pescoço)",
+    "Infravision",
+    "Sentido de Vibração",
+    "Animal Selvagem",
+    "Cego (detecta por vibração)"
+  ],
+  "habs": [
+    "Luta-12",
+    "Escavar-12"
+  ],
+  "magias": [],
+  "objetivo": "Alimentar-se. Patrulha instintiva de seu território subterrâneo.",
+  "emocoes": "Sem emoções — instinto puro. Reagência mecânica a estímulos de calor e vibração.",
+  "raiva": "Qualquer perturbação no solo próximo. Ameaça direta.",
+  "convicoes": "Nenhuma.",
+  "fala_batalha": "[Barulho úmido de mandíbulas. Chiado químico quando ácido toca superfícies.]",
+  "comportamento": "Permanece enterrada aguardando presas que pisem sobre ela. O midgut ácido é ingrediente raro: vale $500 silvers para Mutter Grimmhaar. Toma metade do dano de ataques de impacto.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/larva_gigante_retrato.png",
+    "sprite_frente": "sprites/frente/larva_gigante_frente.png",
+    "sprite_costas": "sprites/costas/larva_gigante_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/larva_gigante_peca.png"
+  }
+}

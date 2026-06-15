@@ -1,0 +1,13 @@
+{
+  "id": "npc_bishop_methodios",
+  "nome": "Bispo Methodios",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_bishop_methodios_retrato.png",
+    "sprite_frente": "sprites/frente/npc_bishop_methodios_frente.png",
+    "sprite_costas": "sprites/costas/npc_bishop_methodios_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_bishop_methodios_peca.png"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "npc_rei_chutter",
+  "nome": "Rei Chutter (NPC)",
+  "categoria": "vilao",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_rei_chutter_retrato.png",
+    "sprite_frente": "sprites/frente/npc_rei_chutter_frente.png",
+    "sprite_costas": "sprites/costas/npc_rei_chutter_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_rei_chutter_peca.png"
+  }
+}

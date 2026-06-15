@@ -1,0 +1,56 @@
+{
+  "id": "log_wife",
+  "emoji": "🌿",
+  "cor": "#3a5a3a",
+  "nome": "Log-Wife",
+  "tipo": "Espírito",
+  "desc": "Espírito maligno que habita troncos apodrecidos cobertos de cogumelos raros. Atrai viajantes perdidos com choro sedutor para destruí-los.",
+  "gurps": {
+    "st": 14,
+    "dx": 11,
+    "iq": 12,
+    "ht": 11,
+    "hp": 14,
+    "will": 14,
+    "per": 13,
+    "fp": "∞",
+    "speed": 5.5,
+    "move": 5,
+    "dodge": 8,
+    "dr": 2,
+    "sm": 0
+  },
+  "ataque": "Raízes e Galhos 1d+1 esmagador (Perícia 13); Choro Sedutor (Mental: Will vs. IQ 12 ou aproximar-se compulsivamente)",
+  "tracos": [
+    "Espírito (pode tornar-se imaterial)",
+    "Invulnerabilidade a dano físico não-mágico",
+    "Resistente a Fogo",
+    "Choro Sedutor",
+    "Empatia Negativa",
+    "Ódio por Humanos"
+  ],
+  "habs": [
+    "Enganação-14",
+    "Diplomacia-12 (disfarce como mulher em apuros)",
+    "Furtividade-13"
+  ],
+  "magias": [
+    "Fascinação (Canto)-14",
+    "Criar Ilusão (forma humana)-13",
+    "Drenar HP-12"
+  ],
+  "objetivo": "Atrair viajantes solitários para seu tronco e destruí-los, absorvendo sua força vital.",
+  "emocoes": "Fome insaciável por energia vital. Prazer sádico em enganar. Ódio profundo e antigo por humanos vivos.",
+  "raiva": "Ser desmascarada como espírito. Ser atacada com magia ou armas de prata. Ser ignorada.",
+  "convicoes": "Os humanos são presas, não pessoas. Os cogumelos ao redor do tronco são sagrados e não devem ser colhidos por estranhos.",
+  "fala_batalha": "\"Ajude-me... estou perdida...\" [choro hipnótico] — \"Você não vai a lugar nenhum.\" [ao revelar forma] — \"Sua energia vai me alimentar por meses.\"",
+  "comportamento": "Aparece como mulher chorando nas profundezas da floresta. Tenta atrair viajantes isolados. Só combate quando encurralada. Seus cogumelos raros curam doenças e fazem parte do ritual para curar o Duque Oswald.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/log_wife_retrato.png",
+    "sprite_frente": "sprites/frente/log_wife_frente.png",
+    "sprite_costas": "sprites/costas/log_wife_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/log_wife_peca.png"
+  }
+}

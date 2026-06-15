@@ -1,0 +1,13 @@
+{
+  "id": "npc_gregoras_pellos",
+  "nome": "Gregoras Pellos",
+  "categoria": "aliado",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_gregoras_pellos_retrato.png",
+    "sprite_frente": "sprites/frente/npc_gregoras_pellos_frente.png",
+    "sprite_costas": "sprites/costas/npc_gregoras_pellos_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_gregoras_pellos_peca.png"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "npc_hobbleboot_sam",
+  "nome": "Hobbleboot Sam",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_hobbleboot_sam_retrato.png",
+    "sprite_frente": "sprites/frente/npc_hobbleboot_sam_frente.png",
+    "sprite_costas": "sprites/costas/npc_hobbleboot_sam_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_hobbleboot_sam_peca.png"
+  }
+}

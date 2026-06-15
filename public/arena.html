@@ -6,9 +6,8 @@
 <title>Arena v2</title>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script type="module">
-import { INIMIGOS_DATA } from './campaigns/mhoried/data/bestiary.js?v=3';
+import { INIMIGOS_DATA, NPCS as _NPCS_DATA } from './catalogo/mhoried/loader.js';
 window.INIMIGOS_DATA = INIMIGOS_DATA;
-import { NPCS as _NPCS_DATA } from './campaigns/mhoried/data/campaign.js?v=4';
 window._campanhaNPCs = _NPCS_DATA;
 import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import{getFirestore,doc,onSnapshot,updateDoc,increment}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
@@ -571,8 +570,8 @@ function criarInimigo(bestiaryId, col, row, overrides){
     col, row,
     emoji:       en.emoji || '💀',
     cor:         en.cor   || '#4a0000',
-    imgSrc:      `campaigns/mhoried/portraits/enemy_${bestiaryId}.png`,
-    imgSrcAtaque:`campaigns/mhoried/portraits/enemy_${bestiaryId}.png`,
+    imgSrc:      en._retrato  || `catalogo/mhoried/inimigos/${bestiaryId}/retrato/${bestiaryId}_retrato.png`,
+    imgSrcAtaque:en._retrato  || `catalogo/mhoried/inimigos/${bestiaryId}/retrato/${bestiaryId}_retrato.png`,
     img:         null,
     tipo:        'inimigo',
     mov:         g.move  ?? 4,
@@ -580,7 +579,7 @@ function criarInimigo(bestiaryId, col, row, overrides){
     maxHp:       g.hp    ?? 10,
     sp:          (typeof g.fp === 'number' ? g.fp : 0),
     maxSp:       (typeof g.fp === 'number' ? g.fp : 0),
-    portrait:    `campaigns/mhoried/portraits/enemy_${bestiaryId}.png`,
+    portrait:    en._retrato  || `catalogo/mhoried/inimigos/${bestiaryId}/retrato/${bestiaryId}_retrato.png`,
     ac:          g.dodge ?? 8,
     dr:          g.dr    ?? 0,
     bestiaryId,
@@ -3026,7 +3025,7 @@ function _loadSprite(u){
         const fb=new Image();
         fb.onload=()=>{u.img=fb;renderUnits();};
         fb.onerror=()=>renderUnits();
-        fb.src=`campaigns/mhoried/sprites/inimigo_${u.bestiaryId}.png`;
+        fb.src=`catalogo/mhoried/inimigos/${u.bestiaryId}/peca_tabuleiro/${u.bestiaryId}_peca.png`;
       } else { renderUnits(); }
     };
     img.src=u.imgSrc;

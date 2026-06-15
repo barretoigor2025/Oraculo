@@ -1,0 +1,60 @@
+{
+  "id": "mother_clutch",
+  "emoji": "💀",
+  "cor": "#2a1a3a",
+  "nome": "Mother Clutch",
+  "tipo": "Morto-Vivo",
+  "desc": "Massa rolante de membros entrelaçados criada por Choir. Enviada para dizimar o acampamento dos druidas.",
+  "gurps": {
+    "st": 13,
+    "dx": 13,
+    "iq": 8,
+    "ht": 12,
+    "hp": 16,
+    "will": 10,
+    "per": 8,
+    "fp": 12,
+    "speed": 6.25,
+    "move": 7,
+    "dodge": 10,
+    "dr": 1,
+    "sm": 2
+  },
+  "ataque": "Braços (×10) 1d+1 esmagador (Perícia 15); Agarrar e Esfolar com +20 em agarrões e +3 para imobilizar",
+  "tracos": [
+    "SM +2",
+    "Ambidestria",
+    "Não pode Falar",
+    "Reflexos de Combate",
+    "Visão no Escuro",
+    "Braços Extras ×10",
+    "Ataque Extra 2",
+    "Difícil de Subjugar 2",
+    "Limiar de Dor Elevado",
+    "Indomável",
+    "Movimento Aumentado",
+    "Tolerância a Ferimentos (Sem Sangue, Sem Cérebro, Sem Cabeça, Sem Pescoço, Sem Vitais, Sem Olhos, Não-Vivo)",
+    "Resistente (Controle Mental)",
+    "Inabalável"
+  ],
+  "habs": [
+    "Luta-15",
+    "Furtividade-12",
+    "Luta Livre-13"
+  ],
+  "magias": [],
+  "objetivo": "Capturar e arrancar membros das presas para adicionar ao próprio corpo. Opera por impulso compulsivo criado por Choir.",
+  "emocoes": "Sem emoções — impulso compulsivo de expandir a massa de membros. Alvos prioritários: druidas e curadores.",
+  "raiva": "Qualquer criatura viva que tente escapar do agarrão.",
+  "convicoes": "Nenhuma.",
+  "fala_batalha": "[Arrasto úmido de carne. Rangido de ossos. Nenhuma vocalização.]",
+  "comportamento": "Rola pelo acampamento à noite agarrando vítimas. Toma metade do dano de ataques perfurantes e 1/3 de ataques de penetração. Ver Mother Clutch pela primeira vez exige Verificação de Susto -3.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/mother_clutch_retrato.png",
+    "sprite_frente": "sprites/frente/mother_clutch_frente.png",
+    "sprite_costas": "sprites/costas/mother_clutch_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/mother_clutch_peca.png"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "npc_valmorien",
+  "nome": "Valmorien",
+  "categoria": "hostil",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_valmorien_retrato.png",
+    "sprite_frente": "sprites/frente/npc_valmorien_frente.png",
+    "sprite_costas": "sprites/costas/npc_valmorien_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_valmorien_peca.png"
+  }
+}

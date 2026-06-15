@@ -1,0 +1,50 @@
+{
+  "id": "barkthresher",
+  "emoji": "🌲",
+  "cor": "#3a2a1a",
+  "nome": "Barkthresher",
+  "tipo": "Elemental",
+  "desc": "Elemental de madeira viva, 2,5m, que ataca as Starshade Blooms em Twinfold Hollow. Corpo de tronco retorcido com galhos como braços e olhos âmbar brilhantes.",
+  "gurps": {
+    "st": 16,
+    "dx": 9,
+    "iq": 4,
+    "ht": 13,
+    "hp": 18,
+    "will": 8,
+    "per": 10,
+    "fp": 13,
+    "speed": 5.5,
+    "move": 5,
+    "dodge": 8,
+    "dr": 4,
+    "sm": 1
+  },
+  "ataque": "Golpe de Galho 2d+1 cortante (Perícia 11), Alcance 1–2; pode atacar duas flores ou um PC na mesma rodada",
+  "tracos": [
+    "SM +1",
+    "Vulnerável ao Fogo (x2 dano)",
+    "Imune a veneno/mente",
+    "Regenera 1 HP/turno (exceto de fogo)",
+    "Sem Visão no Escuro — só âmbar próximo"
+  ],
+  "habs": [
+    "Luta-11",
+    "Arremesso de Galho-10"
+  ],
+  "magias": [],
+  "objetivo": "Destruir as Starshade Blooms. Não persegue além da floresta de Twinfold.",
+  "emocoes": "Fúria vegetal — instinto de dominar o território.",
+  "raiva": "Qualquer ser que toque as flores ou entre em Twinfold.",
+  "convicoes": "Nenhuma.",
+  "fala_batalha": "[Rangido profundo de madeira. Galhos craquejando.]",
+  "comportamento": "Prioridade: flores > heróis. Ignora dano pequeno. Fogo é o ponto fraco óbvio — mas o combate é perto das flores, então fogo é arriscado.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/barkthresher_retrato.png",
+    "sprite_frente": "sprites/frente/barkthresher_frente.png",
+    "sprite_costas": "sprites/costas/barkthresher_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/barkthresher_peca.png"
+  }
+}

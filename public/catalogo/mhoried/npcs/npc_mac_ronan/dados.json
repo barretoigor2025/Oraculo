@@ -1,0 +1,13 @@
+{
+  "id": "npc_mac_ronan",
+  "nome": "Mac Rónán, Alto Druida",
+  "categoria": "aliado",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_mac_ronan_retrato.png",
+    "sprite_frente": "sprites/frente/npc_mac_ronan_frente.png",
+    "sprite_costas": "sprites/costas/npc_mac_ronan_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_mac_ronan_peca.png"
+  }
+}

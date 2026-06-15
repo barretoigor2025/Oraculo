@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checklist — mhoried</title>
+<style>
+  :root {
+    --ok:    #4caf50;
+    --warn:  #ff9800;
+    --err:   #f44336;
+    --bg:    #0e0e0e;
+    --card:  #1a1a1a;
+    --gold:  #c8a84b;
+    --text:  #d0c8b0;
+    --dim:   #666;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: monospace; font-size: 13px; padding: 16px; }
+  h1 { color: var(--gold); font-size: 18px; margin-bottom: 4px; }
+  .subtitle { color: var(--dim); margin-bottom: 20px; }
+  .summary { display: flex; gap: 20px; margin-bottom: 24px; padding: 12px; background: var(--card); border-radius: 8px; border: 1px solid #333; flex-wrap: wrap; }
+  .stat { text-align: center; }
+  .stat .num { font-size: 28px; font-weight: bold; }
+  .stat .lbl { font-size: 11px; color: var(--dim); }
+  .ok .num   { color: var(--ok); }
+  .warn .num { color: var(--warn); }
+  .err .num  { color: var(--err); }
+  h2 { color: var(--gold); margin: 20px 0 10px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+  .entity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+  .entity-card { background: var(--card); border-radius: 8px; padding: 10px 12px; border: 1px solid #2a2a2a; }
+  .entity-card.full { border-left: 3px solid var(--ok); }
+  .entity-card.partial { border-left: 3px solid var(--warn); }
+  .entity-card.empty  { border-left: 3px solid var(--err); }
+  .entity-name { font-weight: bold; margin-bottom: 6px; }
+  .checks { display: flex; flex-direction: column; gap: 2px; }
+  .check { display: flex; align-items: center; gap: 6px; }
+  .check .icon { width: 14px; text-align: center; flex-shrink: 0; }
+  .check .label { color: var(--dim); }
+  .check.ok .icon { color: var(--ok); }
+  .check.warn .icon { color: var(--warn); }
+  .check.err .icon { color: var(--err); }
+  .check.ok .label { color: var(--text); }
+  #loading { text-align: center; padding: 40px; color: var(--dim); }
+  .section-stats { font-size: 11px; color: var(--dim); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<h1>📋 Checklist da Campanha: mhoried</h1>
+<p class="subtitle">Beast of Black Keep — Verificação de assets e dados</p>
+
+<div id="summary" class="summary">
+  <p id="loading">Verificando assets...</p>
+</div>
+
+<div id="results"></div>
+
+<script>
+const BASE = '../../../';
+const CATALOGO = `${BASE}catalogo/mhoried`;
+
+const INIMIGOS = [
+  'espantalho_assombrado','kobold_azul','elfo_sombrio','grimhollow_thool',
+  'manticora_albina','larva_gigante','log_wife','mother_clutch',
+  'wraithweaver_spider','golem_de_pergaminho','alquimista_choir',
+  'demonio_vulkrundshard','marrowwither','barkthresher','quay_grabber',
+  'caranguejo_gigante','javali_ensandecido','esqueleto_lanceiro','rei_chutter'
+];
+
+const NPCS = [
+  'npc_catherine_laskaris','npc_gregoras_pellos','npc_hobbleboot_sam',
+  'npc_finn_willowheel','npc_ruzalka','npc_principe_kalos','npc_valmorien',
+  'npc_ysoria','npc_wulfram_chifrado','npc_fariborz_piromante',
+  'npc_mutter_grimmhaar','npc_mac_ronan','npc_muirenn','npc_dvalinn_anao',
+  'npc_blunkin_esmaga_cranios','npc_duque_oswald_thool','npc_rei_chutter',
+  'npc_aelar_eisenli','npc_jariella','npc_choir_necromante',
+  'npc_bishop_methodios','npc_morwenna','npc_krink','npc_drizzle',
+  'npc_murznut','npc_father_halric'
+];
+
+const CLASSES = ['guerreiro','arqueiro','mago','clerigo','ladino','barbaro'];
+const GENEROS = ['f','m'];
+
+async function imgExists(url) {
+  try {
+    const r = await fetch(url, { method: 'HEAD' });
+    return r.ok;
+  } catch { return false; }
+}
+
+async function jsonExists(url) {
+  try {
+    const r = await fetch(url);
+    return r.ok;
+  } catch { return false; }
+}
+
+function checkCard(name, status, checks) {
+  const cls = checks.every(c => c.ok) ? 'full' : checks.some(c => c.ok) ? 'partial' : 'empty';
+  return `
+    <div class="entity-card ${cls}">
+      <div class="entity-name">${name}</div>
+      <div class="checks">
+        ${checks.map(c => `
+          <div class="check ${c.ok ? 'ok' : 'err'}">
+            <span class="icon">${c.ok ? '✓' : '✗'}</span>
+            <span class="label">${c.label}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+async function verificarInimigo(id) {
+  const base = `${CATALOGO}/inimigos/${id}`;
+  const [dados, retrato, frente, costas, peca] = await Promise.all([
+    jsonExists(`${base}/dados.json`),
+    imgExists(`${base}/retrato/${id}_retrato.png`),
+    imgExists(`${base}/sprites/frente/${id}_frente.png`),
+    imgExists(`${base}/sprites/costas/${id}_costas.png`),
+    imgExists(`${base}/peca_tabuleiro/${id}_peca.png`),
+  ]);
+  const checks = [
+    { label: 'dados.json', ok: dados },
+    { label: 'retrato', ok: retrato },
+    { label: 'sprite frente', ok: frente },
+    { label: 'sprite costas', ok: costas },
+    { label: 'peça tabuleiro', ok: peca },
+  ];
+  return { id, checks };
+}
+
+async function verificarNPC(id) {
+  const base = `${CATALOGO}/npcs/${id}`;
+  const [dados, retrato, frente, costas] = await Promise.all([
+    jsonExists(`${base}/dados.json`),
+    imgExists(`${base}/retrato/${id}_retrato.png`),
+    imgExists(`${base}/sprites/frente/${id}_frente.png`),
+    imgExists(`${base}/sprites/costas/${id}_costas.png`),
+  ]);
+  const checks = [
+    { label: 'dados.json', ok: dados },
+    { label: 'retrato', ok: retrato },
+    { label: 'sprite frente', ok: frente },
+    { label: 'sprite costas', ok: costas },
+  ];
+  return { id, checks };
+}
+
+async function verificarClasse(id) {
+  const base = `${CATALOGO}/classes/${id}`;
+  const checks = [
+    { label: 'dados.json', ok: await jsonExists(`${base}/dados.json`) },
+  ];
+  for (const g of GENEROS) {
+    checks.push({ label: `retrato ${g}`, ok: await imgExists(`${base}/retrato/${id}_${g}_retrato.png`) });
+    checks.push({ label: `sprite frente ${g}`, ok: await imgExists(`${base}/sprites/frente/${id}_${g}_frente.png`) });
+    checks.push({ label: `sprite costas ${g}`, ok: await imgExists(`${base}/sprites/costas/${id}_${g}_costas.png`) });
+  }
+  return { id, checks };
+}
+
+async function run() {
+  const summaryEl = document.getElementById('summary');
+  const resultsEl = document.getElementById('results');
+
+  // Verificar inimigos
+  const inimigosResults = await Promise.all(INIMIGOS.map(verificarInimigo));
+  const npcResults      = await Promise.all(NPCS.map(verificarNPC));
+  const classesResults  = await Promise.all(CLASSES.map(verificarClasse));
+
+  const allResults = [...inimigosResults, ...npcResults, ...classesResults];
+  const totalChecks = allResults.reduce((s, r) => s + r.checks.length, 0);
+  const okChecks    = allResults.reduce((s, r) => s + r.checks.filter(c => c.ok).length, 0);
+  const fullEntities    = allResults.filter(r => r.checks.every(c => c.ok)).length;
+  const partialEntities = allResults.filter(r => r.checks.some(c => c.ok) && !r.checks.every(c => c.ok)).length;
+  const emptyEntities   = allResults.filter(r => r.checks.every(c => !c.ok)).length;
+
+  summaryEl.innerHTML = `
+    <div class="stat ok"><div class="num">${fullEntities}</div><div class="lbl">COMPLETOS</div></div>
+    <div class="stat warn"><div class="num">${partialEntities}</div><div class="lbl">PARCIAIS</div></div>
+    <div class="stat err"><div class="num">${emptyEntities}</div><div class="lbl">VAZIOS</div></div>
+    <div class="stat"><div class="num" style="color:var(--gold)">${okChecks}/${totalChecks}</div><div class="lbl">CHECKS OK</div></div>
+    <div class="stat"><div class="num" style="color:${okChecks===totalChecks?'var(--ok)':'var(--warn)'}">${Math.round(okChecks/totalChecks*100)}%</div><div class="lbl">COMPLETO</div></div>
+  `;
+
+  // Render sections
+  let html = '';
+
+  html += `<h2>⚔️ Inimigos (${inimigosResults.filter(r=>r.checks.every(c=>c.ok)).length}/${inimigosResults.length} completos)</h2>`;
+  html += `<div class="entity-grid">`;
+  for (const r of inimigosResults) {
+    html += checkCard(r.id.replace(/_/g,' '), null, r.checks);
+  }
+  html += `</div>`;
+
+  html += `<h2>🧑 NPCs (${npcResults.filter(r=>r.checks.every(c=>c.ok)).length}/${npcResults.length} completos)</h2>`;
+  html += `<div class="entity-grid">`;
+  for (const r of npcResults) {
+    html += checkCard(r.id.replace(/npc_/,'').replace(/_/g,' '), null, r.checks);
+  }
+  html += `</div>`;
+
+  html += `<h2>🎭 Classes (${classesResults.filter(r=>r.checks.every(c=>c.ok)).length}/${classesResults.length} completos)</h2>`;
+  html += `<div class="entity-grid">`;
+  for (const r of classesResults) {
+    html += checkCard(r.id, null, r.checks);
+  }
+  html += `</div>`;
+
+  resultsEl.innerHTML = html;
+}
+
+run();
+</script>
+</body>
+</html>

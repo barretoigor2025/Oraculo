@@ -1,0 +1,52 @@
+{
+  "id": "wraithweaver_spider",
+  "emoji": "🕷️",
+  "cor": "#1a2a1a",
+  "nome": "Aranha Espectral",
+  "tipo": "Aranha",
+  "desc": "Aranha de ossos e olhos de brasa que tece teias de energia espectral no nordeste dos Blackwoods.",
+  "gurps": {
+    "st": 12,
+    "dx": 13,
+    "iq": 3,
+    "ht": 11,
+    "hp": 12,
+    "will": 10,
+    "per": 10,
+    "fp": 11,
+    "speed": 6.0,
+    "move": 6,
+    "dodge": 9,
+    "dr": 1,
+    "sm": 0
+  },
+  "ataque": "Mordida 1d pi+ + Terror (Verificação de Susto a cada mordida) (Perícia 15)",
+  "tracos": [
+    "Visão 360°",
+    "DR 1 (quitina)",
+    "Pernas Extras (8)",
+    "Escalar Super (Move 6)",
+    "Bico Afiado",
+    "Terror (Apenas na mordida)",
+    "Animal Selvagem"
+  ],
+  "habs": [
+    "Luta-15",
+    "Furtividade-14"
+  ],
+  "magias": [],
+  "objetivo": "Caçar e se alimentar. Usa teias espectrais para paralisar presas com terror antes de devorar.",
+  "emocoes": "Predatória. Sem emoções complexas — opera por instinto puro de caça territorial.",
+  "raiva": "Qualquer criatura que invada seu território de teias espectrais.",
+  "convicoes": "Nenhuma.",
+  "fala_batalha": "[Silêncio total — move-se em silêncio absoluto]",
+  "comportamento": "Tece teias de filamentos espectrais quase invisíveis. Esbarrar numa teia causa Terror e aprisiona (Força ST 12 para escapar). Restos de presas (kobolds, elfos, mercantes) ficam embalados próximos ao ninho. Kobolds às vezes tentam colher o veneno para vender em Kobold-Town.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/wraithweaver_spider_retrato.png",
+    "sprite_frente": "sprites/frente/wraithweaver_spider_frente.png",
+    "sprite_costas": "sprites/costas/wraithweaver_spider_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/wraithweaver_spider_peca.png"
+  }
+}

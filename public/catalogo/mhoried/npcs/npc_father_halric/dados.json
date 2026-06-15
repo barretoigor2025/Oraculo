@@ -1,0 +1,13 @@
+{
+  "id": "npc_father_halric",
+  "nome": "Father Halric",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_father_halric_retrato.png",
+    "sprite_frente": "sprites/frente/npc_father_halric_frente.png",
+    "sprite_costas": "sprites/costas/npc_father_halric_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_father_halric_peca.png"
+  }
+}

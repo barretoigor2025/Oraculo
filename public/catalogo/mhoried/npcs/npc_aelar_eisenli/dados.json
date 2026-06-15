@@ -1,0 +1,13 @@
+{
+  "id": "npc_aelar_eisenli",
+  "nome": "Aelar Eisenli",
+  "categoria": "neutro",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "npc",
+  "assets": {
+    "retrato": "retrato/npc_aelar_eisenli_retrato.png",
+    "sprite_frente": "sprites/frente/npc_aelar_eisenli_frente.png",
+    "sprite_costas": "sprites/costas/npc_aelar_eisenli_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/npc_aelar_eisenli_peca.png"
+  }
+}

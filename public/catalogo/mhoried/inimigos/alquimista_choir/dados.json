@@ -1,0 +1,64 @@
+{
+  "id": "alquimista_choir",
+  "emoji": "🧟",
+  "cor": "#2a2a3a",
+  "nome": "Choir, o Necromante",
+  "tipo": "Humanoide",
+  "desc": "Necromante pálido e calculista contratado pelo Rei Chutter para criar um exército de mortos-vivos. Lento para entregar suas promessas.",
+  "gurps": {
+    "st": 9,
+    "dx": 11,
+    "iq": 14,
+    "ht": 10,
+    "hp": 9,
+    "will": 15,
+    "per": 13,
+    "fp": 14,
+    "speed": 5.25,
+    "move": 4,
+    "dodge": 7,
+    "dr": 3,
+    "sm": 0
+  },
+  "ataque": "Faca 1d-2 cor (Perícia 12); Magia (veja Magias)",
+  "tracos": [
+    "Magery 3",
+    "Aparência Cadavérica",
+    "Obsessão (criar exército morto-vivo)",
+    "Cauteloso",
+    "Covarde (prefere usar mortos como escudos)",
+    "Ambicioso e Calculista"
+  ],
+  "habs": [
+    "Ocultismo-15",
+    "Taumaturgia-14",
+    "Alquimia-13",
+    "Furtividade-12",
+    "Persuasão-12",
+    "Diplomacia-13"
+  ],
+  "magias": [
+    "Animar Morto-15",
+    "Controlar Morto-Vivo-15",
+    "Criar Espírito-14",
+    "Drenar Força Vital-13",
+    "Medo-14",
+    "Escuridão-13",
+    "Proteção Mágica-13",
+    "Sentir Vida-14"
+  ],
+  "objetivo": "Construir um exército de mortos-vivos impressionante para consolidar poder ao lado do Rei Chutter — e eventualmente traí-lo para assumir o controle sozinho.",
+  "emocoes": "Frio e clínico na superfície. Internamente corroído por ambição e desprezo por quem o subestima. Assustado com a possibilidade de fracasso e humilhação.",
+  "raiva": "Ser chamado de incompetente. Ter seus mortos-vivos destruídos. Descobrir que seus planos foram revelados ao Rei Chutter.",
+  "convicoes": "A necromancia é a arte mais elevada. Os mortos devem servir aos vivos inteligentes. O Rei Chutter é um aliado temporário, não um senhor.",
+  "fala_batalha": "\"Meus servos cuidarão de vocês.\" — \"Que desperdício de carne ainda quente.\" — \"Não me forcem a usar meu potencial real.\" — \"Choir não é um nome para se chamar de modo leviano.\"",
+  "comportamento": "Nunca luta pessoalmente se puder evitar. Permanece atrás das fileiras de Esqueletos Lanceiros. Usa Mother Clutch como guarda pessoal. Taticamente brilhante — nunca trava combate desvantajoso. O sinal de Choir está tatuado nos Esqueletos Lanceiros.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/alquimista_choir_retrato.png",
+    "sprite_frente": "sprites/frente/alquimista_choir_frente.png",
+    "sprite_costas": "sprites/costas/alquimista_choir_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/alquimista_choir_peca.png"
+  }
+}

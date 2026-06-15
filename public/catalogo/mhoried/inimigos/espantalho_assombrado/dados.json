@@ -1,0 +1,49 @@
+{
+  "id": "espantalho_assombrado",
+  "emoji": "🌾",
+  "cor": "#8b4513",
+  "nome": "Espantalho Assombrado",
+  "tipo": "Morto-Vivo",
+  "desc": "Criatura de palha animada por necromancia. Enviada por Choir para destruir a Árvore Aeterna na Feira de St. Phanourios.",
+  "gurps": {
+    "st": 10,
+    "dx": 12,
+    "iq": 7,
+    "ht": 10,
+    "hp": 10,
+    "will": 9,
+    "per": 9,
+    "fp": 10,
+    "speed": 5.5,
+    "move": 5,
+    "dodge": 8,
+    "dr": 0,
+    "sm": 0
+  },
+  "ataque": "Foice 1d+3 cor (Perícia 13), Parry 10U — 1 em 3 carrega Foice Grande 1d+4 cor / 1d+2 imp (Parry 9U). Um por grupo carrega Maçã Fumegante (nuvem 3 metros, HT-4 ou nauseado: -2 attrs, -1 defesa por 10 min).",
+  "tracos": [
+    "Limiar de Dor Elevado",
+    "Tolerância a Ferimentos (Homogêneo; Sem Sangue, Sem Cérebro, Sem Vitais)",
+    "Força de Golpe +1",
+    "Vulnerabilidade (Fogo ×2)"
+  ],
+  "habs": [
+    "Machado/Maça-13",
+    "Machado/Maça a Duas Mãos-13"
+  ],
+  "magias": [],
+  "objetivo": "Destruir a Árvore Aeterna e matar quem se interpuser no caminho. Obedecem compulsivamente ao Choir.",
+  "emocoes": "Sem emoções — construto animado por necromancia. Executa ordens mecanicamente.",
+  "raiva": "Não sente raiva. Qualquer obstáculo ao objetivo designado será atacado sem hesitação.",
+  "convicoes": "Nenhuma. Marionetes do necromante Choir.",
+  "fala_batalha": "[Silêncio absoluto. Rangidos de galhos. Nenhuma vocalização.]",
+  "comportamento": "Atacam em bando (2 por personagem). Focam no maior alvo. Ignoram dano não-incendiário até serem destruídos. Tomam metade do dano de ataques perfurantes e 1/5 de ataques de impacto.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "inimigo",
+  "assets": {
+    "retrato": "retrato/espantalho_assombrado_retrato.png",
+    "sprite_frente": "sprites/frente/espantalho_assombrado_frente.png",
+    "sprite_costas": "sprites/costas/espantalho_assombrado_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/espantalho_assombrado_peca.png"
+  }
+}
