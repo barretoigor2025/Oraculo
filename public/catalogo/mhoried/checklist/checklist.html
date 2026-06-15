@@ -130,6 +130,52 @@ const sections = [
       path: `${CAT}classes/${id}/retrato/${id}_f_retrato.png`,
     })),
   },
+  // ── Sprites de Jogo ──
+  {
+    titulo: '🏃 Sprites Frente — Inimigos',
+    dica: 'inimigos/{id}/sprites/frente/{id}_frente.png',
+    items: INIMIGOS_DATA.map(e=>({ nome:e.nome||e.id, sub:`${e.id}_frente.png`, path:`${CAT}inimigos/${e.id}/sprites/frente/${e.id}_frente.png` })),
+  },
+  {
+    titulo: '🔄 Sprites Costas — Inimigos',
+    dica: 'inimigos/{id}/sprites/costas/{id}_costas.png',
+    items: INIMIGOS_DATA.map(e=>({ nome:e.nome||e.id, sub:`${e.id}_costas.png`, path:`${CAT}inimigos/${e.id}/sprites/costas/${e.id}_costas.png` })),
+  },
+  {
+    titulo: '♟️ Standee — Inimigos',
+    dica: 'inimigos/{id}/peca_tabuleiro/{id}_peca.png',
+    items: INIMIGOS_DATA.map(e=>({ nome:e.nome||e.id, sub:`${e.id}_peca.png`, path:`${CAT}inimigos/${e.id}/peca_tabuleiro/${e.id}_peca.png` })),
+  },
+  {
+    titulo: '🏃 Sprites Frente — NPCs',
+    dica: 'npcs/{id}/sprites/frente/{id}_frente.png',
+    items: Object.values(NPCS).map(n=>({ nome:n.nome||n.id, sub:`${n.id}_frente.png`, path:`${CAT}npcs/${n.id}/sprites/frente/${n.id}_frente.png` })),
+  },
+  {
+    titulo: '🔄 Sprites Costas — NPCs',
+    dica: 'npcs/{id}/sprites/costas/{id}_costas.png',
+    items: Object.values(NPCS).map(n=>({ nome:n.nome||n.id, sub:`${n.id}_costas.png`, path:`${CAT}npcs/${n.id}/sprites/costas/${n.id}_costas.png` })),
+  },
+  {
+    titulo: '♟️ Standee — NPCs',
+    dica: 'npcs/{id}/peca_tabuleiro/{id}_peca.png',
+    items: Object.values(NPCS).map(n=>({ nome:n.nome||n.id, sub:`${n.id}_peca.png`, path:`${CAT}npcs/${n.id}/peca_tabuleiro/${n.id}_peca.png` })),
+  },
+  {
+    titulo: '🏃 Sprites Frente — Classes',
+    dica: 'classes/{id}/sprites/frente/{id}_{m|f}_frente.png',
+    items: CLASSES.flatMap(id=>['m','f'].map(g=>({ nome:`${CLASSE_NOMES[id]||id} (${g.toUpperCase()})`, sub:`${id}_${g}_frente.png`, path:`${CAT}classes/${id}/sprites/frente/${id}_${g}_frente.png` }))),
+  },
+  {
+    titulo: '🔄 Sprites Costas — Classes',
+    dica: 'classes/{id}/sprites/costas/{id}_{m|f}_costas.png',
+    items: CLASSES.flatMap(id=>['m','f'].map(g=>({ nome:`${CLASSE_NOMES[id]||id} (${g.toUpperCase()})`, sub:`${id}_${g}_costas.png`, path:`${CAT}classes/${id}/sprites/costas/${id}_${g}_costas.png` }))),
+  },
+  {
+    titulo: '♟️ Standee — Classes',
+    dica: 'classes/{id}/peca_tabuleiro/{id}_peca.png',
+    items: CLASSES.map(id=>({ nome:CLASSE_NOMES[id]||id, sub:`${id}_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_peca.png` })),
+  },
 ];
 
 // ── Verificação ───────────────────────────────────────────────────────
