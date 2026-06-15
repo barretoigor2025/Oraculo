@@ -1652,9 +1652,35 @@ function renderSel(){
 // ══════════════════════════════════════════
 function renderGrid(){
   ctxH.clearRect(0,0,MAP_W,MAP_H);
+
+  // Hexes ocupados: posição lógica de cada unidade viva
+  const ocupados={};
+  for(const u of unidades){
+    if(!u||(u.tipo==='inimigo'&&u.hp<=0)) continue;
+    ocupados[`${u.col},${u.row}`]=u.tipo;
+  }
+
   for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
     const{x,y}=hexCentro(c,r);
+    const oTipo=ocupados[`${c},${r}`];
+
+    // Fill de ocupação (antes do outline branco)
+    if(oTipo){
+      hexPath(ctxH,x,y);
+      ctxH.fillStyle=oTipo==='heroi'?'rgba(60,140,255,0.10)':'rgba(255,60,60,0.10)';
+      ctxH.fill();
+    }
+
+    // Grid padrão branco
     hexPath(ctxH,x,y); ctxH.strokeStyle='#ffffff'; ctxH.lineWidth=1.2; ctxH.stroke();
+
+    // Borda colorida sobre o hex ocupado
+    if(oTipo){
+      hexPath(ctxH,x,y);
+      ctxH.strokeStyle=oTipo==='heroi'?'rgba(80,160,255,0.65)':'rgba(255,80,80,0.65)';
+      ctxH.lineWidth=2; ctxH.stroke();
+    }
+
     if(showCoords){
       const lbl=hexLabel(c,r);
       ctxH.font='bold 12px Segoe UI,sans-serif';
