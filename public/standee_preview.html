@@ -9,27 +9,26 @@
   body {
     background: #0a0806;
     display: flex; flex-direction: column; align-items: center;
-    min-height: 100vh; padding: 16px;
+    min-height: 100vh; padding: 12px;
     font-family: 'Georgia', serif;
   }
   h1 {
-    color: #c8a040; font-size: 13px; letter-spacing: 2px;
+    color: #c8a040; font-size: 12px; letter-spacing: 2px;
     text-transform: uppercase; font-weight: 400;
-    margin-bottom: 5px; text-align: center;
+    margin-bottom: 4px; text-align: center;
   }
   .subtitle {
-    color: rgba(190,165,90,0.38); font-size: 9px; letter-spacing: 1px;
-    text-transform: uppercase; margin-bottom: 14px; text-align: center;
+    color: rgba(190,165,90,0.38); font-size: 8px; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 12px; text-align: center;
   }
   #wrap {
     position: relative; overflow: hidden;
     border: 1px solid rgba(200,160,64,0.18);
-    border-radius: 10px;
-    box-shadow: 0 0 60px rgba(0,0,0,0.9);
-    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.9);
   }
   canvas#cv { display: block; }
-  #chars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  #chars { position: absolute; top: 0; left: 0; pointer-events: none; }
   .standee {
     position: absolute;
     display: flex; flex-direction: column; align-items: center;
@@ -37,31 +36,27 @@
   }
   .standee img {
     display: block; width: auto;
-    filter: drop-shadow(0 4px 14px rgba(0,0,0,0.92));
+    filter: drop-shadow(0 3px 10px rgba(0,0,0,0.95));
   }
   .standee-label {
-    font-size: 8px; color: rgba(220,195,130,0.85);
-    letter-spacing: .8px; text-transform: uppercase;
-    white-space: nowrap; margin-top: 2px;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.95);
-  }
-  .standee-sub {
-    font-size: 7px; color: rgba(190,165,90,0.4);
-    letter-spacing: .4px;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    font-size: 7px; color: rgba(220,195,130,0.9);
+    letter-spacing: .6px; text-transform: uppercase;
+    white-space: nowrap; margin-top: 1px;
+    text-shadow: 0 1px 4px rgba(0,0,0,1);
+    background: rgba(0,0,0,0.55); padding: 1px 4px; border-radius: 2px;
   }
   a.back {
-    display: inline-block; margin-top: 12px;
-    font-size: 10px; color: rgba(190,165,90,0.5);
+    display: inline-block; margin-top: 10px;
+    font-size: 9px; color: rgba(190,165,90,0.5);
     text-decoration: none; letter-spacing: 1px;
-    border: 1px solid rgba(200,160,64,0.18); border-radius: 20px; padding: 4px 14px;
+    border: 1px solid rgba(200,160,64,0.18); border-radius: 20px; padding: 3px 12px;
   }
   a.back:hover { color: #c8a040; }
 </style>
 </head>
 <body>
 <h1>Standees — Mhoried</h1>
-<div class="subtitle">Porte relativo de cada classe · malha hexagonal escala ×2</div>
+<div class="subtitle">Escala real de jogo (HR=55px · mesmo do arena.html)</div>
 <div id="wrap">
   <canvas id="cv"></canvas>
   <div id="chars"></div>
@@ -69,76 +64,60 @@
 <a class="back" href="catalog.html">← Catálogo</a>
 
 <script>
-// ── Geometria idêntica ao arena.html, escala ×2 ──────────────────────────
-const SC   = 2;
-const HR   = 55 * SC;    // 110 – raio hex
-const CS   = 82 * SC;    // 164 – espaço entre colunas
-const RS   = 95 * SC;    // 190 – espaço entre linhas
-const OOFF = 48 * SC;    //  96 – offset coluna ímpar
+// ── Geometria IDÊNTICA ao arena.html (escala 1:1) ────────────────────────
+const HR   = 55;
+const CS   = 82;
+const RS   = 95;
+const OOFF = 48;
 
-// Grid exibido: 8 colunas × 4 linhas (chars nas linhas 0 e 2)
+// Grid: 8 colunas × 4 linhas (chars nas linhas 0 = M, 2 = F)
 const GRID_COLS = 8;
 const GRID_ROWS = 4;
-const CHAR_COLS = 6;   // cols 0-5 ocupadas por personagens
-const ROW_M  = 0;      // linha Masculino
-const ROW_F  = 2;      // linha Feminino
+const CHAR_COLS = 6;
+const ROW_M = 0;
+const ROW_F = 2;
 
-// Origem do grid — garante espaço para o personagem mais alto acima da linha 0
-const CHAR_MAX_DISP = 260;  // altura máxima de display (Bárbaro M)
-const GX0 = HR + 20;        // 130
-const GY0 = CHAR_MAX_DISP + 20;  // 280
-
-// Centro do hex (col, row)
-const hexCx = col       => GX0 + col * CS;
-const hexCy = (col,row) => GY0 + row * RS + (col % 2 === 1 ? OOFF : 0);
-// Pé do personagem: ligeiramente abaixo do centro (como no arena)
-const footX = col       => hexCx(col);
-const footY = (col,row) => hexCy(col, row) + Math.round(HR * 0.35);
-
-// ── Alturas dos sprites (armazenadas nos arquivos PNG) ───────────────────
-// Foram definidas com hierarquia: Bárbaro > Guerreiro > Arqueiro > Ladino > Mago ≥ Clérigo
-// Aqui comprimimos o range de display para evitar diferenças absurdas
-const CLASSES = [
-  { id:'barbaro',   nome:'Bárbaro',   hm:400, hf:375 },
-  { id:'guerreiro', nome:'Guerreiro', hm:355, hf:330 },
-  { id:'arqueiro',  nome:'Arqueiro',  hm:315, hf:292 },
-  { id:'ladino',    nome:'Ladino',    hm:286, hf:266 },
-  { id:'mago',      nome:'Mago',      hm:270, hf:252 },
-  { id:'clerigo',   nome:'Clérigo',   hm:252, hf:234 },
-];
-
-// Mapeamento linear das alturas armazenadas [234,400] → display [215,275]
-// Reduz o ratio de 1.71 para ~1.28, mantendo a hierarquia visível
-const SH_MIN = 234, SH_MAX = 400;
-const DH_MIN = 215, DH_MAX = 275;
-function dispH(storedH) {
-  return Math.round(DH_MIN + (storedH - SH_MIN) / (SH_MAX - SH_MIN) * (DH_MAX - DH_MIN));
+// Altura máxima de display: mesma que o arena usa para sprites
+// (SW = HR*3.2 = 176px de largura → personagens altos ~200-250px)
+const DH_MAX = 240;  // Bárbaro M
+const DH_MIN = 192;  // Clérigo F  — ratio ~1.25, visível mas não absurdo
+const SH_MAX = 400;
+const SH_MIN = 234;
+function dispH(sh) {
+  return Math.round(DH_MIN + (sh - SH_MIN) / (SH_MAX - SH_MIN) * (DH_MAX - DH_MIN));
 }
 
-// ── Dimensões do canvas ───────────────────────────────────────────────────
-// Largura: col 0 até col GRID_COLS-1
-const CANVAS_W = GX0 + (GRID_COLS - 1) * CS + HR + 30;
-// Altura: cobre até linha GRID_ROWS-1 (ímpar = maior y) + labels
-const bottomHex = GY0 + (GRID_ROWS - 1) * RS + OOFF + HR;  // fundo do hex mais baixo
-const bottomLabel = footY(1, ROW_F) + 34;                   // labels da linha F (col ímpar)
-const CANVAS_H = Math.max(bottomHex, bottomLabel) + 30;
+// Origem do grid
+const GX0 = HR + 18;          // 73
+const GY0 = DH_MAX + 25;      // 265  (espaço para o char mais alto acima da linha 0)
 
-// ── Canvas + DOM ──────────────────────────────────────────────────────────
+const hexCx  = col       => GX0 + col * CS;
+const hexCy  = (col,row) => GY0 + row * RS + (col % 2 === 1 ? OOFF : 0);
+const footX  = col       => hexCx(col);
+const footY  = (col,row) => hexCy(col, row) + Math.round(HR * 0.35);
+
+// ── Dimensões do canvas ───────────────────────────────────────────────────
+const CANVAS_W = GX0 + (GRID_COLS - 1) * CS + HR + 22;
+const CANVAS_H = Math.max(
+  GY0 + (GRID_ROWS - 1) * RS + OOFF + HR + 20,  // fundo do último hex (ímpar)
+  footY(1, ROW_F) + 28                            // labels linha F (col ímpar)
+);
+
+// ── Canvas ────────────────────────────────────────────────────────────────
 const cv   = document.getElementById('cv');
 const wrap = document.getElementById('wrap');
-cv.width  = CANVAS_W;
-cv.height = CANVAS_H;
+cv.width   = CANVAS_W;
+cv.height  = CANVAS_H;
 wrap.style.width  = CANVAS_W + 'px';
 wrap.style.height = CANVAS_H + 'px';
 const ctx = cv.getContext('2d');
 
-// Fundo: imagem do mercado
 const bg = new Image();
 bg.src = 'catalogo/mhoried/cenarios/batalha_hex/feira_phanourios/imagem/feira-limpa.png';
 bg.onload  = drawAll;
 bg.onerror = drawAll;
 
-// ── Funções de desenho ────────────────────────────────────────────────────
+// ── Desenho ───────────────────────────────────────────────────────────────
 function hexPath(x, y) {
   ctx.beginPath();
   for (let i = 0; i < 6; i++) {
@@ -150,136 +129,124 @@ function hexPath(x, y) {
   ctx.closePath();
 }
 
-function isCharHex(col, row) {
-  return (row === ROW_M || row === ROW_F) && col < CHAR_COLS;
-}
-
 function drawMarbleBase(x, y) {
-  const rx = HR * 0.65, ry = HR * 0.20;
-  // Sombra projetada
+  const rx = HR * 0.62, ry = HR * 0.18;
+  // sombra
   ctx.beginPath();
-  ctx.ellipse(x, y + ry * 0.8, rx * 1.06, ry * 0.45, 0, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.ellipse(x, y + ry * 0.9, rx * 1.05, ry * 0.4, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.48)';
   ctx.fill();
-  // Base com gradiente
-  const g = ctx.createRadialGradient(x - rx * 0.28, y - ry * 0.3, 0, x, y, rx);
+  // corpo
+  const g = ctx.createRadialGradient(x - rx * .28, y - ry * .3, 0, x, y, rx);
   g.addColorStop(0, '#4c4c4c');
-  g.addColorStop(0.3, '#282828');
-  g.addColorStop(0.7, '#121212');
-  g.addColorStop(1,   '#050505');
+  g.addColorStop(.3, '#282828');
+  g.addColorStop(.7, '#111');
+  g.addColorStop(1, '#040404');
   ctx.beginPath();
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
   ctx.fillStyle = g;
   ctx.fill();
-  // Veias brancas (determinísticas)
+  // veias
   ctx.save();
   ctx.beginPath();
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
   ctx.clip();
-  const seed = (x * 17 + y * 11) | 0;
+  const s = (x * 17 + y * 11) | 0;
   for (let v = 0; v < 8; v++) {
-    const r0 = ((seed * 1103515245 + v * 12345)  >>> 0) / 4294967296;
-    const r1 = ((seed * 214013    + v * 2531011)  >>> 0) / 4294967296;
-    const r2 = ((seed * 69621     + v * 1234567)  >>> 0) / 4294967296;
+    const r0 = ((s * 1103515245 + v * 12345)  >>> 0) / 4294967296;
+    const r1 = ((s * 214013    + v * 2531011)  >>> 0) / 4294967296;
+    const r2 = ((s * 69621     + v * 1234567)  >>> 0) / 4294967296;
     ctx.beginPath();
-    ctx.moveTo(x + (r0 - .5) * rx * 2, y + (r1 - .5) * ry * 2);
-    ctx.lineTo(x + (r2 - .5) * rx * 2, y + ((r1 + .5) % 1 - .5) * ry * 2);
-    ctx.strokeStyle = `rgba(220,220,220,${.03 + v * .016})`;
-    ctx.lineWidth = .4 + r0 * .8;
+    ctx.moveTo(x + (r0-.5)*rx*2, y + (r1-.5)*ry*2);
+    ctx.lineTo(x + (r2-.5)*rx*2, y + ((r1+.5)%1-.5)*ry*2);
+    ctx.strokeStyle = `rgba(222,222,222,${.03 + v*.016})`;
+    ctx.lineWidth = .4 + r0 * .7;
     ctx.stroke();
   }
   ctx.restore();
-  // Borda
   ctx.beginPath();
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(150,150,150,0.2)';
+  ctx.strokeStyle = 'rgba(140,140,140,0.2)';
   ctx.lineWidth = 1;
   ctx.stroke();
+}
+
+function isCharHex(col, row) {
+  return col < CHAR_COLS && (row === ROW_M || row === ROW_F);
 }
 
 function drawAll() {
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
-  // ── Fundo ────────────────────────────────────────────────────────────
+  // Fundo
   if (bg.complete && bg.naturalWidth > 0) {
     const bsr = bg.naturalWidth / bg.naturalHeight;
     const csr = CANVAS_W / CANVAS_H;
     let bw, bh, bx, by;
-    if (bsr > csr) { bh = CANVAS_H; bw = bh * bsr; bx = (CANVAS_W - bw) / 2; by = 0; }
-    else           { bw = CANVAS_W; bh = bw / bsr;  bx = 0; by = (CANVAS_H - bh) / 2; }
+    if (bsr > csr) { bh = CANVAS_H; bw = bh*bsr; bx = (CANVAS_W-bw)/2; by = 0; }
+    else           { bw = CANVAS_W; bh = bw/bsr;  bx = 0; by = (CANVAS_H-bh)/2; }
     ctx.drawImage(bg, bx, by, bw, bh);
-    ctx.fillStyle = 'rgba(8,6,4,0.60)';
+    ctx.fillStyle = 'rgba(8,6,4,0.55)';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
   } else {
     ctx.fillStyle = '#0e0b07';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
   }
 
-  // ── Malha hexagonal completa ─────────────────────────────────────────
+  // Malha hexagonal completa
   for (let row = 0; row < GRID_ROWS; row++) {
     for (let col = 0; col < GRID_COLS; col++) {
       const cx = hexCx(col);
       const cy = hexCy(col, row);
-      const charHex = isCharHex(col, row);
+      const ch = isCharHex(col, row);
 
-      // Fill: hexes de personagem levemente iluminados
       hexPath(cx, cy);
-      if (charHex) {
-        ctx.fillStyle = row === ROW_M
-          ? 'rgba(80,120,200,0.06)'   // azulado para Masculino
-          : 'rgba(200,80,120,0.06)';  // rosado para Feminino
-      } else {
-        ctx.fillStyle = 'rgba(255,210,80,0.03)';
-      }
+      ctx.fillStyle = ch
+        ? (row === ROW_M ? 'rgba(80,120,200,0.07)' : 'rgba(200,80,120,0.07)')
+        : 'rgba(255,210,80,0.03)';
       ctx.fill();
 
-      // Outline
       hexPath(cx, cy);
-      ctx.strokeStyle = charHex
-        ? 'rgba(200,160,64,0.45)'
-        : 'rgba(200,160,64,0.16)';
-      ctx.lineWidth = charHex ? 1.5 : 1;
+      ctx.strokeStyle = ch ? 'rgba(200,160,64,0.50)' : 'rgba(200,160,64,0.15)';
+      ctx.lineWidth   = ch ? 1.5 : 1;
       ctx.stroke();
     }
   }
 
-  // ── Bases de mármore nos hexes de personagem ─────────────────────────
-  for (let row of [ROW_M, ROW_F]) {
+  // Bases de mármore
+  for (const row of [ROW_M, ROW_F]) {
     for (let col = 0; col < CHAR_COLS; col++) {
       drawMarbleBase(footX(col), footY(col, row));
     }
   }
 
-  // ── Label de linha ────────────────────────────────────────────────────
-  ctx.font = '9px Georgia';
+  // Labels de linha
+  ctx.font = '8px Georgia';
   ctx.textAlign = 'right';
-  ctx.fillStyle = 'rgba(200,165,80,0.32)';
-  const labelX = GX0 - HR - 8;
-  ctx.fillText('♂', labelX, hexCy(0, ROW_M) + 5);
-  ctx.fillText('♀', labelX, hexCy(0, ROW_F) + 5);
+  ctx.fillStyle = 'rgba(200,165,80,0.35)';
+  ctx.fillText('♂ M', GX0 - HR - 5, hexCy(0, ROW_M) + 4);
+  ctx.fillText('♀ F', GX0 - HR - 5, hexCy(0, ROW_F) + 4);
 
-  // ── Posiciona os <img> dos personagens ───────────────────────────────
   placeStandees();
 }
 
-// ── HTML overlay: sprites ─────────────────────────────────────────────────
-function spritePath(id, g) {
-  return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png`;
-}
+// ── Overlay HTML ──────────────────────────────────────────────────────────
+const CLASSES = [
+  { id:'barbaro',   nome:'Bárbaro',   hm:400, hf:375 },
+  { id:'guerreiro', nome:'Guerreiro', hm:355, hf:330 },
+  { id:'arqueiro',  nome:'Arqueiro',  hm:315, hf:292 },
+  { id:'ladino',    nome:'Ladino',    hm:286, hf:266 },
+  { id:'mago',      nome:'Mago',      hm:270, hf:252 },
+  { id:'clerigo',   nome:'Clérigo',   hm:252, hf:234 },
+];
 
 function placeStandees() {
-  const container = document.getElementById('chars');
-  container.innerHTML = '';
+  const c = document.getElementById('chars');
+  c.innerHTML = '';
 
-  const rows = [
-    { g:'m', row: ROW_M, label:'Masculino' },
-    { g:'f', row: ROW_F, label:'Feminino'  },
-  ];
-
-  rows.forEach(({ g, row, label }) => {
+  for (const { g, row } of [{ g:'m', row:ROW_M }, { g:'f', row:ROW_F }]) {
     CLASSES.forEach((cls, col) => {
-      const storedH = g === 'm' ? cls.hm : cls.hf;
-      const dh  = dispH(storedH);
+      const dh  = dispH(g === 'm' ? cls.hm : cls.hf);
       const cx  = footX(col);
       const fy  = footY(col, row);
 
@@ -289,23 +256,19 @@ function placeStandees() {
       div.style.top  = (fy - dh - 2) + 'px';
 
       const img = document.createElement('img');
-      img.src          = spritePath(cls.id, g);
-      img.alt          = `${cls.nome} ${label}`;
+      img.src          = `catalogo/mhoried/classes/${cls.id}/peca_tabuleiro/${cls.id}_${g}_peca.png`;
+      img.alt          = cls.nome;
       img.style.height = dh + 'px';
-      img.onerror = () => { img.style.opacity = '0.06'; };
+      img.onerror      = () => { img.style.opacity = '0.06'; };
 
       const lbl = document.createElement('div');
       lbl.className   = 'standee-label';
       lbl.textContent = cls.nome;
 
-      const sub = document.createElement('div');
-      sub.className   = 'standee-sub';
-      sub.textContent = label;
-
-      div.append(img, lbl, sub);
-      container.appendChild(div);
+      div.append(img, lbl);
+      c.appendChild(div);
     });
-  });
+  }
 }
 </script>
 </body>
