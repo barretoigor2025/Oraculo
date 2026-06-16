@@ -235,8 +235,8 @@ function drawChart() {
 }
 
 function spritePath(id, g) {
-  const rev = ({mago_f:1,ladino_m:1,ladino_f:1}[id+'_'+g]) ? '_r' : '';
-  return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${rev}_peca.png`;
+  const REV = {mago_f:'_r',ladino_m:'_r2',ladino_f:'_r2'};
+  return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${REV[id+'_'+g]||''}_peca.png`;
 }
 
 function placeSprites() {
