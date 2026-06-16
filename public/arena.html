@@ -1722,25 +1722,34 @@ function renderUnits(){
       ctxU.lineWidth = u===selUnit ? 3 : 2;
       ctxU.stroke();
     } else if(u.img){
-      let sw=HR*3.2;
-      // Aplica escala customizada salva no catálogo (Size tab)
-      if(u.classId && u.gender){
-        const _szH = (()=>{try{return JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}')}catch(e){return{}}})();
-        const _cH = _szH['classe:'+u.classId+'_'+u.gender];
-        if(_cH){
-          const _defH = {barbaro:{m:400,f:362},guerreiro:{m:338,f:300},arqueiro:{m:290,f:283},mago:{m:290,f:290},ladino:{m:313,f:330},clerigo:{m:305,f:297}}[u.classId]?.[u.gender]||300;
-          sw = sw * (_cH / _defH);
-        }
+      const foot = y + OOFF * .3;
+      const clip = u.clipBottom || 0;
+
+      let sw, drawH;
+      if(u.classId && u.gender && u.img.naturalWidth > 0){
+        // Standee de classe: altura = storedH do PNG (calibrado no Size tab)
+        // sem compressão para SW fixo. Mantém aspecto real.
+        const _szH  = (()=>{try{return JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}')}catch(e){return{}}})();
+        const _cH   = _szH['classe:'+u.classId+'_'+u.gender];
+        const _defH = {barbaro:{m:400,f:362},guerreiro:{m:338,f:300},arqueiro:{m:290,f:283},mago:{m:290,f:290},ladino:{m:313,f:330},clerigo:{m:305,f:297}}[u.classId]?.[u.gender]||300;
+        const targetH = (_cH || _defH) * (1 - clip);
+        drawH = targetH;
+        sw    = targetH * (u.img.naturalWidth / u.img.naturalHeight);
+      } else if(u.frameW){
+        // Sprite sheet (costas/frente): usa frameW para altura proporcional
+        sw    = HR * 3.2;
+        drawH = sw * (u.img.naturalHeight / u.frameW) * (1 - clip);
+      } else {
+        sw    = HR * 3.2;
+        drawH = sw * (1 - clip);
       }
-      const foot=y+OOFF*.3;
-      const clip=u.clipBottom||0;
+
       const srcW = u.frameW ?? u.img.naturalWidth;
-      const srcH = u.img.naturalHeight*(1-clip);
-      const drawH = u.frameW ? sw*(u.img.naturalHeight/u.frameW)*(1-clip) : sw*(1-clip);
+      const srcH = u.img.naturalHeight * (1 - clip);
       ctxU.save();
       if(u===selUnit) ctxU.filter='drop-shadow(0 0 8px #ffd028) drop-shadow(0 0 14px #ffd02888)';
       if(u.flipH){ ctxU.translate(2*x,0); ctxU.scale(-1,1); }
-      ctxU.drawImage(u.img,0,0,srcW,srcH,x-sw/2,foot-drawH,sw,drawH);
+      ctxU.drawImage(u.img, 0, 0, srcW, srcH, x - sw/2, foot - drawH, sw, drawH);
       ctxU.restore();
     } else {
       ctxU.beginPath(); ctxU.arc(x,y,HR*.45,0,Math.PI*2);
