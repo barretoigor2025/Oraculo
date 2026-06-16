@@ -431,6 +431,14 @@
     #size-zoom-ctrl {
       display: flex; align-items: center; gap: 4px; margin-left: auto;
     }
+    #sz-export-btn {
+      height: 26px; padding: 0 8px; border-radius: 6px;
+      border: 1px solid rgba(80,180,120,0.35); background: rgba(60,160,80,0.09);
+      color: rgba(100,210,140,0.8); font-size: 9px; letter-spacing: .5px;
+      text-transform: uppercase; cursor: pointer; white-space: nowrap;
+      transition: background .12s;
+    }
+    #sz-export-btn:hover { background: rgba(60,160,80,0.22); color: #70e8a0; }
     .sz-zoom-btn {
       width: 26px; height: 26px; border-radius: 6px;
       border: 1px solid rgba(200,160,64,0.3); background: rgba(200,160,64,0.07);
@@ -1396,6 +1404,7 @@ function buildSizeTab(){
           <button class="sz-zoom-btn" id="sz-zm" title="Diminuir">−</button>
           <span id="sz-pct">100%</span>
           <button class="sz-zoom-btn" id="sz-zp" title="Aumentar">+</button>
+          <button id="sz-export-btn" title="Exportar alturas salvas como JSON">⬇ Exportar</button>
         </div>
       </div>
       <div id="size-chips-scroll"></div>
@@ -1657,6 +1666,24 @@ function buildSizeTab(){
   document.getElementById('sz-zp').addEventListener('click',()=>{
     const idx = ZOOM_STEPS.indexOf(_zoom);
     if(idx < ZOOM_STEPS.length-1){ _zoom=ZOOM_STEPS[idx+1]; _updateZoomUI(); renderArena(); }
+  });
+  document.getElementById('sz-export-btn').addEventListener('click',()=>{
+    // Build a complete height map: defaults merged with any saved customizations
+    const full = {};
+    for(const [cls, genders] of Object.entries(_STANDEE_DEF_H)){
+      for(const [g, defH] of Object.entries(genders)){
+        const key = 'classe:'+cls+'_'+g;
+        full[key] = customHeights[key] || defH;
+      }
+    }
+    const json = JSON.stringify(full, null, 2);
+    const blob = new Blob([json], {type:'application/json'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'oraculo_standee_heights.json';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   });
   document.getElementById('sz-ed-m10').addEventListener('click',()=>_changeH(-10));
   document.getElementById('sz-ed-m1') .addEventListener('click',()=>_changeH(-1));
