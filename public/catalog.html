@@ -1257,7 +1257,7 @@ function buildSizeTab(){
   // Alturas armazenadas conhecidas por classe
   const CLASS_H = {
     barbaro:{m:400,f:362}, guerreiro:{m:330,f:300},
-    arqueiro:{m:290,f:265}, mago:{m:290,f:282},
+    arqueiro:{m:290,f:265}, mago:{m:290,f:290},
     ladino:{m:265,f:265}, clerigo:{m:275,f:252},
   };
 
@@ -1270,7 +1270,7 @@ function buildSizeTab(){
       DB[key] = {
         nome:  `${cls.nome} ${g==='m'?'♂':'♀'}`,
         short: `${cls.nome.slice(0,4)} ${g==='m'?'♂':'♀'}`,
-        path:  `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png?v=4`,
+        path:  `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png?v=${Date.now()}`,
         storedH: CLASS_H[id]?.[g] ?? 300,
         color: cls.cor, type:'classe',
       };
