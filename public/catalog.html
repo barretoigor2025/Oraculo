@@ -1270,7 +1270,7 @@ function buildSizeTab(){
       DB[key] = {
         nome:  `${cls.nome} ${g==='m'?'♂':'♀'}`,
         short: `${cls.nome.slice(0,4)} ${g==='m'?'♂':'♀'}`,
-        path:  `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${({mago_f:1,ladino_m:1,ladino_f:1}[`${id}_${g}`]?'_r':'')}_peca.png`,
+        path:  `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${({mago_f:1,ladino_m:1,ladino_f:1}[id+'_'+g]?'_r':'')}_peca.png`,
         storedH: CLASS_H[id]?.[g] ?? 300,
         color: cls.cor, type:'classe',
       };
