@@ -1270,7 +1270,7 @@ function buildSizeTab(){
       DB[key] = {
         nome:  `${cls.nome} ${g==='m'?'♂':'♀'}`,
         short: `${cls.nome.slice(0,4)} ${g==='m'?'♂':'♀'}`,
-        path:  `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png?v=${Date.now()}`,
+        path:  `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${({mago_f:1,ladino_m:1,ladino_f:1}[`${id}_${g}`]?'_r':'')}_peca.png`,
         storedH: CLASS_H[id]?.[g] ?? 300,
         color: cls.cor, type:'classe',
       };
@@ -1430,8 +1430,8 @@ function buildSizeTab(){
       const lineY = baseY - n*hexDisp;
       ctx.beginPath();
       ctx.moveTo(RULER_W, lineY); ctx.lineTo(canvasW, lineY);
-      ctx.strokeStyle = n===0 ? 'rgba(200,160,64,0.95)' : 'rgba(200,160,64,0.55)';
-      ctx.lineWidth   = n===0 ? 2 : 1;
+      ctx.strokeStyle = n===0 ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)';
+      ctx.lineWidth   = n===0 ? 1.5 : 0.8;
       ctx.stroke();
       if(n>0){
         ctx.font='7px Georgia'; ctx.textAlign='right';
@@ -1450,7 +1450,7 @@ function buildSizeTab(){
     // Linha divisória de régua
     ctx.beginPath();
     ctx.moveTo(RULER_W,0); ctx.lineTo(RULER_W,arenaH);
-    ctx.strokeStyle='rgba(200,160,64,0.25)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=1; ctx.stroke();
 
     // Separadores de unidade
     for(let i=0;i<selected.length;i++){
@@ -1459,7 +1459,7 @@ function buildSizeTab(){
         ctx.beginPath();
         ctx.moveTo(cx-unitW/2-UNIT_GAP/2, 0);
         ctx.lineTo(cx-unitW/2-UNIT_GAP/2, arenaH);
-        ctx.strokeStyle='rgba(200,160,64,0.40)'; ctx.lineWidth=1; ctx.stroke();
+        ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=0.8; ctx.stroke();
       }
     }
 
