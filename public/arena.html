@@ -3388,13 +3388,14 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
     {id:'clerigo',  g:'f',col:11,row:5},
   ];
   const _SD_REV  = {mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r2',ladino_m:'_r3',ladino_f:'_r3'};
+  const _SD_NOME = {barbaro:'Bárbaro',guerreiro:'Guerreiro',arqueiro:'Arqueiro',mago:'Mago',ladino:'Ladino',clerigo:'Clérigo'};
 
   unidades = _SD_DATA.map(u=>{
     const r   = _SD_REV[u.id+'_'+u.g]||'';
     const src = `catalogo/mhoried/classes/${u.id}/peca_tabuleiro/${u.id}_${u.g}${r}_peca.png`;
-    return {nome:u.id+'_'+u.g, col:u.col, row:u.row, emoji:'🧍', cor:'#888',
-            imgSrc:src, img:null, tipo:'heroi', mov:0,
-            hp:100, maxHp:100, sp:100, maxSp:100,
+    return {nome:_SD_NOME[u.id]+' '+(u.g==='m'?'♂':'♀'), col:u.col, row:u.row,
+            emoji:'🧍', cor:'#888', imgSrc:src, img:null, tipo:'heroi',
+            mov:0, hp:100, maxHp:100, sp:100, maxSp:100,
             portrait:src, itens:[], classId:u.id, gender:u.g};
   });
 
@@ -3402,15 +3403,37 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   const bp = document.getElementById('bottom-panel');
   if(bp) bp.style.display='none';
 
-  // Carrega imagens e re-renderiza
+  // Renderização própria: usa dimensões NATURAIS do PNG
+  // (naturalHeight = storedH calibrado = escala correta no grid HR=55)
+  function _drawStandees(){
+    ctxU.clearRect(0, 0, MAP_W, MAP_H);
+    unidades.forEach(u=>{
+      const img = u.img;
+      const {x, y} = hexCentro(u.col, u.row);
+      const foot  = y + OOFF * 0.3;
+      if(img && img.naturalWidth > 0){
+        const dH = img.naturalHeight; // altura = storedH → escala real do hex
+        const dW = img.naturalWidth;  // largura mantém aspecto original
+        ctxU.save();
+        ctxU.filter = 'drop-shadow(0 4px 14px rgba(0,0,0,0.98))';
+        ctxU.drawImage(img, x - dW/2, foot - dH, dW, dH);
+        ctxU.restore();
+      }
+      // Label
+      ctxU.font      = 'bold 9px Georgia';
+      ctxU.textAlign = 'center';
+      ctxU.fillStyle = 'rgba(230,205,120,0.92)';
+      ctxU.fillText(u.nome, x, foot + 22);
+    });
+  }
+
+  // Carrega imagens e renderiza
   let _sdLoaded = 0;
   unidades.forEach(u=>{
     const img = new Image();
     img.onload = img.onerror = ()=>{
       u.img = img;
-      // frameW = largura natural → drawH proporcional ao PNG
-      if(img.naturalWidth > 0) u.frameW = img.naturalWidth;
-      if(++_sdLoaded >= unidades.length){ renderGrid(); renderUnits(); }
+      if(++_sdLoaded >= unidades.length){ renderGrid(); _drawStandees(); }
     };
     img.src = u.imgSrc;
   });
