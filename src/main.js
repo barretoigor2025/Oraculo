@@ -289,9 +289,6 @@ function renderClassDetail() {
 
   el.innerHTML = `
     <div class="icd-left">
-      <div class="icd-retrato-wrap">
-        <img class="icd-retrato" src="${_retratoUrl(cls.id, selectedGender)}" alt="${escapeHtml(cls.name)}" onerror="this.style.display='none'">
-      </div>
       <img class="icd-peca" src="${standeeUrl(cls.id, selectedGender)}" alt="" onerror="this.style.display='none'">
     </div>
     <div class="icd-right">
