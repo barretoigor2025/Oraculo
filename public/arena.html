@@ -1728,7 +1728,7 @@ function renderUnits(){
         const _szH = (()=>{try{return JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}')}catch(e){return{}}})();
         const _cH = _szH['classe:'+u.classId+'_'+u.gender];
         if(_cH){
-          const _defH = {barbaro:{m:400,f:362},guerreiro:{m:330,f:300},arqueiro:{m:290,f:265},mago:{m:290,f:290},ladino:{m:290,f:290},clerigo:{m:275,f:252}}[u.classId]?.[u.gender]||300;
+          const _defH = {barbaro:{m:400,f:362},guerreiro:{m:338,f:300},arqueiro:{m:290,f:283},mago:{m:290,f:290},ladino:{m:313,f:330},clerigo:{m:305,f:296}}[u.classId]?.[u.gender]||300;
           sw = sw * (_cH / _defH);
         }
       }

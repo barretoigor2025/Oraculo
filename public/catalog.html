@@ -798,14 +798,14 @@ function classSpriteUrl(id, gender){
 }
 function classFrente(id, g){ return `catalogo/mhoried/classes/${id}/sprites/frente/${id}_${g}_frente.png`; }
 function classCostas(id, g){ return `catalogo/mhoried/classes/${id}/sprites/costas/${id}_${g}_costas.png`; }
-const _REVISED_STANDEE = {mago_f:'_r',ladino_m:'_r2',ladino_f:'_r2'};
+const _REVISED_STANDEE = {mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r',ladino_m:'_r3',ladino_f:'_r3'};
 function classStandee(id, g){ const r=_REVISED_STANDEE[id+'_'+g]||''; return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${r}_peca.png`; }
 
 // Alturas de referência (px da imagem = hex-scale reference)
 const _STANDEE_DEF_H = {
-  barbaro:{m:400,f:362}, guerreiro:{m:330,f:300},
-  arqueiro:{m:290,f:265}, mago:{m:290,f:290},
-  ladino:{m:290,f:290}, clerigo:{m:275,f:252},
+  barbaro:{m:400,f:362}, guerreiro:{m:338,f:300},
+  arqueiro:{m:290,f:283}, mago:{m:290,f:290},
+  ladino:{m:313,f:330}, clerigo:{m:305,f:296},
 };
 function _getSzCustomHeights(){ try{ return JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}'); }catch(e){return{};} }
 function _standeeH(id, g){ const c=_getSzCustomHeights(); return c['classe:'+id+'_'+g] || _STANDEE_DEF_H[id]?.[g] || 300; }
@@ -1243,12 +1243,12 @@ function buildChecklistTab(){
     {
       titulo: '♟️ Standee — Classes (M)',
       dica: 'classes/{id}/peca_tabuleiro/{id}_m_peca.png',
-      items: classes.map(id=>({ nome:CLASSES_DATA[id].nome, sub:`${id}_m_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_m${_REVISED_STANDEE[id+'_m']?'_r':''}_peca.png` })),
+      items: classes.map(id=>({ nome:CLASSES_DATA[id].nome, sub:`${id}_m_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_m${_REVISED_STANDEE[id+'_m']||''}_peca.png` })),
     },
     {
       titulo: '♟️ Standee — Classes (F)',
       dica: 'classes/{id}/peca_tabuleiro/{id}_f_peca.png',
-      items: classes.map(id=>({ nome:CLASSES_DATA[id].nome, sub:`${id}_f_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_f${_REVISED_STANDEE[id+'_f']?'_r':''}_peca.png` })),
+      items: classes.map(id=>({ nome:CLASSES_DATA[id].nome, sub:`${id}_f_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_f${_REVISED_STANDEE[id+'_f']||''}_peca.png` })),
     },
   ];
 
@@ -1335,9 +1335,9 @@ function buildSizeTab(){
 
   // Alturas armazenadas conhecidas por classe
   const CLASS_H = {
-    barbaro:{m:400,f:362}, guerreiro:{m:330,f:300},
-    arqueiro:{m:290,f:265}, mago:{m:290,f:290},
-    ladino:{m:290,f:290}, clerigo:{m:275,f:252},
+    barbaro:{m:400,f:362}, guerreiro:{m:338,f:300},
+    arqueiro:{m:290,f:283}, mago:{m:290,f:290},
+    ladino:{m:313,f:330}, clerigo:{m:305,f:296},
   };
 
   const DB = {}; // key → {nome, path, storedH, color, type, short}
