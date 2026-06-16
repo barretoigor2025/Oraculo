@@ -820,8 +820,8 @@ function classStandee(id, g){ const r=_REVISED_STANDEE[id+'_'+g]||''; return `ca
 // Alturas de referência (px da imagem = hex-scale reference)
 const _STANDEE_DEF_H = {
   barbaro:{m:400,f:362}, guerreiro:{m:338,f:300},
-  arqueiro:{m:290,f:283}, mago:{m:290,f:290},
-  ladino:{m:313,f:330}, clerigo:{m:305,f:297},
+  arqueiro:{m:290,f:284}, mago:{m:290,f:290},
+  ladino:{m:314,f:330}, clerigo:{m:306,f:298},
 };
 function _getSzCustomHeights(){ try{ return JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}'); }catch(e){return{};} }
 function _standeeH(id, g){ const c=_getSzCustomHeights(); return c['classe:'+id+'_'+g] || _STANDEE_DEF_H[id]?.[g] || 300; }
@@ -1353,8 +1353,8 @@ function buildSizeTab(){
   // Alturas armazenadas conhecidas por classe
   const CLASS_H = {
     barbaro:{m:400,f:362}, guerreiro:{m:338,f:300},
-    arqueiro:{m:290,f:283}, mago:{m:290,f:290},
-    ladino:{m:313,f:330}, clerigo:{m:305,f:297},
+    arqueiro:{m:290,f:284}, mago:{m:290,f:290},
+    ladino:{m:314,f:330}, clerigo:{m:306,f:298},
   };
 
   const DB = {}; // key → {nome, path, storedH, color, type, short}

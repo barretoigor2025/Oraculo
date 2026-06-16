@@ -1744,7 +1744,7 @@ function renderUnits(){
         // sem compressão para SW fixo. Mantém aspecto real.
         const _szH  = (()=>{try{return JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}')}catch(e){return{}}})();
         const _cH   = _szH['classe:'+u.classId+'_'+u.gender];
-        const _defH = {barbaro:{m:400,f:362},guerreiro:{m:338,f:300},arqueiro:{m:290,f:283},mago:{m:290,f:290},ladino:{m:313,f:330},clerigo:{m:305,f:297}}[u.classId]?.[u.gender]||300;
+        const _defH = {barbaro:{m:400,f:362},guerreiro:{m:338,f:300},arqueiro:{m:290,f:284},mago:{m:290,f:290},ladino:{m:314,f:330},clerigo:{m:306,f:298}}[u.classId]?.[u.gender]||300;
         const targetH = (_cH || _defH) * 0.5 * (1 - clip);
         drawH = targetH;
         sw    = targetH * (u.img.naturalWidth / u.img.naturalHeight);
