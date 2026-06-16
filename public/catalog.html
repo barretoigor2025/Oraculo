@@ -403,12 +403,28 @@
       border-color: rgba(200,160,64,0.5);
     }
     #size-clear {
-      margin-left: auto; font-size: 9px; letter-spacing: .8px;
+      font-size: 9px; letter-spacing: .8px;
       text-transform: uppercase; border: 1px solid rgba(255,80,80,0.25);
       border-radius: 20px; padding: 3px 10px; background: transparent;
       color: rgba(220,100,80,0.6); cursor: pointer;
     }
     #size-clear:hover { color: #e06040; border-color: rgba(255,80,80,0.5); }
+    #size-zoom-ctrl {
+      display: flex; align-items: center; gap: 4px; margin-left: auto;
+    }
+    .sz-zoom-btn {
+      width: 26px; height: 26px; border-radius: 6px;
+      border: 1px solid rgba(200,160,64,0.3); background: rgba(200,160,64,0.07);
+      color: var(--gold); font-size: 16px; line-height: 1;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .12s;
+    }
+    .sz-zoom-btn:hover { background: rgba(200,160,64,0.18); }
+    .sz-zoom-btn:disabled { opacity: 0.22; cursor: default; }
+    #sz-pct {
+      font-size: 9px; color: rgba(200,165,80,0.55); letter-spacing: .5px;
+      min-width: 30px; text-align: center;
+    }
 
     #size-chips-scroll {
       display: flex; flex-wrap: wrap; gap: 5px;
@@ -1284,6 +1300,8 @@ function buildSizeTab(){
   // ── Estado da seleção ─────────────────────────────────────────────
   let selected = []; // ordered array of keys
   let catFilter = 'classes'; // 'classes' | 'npcs' | 'inimigos'
+  let _zoom = 1.0;  // zoom do comparador: 0.4–1.5
+  const ZOOM_STEPS = [0.4, 0.5, 0.65, 0.8, 1.0, 1.2, 1.5];
   const imgCache = {}; // key → HTMLImageElement (loaded)
 
   // ── HTML ──────────────────────────────────────────────────────────
@@ -1294,6 +1312,11 @@ function buildSizeTab(){
         <button class="size-cat-btn" data-cat="npcs">NPCs</button>
         <button class="size-cat-btn" data-cat="inimigos">Inimigos</button>
         <button id="size-clear">✕ Limpar</button>
+        <div id="size-zoom-ctrl">
+          <button class="sz-zoom-btn" id="sz-zm" title="Diminuir">−</button>
+          <span id="sz-pct">100%</span>
+          <button class="sz-zoom-btn" id="sz-zp" title="Aumentar">+</button>
+        </div>
       </div>
       <div id="size-chips-scroll"></div>
       <div id="size-selected-bar"></div>
@@ -1374,24 +1397,29 @@ function buildSizeTab(){
     }
     empty.style.display='none'; cv.style.display='block';
 
+    // Valores escalados pelo zoom
+    const hexDisp = Math.round(HEX_DISP * _zoom);
+    const unitW   = Math.round(UNIT_W   * _zoom);
+    const arenaH  = TOP_PAD + MAX_HEX_LINES * hexDisp + BASE_PAD;
+
     // Carrega todas as imagens
     const imgs = await Promise.all(selected.map(k=>loadImg(k)));
 
     // Calcula dimensões
-    const canvasW = RULER_W + selected.length * (UNIT_W + UNIT_GAP) + 10;
+    const canvasW = RULER_W + selected.length * (unitW + UNIT_GAP) + 10;
     cv.width  = canvasW;
-    cv.height = ARENA_H;
+    cv.height = arenaH;
     overlay.style.width  = canvasW+'px';
-    overlay.style.height = ARENA_H+'px';
-    document.getElementById('size-arena').style.minHeight = ARENA_H+'px';
+    overlay.style.height = arenaH+'px';
+    document.getElementById('size-arena').style.minHeight = arenaH+'px';
 
     const ctx = cv.getContext('2d');
-    ctx.clearRect(0,0,canvasW,ARENA_H);
+    ctx.clearRect(0,0,canvasW,arenaH);
 
     // Fundo
-    ctx.fillStyle='#0d0b08'; ctx.fillRect(0,0,canvasW,ARENA_H);
+    ctx.fillStyle='#0d0b08'; ctx.fillRect(0,0,canvasW,arenaH);
 
-    const baseY = TOP_PAD + MAX_HEX_LINES * HEX_DISP;
+    const baseY = TOP_PAD + MAX_HEX_LINES * hexDisp;
 
     // Área de conteúdo
     ctx.fillStyle='rgba(18,14,8,0.7)';
@@ -1399,7 +1427,7 @@ function buildSizeTab(){
 
     // Linhas de hex-height + régua
     for(let n=0; n<=MAX_HEX_LINES; n++){
-      const lineY = baseY - n*HEX_DISP;
+      const lineY = baseY - n*hexDisp;
       ctx.beginPath();
       ctx.moveTo(RULER_W, lineY); ctx.lineTo(canvasW, lineY);
       ctx.strokeStyle = n===0 ? 'rgba(200,160,64,0.6)' : 'rgba(200,160,64,0.13)';
@@ -1421,16 +1449,16 @@ function buildSizeTab(){
 
     // Linha divisória de régua
     ctx.beginPath();
-    ctx.moveTo(RULER_W,0); ctx.lineTo(RULER_W,ARENA_H);
+    ctx.moveTo(RULER_W,0); ctx.lineTo(RULER_W,arenaH);
     ctx.strokeStyle='rgba(200,160,64,0.25)'; ctx.lineWidth=1; ctx.stroke();
 
     // Separadores de unidade
     for(let i=0;i<selected.length;i++){
-      const cx = RULER_W + i*(UNIT_W+UNIT_GAP) + UNIT_W/2;
+      const cx = RULER_W + i*(unitW+UNIT_GAP) + unitW/2;
       if(i>0){
         ctx.beginPath();
-        ctx.moveTo(cx-UNIT_W/2-UNIT_GAP/2, 0);
-        ctx.lineTo(cx-UNIT_W/2-UNIT_GAP/2, ARENA_H);
+        ctx.moveTo(cx-unitW/2-UNIT_GAP/2, 0);
+        ctx.lineTo(cx-unitW/2-UNIT_GAP/2, arenaH);
         ctx.strokeStyle='rgba(200,160,64,0.07)'; ctx.lineWidth=1; ctx.stroke();
       }
     }
@@ -1441,9 +1469,9 @@ function buildSizeTab(){
       const img   = imgs[i];
       const entry = DB[key];
       const storedH = (img?.naturalHeight) || entry.storedH || 300;
-      const dispH   = Math.round(storedH/GAME_HEX*HEX_DISP);
-      const safeDispH = Math.min(dispH, MAX_HEX_LINES*HEX_DISP-2);
-      const cx = RULER_W + i*(UNIT_W+UNIT_GAP) + UNIT_W/2;
+      const dispH   = Math.round(storedH/GAME_HEX*hexDisp);
+      const safeDispH = Math.min(dispH, MAX_HEX_LINES*hexDisp-2);
+      const cx = RULER_W + i*(unitW+UNIT_GAP) + unitW/2;
 
       const div=document.createElement('div');
       div.className='sz-unit';
@@ -1471,6 +1499,16 @@ function buildSizeTab(){
     });
   }
 
+  function _updateZoomUI(){
+    const idx = ZOOM_STEPS.indexOf(_zoom);
+    const zmBtn = document.getElementById('sz-zm');
+    const zpBtn = document.getElementById('sz-zp');
+    const pctEl = document.getElementById('sz-pct');
+    if(zmBtn) zmBtn.disabled = idx <= 0;
+    if(zpBtn) zpBtn.disabled = idx >= ZOOM_STEPS.length-1;
+    if(pctEl) pctEl.textContent = Math.round(_zoom*100)+'%';
+  }
+
   // ── Eventos ───────────────────────────────────────────────────────
   tab.querySelectorAll('.size-cat-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
@@ -1483,7 +1521,16 @@ function buildSizeTab(){
   document.getElementById('size-clear').addEventListener('click',()=>{
     selected=[]; renderChips(); renderSelectedBar(); renderArena();
   });
+  document.getElementById('sz-zm').addEventListener('click',()=>{
+    const idx = ZOOM_STEPS.indexOf(_zoom);
+    if(idx > 0){ _zoom=ZOOM_STEPS[idx-1]; _updateZoomUI(); renderArena(); }
+  });
+  document.getElementById('sz-zp').addEventListener('click',()=>{
+    const idx = ZOOM_STEPS.indexOf(_zoom);
+    if(idx < ZOOM_STEPS.length-1){ _zoom=ZOOM_STEPS[idx+1]; _updateZoomUI(); renderArena(); }
+  });
 
+  _updateZoomUI();
   renderChips();
   renderArena();
 }
