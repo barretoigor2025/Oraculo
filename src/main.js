@@ -1,5 +1,5 @@
 import './styles.css';
-import { CLASSES } from './data/classes.js';
+import { CLASSES, standeeUrl } from './data/classes.js';
 import { joinRoom, listenRoom, saveRoom, startNarration } from './firebase/roomService.js';
 import { firebaseApp } from './firebase/config.js';
 import { startGame } from './game/turnSystem.js';
@@ -217,12 +217,14 @@ function renderSlots() {
 let selectedClassId = 'barbaro';
 let selectedGender = 'm';
 
+const _HAB_TIPO_COLOR = { melee: '#c88080', magia: '#8888f0', cura: '#70c070', buff: '#c0a040', projétil: '#70c0c0' };
+
 function initCreateScreen() {
   selectedClassId = 'barbaro';
   selectedGender = 'm';
-  renderClassGrid();
+  renderClassCarousel();
+  renderClassDetail();
   renderGenderButtons();
-  updateStatsPreview();
 
   const btn = document.getElementById('btn-criar-personagem');
   if (btn) {
@@ -238,58 +240,70 @@ function renderGenderButtons() {
     btn.onclick = () => {
       selectedGender = btn.dataset.gender;
       renderGenderButtons();
-      renderClassGrid();
-      updateStatsPreview();
+      renderClassCarousel();
+      renderClassDetail();
     };
   });
 }
 
-function renderClassGrid() {
-  const grid = document.getElementById('isc-class-grid');
-  if (!grid) return;
-  grid.innerHTML = Object.values(CLASSES).map(cls => `
-    <button class="isc-class-btn ${cls.id === selectedClassId ? 'selected' : ''}" data-class="${cls.id}">
-      <div class="isc-class-portrait">
+function renderClassCarousel() {
+  const el = document.getElementById('isc-class-carousel');
+  if (!el) return;
+  el.innerHTML = Object.values(CLASSES).map(cls => `
+    <button class="isc-cls-chip ${cls.id === selectedClassId ? 'selected' : ''}" data-class="${cls.id}">
+      <div class="isc-cls-chip-img">
         <img src="${_retratoUrl(cls.id, selectedGender)}" alt="" onerror="this.style.display='none'">
         <span>${cls.icon}</span>
       </div>
-      <span class="isc-class-name">${cls.name}</span>
+      <span class="isc-cls-chip-name">${cls.name}</span>
     </button>
   `).join('');
-  grid.querySelectorAll('.isc-class-btn').forEach(btn => {
+  el.querySelectorAll('.isc-cls-chip').forEach(btn => {
     btn.addEventListener('click', () => {
       selectedClassId = btn.dataset.class;
-      renderClassGrid();
-      updateStatsPreview();
+      renderClassCarousel();
+      renderClassDetail();
     });
   });
 }
 
-function updateStatsPreview() {
+function renderClassDetail() {
+  const el = document.getElementById('isc-class-detail');
+  if (!el) return;
   const cls = CLASSES[selectedClassId];
-  if (!cls) return;
-  const icon = document.getElementById('isc-sprite-icon');
-  const feat = document.getElementById('isc-class-feat');
-  if (icon) {
-    const img = document.createElement('img');
-    img.src = `portraits/${selectedClassId}_${selectedGender}.png`;
-    img.alt = cls.name;
-    img.style.cssText = 'width:100%;height:auto;display:block;border-radius:10px;';
-    img.onerror = () => { icon.innerHTML = cls.icon; };
-    icon.innerHTML = '';
-    icon.appendChild(img);
-  }
-  if (feat) feat.textContent = cls.feat;
-  ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].forEach(attr => {
-    const el = document.getElementById(`isp-${attr}`);
-    if (el) el.textContent = cls.attrs?.[attr] ?? '—';
-  });
-  const hp  = document.getElementById('isp-HP');
-  const mov = document.getElementById('isp-MOV');
-  const atq = document.getElementById('isp-ATQ');
-  if (hp)  hp.textContent  = cls.maxHp;
-  if (mov) mov.textContent = cls.movement;
-  if (atq) atq.textContent = cls.attack;
+  if (!cls) { el.innerHTML = ''; return; }
+
+  const attrs = [
+    ['FOR', cls.attrs.STR], ['DES', cls.attrs.DEX], ['CON', cls.attrs.CON],
+    ['INT', cls.attrs.INT], ['SAB', cls.attrs.WIS], ['CAR', cls.attrs.CHA],
+  ];
+
+  const habsHtml = (cls.habs || []).map(h => `
+    <div class="icd-hab">
+      <span class="icd-hab-icon">${h.icon}</span>
+      <div class="icd-hab-body">
+        <div class="icd-hab-nome">${escapeHtml(h.nome)}${h.dano !== '—' ? ` <span class="icd-hab-dano" style="color:${_HAB_TIPO_COLOR[h.tipo] || '#aaa'}">${escapeHtml(h.dano)}</span>` : ''}</div>
+        <div class="icd-hab-desc">${escapeHtml(h.desc)}</div>
+      </div>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div class="icd-left">
+      <div class="icd-retrato-wrap">
+        <img class="icd-retrato" src="${_retratoUrl(cls.id, selectedGender)}" alt="${escapeHtml(cls.name)}" onerror="this.style.display='none'">
+      </div>
+      <img class="icd-peca" src="${standeeUrl(cls.id, selectedGender)}" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="icd-right">
+      <div class="icd-titulo">${cls.icon} ${escapeHtml(cls.name)}</div>
+      <p class="icd-feat">${escapeHtml(cls.feat)}</p>
+      <div class="icd-attrs">
+        ${attrs.map(([k, v]) => `<div class="icd-attr"><span class="icd-attr-k">${k}</span><span class="icd-attr-v">${v}</span></div>`).join('')}
+      </div>
+      <div class="icd-derived">❤️ <strong>${cls.maxHp}</strong> PV &nbsp;⚡ <strong>${cls.movement}</strong> MOV &nbsp;⚔️ <strong>${cls.attack}</strong> ATQ</div>
+      <div class="icd-habs-title">Habilidades</div>
+      <div class="icd-habs">${habsHtml}</div>
+    </div>`;
 }
 
 function confirmarPersonagem() {
