@@ -84,7 +84,7 @@ const STORED = {
   arqueiro:  { m:290, f:283 },
   mago:      { m:290, f:290 },
   ladino:    { m:313, f:330 },
-  clerigo:   { m:305, f:296 },
+  clerigo:   { m:305, f:297 },
 };
 
 // ── Escala do chart ───────────────────────────────────────────────────────
@@ -235,7 +235,7 @@ function drawChart() {
 }
 
 function spritePath(id, g) {
-  const REV = {mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r',ladino_m:'_r3',ladino_f:'_r3'};
+  const REV = {mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r2',ladino_m:'_r3',ladino_f:'_r3'};
   return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${REV[id+'_'+g]||''}_peca.png`;
 }
 
