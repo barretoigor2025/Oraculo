@@ -59,7 +59,8 @@ html,body{
 
 /* ── LAYOUT PRINCIPAL ── */
 #narracao-wrap{
-  position:fixed;inset:0;
+  position:fixed;top:0;left:0;right:0;
+  height:100dvh; /* encolhe quando teclado abre em browsers modernos */
   display:flex;flex-direction:column;
   overflow:hidden;
 }
@@ -114,6 +115,11 @@ html,body{
   max-height:clamp(130px,30vh,240px);
   overflow:hidden;
   display:flex;align-items:center;justify-content:center;
+  transition:max-height .25s ease, opacity .2s ease;
+}
+/* teclado aberto: imagem some pra liberar espaço pro diálogo */
+#narracao-wrap.teclado-aberto #cena-imagem-wrap{
+  max-height:0; opacity:0; pointer-events:none;
 }
 #cena-imagem{
   width:100%;height:100%;
@@ -1124,6 +1130,31 @@ function esc(v) {
 
 // ── Boot ──────────────────────────────────────────────────────────
 init();
+
+// ── Teclado mobile: esconde imagem da cena quando input está ativo ─
+(function(){
+  const wrap = document.getElementById('narracao-wrap');
+  if (!wrap) return;
+
+  function _setTeclado(aberto) {
+    wrap.classList.toggle('teclado-aberto', aberto);
+    if (!aberto) elLog?.scrollTo({ top: elLog.scrollHeight, behavior: 'smooth' });
+  }
+
+  // visualViewport é a forma mais confiável em Android Chrome
+  if (window.visualViewport) {
+    const INITIAL_H = window.visualViewport.height;
+    window.visualViewport.addEventListener('resize', () => {
+      const delta = INITIAL_H - window.visualViewport.height;
+      wrap.style.height = window.visualViewport.height + 'px';
+      _setTeclado(delta > 80); // >80px = teclado abriu
+    });
+  }
+
+  // Fallback: foco/blur no textarea
+  elInputTexto?.addEventListener('focus', () => _setTeclado(true));
+  elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
+})();
 </script>
 </body>
 </html>
