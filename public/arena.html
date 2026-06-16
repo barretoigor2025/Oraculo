@@ -3100,6 +3100,9 @@ function _loadSprite(u){
     `catalogo/mhoried/classes/${cid}/sprites/costas/${cid}_${alt}_costas.png`,
     `catalogo/mhoried/classes/${cid}/sprites/costas/${cid}_costas.png`,
   ];
+  const _revStandee={mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r2',ladino_m:'_r3',ladino_f:'_r3'};
+  const _standeeRev=_revStandee[cid+'_'+g]||'';
+  queue.push(`catalogo/mhoried/classes/${cid}/peca_tabuleiro/${cid}_${g}${_standeeRev}_peca.png`);
   let qi=0;
   (function tryNext(){
     if(qi>=queue.length){renderUnits();return;}
