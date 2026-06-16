@@ -222,31 +222,50 @@
       border-bottom: 1px solid var(--border);
       align-items: flex-start;
     }
+    /* modal sprites — NPC / inimigo */
     .modal-sprites {
       display: flex; flex-direction: column; gap: 0;
-      background:
-        repeating-linear-gradient(
-          to top,
-          rgba(200,160,64,0.09) 0px, rgba(200,160,64,0.09) 1px,
-          transparent 1px, transparent 44px
-        ),
-        rgba(0,0,0,0.38);
+      background: rgba(0,0,0,0.4);
       flex-shrink: 0;
-      min-width: 100px; max-width: 180px;
+      min-width: 90px; max-width: 130px;
       align-self: stretch;
+      border-right: 1px solid var(--border);
     }
     .modal-sprite-wrap {
       display: flex; align-items: flex-end; justify-content: center;
-      flex: 1; padding: 6px 4px; min-height: 60px;
+      flex: 1; padding: 4px; min-height: 60px;
     }
     .modal-sprite-wrap img {
-      max-height: 160px; max-width: 100%;
+      max-height: 130px; max-width: 100%;
       object-fit: contain; object-position: bottom;
     }
+    /* modal sprites — Classes (M + F com grid branco) */
+    .modal-sprites-cls {
+      display: flex; flex-direction: row;
+      flex-shrink: 0; align-self: stretch;
+      min-width: 130px; max-width: 175px;
+      border-right: 1px solid var(--border);
+    }
+    .modal-std-col {
+      flex: 1; display: flex; flex-direction: column;
+    }
+    .modal-std-col + .modal-std-col { border-left: 1px solid rgba(200,160,64,0.12); }
+    .modal-std-grid {
+      flex: 1; display: flex; align-items: flex-end; justify-content: center;
+      height: 130px; overflow: hidden; padding: 2px 3px 0;
+      background:
+        repeating-linear-gradient(
+          to top,
+          rgba(255,255,255,0.35) 0px, rgba(255,255,255,0.35) 1px,
+          transparent 1px, transparent 28px
+        ),
+        rgba(8,6,3,0.85);
+    }
+    .modal-std-grid img { width: auto; max-width: 95%; object-fit: contain; object-position: bottom; }
     .sprite-label {
       text-align: center; font-size: 8px; color: var(--text-dim);
-      padding: 4px; letter-spacing: .8px; text-transform: uppercase;
-      border-top: 1px solid var(--border);
+      padding: 3px; letter-spacing: .8px; text-transform: uppercase;
+      border-top: 1px solid var(--border); background: rgba(0,0,0,0.4);
     }
     .modal-title-area {
       flex: 1; padding: 14px 16px 14px; display: flex; flex-direction: column; gap: 6px;
@@ -774,6 +793,15 @@ function classCostas(id, g){ return `catalogo/mhoried/classes/${id}/sprites/cost
 const _REVISED_STANDEE = {mago_f:'_r',ladino_m:'_r2',ladino_f:'_r2'};
 function classStandee(id, g){ const r=_REVISED_STANDEE[id+'_'+g]||''; return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${r}_peca.png`; }
 
+// Alturas de referência (px da imagem = hex-scale reference)
+const _STANDEE_DEF_H = {
+  barbaro:{m:400,f:362}, guerreiro:{m:330,f:300},
+  arqueiro:{m:290,f:265}, mago:{m:290,f:290},
+  ladino:{m:290,f:290}, clerigo:{m:275,f:252},
+};
+function _getSzCustomHeights(){ try{ return JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}'); }catch(e){return{};} }
+function _standeeH(id, g){ const c=_getSzCustomHeights(); return c['classe:'+id+'_'+g] || _STANDEE_DEF_H[id]?.[g] || 300; }
+
 function npcRetratoUrl(id){
   return `catalogo/mhoried/npcs/${id}/retrato/${id}_retrato.png`;
 }
@@ -904,15 +932,22 @@ window.openClassModal = function(id, _idx){
       </div>
     </div>`).join('');
 
-  const standeePairs = ['m','f'].map(g=>`
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(0,0,0,0.3);${g==='m'?'border-right:1px solid var(--border)':''}">
-      <img src="${classStandee(id,g)}" alt="${g==='m'?'Masculino':'Feminino'}" style="max-height:180px;max-width:100%;object-fit:contain;object-position:bottom;padding:4px 2px" onerror="this.style.opacity='.15'">
+  const _MAX_STH = 400; // bárbaro_m é o mais alto
+  const _MODAL_GRID_H = 130; // px da área de display no modal
+  const standeePairs = ['m','f'].map(g=>{
+    const stH = _standeeH(id, g);
+    const dispH = Math.round(stH / _MAX_STH * _MODAL_GRID_H);
+    return `<div class="modal-std-col">
+      <div class="modal-std-grid">
+        <img src="${classStandee(id,g)}" alt="${g==='m'?'♂':'♀'}" style="height:${dispH}px" onerror="this.style.opacity='.15'">
+      </div>
       <div class="sprite-label">${g==='m'?'Masculino':'Feminino'}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   document.getElementById('modal-inner').innerHTML = `
     <div class="modal-header">
-      <div class="modal-sprites" style="flex-direction:row;min-width:160px;max-width:200px">
+      <div class="modal-sprites-cls">
         ${standeePairs}
       </div>
       <div class="modal-title-area">

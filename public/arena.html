@@ -887,7 +887,7 @@ let unidades = [
     img:null, tipo:'heroi', mov:_hcd.mov,
     hp:_hcd.hp, maxHp:_hcd.hp, sp:_hcd.sp, maxSp:_hcd.sp,
     portrait:`catalogo/mhoried/classes/${_heroClassId}/retrato/${_heroClassId}_${_heroGender}_retrato.png`,
-    itens:_hcd.itens },
+    itens:_hcd.itens, classId:_heroClassId, gender:_heroGender },
   criarInimigo('espantalho_assombrado', 6, 3),
 ];
 
@@ -1722,11 +1722,20 @@ function renderUnits(){
       ctxU.lineWidth = u===selUnit ? 3 : 2;
       ctxU.stroke();
     } else if(u.img){
-      const sw=HR*3.2,foot=y+OOFF*.3;
+      let sw=HR*3.2;
+      // Aplica escala customizada salva no catálogo (Size tab)
+      if(u.classId && u.gender){
+        const _szH = (()=>{try{return JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}')}catch(e){return{}}})();
+        const _cH = _szH['classe:'+u.classId+'_'+u.gender];
+        if(_cH){
+          const _defH = {barbaro:{m:400,f:362},guerreiro:{m:330,f:300},arqueiro:{m:290,f:265},mago:{m:290,f:290},ladino:{m:290,f:290},clerigo:{m:275,f:252}}[u.classId]?.[u.gender]||300;
+          sw = sw * (_cH / _defH);
+        }
+      }
+      const foot=y+OOFF*.3;
       const clip=u.clipBottom||0;
       const srcW = u.frameW ?? u.img.naturalWidth;
       const srcH = u.img.naturalHeight*(1-clip);
-      // Se frameW definido, mantém proporção do frame; caso contrário, quadrado (comportamento padrão)
       const drawH = u.frameW ? sw*(u.img.naturalHeight/u.frameW)*(1-clip) : sw*(1-clip);
       ctxU.save();
       if(u===selUnit) ctxU.filter='drop-shadow(0 0 8px #ffd028) drop-shadow(0 0 14px #ffd02888)';
