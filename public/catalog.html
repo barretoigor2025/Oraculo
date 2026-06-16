@@ -736,7 +736,8 @@ function classSpriteUrl(id, gender){
 }
 function classFrente(id, g){ return `catalogo/mhoried/classes/${id}/sprites/frente/${id}_${g}_frente.png`; }
 function classCostas(id, g){ return `catalogo/mhoried/classes/${id}/sprites/costas/${id}_${g}_costas.png`; }
-function classStandee(id, g){ return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png`; }
+const _REVISED_STANDEE = {mago_f:1,ladino_m:1,ladino_f:1};
+function classStandee(id, g){ const r=_REVISED_STANDEE[id+'_'+g]?'_r':''; return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${r}_peca.png`; }
 
 function npcRetratoUrl(id){
   return `catalogo/mhoried/npcs/${id}/retrato/${id}_retrato.png`;
@@ -1164,12 +1165,12 @@ function buildChecklistTab(){
     {
       titulo: '♟️ Standee — Classes (M)',
       dica: 'classes/{id}/peca_tabuleiro/{id}_m_peca.png',
-      items: classes.map(id=>({ nome:CLASSES_DATA[id].nome, sub:`${id}_m_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_m_peca.png` })),
+      items: classes.map(id=>({ nome:CLASSES_DATA[id].nome, sub:`${id}_m_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_m${_REVISED_STANDEE[id+'_m']?'_r':''}_peca.png` })),
     },
     {
       titulo: '♟️ Standee — Classes (F)',
       dica: 'classes/{id}/peca_tabuleiro/{id}_f_peca.png',
-      items: classes.map(id=>({ nome:CLASSES_DATA[id].nome, sub:`${id}_f_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_f_peca.png` })),
+      items: classes.map(id=>({ nome:CLASSES_DATA[id].nome, sub:`${id}_f_peca.png`, path:`${CAT}classes/${id}/peca_tabuleiro/${id}_f${_REVISED_STANDEE[id+'_f']?'_r':''}_peca.png` })),
     },
   ];
 
@@ -1258,7 +1259,7 @@ function buildSizeTab(){
   const CLASS_H = {
     barbaro:{m:400,f:362}, guerreiro:{m:330,f:300},
     arqueiro:{m:290,f:265}, mago:{m:290,f:290},
-    ladino:{m:265,f:265}, clerigo:{m:275,f:252},
+    ladino:{m:290,f:290}, clerigo:{m:275,f:252},
   };
 
   const DB = {}; // key → {nome, path, storedH, color, type, short}
