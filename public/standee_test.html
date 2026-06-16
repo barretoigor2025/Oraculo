@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Standees em Arena — Mhoried</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0806;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; padding: 14px;
+    font-family: 'Georgia', serif;
+  }
+  h1 { color: #c8a040; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
+  .sub { color: rgba(190,165,90,0.38); font-size: 8px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+  #wrap {
+    position: relative;
+    border: 1px solid rgba(200,160,64,0.18);
+    border-radius: 10px; overflow: hidden;
+    box-shadow: 0 0 40px rgba(0,0,0,0.9);
+    max-width: 100%; overflow-x: auto;
+  }
+  canvas { display: block; }
+  #ov { position: absolute; top: 0; left: 0; pointer-events: none; }
+  .sp {
+    position: absolute; display: flex; flex-direction: column; align-items: center;
+    transform: translateX(-50%);
+  }
+  .sp img {
+    display: block; width: auto;
+    filter: drop-shadow(0 3px 8px rgba(0,0,0,0.95));
+  }
+  .sp-lbl {
+    font-size: 6px; color: rgba(220,195,130,0.8);
+    letter-spacing: .4px; white-space: nowrap; margin-top: 2px;
+    background: rgba(0,0,0,0.7); padding: 1px 3px; border-radius: 2px;
+  }
+  a.back {
+    display: inline-block; margin-top: 12px;
+    font-size: 9px; color: rgba(190,165,90,0.5);
+    text-decoration: none; letter-spacing: 1px;
+    border: 1px solid rgba(200,160,64,0.18); border-radius: 20px; padding: 3px 12px;
+  }
+  a.back:hover { color: #c8a040; }
+</style>
+</head>
+<body>
+<h1>Todos os Standees — Escala do Arena</h1>
+<div class="sub">HR = 55 · 1 linha = 1 hexágono de altura · M e F lado a lado por classe</div>
+<div id="wrap">
+  <canvas id="cv"></canvas>
+  <div id="ov"></div>
+</div>
+<a class="back" href="catalog.html">← Catálogo</a>
+
+<script>
+// ── Dados ──────────────────────────────────────────────────────────────────
+const CLASSES = [
+  { id:'barbaro',   nome:'Bárbaro'  },
+  { id:'guerreiro', nome:'Guerreiro'},
+  { id:'arqueiro',  nome:'Arqueiro' },
+  { id:'mago',      nome:'Mago'     },
+  { id:'ladino',    nome:'Ladino'   },
+  { id:'clerigo',   nome:'Clérigo'  },
+];
+
+const DEF_H = {
+  barbaro:  {m:400, f:362},
+  guerreiro:{m:338, f:300},
+  arqueiro: {m:290, f:283},
+  mago:     {m:290, f:290},
+  ladino:   {m:313, f:330},
+  clerigo:  {m:305, f:297},
+};
+
+const REV = {
+  mago_f:'_r', arqueiro_f:'_r', guerreiro_m:'_r',
+  clerigo_m:'_r', clerigo_f:'_r2',
+  ladino_m:'_r3', ladino_f:'_r3',
+};
+
+function url(id, g){
+  const r = REV[id+'_'+g] || '';
+  return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${r}_peca.png`;
+}
+
+// ── Escala ─────────────────────────────────────────────────────────────────
+// Mantém a proporção exata do arena (HR=55, hexH≈95px)
+const HR          = 30;                              // raio do hex no display
+const HEX_H       = Math.round(HR * Math.sqrt(3));  // altura de 1 hex ≈52px
+const GAME_HEX_H  = 95;                             // altura de 1 hex no arena
+const SW          = Math.round(HR * 3.2);            // largura do standee ≈96px
+
+function dH(id, g){ return Math.round(DEF_H[id][g] / GAME_HEX_H * HEX_H); }
+
+// ── Layout ──────────────────────────────────────────────────────────────────
+const PAIR_GAP   = 6;   // gap entre M e F do mesmo par
+const CLASS_GAP  = 14;  // gap entre classes
+const PAIR_W     = SW * 2 + PAIR_GAP;
+const COL_STEP   = PAIR_W + CLASS_GAP;
+const RULER_W    = 36;
+const PAD_TOP    = 18;
+const HEX_FLOOR  = 3;   // linhas de hexágono abaixo da baseline
+const BASE_PAD   = HEX_FLOOR * HEX_H + 20; // espaço abaixo da baseline
+const LBL_ZONE   = 16;  // altura das labels de classe em cima
+
+const MAX_H = Math.max(...CLASSES.flatMap(c => ['m','f'].map(g => dH(c.id, g))));
+const HEX_LINES = Math.ceil(MAX_H / HEX_H) + 1;
+
+const CANVAS_W = RULER_W + CLASSES.length * COL_STEP + CLASS_GAP;
+const CANVAS_H = LBL_ZONE + PAD_TOP + MAX_H + BASE_PAD;
+const BASE_Y   = LBL_ZONE + PAD_TOP + MAX_H;
+
+// cx do masculino de cada classe
+function mCx(i){ return RULER_W + i * COL_STEP + SW / 2; }
+// cx do feminino
+function fCx(i){ return mCx(i) + SW + PAIR_GAP; }
+
+// ── Canvas ──────────────────────────────────────────────────────────────────
+const cv = document.getElementById('cv');
+cv.width  = CANVAS_W;
+cv.height = CANVAS_H;
+const ctx = cv.getContext('2d');
+
+// Fundo
+ctx.fillStyle = '#0d0b08';
+ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+// Fundo da área da grade
+ctx.fillStyle = 'rgba(20,16,8,0.7)';
+ctx.fillRect(RULER_W, LBL_ZONE, CANVAS_W - RULER_W - 2, MAX_H + PAD_TOP);
+
+// Linhas horizontais de hex-height
+for(let n = 0; n <= HEX_LINES; n++){
+  const y = BASE_Y - n * HEX_H;
+  if(y < LBL_ZONE) break;
+  ctx.beginPath();
+  ctx.moveTo(RULER_W, y); ctx.lineTo(CANVAS_W - 2, y);
+  ctx.strokeStyle = n === 0 ? 'rgba(200,160,64,0.6)' : 'rgba(255,255,255,0.18)';
+  ctx.lineWidth   = n === 0 ? 1.5 : 1;
+  ctx.stroke();
+
+  if(n > 0){
+    ctx.font      = n % 2 === 0 ? 'bold 8px Georgia' : '7px Georgia';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = n % 2 === 0 ? 'rgba(200,165,80,0.7)' : 'rgba(200,165,80,0.35)';
+    ctx.fillText(n === 1 ? '1 hex' : `${n}×`, RULER_W - 5, y + 3);
+    ctx.beginPath();
+    ctx.moveTo(RULER_W - 4, y); ctx.lineTo(RULER_W, y);
+    ctx.strokeStyle = 'rgba(200,165,80,0.4)';
+    ctx.lineWidth = 1; ctx.stroke();
+  }
+}
+
+// Linha vertical da régua
+ctx.beginPath();
+ctx.moveTo(RULER_W, 0); ctx.lineTo(RULER_W, CANVAS_H);
+ctx.strokeStyle = 'rgba(200,160,64,0.25)';
+ctx.lineWidth = 1; ctx.stroke();
+
+// Separadores de classe
+CLASSES.forEach((_, i) => {
+  const x = RULER_W + i * COL_STEP;
+  ctx.beginPath();
+  ctx.moveTo(x, LBL_ZONE); ctx.lineTo(x, CANVAS_H);
+  ctx.strokeStyle = 'rgba(200,160,64,0.1)';
+  ctx.lineWidth = 1; ctx.stroke();
+});
+
+// Labels de classe (topo de cada par)
+CLASSES.forEach((cls, i) => {
+  const cx = RULER_W + i * COL_STEP + PAIR_W / 2;
+  ctx.font = '8px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(200,175,100,0.65)';
+  ctx.fillText(cls.nome, cx, LBL_ZONE - 4);
+});
+
+// Sub-labels M / F
+CLASSES.forEach((_, i) => {
+  ctx.font = '6px Georgia'; ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(160,140,80,0.45)';
+  ctx.fillText('♂', mCx(i), LBL_ZONE + 10);
+  ctx.fillText('♀', fCx(i), LBL_ZONE + 10);
+});
+
+// ── Overlay de sprites ───────────────────────────────────────────────────────
+const ov = document.getElementById('ov');
+ov.style.width  = CANVAS_W + 'px';
+ov.style.height = CANVAS_H + 'px';
+
+function place(id, g, cx){
+  const h = dH(id, g);
+  const div = document.createElement('div');
+  div.className = 'sp';
+  div.style.left = cx + 'px';
+  div.style.top  = (BASE_Y - h) + 'px';
+
+  const img = document.createElement('img');
+  img.src    = url(id, g);
+  img.alt    = `${id}_${g}`;
+  img.style.height = h + 'px';
+  img.onerror = () => { img.style.opacity = '0.07'; };
+
+  const lbl = document.createElement('div');
+  lbl.className   = 'sp-lbl';
+  lbl.textContent = `${DEF_H[id][g]}px`;
+
+  div.append(img, lbl);
+  ov.appendChild(div);
+}
+
+CLASSES.forEach((cls, i) => {
+  place(cls.id, 'm', mCx(i));
+  place(cls.id, 'f', fCx(i));
+});
+</script>
+</body>
+</html>
