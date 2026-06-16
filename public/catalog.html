@@ -380,6 +380,101 @@
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: rgba(200,160,64,0.3); border-radius: 2px; }
 
+    /* ── SIZE TAB ── */
+    #size-tab { padding: 0; display: flex; flex-direction: column; height: 100%; }
+
+    #size-picker {
+      padding: 10px 12px 6px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .size-picker-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 8px; flex-wrap: wrap;
+    }
+    .size-cat-btn {
+      font-size: 9px; letter-spacing: .8px; text-transform: uppercase;
+      border: 1px solid rgba(200,160,64,0.22); border-radius: 20px;
+      padding: 3px 10px; background: transparent;
+      color: var(--text-dim); cursor: pointer; transition: all .15s;
+    }
+    .size-cat-btn.active {
+      background: rgba(200,160,64,0.14); color: var(--gold);
+      border-color: rgba(200,160,64,0.5);
+    }
+    #size-clear {
+      margin-left: auto; font-size: 9px; letter-spacing: .8px;
+      text-transform: uppercase; border: 1px solid rgba(255,80,80,0.25);
+      border-radius: 20px; padding: 3px 10px; background: transparent;
+      color: rgba(220,100,80,0.6); cursor: pointer;
+    }
+    #size-clear:hover { color: #e06040; border-color: rgba(255,80,80,0.5); }
+
+    #size-chips-scroll {
+      display: flex; flex-wrap: wrap; gap: 5px;
+      max-height: 88px; overflow-y: auto;
+    }
+    .size-chip {
+      font-size: 9px; padding: 3px 9px; border-radius: 20px; cursor: pointer;
+      border: 1px solid rgba(200,160,64,0.20); background: rgba(0,0,0,0.3);
+      color: rgba(200,175,100,0.65); user-select: none; transition: all .12s;
+      white-space: nowrap;
+    }
+    .size-chip:hover  { border-color: rgba(200,160,64,0.5); color: var(--text); }
+    .size-chip.on {
+      background: rgba(200,160,64,0.15); border-color: var(--gold);
+      color: var(--gold2);
+    }
+    .size-chip.on::before { content: '✓ '; font-size: 8px; }
+
+    #size-selected-bar {
+      display: flex; flex-wrap: wrap; gap: 5px;
+      margin-top: 7px; min-height: 0;
+    }
+    .size-sel-chip {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 9px; padding: 2px 8px; border-radius: 20px;
+      background: rgba(200,160,64,0.12); border: 1px solid rgba(200,160,64,0.35);
+      color: var(--gold2); white-space: nowrap;
+    }
+    .size-sel-chip button {
+      background: none; border: none; color: rgba(255,100,80,0.6);
+      cursor: pointer; font-size: 11px; line-height: 1; padding: 0;
+    }
+    .size-sel-chip button:hover { color: #e05030; }
+
+    #size-arena {
+      flex: 1; overflow-x: auto; overflow-y: hidden;
+      position: relative;
+      background: #0e0b08;
+    }
+    #size-canvas { display: block; }
+    #size-units-overlay {
+      position: absolute; top: 0; left: 0;
+      pointer-events: none;
+    }
+    .sz-unit {
+      position: absolute;
+      display: flex; flex-direction: column; align-items: center;
+      transform: translateX(-50%);
+    }
+    .sz-unit img {
+      display: block; width: auto;
+      filter: drop-shadow(0 3px 10px rgba(0,0,0,0.9));
+    }
+    .sz-unit-lbl {
+      font-size: 7px; color: rgba(220,195,130,0.85); letter-spacing: .4px;
+      text-transform: uppercase; white-space: nowrap; margin-top: 2px;
+      background: rgba(0,0,0,0.65); padding: 1px 4px; border-radius: 2px;
+      text-align: center; max-width: 70px; overflow: hidden; text-overflow: ellipsis;
+    }
+    #size-empty {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(190,165,90,0.25); font-size: 12px; letter-spacing: 1px;
+      text-transform: uppercase; text-align: center; line-height: 1.8;
+    }
+
     /* ── CLASS PORTRAIT (taller) ── */
 .portrait-toggle {
       position: absolute; bottom: 6px; right: 6px; z-index: 2;
@@ -453,6 +548,7 @@
     <button class="tab-btn" data-tab="cenarios">Cenários</button>
     <button class="tab-btn" data-tab="roteiro">Roteiro</button>
     <button class="tab-btn" data-tab="checklist">✓ Check</button>
+    <button class="tab-btn" data-tab="size">📐 Size</button>
   </nav>
 </header>
 
@@ -472,6 +568,7 @@
   <div id="cenarios-tab"  class="tab-content"></div>
   <div id="roteiro-tab"   class="tab-content"></div>
   <div id="checklist-tab" class="tab-content"></div>
+  <div id="size-tab"      class="tab-content"></div>
 </main>
 
 <!-- Modal -->
@@ -1116,7 +1213,7 @@ function buildChecklistTab(){
 
 // ── TABS ──────────────────────────────────────────────────────────────
 
-let checklistBuilt = false;
+let checklistBuilt = false, sizeBuilt = false;
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const tab = btn.dataset.tab;
@@ -1126,9 +1223,270 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.getElementById(`${tab}-tab`).classList.add('active');
     document.getElementById('filter-bar').style.display = tab==='npcs' ? 'flex' : 'none';
     if(tab==='checklist' && !checklistBuilt){ buildChecklistTab(); checklistBuilt=true; }
+    if(tab==='size'      && !sizeBuilt)     { buildSizeTab();      sizeBuilt=true; }
     updateCount(tab);
   });
 });
+
+// ── SIZE TAB ──────────────────────────────────────────────────────────
+
+function buildSizeTab(){
+  const tab = document.getElementById('size-tab');
+
+  // ── Monta o banco de entidades disponíveis ────────────────────────
+  // Escala: 1 hex-height (RS=95px jogo) = 55px no comparador
+  const HEX_DISP = 55;
+  const GAME_HEX = 95;
+
+  // Alturas armazenadas conhecidas por classe
+  const CLASS_H = {
+    barbaro:{m:400,f:362}, guerreiro:{m:330,f:300},
+    arqueiro:{m:290,f:265}, mago:{m:290,f:265},
+    ladino:{m:275,f:252}, clerigo:{m:275,f:252},
+  };
+
+  const DB = {}; // key → {nome, path, storedH, color, type, short}
+
+  // Classes
+  for(const [id,cls] of Object.entries(CLASSES_DATA)){
+    for(const g of ['m','f']){
+      const key = `classe:${id}_${g}`;
+      DB[key] = {
+        nome:  `${cls.nome} ${g==='m'?'♂':'♀'}`,
+        short: `${cls.nome.slice(0,4)} ${g==='m'?'♂':'♀'}`,
+        path:  `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png`,
+        storedH: CLASS_H[id]?.[g] ?? 300,
+        color: cls.cor, type:'classe',
+      };
+    }
+  }
+  // NPCs
+  for(const [id,npc] of Object.entries(NPCS)){
+    const key = `npc:${id}`;
+    DB[key] = {
+      nome: npc.nome||id, short:(npc.nome||id).slice(0,8),
+      path: `catalogo/mhoried/npcs/${id}/peca_tabuleiro/${id}_peca.png`,
+      storedH: null, // descoberto ao carregar a imagem
+      color:'#3a5a7a', type:'npc',
+    };
+  }
+  // Inimigos
+  for(const en of (INIMIGOS_COMPLETO||[])){
+    const key = `inimigo:${en.id}`;
+    DB[key] = {
+      nome: en.nome||en.id, short:(en.nome||en.id).slice(0,8),
+      path: `catalogo/mhoried/inimigos/${en.id}/peca_tabuleiro/${en.id}_peca.png`,
+      storedH: null,
+      color:'#7a2a2a', type:'inimigo',
+    };
+  }
+
+  // ── Estado da seleção ─────────────────────────────────────────────
+  let selected = []; // ordered array of keys
+  let catFilter = 'classes'; // 'classes' | 'npcs' | 'inimigos'
+  const imgCache = {}; // key → HTMLImageElement (loaded)
+
+  // ── HTML ──────────────────────────────────────────────────────────
+  tab.innerHTML = `
+    <div id="size-picker">
+      <div class="size-picker-row">
+        <button class="size-cat-btn active" data-cat="classes">Classes</button>
+        <button class="size-cat-btn" data-cat="npcs">NPCs</button>
+        <button class="size-cat-btn" data-cat="inimigos">Inimigos</button>
+        <button id="size-clear">✕ Limpar</button>
+      </div>
+      <div id="size-chips-scroll"></div>
+      <div id="size-selected-bar"></div>
+    </div>
+    <div id="size-arena">
+      <div id="size-empty">Selecione personagens acima<br>para comparar alturas</div>
+      <canvas id="size-canvas" style="display:none"></canvas>
+      <div id="size-units-overlay"></div>
+    </div>`;
+
+  // ── Popula chips de categoria ─────────────────────────────────────
+  function renderChips(){
+    const wrap = document.getElementById('size-chips-scroll');
+    const keysForCat = Object.keys(DB).filter(k=>{
+      if(catFilter==='classes')  return DB[k].type==='classe';
+      if(catFilter==='npcs')     return DB[k].type==='npc';
+      if(catFilter==='inimigos') return DB[k].type==='inimigo';
+    });
+    wrap.innerHTML = keysForCat.map(k=>`
+      <div class="size-chip${selected.includes(k)?' on':''}" data-key="${k}">
+        ${DB[k].short}
+      </div>`).join('');
+    wrap.querySelectorAll('.size-chip').forEach(ch=>{
+      ch.addEventListener('click',()=>{
+        const k=ch.dataset.key;
+        if(selected.includes(k)) selected=selected.filter(x=>x!==k);
+        else selected.push(k);
+        renderChips(); renderSelectedBar(); renderArena();
+      });
+    });
+  }
+
+  // ── Barra de selecionados ─────────────────────────────────────────
+  function renderSelectedBar(){
+    const bar = document.getElementById('size-selected-bar');
+    if(!selected.length){ bar.innerHTML=''; return; }
+    bar.innerHTML = selected.map(k=>`
+      <div class="size-sel-chip" data-key="${k}">
+        <span>${DB[k].short}</span>
+        <button data-key="${k}" title="Remover">×</button>
+      </div>`).join('');
+    bar.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const k=btn.dataset.key;
+        selected=selected.filter(x=>x!==k);
+        renderChips(); renderSelectedBar(); renderArena();
+      });
+    });
+  }
+
+  // ── Arena de comparação ───────────────────────────────────────────
+  const RULER_W  = 42;
+  const UNIT_W   = 72;
+  const UNIT_GAP = 8;
+  const TOP_PAD  = 14;
+  const BASE_PAD = 26; // espaço abaixo da baseline (labels)
+  const MAX_HEX_LINES = 6; // régua até 6 hexes de altura
+  const ARENA_H = TOP_PAD + MAX_HEX_LINES * HEX_DISP + BASE_PAD;
+
+  function loadImg(key){
+    return new Promise(resolve=>{
+      if(imgCache[key]){ resolve(imgCache[key]); return; }
+      const img=new Image();
+      img.onload  = ()=>{ imgCache[key]=img; if(!DB[key].storedH) DB[key].storedH=img.naturalHeight; resolve(img); };
+      img.onerror = ()=>{ imgCache[key]=null; resolve(null); };
+      img.src = DB[key].path;
+    });
+  }
+
+  async function renderArena(){
+    const empty  = document.getElementById('size-empty');
+    const cv     = document.getElementById('size-canvas');
+    const overlay= document.getElementById('size-units-overlay');
+
+    if(!selected.length){
+      empty.style.display='flex'; cv.style.display='none';
+      overlay.innerHTML=''; return;
+    }
+    empty.style.display='none'; cv.style.display='block';
+
+    // Carrega todas as imagens
+    const imgs = await Promise.all(selected.map(k=>loadImg(k)));
+
+    // Calcula dimensões
+    const canvasW = RULER_W + selected.length * (UNIT_W + UNIT_GAP) + 10;
+    cv.width  = canvasW;
+    cv.height = ARENA_H;
+    overlay.style.width  = canvasW+'px';
+    overlay.style.height = ARENA_H+'px';
+    document.getElementById('size-arena').style.minHeight = ARENA_H+'px';
+
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0,0,canvasW,ARENA_H);
+
+    // Fundo
+    ctx.fillStyle='#0d0b08'; ctx.fillRect(0,0,canvasW,ARENA_H);
+
+    const baseY = TOP_PAD + MAX_HEX_LINES * HEX_DISP;
+
+    // Área de conteúdo
+    ctx.fillStyle='rgba(18,14,8,0.7)';
+    ctx.fillRect(RULER_W, 0, canvasW-RULER_W, baseY+4);
+
+    // Linhas de hex-height + régua
+    for(let n=0; n<=MAX_HEX_LINES; n++){
+      const lineY = baseY - n*HEX_DISP;
+      ctx.beginPath();
+      ctx.moveTo(RULER_W, lineY); ctx.lineTo(canvasW, lineY);
+      ctx.strokeStyle = n===0 ? 'rgba(200,160,64,0.6)' : 'rgba(200,160,64,0.13)';
+      ctx.lineWidth   = n===0 ? 1.5 : 1;
+      ctx.stroke();
+      if(n>0){
+        ctx.font='7px Georgia'; ctx.textAlign='right';
+        ctx.fillStyle='rgba(200,165,80,0.55)';
+        ctx.fillText(n===1?'1 hex':`${n}×`, RULER_W-5, lineY+3);
+        ctx.beginPath();
+        ctx.moveTo(RULER_W-5,lineY); ctx.lineTo(RULER_W,lineY);
+        ctx.strokeStyle='rgba(200,165,80,0.4)'; ctx.lineWidth=1; ctx.stroke();
+      }
+    }
+    // Label "base"
+    ctx.font='7px Georgia'; ctx.textAlign='right';
+    ctx.fillStyle='rgba(200,165,80,0.4)';
+    ctx.fillText('base', RULER_W-5, baseY+3);
+
+    // Linha divisória de régua
+    ctx.beginPath();
+    ctx.moveTo(RULER_W,0); ctx.lineTo(RULER_W,ARENA_H);
+    ctx.strokeStyle='rgba(200,160,64,0.25)'; ctx.lineWidth=1; ctx.stroke();
+
+    // Separadores de unidade
+    for(let i=0;i<selected.length;i++){
+      const cx = RULER_W + i*(UNIT_W+UNIT_GAP) + UNIT_W/2;
+      if(i>0){
+        ctx.beginPath();
+        ctx.moveTo(cx-UNIT_W/2-UNIT_GAP/2, 0);
+        ctx.lineTo(cx-UNIT_W/2-UNIT_GAP/2, ARENA_H);
+        ctx.strokeStyle='rgba(200,160,64,0.07)'; ctx.lineWidth=1; ctx.stroke();
+      }
+    }
+
+    // Renderiza imagens HTML
+    overlay.innerHTML='';
+    selected.forEach((key,i)=>{
+      const img   = imgs[i];
+      const entry = DB[key];
+      const storedH = (img?.naturalHeight) || entry.storedH || 300;
+      const dispH   = Math.round(storedH/GAME_HEX*HEX_DISP);
+      const safeDispH = Math.min(dispH, MAX_HEX_LINES*HEX_DISP-2);
+      const cx = RULER_W + i*(UNIT_W+UNIT_GAP) + UNIT_W/2;
+
+      const div=document.createElement('div');
+      div.className='sz-unit';
+      div.style.left= cx+'px';
+      div.style.top = (baseY-safeDispH-2)+'px';
+
+      if(img){
+        const el=document.createElement('img');
+        el.src   = entry.path;
+        el.alt   = entry.nome;
+        el.style.height = safeDispH+'px';
+        div.appendChild(el);
+      } else {
+        const ph=document.createElement('div');
+        ph.style.cssText=`height:${safeDispH}px;width:40px;opacity:0.12;
+          background:rgba(200,160,64,0.2);border:1px dashed rgba(200,160,64,0.3);
+          border-radius:4px;`;
+        div.appendChild(ph);
+      }
+
+      const lbl=document.createElement('div');
+      lbl.className='sz-unit-lbl'; lbl.textContent=entry.short;
+      div.appendChild(lbl);
+      overlay.appendChild(div);
+    });
+  }
+
+  // ── Eventos ───────────────────────────────────────────────────────
+  tab.querySelectorAll('.size-cat-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      tab.querySelectorAll('.size-cat-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      catFilter=btn.dataset.cat;
+      renderChips();
+    });
+  });
+  document.getElementById('size-clear').addEventListener('click',()=>{
+    selected=[]; renderChips(); renderSelectedBar(); renderArena();
+  });
+
+  renderChips();
+  renderArena();
+}
 
 // ── NPC FILTER ────────────────────────────────────────────────────────
 
