@@ -1257,8 +1257,8 @@ function buildSizeTab(){
   // Alturas armazenadas conhecidas por classe
   const CLASS_H = {
     barbaro:{m:400,f:362}, guerreiro:{m:330,f:300},
-    arqueiro:{m:290,f:265}, mago:{m:290,f:265},
-    ladino:{m:275,f:275}, clerigo:{m:275,f:252},
+    arqueiro:{m:290,f:265}, mago:{m:290,f:282},
+    ladino:{m:265,f:265}, clerigo:{m:275,f:252},
   };
 
   const DB = {}; // key → {nome, path, storedH, color, type, short}
@@ -1270,7 +1270,7 @@ function buildSizeTab(){
       DB[key] = {
         nome:  `${cls.nome} ${g==='m'?'♂':'♀'}`,
         short: `${cls.nome.slice(0,4)} ${g==='m'?'♂':'♀'}`,
-        path:  `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png?v=3`,
+        path:  `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png?v=4`,
         storedH: CLASS_H[id]?.[g] ?? 300,
         color: cls.cor, type:'classe',
       };
@@ -1430,8 +1430,8 @@ function buildSizeTab(){
       const lineY = baseY - n*hexDisp;
       ctx.beginPath();
       ctx.moveTo(RULER_W, lineY); ctx.lineTo(canvasW, lineY);
-      ctx.strokeStyle = n===0 ? 'rgba(200,160,64,0.75)' : 'rgba(200,160,64,0.32)';
-      ctx.lineWidth   = n===0 ? 1.5 : 1;
+      ctx.strokeStyle = n===0 ? 'rgba(200,160,64,0.95)' : 'rgba(200,160,64,0.55)';
+      ctx.lineWidth   = n===0 ? 2 : 1;
       ctx.stroke();
       if(n>0){
         ctx.font='7px Georgia'; ctx.textAlign='right';
@@ -1459,7 +1459,7 @@ function buildSizeTab(){
         ctx.beginPath();
         ctx.moveTo(cx-unitW/2-UNIT_GAP/2, 0);
         ctx.lineTo(cx-unitW/2-UNIT_GAP/2, arenaH);
-        ctx.strokeStyle='rgba(200,160,64,0.22)'; ctx.lineWidth=1; ctx.stroke();
+        ctx.strokeStyle='rgba(200,160,64,0.40)'; ctx.lineWidth=1; ctx.stroke();
       }
     }
 
