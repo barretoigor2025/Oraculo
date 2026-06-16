@@ -3407,13 +3407,25 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   // (naturalHeight = storedH calibrado = escala correta no grid HR=55)
   function _drawStandees(){
     ctxU.clearRect(0, 0, MAP_W, MAP_H);
+
+    // Linha de chão fixa para todos (sem offset par/ímpar)
+    const GROUND_Y = GY0 + 5 * RS + OOFF * 0.3;
+
+    // Linha de chão dourada
+    ctxU.beginPath();
+    ctxU.moveTo(0, GROUND_Y);
+    ctxU.lineTo(MAP_W, GROUND_Y);
+    ctxU.strokeStyle = 'rgba(200,160,64,0.55)';
+    ctxU.lineWidth   = 1.5;
+    ctxU.stroke();
+
     unidades.forEach(u=>{
       const img = u.img;
-      const {x, y} = hexCentro(u.col, u.row);
-      const foot  = y + OOFF * 0.3;
+      const {x} = hexCentro(u.col, u.row); // só usa x do hex
+      const foot = GROUND_Y;               // todos no mesmo chão
       if(img && img.naturalWidth > 0){
-        const dH = img.naturalHeight; // altura = storedH → escala real do hex
-        const dW = img.naturalWidth;  // largura mantém aspecto original
+        const dH = img.naturalHeight; // = storedH → proporcional ao hex
+        const dW = img.naturalWidth;
         ctxU.save();
         ctxU.filter = 'drop-shadow(0 4px 14px rgba(0,0,0,0.98))';
         ctxU.drawImage(img, x - dW/2, foot - dH, dW, dH);
