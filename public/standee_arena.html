@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Standees no Arena — Mhoried</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #060504;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; padding: 12px;
+    font-family: 'Georgia', serif;
+  }
+  h1 { color: #c8a040; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; text-align: center; }
+  .sub { color: rgba(190,165,90,0.38); font-size: 8px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; text-align: center; }
+  #zoom-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .z-btn {
+    width: 28px; height: 28px; border-radius: 7px;
+    border: 1px solid rgba(200,160,64,0.3); background: rgba(200,160,64,0.07);
+    color: #c8a040; font-size: 18px; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .z-btn:hover { background: rgba(200,160,64,0.18); }
+  #z-pct { font-size: 9px; color: rgba(200,165,80,0.6); min-width: 34px; text-align: center; letter-spacing: .5px; }
+  #scroll-wrap {
+    max-width: 100%; overflow: auto;
+    border: 1px solid rgba(200,160,64,0.18);
+    border-radius: 10px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.9);
+  }
+  #map-wrap { position: relative; overflow: hidden; }
+  canvas { position: absolute; top: 0; left: 0; }
+  #cv-top { position: relative; } /* top layer sets the size */
+  a.back {
+    display: inline-block; margin-top: 12px;
+    font-size: 9px; color: rgba(190,165,90,0.5);
+    text-decoration: none; letter-spacing: 1px;
+    border: 1px solid rgba(200,160,64,0.18); border-radius: 20px; padding: 3px 12px;
+  }
+  a.back:hover { color: #c8a040; }
+</style>
+</head>
+<body>
+<h1>Standees no Arena — Escala Real</h1>
+<div class="sub">Todos os personagens · grid hexagonal · HR = 55</div>
+<div id="zoom-row">
+  <button class="z-btn" id="z-out">−</button>
+  <span id="z-pct">100%</span>
+  <button class="z-btn" id="z-in">+</button>
+</div>
+<div id="scroll-wrap">
+  <div id="map-wrap">
+    <canvas id="cv-ter"></canvas>
+    <canvas id="cv-hex"></canvas>
+    <canvas id="cv-uni"></canvas>
+    <canvas id="cv-top"></canvas><!-- labels — sets layout size -->
+  </div>
+</div>
+<a class="back" href="catalog.html">← Catálogo</a>
+
+<script>
+// ── Constantes do Arena (idênticas ao arena.html) ────────────────────────
+const HR   = 55;
+const CS   = 82;   // column step
+const RS   = 95;   // row step
+const OOFF = 48;   // odd-column y offset
+const GX0  = 47;
+const GY0  = 80;
+const COLS = 13;
+const ROWS = 13;
+const LETRAS = 'ABCDEFGHIJKLM';
+
+// Apenas as linhas que queremos exibir (recorte do mapa)
+const ROW_STANDEE = 5;   // linha onde ficam os standees
+const SHOW_ROWS   = 10;  // quantas linhas do grid mostrar
+
+// ── Dados dos standees ───────────────────────────────────────────────────
+const DEF_H = {
+  barbaro:  {m:400, f:362},
+  guerreiro:{m:338, f:300},
+  arqueiro: {m:290, f:283},
+  mago:     {m:290, f:290},
+  ladino:   {m:313, f:330},
+  clerigo:  {m:305, f:297},
+};
+const REV = {
+  mago_f:'_r', arqueiro_f:'_r', guerreiro_m:'_r',
+  clerigo_m:'_r', clerigo_f:'_r2',
+  ladino_m:'_r3', ladino_f:'_r3',
+};
+
+const UNITS = [
+  {id:'barbaro',   g:'m', col:0},
+  {id:'barbaro',   g:'f', col:1},
+  {id:'guerreiro', g:'m', col:2},
+  {id:'guerreiro', g:'f', col:3},
+  {id:'arqueiro',  g:'m', col:4},
+  {id:'arqueiro',  g:'f', col:5},
+  {id:'mago',      g:'m', col:6},
+  {id:'mago',      g:'f', col:7},
+  {id:'ladino',    g:'m', col:8},
+  {id:'ladino',    g:'f', col:9},
+  {id:'clerigo',   g:'m', col:10},
+  {id:'clerigo',   g:'f', col:11},
+];
+
+function standeeUrl(id, g){
+  const r = REV[id+'_'+g] || '';
+  return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${r}_peca.png`;
+}
+
+// ── Canvas setup ──────────────────────────────────────────────────────────
+const MAP_W = GX0 + COLS * CS + HR + 10;
+const MAP_H = GY0 + SHOW_ROWS * RS + OOFF + HR + 10;
+
+const cvTer = document.getElementById('cv-ter');
+const cvHex = document.getElementById('cv-hex');
+const cvUni = document.getElementById('cv-uni');
+const cvTop = document.getElementById('cv-top');
+[cvTer, cvHex, cvUni, cvTop].forEach(cv => {
+  cv.width  = MAP_W;
+  cv.height = MAP_H;
+  cv.style.width  = MAP_W + 'px';
+  cv.style.height = MAP_H + 'px';
+});
+document.getElementById('map-wrap').style.width  = MAP_W + 'px';
+document.getElementById('map-wrap').style.height = MAP_H + 'px';
+
+const ctxTer = cvTer.getContext('2d');
+const ctxH   = cvHex.getContext('2d');
+const ctxU   = cvUni.getContext('2d');
+const ctxLbl = cvTop.getContext('2d');
+
+// ── Funções hex (idênticas ao arena.html) ────────────────────────────────
+function hexCentro(col, row){
+  return { x: GX0 + col*CS, y: GY0 + row*RS + (col%2===1 ? OOFF : 0) };
+}
+
+function hexPath(ctx, x, y){
+  ctx.beginPath();
+  for(let i=0; i<6; i++){
+    const a = Math.PI/3 * i;
+    i===0 ? ctx.moveTo(x + HR*Math.cos(a), y + HR*Math.sin(a))
+           : ctx.lineTo(x + HR*Math.cos(a), y + HR*Math.sin(a));
+  }
+  ctx.closePath();
+}
+
+// ── Terreno ───────────────────────────────────────────────────────────────
+function drawTerrain(){
+  // Fundo
+  ctxTer.fillStyle = '#1a1510';
+  ctxTer.fillRect(0, 0, MAP_W, MAP_H);
+
+  // Fills dos hexes
+  for(let c=0; c<COLS; c++){
+    for(let r=0; r<SHOW_ROWS; r++){
+      const {x, y} = hexCentro(c, r);
+      hexPath(ctxTer, x, y);
+      // Padrão alternado de terreno
+      const shade = (c+r) % 2 === 0 ? 0.06 : 0.03;
+      ctxTer.fillStyle = `rgba(180,150,80,${shade})`;
+      ctxTer.fill();
+    }
+  }
+
+  // Linha de chão dos standees (highlight da fileira deles)
+  for(let c=0; c<COLS; c++){
+    const {x, y} = hexCentro(c, ROW_STANDEE);
+    hexPath(ctxTer, x, y);
+    ctxTer.fillStyle = 'rgba(80,140,255,0.07)';
+    ctxTer.fill();
+    if(c < COLS-1){
+      // hex à frente também
+      const {x:x2, y:y2} = hexCentro(c, ROW_STANDEE+1);
+      hexPath(ctxTer, x2, y2);
+      ctxTer.fillStyle = 'rgba(30,60,120,0.05)';
+      ctxTer.fill();
+    }
+  }
+}
+
+// ── Grid hex ──────────────────────────────────────────────────────────────
+function drawGrid(){
+  ctxH.clearRect(0, 0, MAP_W, MAP_H);
+  for(let c=0; c<COLS; c++){
+    for(let r=0; r<SHOW_ROWS; r++){
+      const {x, y} = hexCentro(c, r);
+      hexPath(ctxH, x, y);
+      // Destaque na linha dos standees
+      if(r === ROW_STANDEE){
+        ctxH.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctxH.lineWidth   = 1.5;
+      } else {
+        ctxH.strokeStyle = 'rgba(255,255,255,0.14)';
+        ctxH.lineWidth   = 1;
+      }
+      ctxH.stroke();
+
+      // Coord label
+      ctxH.font      = '8px Georgia';
+      ctxH.textAlign = 'center';
+      ctxH.fillStyle = r === ROW_STANDEE
+        ? 'rgba(255,255,255,0.3)'
+        : 'rgba(255,255,255,0.1)';
+      ctxH.fillText(`${c+1}${LETRAS[r]||''}`, x, y + 3);
+    }
+  }
+}
+
+// ── Sprites ───────────────────────────────────────────────────────────────
+const imgCache = {};
+let loadedCount = 0;
+const totalImgs = UNITS.length;
+
+function onImgReady(){
+  if(++loadedCount >= totalImgs) drawUnits();
+}
+
+UNITS.forEach(u => {
+  const key = u.id+'_'+u.g;
+  const img = new Image();
+  img.onload  = onImgReady;
+  img.onerror = onImgReady;
+  img.src = standeeUrl(u.id, u.g);
+  imgCache[key] = img;
+});
+
+function drawUnits(){
+  ctxU.clearRect(0, 0, MAP_W, MAP_H);
+  ctxLbl.clearRect(0, 0, MAP_W, MAP_H);
+
+  UNITS.forEach(u => {
+    const {x, y} = hexCentro(u.col, ROW_STANDEE);
+    const img    = imgCache[u.id+'_'+u.g];
+    const sw     = HR * 3.2;   // 176px — exatamente como no arena.html
+    const foot   = y + OOFF * 0.3;
+
+    if(img && img.naturalWidth > 0){
+      // drawH proporcional ao naturalHeight/naturalWidth (mesmo cálculo do arena)
+      const drawH = sw * (img.naturalHeight / img.naturalWidth);
+      ctxU.save();
+      ctxU.filter = 'drop-shadow(0 4px 12px rgba(0,0,0,0.95))';
+      ctxU.drawImage(
+        img, 0, 0, img.naturalWidth, img.naturalHeight,
+        x - sw/2, foot - drawH,
+        sw, drawH
+      );
+      ctxU.restore();
+    } else {
+      // fallback: círculo colorido
+      ctxU.beginPath();
+      ctxU.arc(x, y, HR*.45, 0, Math.PI*2);
+      ctxU.fillStyle = '#556';
+      ctxU.fill();
+    }
+
+    // Label abaixo do hex
+    const lblY = foot + 30;
+    const clsNomes = {
+      barbaro:'Bárbaro', guerreiro:'Guerreiro', arqueiro:'Arqueiro',
+      mago:'Mago', ladino:'Ladino', clerigo:'Clérigo',
+    };
+    ctxLbl.font      = 'bold 8px Georgia';
+    ctxLbl.textAlign = 'center';
+    ctxLbl.fillStyle = 'rgba(220,190,100,0.85)';
+    ctxLbl.fillText(clsNomes[u.id] + (u.g==='m'?' ♂':' ♀'), x, lblY);
+
+    ctxLbl.font      = '7px Georgia';
+    ctxLbl.fillStyle = 'rgba(180,160,80,0.55)';
+    ctxLbl.fillText(DEF_H[u.id][u.g]+'px', x, lblY + 11);
+  });
+}
+
+// ── Zoom ─────────────────────────────────────────────────────────────────
+const ZOOM_STEPS = [0.35, 0.45, 0.55, 0.7, 0.85, 1.0];
+let zoomIdx = 5; // começa em 100%
+
+function applyZoom(){
+  const z = ZOOM_STEPS[zoomIdx];
+  const w = Math.round(MAP_W * z);
+  const h = Math.round(MAP_H * z);
+  [cvTer, cvHex, cvUni, cvTop].forEach(cv => {
+    cv.style.width  = w + 'px';
+    cv.style.height = h + 'px';
+  });
+  document.getElementById('map-wrap').style.width  = w + 'px';
+  document.getElementById('map-wrap').style.height = h + 'px';
+  document.getElementById('z-pct').textContent = Math.round(z*100) + '%';
+  document.getElementById('z-out').disabled = zoomIdx <= 0;
+  document.getElementById('z-in') .disabled = zoomIdx >= ZOOM_STEPS.length-1;
+}
+
+document.getElementById('z-out').addEventListener('click',()=>{ if(zoomIdx>0){ zoomIdx--; applyZoom(); }});
+document.getElementById('z-in') .addEventListener('click',()=>{ if(zoomIdx<ZOOM_STEPS.length-1){ zoomIdx++; applyZoom(); }});
+
+// ── Init ──────────────────────────────────────────────────────────────────
+drawTerrain();
+drawGrid();
+// drawUnits() será chamado quando todas as imagens carregarem
+</script>
+</body>
+</html>
