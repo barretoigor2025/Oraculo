@@ -10,6 +10,7 @@ const session = {
   playerId: localStorage.getItem('oraculo.playerId') ?? crypto.randomUUID(),
   playerName: '',
   classId: 'barbaro',
+  gender: 'm',
   roomId: '',
   room: null,
   unsubscribe: null,
@@ -30,8 +31,13 @@ function _persistSession() {
   localStorage.setItem('oraculo.playerId', session.playerId);
   localStorage.setItem('oraculo.playerName', session.playerName);
   localStorage.setItem('oraculo.classId', session.classId);
+  localStorage.setItem('oraculo.gender', session.gender);
   if (firebaseApp) localStorage.setItem('oraculo.fbConfig', JSON.stringify(firebaseApp.options));
   localStorage.setItem('oraculo.isHost', session.isHost ? '1' : '0');
+}
+
+function _retratoUrl(classId, gender) {
+  return `catalogo/mhoried/classes/${classId}/retrato/${classId}_${gender || 'm'}_retrato.png`;
 }
 
 function goToArena() {
@@ -145,7 +151,9 @@ function renderSlots() {
   for (let i = 0; i < 4; i++) {
     const c = chars[i];
     if (c) {
-      const portraitSrc = `portraits/${c.classId}_${c.gender || 'm'}.png`;
+      const portraitSrc = _retratoUrl(c.classId, c.gender);
+      const lvl = c.level || 1;
+      const camp = c.campaign || 'Mhoried';
       html += `
         <div class="isc-slot-card occupied" data-slot="${i}">
           <div class="isc-slot-portrait">
@@ -154,6 +162,7 @@ function renderSlots() {
           </div>
           <div class="isc-slot-nome">${escapeHtml(c.name)}</div>
           <div class="isc-slot-classe">${escapeHtml(c.className)}</div>
+          <div class="isc-slot-meta">Lv ${lvl} · ${escapeHtml(camp)}</div>
           <button class="isc-slot-del" data-del="${i}" title="Excluir">✕</button>
         </div>`;
     } else {
@@ -172,6 +181,7 @@ function renderSlots() {
       const c = chars[Number(card.dataset.slot)];
       session.playerName = c.name;
       session.classId = c.classId;
+      session.gender = c.gender || 'm';
       localStorage.setItem('oraculo.playerName', c.name);
       localStorage.setItem('oraculo.classId', c.classId);
       localStorage.setItem('oraculo.gender', c.gender || 'm');
@@ -228,6 +238,7 @@ function renderGenderButtons() {
     btn.onclick = () => {
       selectedGender = btn.dataset.gender;
       renderGenderButtons();
+      renderClassGrid();
       updateStatsPreview();
     };
   });
@@ -238,7 +249,10 @@ function renderClassGrid() {
   if (!grid) return;
   grid.innerHTML = Object.values(CLASSES).map(cls => `
     <button class="isc-class-btn ${cls.id === selectedClassId ? 'selected' : ''}" data-class="${cls.id}">
-      <span class="isc-class-icon">${cls.icon}</span>
+      <div class="isc-class-portrait">
+        <img src="${_retratoUrl(cls.id, selectedGender)}" alt="" onerror="this.style.display='none'">
+        <span>${cls.icon}</span>
+      </div>
       <span class="isc-class-name">${cls.name}</span>
     </button>
   `).join('');
@@ -293,13 +307,14 @@ function confirmarPersonagem() {
   const character = {
     name, classId: selectedClassId, className: cls.name,
     icon: cls.icon, maxHp: cls.maxHp, movement: cls.movement, attack: cls.attack,
-    gender: selectedGender,
+    gender: selectedGender, level: 1, campaign: 'Mhoried',
   };
   chars.push(character);
   saveCharacters(chars);
 
   session.playerName = name;
   session.classId = selectedClassId;
+  session.gender = selectedGender;
   localStorage.setItem('oraculo.playerName', name);
   localStorage.setItem('oraculo.classId', selectedClassId);
   localStorage.setItem('oraculo.gender', selectedGender);
@@ -371,7 +386,7 @@ async function enterRoom(roomId, isHost) {
   showScreen('isc-room');
 
   try {
-    await joinRoom(session.roomId, session.playerId, { name: session.playerName || 'Viajante', classId: session.classId });
+    await joinRoom(session.roomId, session.playerId, { name: session.playerName || 'Viajante', classId: session.classId, gender: session.gender || localStorage.getItem('oraculo.gender') || 'm' });
   } catch (err) {
     alert(`Erro ao entrar na sala: ${err.message}`);
     showScreen(session.onlineMode ? 'isc-lobby' : 'isc-slots');
@@ -433,16 +448,19 @@ function renderRoomPlayers(room) {
   const players = Object.values(room.players ?? {});
   list.innerHTML = players.map(p => {
     const gender = p.gender || 'm';
-    const portraitSrc = `portraits/${p.classId}_${gender}.png`;
+    const portraitSrc = _retratoUrl(p.classId, gender);
+    const className = CLASSES[p.classId]?.name || p.classId;
+    const isMe = p.id === session.playerId;
+    const isHost = isMe && session.isHost;
     return `
-    <div class="room-player-card${p.id === session.playerId && session.isHost ? ' is-host' : ''}">
-      ${p.id === session.playerId && session.isHost ? '<span class="room-host-badge">Host</span>' : ''}
+    <div class="room-player-card${isHost ? ' is-host' : ''}">
+      ${isHost ? '<span class="room-host-badge">Host</span>' : ''}
       <div class="room-portrait">
         <img src="${portraitSrc}" alt="" onerror="this.style.display='none'">
         <span>${p.icon}</span>
       </div>
       <div class="room-player-nome">${escapeHtml(p.name)}</div>
-      <div class="room-player-classe">${escapeHtml(p.classId)}</div>
+      <div class="room-player-classe">${escapeHtml(className)}</div>
     </div>`
   }).join('');
 

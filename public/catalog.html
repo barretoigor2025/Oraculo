@@ -269,6 +269,7 @@
       text-align: center; font-size: 8px; color: var(--text-dim);
       padding: 3px; letter-spacing: .8px; text-transform: uppercase;
       border-top: 1px solid var(--border); background: rgba(0,0,0,0.4);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .modal-title-area {
       flex: 1; padding: 14px 16px 14px; display: flex; flex-direction: column; gap: 6px;
@@ -966,7 +967,7 @@ window.openClassModal = function(id, _idx){
         <img src="${classStandee(id,g)}" alt="${g==='m'?'♂':'♀'}" style="height:${dispH}px" onerror="this.style.opacity='.15'">
       </div>
       <div class="modal-std-baseline"></div>
-      <div class="sprite-label">${g==='m'?'♂ Masc':'♀ Fem'} · ${stH}px</div>
+      <div class="sprite-label">${g==='m'?'♂ Masc':'♀ Fem'}</div>
     </div>`;
   }).join('');
 
