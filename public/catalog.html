@@ -804,11 +804,24 @@ function classCostas(id, g){ return `catalogo/mhoried/classes/${id}/sprites/cost
 const _REVISED_STANDEE = {mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r2',ladino_m:'_r3',ladino_f:'_r3'};
 function classStandee(id, g){ const r=_REVISED_STANDEE[id+'_'+g]||''; return `catalogo/mhoried/classes/${id}/peca_tabuleiro/${id}_${g}${r}_peca.png`; }
 
+// Migração v3: restaura valores halvados (v2) ao tamanho original
+(function(){
+  try{
+    if(localStorage.getItem('oraculo_sz_v2')&&!localStorage.getItem('oraculo_sz_v3')){
+      const h=JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}');
+      const h2={};
+      for(const k in h) h2[k]=Math.round(h[k]*2);
+      localStorage.setItem('oraculo_sz_heights',JSON.stringify(h2));
+      localStorage.setItem('oraculo_sz_v3','1');
+    }
+  }catch(e){}
+})();
+
 // Alturas de referência (px da imagem = hex-scale reference)
 const _STANDEE_DEF_H = {
-  barbaro:{m:200,f:181}, guerreiro:{m:169,f:150},
-  arqueiro:{m:145,f:142}, mago:{m:145,f:145},
-  ladino:{m:157,f:165}, clerigo:{m:153,f:149},
+  barbaro:{m:400,f:362}, guerreiro:{m:338,f:300},
+  arqueiro:{m:290,f:283}, mago:{m:290,f:290},
+  ladino:{m:313,f:330}, clerigo:{m:305,f:297},
 };
 function _getSzCustomHeights(){ try{ return JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}'); }catch(e){return{};} }
 function _standeeH(id, g){ const c=_getSzCustomHeights(); return c['classe:'+id+'_'+g] || _STANDEE_DEF_H[id]?.[g] || 300; }
@@ -1339,9 +1352,9 @@ function buildSizeTab(){
 
   // Alturas armazenadas conhecidas por classe
   const CLASS_H = {
-    barbaro:{m:200,f:181}, guerreiro:{m:169,f:150},
-    arqueiro:{m:145,f:142}, mago:{m:145,f:145},
-    ladino:{m:157,f:165}, clerigo:{m:153,f:149},
+    barbaro:{m:400,f:362}, guerreiro:{m:338,f:300},
+    arqueiro:{m:290,f:283}, mago:{m:290,f:290},
+    ladino:{m:313,f:330}, clerigo:{m:305,f:297},
   };
 
   const DB = {}; // key → {nome, path, storedH, color, type, short}

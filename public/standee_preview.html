@@ -79,12 +79,12 @@ const CLASSES = [
 
 // Alturas em pixels no arquivo (= hierarquia de porte)
 const STORED = {
-  barbaro:   { m:200, f:181 },
-  guerreiro: { m:169, f:150 },
-  arqueiro:  { m:145, f:142 },
-  mago:      { m:145, f:145 },
-  ladino:    { m:157, f:165 },
-  clerigo:   { m:153, f:149 },
+  barbaro:   { m:400, f:362 },
+  guerreiro: { m:338, f:300 },
+  arqueiro:  { m:290, f:283 },
+  mago:      { m:290, f:290 },
+  ladino:    { m:313, f:330 },
+  clerigo:   { m:305, f:297 },
 };
 
 // ── Escala do chart ───────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ const HEX_DISP   = 56;   // px por hex-height no chart
 // Altura de display de cada standee no chart
 function chartH(storedH) { return Math.round(storedH / GAME_HEX_H * HEX_DISP); }
 
-const MAX_STORED = 200;
+const MAX_STORED = 400;
 const MAX_DISP   = chartH(MAX_STORED);
 
 // ── Layout ────────────────────────────────────────────────────────────────
