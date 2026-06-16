@@ -3373,6 +3373,20 @@ window.addEventListener('resize',()=>{ clearTimeout(_resizeTimer); _resizeTimer=
 
 // ── Modo de visualização de standees (?standeetest=1) ──────────────────────
 if(new URLSearchParams(location.search).get('standeetest')==='1'){
+
+  // ── Remove a compressão do initScale: mapa em tamanho real, scrollável ──
+  const _world = document.getElementById('world');
+  _world.style.transform       = 'none';
+  _world.style.transformOrigin = 'top left';
+  _world.style.position        = 'relative';
+  // Faz o body ser scrollável como uma página normal
+  document.documentElement.style.overflow = 'auto';
+  document.body.style.overflow  = 'auto';
+  document.body.style.height    = 'auto';
+  document.body.style.minHeight = (MAP_H + 20) + 'px';
+  // Impede que resize re-aplique a compressão
+  window.initScale = function(){};
+
   const _SD_DATA = [
     {id:'barbaro',  g:'m',col:0 ,row:5},
     {id:'barbaro',  g:'f',col:1 ,row:5},
