@@ -68,16 +68,18 @@ html,body{
 #world img{ display:block; pointer-events:none; }
 canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 
-#btn-coords{
+#btn-coords,#btn-zoom{
   position:fixed;
   top:max(10px,calc(6px + env(safe-area-inset-top)));
-  right:10px; z-index:100;
+  z-index:100;
   background:rgba(0,0,0,.65); border:1px solid rgba(255,255,255,.25);
   border-radius:7px; color:rgba(255,255,255,.7);
   font-size:11px; font-weight:700; letter-spacing:.3px;
   padding:0 12px; height:36px; display:flex; align-items:center;
   cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
 }
+#btn-coords{ right:10px; }
+#btn-zoom{ right:94px; }
 #btn-coords.on{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.65); color:#fff; }
 
 /* ── Painel inferior ── */
@@ -479,6 +481,7 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 </div>
 
 <button id="btn-coords" onclick="toggleCoords()">⬡ Coords</button>
+<button id="btn-zoom" onclick="toggleZoom()">🔍 2×</button>
 
 <div id="turno-letreiro">
   <div id="turno-nome"></div>
@@ -606,7 +609,7 @@ function getPortraitAtaque(name){
   return {src:null,cor:'#888',icon:'⚔️'};
 }
 
-let _mapScale=1, _mapOffsetX=0;
+let _mapScale=1, _mapOffsetX=0, _zoom=1;
 const _fbIsHost = localStorage.getItem('oraculo.isHost') !== '0'; // true in solo/host, false for guest
 
 // ── DiceOverlay (Three.js) — dado vermelho sólido sobre o mapa ──
@@ -1030,7 +1033,10 @@ function hexesInRange(col,row,range,mover){
 }
 
 function screenToHex(sx,sy){
-  const mx=(sx-_mapOffsetX)/_mapScale,my=sy/_mapScale;
+  const s=_mapScale*_zoom;
+  const scrollX=_zoom>1?window.scrollX:0, scrollY=_zoom>1?window.scrollY:0;
+  const offsetX=_zoom>1?0:_mapOffsetX;
+  const mx=(sx-offsetX+scrollX)/s, my=(sy+scrollY)/s;
   let best=null,bestD2=Infinity;
   for(let c=0;c<COLS;c++) for(let r=0;r<ROWS;r++){
     const{x,y}=hexCentro(c,r);
@@ -2990,8 +2996,8 @@ function dispararAtaque(alvo){
 // ══════════════════════════════════════════
 document.getElementById('world').addEventListener('pointerdown',e=>{
   if(animating) return;
-  if(e.target.closest('#btn-coords,#bottom-panel,#atk-panel')) return;
-  e.preventDefault();
+  if(e.target.closest('#btn-coords,#btn-zoom,#bottom-panel,#atk-panel')) return;
+  if(_zoom===1) e.preventDefault();
   const hex=screenToHex(e.clientX,e.clientY);
 
   // Fase planejar_acao: toque em inimigo → entra em modo ataque básico
@@ -3324,32 +3330,90 @@ function onRoomUpdate(room){
 //  ESCALA + INIT
 // ══════════════════════════════════════════
 function initScale(){
-  if(document.getElementById('cin-conv')) return; // conversa ativa, não reposicionar
+  if(document.getElementById('cin-conv')) return;
   const minPanelH=130;
   const scaleByW=window.innerWidth/MAP_W;
   const scaleByH=(window.innerHeight-minPanelH)/MAP_H;
   _mapScale=Math.min(scaleByW,scaleByH);
 
-  const mapScreenW=Math.round(MAP_W*_mapScale);
-  const mapScreenH=Math.round(MAP_H*_mapScale);
-  _mapOffsetX=Math.max(0,Math.floor((window.innerWidth-mapScreenW)/2));
-
+  const s=_mapScale*_zoom;
   const world=document.getElementById('world');
-  world.style.transform=`scale(${_mapScale})`;
-  world.style.left=_mapOffsetX+'px';
-
-  const panelH=window.innerHeight-mapScreenH;
   const bp=document.getElementById('bottom-panel');
-  bp.style.top=mapScreenH+'px';
-  bp.style.height=panelH+'px';
 
-  // portrait responsivo ao painel — largura limitada, altura natural (sem corte)
-  const infoH=panelH-72;
-  const pw=Math.max(44,Math.min(72,Math.round((infoH-12)*0.68)));
-  const pp=document.getElementById('panel-portrait');
-  if(pp){ pp.style.width=pw+'px'; pp.style.height='auto'; }
+  if(_zoom>1){
+    // ── Modo scroll: mapa maior que a tela, rola nativamente ──
+    const scaledW=Math.ceil(MAP_W*s), scaledH=Math.ceil(MAP_H*s);
+    document.documentElement.style.overflow='auto';
+    document.documentElement.style.height='auto';
+    document.body.style.minWidth=scaledW+'px';
+    document.body.style.minHeight=(scaledH+minPanelH)+'px';
+    document.body.style.height='auto';
+    document.body.style.position='relative';
 
-  document.getElementById('atk-panel').style.bottom=(panelH+8)+'px';
+    world.style.transform=`scale(${s})`;
+    world.style.top='0px'; world.style.left='0px';
+    world.style.touchAction='pan-x pan-y';
+
+    // sincroniza scroll → posição do world (que é fixed)
+    if(!window._arenaScrollSync){
+      window._arenaScrollSync=()=>{
+        world.style.top=-window.scrollY+'px';
+        world.style.left=-window.scrollX+'px';
+      };
+      window.addEventListener('scroll',window._arenaScrollSync,{passive:true});
+    }
+
+    bp.style.top=''; bp.style.height='';
+    bp.style.position='fixed'; bp.style.bottom='0';
+
+    const pp=document.getElementById('panel-portrait');
+    if(pp){ pp.style.width='44px'; pp.style.height='auto'; }
+    document.getElementById('atk-panel').style.bottom='80px';
+
+    const zb=document.getElementById('btn-zoom');
+    if(zb) zb.textContent='🗺 1×';
+
+  } else {
+    // ── Modo fit: tudo cabe na tela (comportamento original) ──
+    document.documentElement.style.overflow='';
+    document.documentElement.style.height='';
+    document.body.style.minWidth='';
+    document.body.style.minHeight='';
+    document.body.style.height='';
+    document.body.style.position='';
+
+    if(window._arenaScrollSync){
+      window.removeEventListener('scroll',window._arenaScrollSync);
+      window._arenaScrollSync=null;
+    }
+
+    const mapScreenW=Math.round(MAP_W*_mapScale);
+    const mapScreenH=Math.round(MAP_H*_mapScale);
+    _mapOffsetX=Math.max(0,Math.floor((window.innerWidth-mapScreenW)/2));
+
+    world.style.transform=`scale(${_mapScale})`;
+    world.style.top='0'; world.style.left=_mapOffsetX+'px';
+    world.style.touchAction='none';
+
+    const panelH=window.innerHeight-mapScreenH;
+    bp.style.top=mapScreenH+'px'; bp.style.height=panelH+'px';
+    bp.style.position='fixed'; bp.style.bottom='';
+
+    const infoH=panelH-72;
+    const pw=Math.max(44,Math.min(72,Math.round((infoH-12)*0.68)));
+    const pp=document.getElementById('panel-portrait');
+    if(pp){ pp.style.width=pw+'px'; pp.style.height='auto'; }
+    document.getElementById('atk-panel').style.bottom=(panelH+8)+'px';
+
+    const zb=document.getElementById('btn-zoom');
+    if(zb) zb.textContent='🔍 2×';
+  }
+}
+
+function toggleZoom(){
+  _zoom=_zoom===1?2:1;
+  if(_zoom===1) window.scrollTo(0,0);
+  initScale();
 }
 function init(){
   initScale();
