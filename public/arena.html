@@ -3374,16 +3374,23 @@ window.addEventListener('resize',()=>{ clearTimeout(_resizeTimer); _resizeTimer=
 // ── Modo de visualização de standees (?standeetest=1) ──────────────────────
 if(new URLSearchParams(location.search).get('standeetest')==='1'){
 
-  // ── Remove a compressão do initScale: mapa em tamanho real, scrollável ──
+  // ── Remove compressão: mapa em tamanho real, body scrollável ─────────────
   const _world = document.getElementById('world');
+  // #world é position:fixed por padrão — muda pra absolute pra scrollar normal
+  _world.style.position        = 'absolute';
   _world.style.transform       = 'none';
   _world.style.transformOrigin = 'top left';
-  _world.style.position        = 'relative';
-  // Faz o body ser scrollável como uma página normal
+  _world.style.top             = '0';
+  _world.style.left            = '0';
+
   document.documentElement.style.overflow = 'auto';
-  document.body.style.overflow  = 'auto';
-  document.body.style.height    = 'auto';
-  document.body.style.minHeight = (MAP_H + 20) + 'px';
+  document.documentElement.style.height   = 'auto';
+  document.body.style.overflow   = 'auto';
+  document.body.style.height     = 'auto';
+  document.body.style.minHeight  = MAP_H + 'px';
+  document.body.style.minWidth   = MAP_W + 'px';
+  document.body.style.position   = 'relative';
+
   // Impede que resize re-aplique a compressão
   window.initScale = function(){};
 
