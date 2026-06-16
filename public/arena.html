@@ -862,6 +862,19 @@ const HABILIDADES = {
   ],
 };
 
+// Migração única: halvear alturas de standee (escala v1→v2)
+(function(){
+  try{
+    if(!localStorage.getItem('oraculo_sz_v2')){
+      const h=JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}');
+      const h2={};
+      for(const k in h) h2[k]=Math.round(h[k]/2);
+      localStorage.setItem('oraculo_sz_heights',JSON.stringify(h2));
+      localStorage.setItem('oraculo_sz_v2','1');
+    }
+  }catch(e){}
+})();
+
 // ══════════════════════════════════════════
 //  HERÓI DINÂMICO (localStorage)
 // ══════════════════════════════════════════
@@ -1731,7 +1744,7 @@ function renderUnits(){
         // sem compressão para SW fixo. Mantém aspecto real.
         const _szH  = (()=>{try{return JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}')}catch(e){return{}}})();
         const _cH   = _szH['classe:'+u.classId+'_'+u.gender];
-        const _defH = {barbaro:{m:400,f:362},guerreiro:{m:338,f:300},arqueiro:{m:290,f:283},mago:{m:290,f:290},ladino:{m:313,f:330},clerigo:{m:305,f:297}}[u.classId]?.[u.gender]||300;
+        const _defH = {barbaro:{m:200,f:181},guerreiro:{m:169,f:150},arqueiro:{m:145,f:142},mago:{m:145,f:145},ladino:{m:157,f:165},clerigo:{m:153,f:149}}[u.classId]?.[u.gender]||150;
         const targetH = (_cH || _defH) * (1 - clip);
         drawH = targetH;
         sw    = targetH * (u.img.naturalWidth / u.img.naturalHeight);
