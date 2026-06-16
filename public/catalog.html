@@ -249,17 +249,20 @@
     .modal-std-col {
       flex: 1; display: flex; flex-direction: column;
     }
-    .modal-std-col + .modal-std-col { border-left: 1px solid rgba(200,160,64,0.12); }
+    .modal-std-col + .modal-std-col { border-left: 1px solid rgba(200,160,64,0.18); }
+    .modal-std-baseline {
+      height: 2px; background: rgba(200,160,64,0.5);
+      margin: 0; flex-shrink: 0;
+    }
     .modal-std-grid {
       flex: 1; display: flex; align-items: flex-end; justify-content: center;
-      height: 130px; overflow: hidden; padding: 2px 3px 0;
-      background:
-        repeating-linear-gradient(
-          to top,
-          rgba(255,255,255,0.35) 0px, rgba(255,255,255,0.35) 1px,
-          transparent 1px, transparent 28px
-        ),
-        rgba(8,6,3,0.85);
+      height: 150px; overflow: hidden; padding: 2px 3px 0;
+      background-image: repeating-linear-gradient(
+        to top,
+        rgba(255,255,255,0.55) 0px, rgba(255,255,255,0.55) 1px,
+        transparent 1px, transparent 28px
+      );
+      background-color: rgba(8,6,3,0.88);
     }
     .modal-std-grid img { width: auto; max-width: 95%; object-fit: contain; object-position: bottom; }
     .sprite-label {
@@ -941,7 +944,7 @@ window.openClassModal = function(id, _idx){
     </div>`).join('');
 
   const _MAX_STH = 400; // bárbaro_m é o mais alto
-  const _MODAL_GRID_H = 130; // px da área de display no modal
+  const _MODAL_GRID_H = 150; // px da área de display no modal
   const standeePairs = ['m','f'].map(g=>{
     const stH = _standeeH(id, g);
     const dispH = Math.round(stH / _MAX_STH * _MODAL_GRID_H);
@@ -949,7 +952,8 @@ window.openClassModal = function(id, _idx){
       <div class="modal-std-grid">
         <img src="${classStandee(id,g)}" alt="${g==='m'?'♂':'♀'}" style="height:${dispH}px" onerror="this.style.opacity='.15'">
       </div>
-      <div class="sprite-label">${g==='m'?'Masculino':'Feminino'}</div>
+      <div class="modal-std-baseline"></div>
+      <div class="sprite-label">${g==='m'?'♂ Masc':'♀ Fem'} · ${stH}px</div>
     </div>`;
   }).join('');
 
