@@ -3367,9 +3367,54 @@ const mapaEl=document.getElementById('mapa');
 let _initFired=false;
 function _initOnce(){ if(!_initFired){ _initFired=true; init(); } }
 mapaEl.onload=_initOnce; mapaEl.onerror=_initOnce;
-_initOnce(); // não espera o mapa carregar — lógica de jogo inicia imediatamente
+_initOnce();
 let _resizeTimer;
 window.addEventListener('resize',()=>{ clearTimeout(_resizeTimer); _resizeTimer=setTimeout(initScale,80); });
+
+// ── Modo de visualização de standees (?standeetest=1) ──────────────────────
+if(new URLSearchParams(location.search).get('standeetest')==='1'){
+  const _SD_DATA = [
+    {id:'barbaro',  g:'m',col:0 ,row:5},
+    {id:'barbaro',  g:'f',col:1 ,row:5},
+    {id:'guerreiro',g:'m',col:2 ,row:5},
+    {id:'guerreiro',g:'f',col:3 ,row:5},
+    {id:'arqueiro', g:'m',col:4 ,row:5},
+    {id:'arqueiro', g:'f',col:5 ,row:5},
+    {id:'mago',     g:'m',col:6 ,row:5},
+    {id:'mago',     g:'f',col:7 ,row:5},
+    {id:'ladino',   g:'m',col:8 ,row:5},
+    {id:'ladino',   g:'f',col:9 ,row:5},
+    {id:'clerigo',  g:'m',col:10,row:5},
+    {id:'clerigo',  g:'f',col:11,row:5},
+  ];
+  const _SD_REV  = {mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r2',ladino_m:'_r3',ladino_f:'_r3'};
+
+  unidades = _SD_DATA.map(u=>{
+    const r   = _SD_REV[u.id+'_'+u.g]||'';
+    const src = `catalogo/mhoried/classes/${u.id}/peca_tabuleiro/${u.id}_${u.g}${r}_peca.png`;
+    return {nome:u.id+'_'+u.g, col:u.col, row:u.row, emoji:'🧍', cor:'#888',
+            imgSrc:src, img:null, tipo:'heroi', mov:0,
+            hp:100, maxHp:100, sp:100, maxSp:100,
+            portrait:src, itens:[], classId:u.id, gender:u.g};
+  });
+
+  // Oculta painel de jogo
+  const bp = document.getElementById('bottom-panel');
+  if(bp) bp.style.display='none';
+
+  // Carrega imagens e re-renderiza
+  let _sdLoaded = 0;
+  unidades.forEach(u=>{
+    const img = new Image();
+    img.onload = img.onerror = ()=>{
+      u.img = img;
+      // frameW = largura natural → drawH proporcional ao PNG
+      if(img.naturalWidth > 0) u.frameW = img.naturalWidth;
+      if(++_sdLoaded >= unidades.length){ renderGrid(); renderUnits(); }
+    };
+    img.src = u.imgSrc;
+  });
+}
 </script>
 </body>
 </html>
