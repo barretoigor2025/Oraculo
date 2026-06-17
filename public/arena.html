@@ -91,10 +91,13 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   z-index:200;
   box-shadow:0 -6px 24px rgba(0,0,0,0.85);
 }
+
+/* ── Faixa 1: Herói ── */
 #panel-info{
-  flex:1; min-height:0;
+  flex-shrink:0;
   display:flex; align-items:stretch;
   padding:8px 10px 6px; gap:0;
+  border-bottom:1px solid rgba(190,140,35,0.1);
 }
 
 /* ── Portrait ── */
@@ -117,10 +120,10 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 
 /* ── Stats ── */
 #panel-stats{
-  flex:0 0 auto; width:clamp(95px,29vw,148px);
-  display:flex; flex-direction:column; justify-content:center; gap:5px;
-  padding-right:10px;
-  border-right:1px solid rgba(190,140,35,0.12);
+  flex:1; min-width:0;
+  display:flex; flex-direction:column; justify-content:center; gap:4px;
+  padding:0 10px;
+  border-right:1px solid rgba(190,140,35,0.10);
 }
 #panel-char-name{
   font-size:12px; font-weight:900; color:#f5d878;
@@ -154,38 +157,55 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   font-size:10px; color:rgba(180,155,80,0.82);
   display:flex; align-items:center; gap:2px; font-weight:700;
 }
+.pmini-fase{
+  font-size:9px; color:rgba(150,130,70,0.55);
+  font-style:italic; margin-left:auto; flex-shrink:0;
+}
 #panel-bag-btn{
-  font-size:16px; cursor:pointer; padding:1px 4px; margin-left:auto;
+  font-size:16px; cursor:pointer; padding:1px 4px;
   touch-action:manipulation; -webkit-tap-highlight-color:transparent;
   filter:drop-shadow(0 0 4px rgba(200,150,40,0.45));
 }
 
-/* ── Centro ── */
-#panel-center{
-  flex:1; min-width:0;
-  display:flex; flex-direction:column; justify-content:center; gap:4px;
-  padding:0 12px;
+/* ── Verb buttons (fixed 3) ── */
+#panel-verbs{
+  flex-shrink:0; width:clamp(84px,26vw,108px);
+  display:flex; flex-direction:column; gap:4px;
+  padding-left:8px; justify-content:center;
 }
-.pcl{
-  font-size:8px; color:rgba(155,130,65,0.55);
-  text-transform:uppercase; letter-spacing:.8px;
+.verb-btn{
+  height:36px !important;
+  border-radius:8px !important;
 }
-.pct{
-  font-size:12px; color:rgba(225,195,115,0.9); font-weight:800;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  text-shadow:0 1px 4px rgba(0,0,0,0.9);
-}
-.pch{ font-size:10px; color:rgba(125,195,255,0.78); font-weight:600; }
+.verb-btn.inativo{ opacity:0.22 !important; }
 
-/* ── Alvo ── */
-#panel-target{
-  flex:0 0 auto; width:clamp(70px,21vw,106px);
-  display:flex; flex-direction:column; justify-content:center; gap:4px;
-  border-left:1px solid rgba(190,140,35,0.12);
-  padding-left:10px;
-  opacity:0; transition:opacity .25s; pointer-events:none;
+/* ── Faixa 2: Detalhe contextual ── */
+#panel-detail{
+  flex-shrink:0;
+  display:flex; align-items:stretch;
+  padding:5px 10px 4px; gap:0;
+  min-height:44px;
+  border-bottom:1px solid rgba(190,140,35,0.08);
 }
-#panel-target.visivel{ opacity:1; pointer-events:all; }
+#pd-left{
+  flex:1; min-width:0;
+  display:flex; flex-direction:column; gap:3px;
+  padding-right:10px;
+  border-right:1px solid rgba(190,140,35,0.1);
+}
+#pd-right{
+  flex:0 0 auto; width:clamp(80px,25vw,120px);
+  display:flex; flex-direction:column; gap:3px;
+  padding-left:10px;
+}
+.pd-head{
+  font-size:8px; text-transform:uppercase;
+  letter-spacing:.8px; color:rgba(155,130,65,0.55);
+}
+#pd-plan-body{
+  font-size:11px; color:rgba(220,190,110,0.9);
+  font-weight:700; line-height:1.45;
+}
 #pt-nome{
   font-size:11px; color:rgba(255,95,65,0.95); font-weight:800;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -194,7 +214,7 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 .pt-s{ font-size:9px; color:rgba(210,175,105,0.65); }
 #pt-sprite{
   align-self:center;
-  width:44px; height:56px;
+  width:38px; height:48px;
   overflow:hidden; border-radius:5px;
   background:rgba(139,69,19,0.15);
   border:1px solid rgba(139,69,19,0.45);
@@ -202,12 +222,33 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   margin-bottom:2px;
 }
 #pt-sprite img{ height:100%; width:auto; display:block; image-rendering:pixelated; }
+#pd-right-info{
+  font-size:10px; color:rgba(200,175,100,0.75);
+  line-height:1.4;
+}
 
-/* ── Botões ── */
+/* ── Faixa 3: Botões de confirmação ── */
 #action-row{
-  display:grid; grid-template-columns:repeat(4,1fr); gap:6px;
+  display:grid; grid-template-columns:1fr 2fr; gap:8px;
   padding:5px 10px;
-  padding-bottom:max(10px,env(safe-area-inset-bottom));
+  padding-bottom:max(8px,env(safe-area-inset-bottom));
+  flex-shrink:0;
+}
+
+/* ── Faixa 4: Log narrativo ── */
+#log-strip{
+  flex-shrink:0;
+  display:flex; align-items:center; gap:8px;
+  padding:4px 12px max(6px,env(safe-area-inset-bottom));
+  background:rgba(0,0,0,0.35);
+  border-top:1px solid rgba(190,140,35,0.12);
+  min-height:26px;
+}
+.log-icon{ font-size:13px; flex-shrink:0; }
+#log-text{
+  flex:1; font-size:10px; color:rgba(190,165,90,0.7);
+  font-style:italic; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
 }
 .act-btn{
   height:52px; border:none; border-radius:11px;
@@ -498,6 +539,8 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 </div>
 
 <div id="bottom-panel">
+
+  <!-- Faixa 1: Herói -->
   <div id="panel-info">
     <div id="panel-portrait"><span id="pp-emoji">⚔️</span></div>
     <div id="panel-stats">
@@ -515,25 +558,50 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
       <div id="panel-mini">
         <span class="pmini" id="pb-mov">👢 —</span>
         <span id="panel-bag-btn" onclick="abrirBagModal()">🎒</span>
+        <span id="pb-fase" class="pmini-fase"></span>
       </div>
     </div>
-    <div id="panel-center">
-      <div class="pcl" id="pc-label">Selecione</div>
-      <div class="pct" id="pc-main">um herói</div>
-      <div class="pch" id="pc-hex"></div>
+    <div id="panel-verbs">
+      <button class="act-btn verb-btn inativo" id="btn-mover"  onclick="clicarMover()" disabled>
+        <span class="btn-icon">👢</span><span class="btn-label">MOVER</span>
+      </button>
+      <button class="act-btn verb-btn inativo" id="btn-atacar" onclick="clicarAtacar()" disabled>
+        <span class="btn-icon">⚔️</span><span class="btn-label">ATACAR</span>
+      </button>
+      <button class="act-btn verb-btn inativo" id="btn-skill"  onclick="abrirSkillPanel()" disabled>
+        <span class="btn-icon">🪄</span><span class="btn-label">AÇÃO</span>
+      </button>
     </div>
-    <div id="panel-target">
-      <div id="pt-sprite"></div>
-      <div id="pt-nome"></div>
-      <div class="pt-s" id="pt-stats"></div>
-      <div class="psr">
+  </div>
+
+  <!-- Faixa 2: Detalhe contextual -->
+  <div id="panel-detail">
+    <div id="pd-left">
+      <div class="pd-head" id="pc-label">—</div>
+      <div id="pd-plan-body"></div>
+    </div>
+    <div id="pd-right">
+      <div id="pt-sprite" style="display:none"></div>
+      <div id="pt-nome" style="display:none"></div>
+      <div class="pt-s" id="pt-stats" style="display:none"></div>
+      <div class="psr" id="pt-hp-row" style="display:none">
         <span class="psi">❤️</span>
         <div class="pbar"><div class="pbar-fill hp" id="pt-hp-bar"></div></div>
         <span class="psv" id="pt-hp-val">—</span>
       </div>
+      <div id="pd-right-info"></div>
     </div>
   </div>
+
+  <!-- Faixa 3: Botões de confirmação -->
   <div id="action-row"></div>
+
+  <!-- Faixa 4: Log narrativo -->
+  <div id="log-strip">
+    <span class="log-icon">📜</span>
+    <span id="log-text">—</span>
+  </div>
+
 </div>
 
 <div id="bag-modal">
@@ -1800,29 +1868,63 @@ function render(){ renderTerrain(); renderSel(); renderGrid(); renderUnits(); }
 // ══════════════════════════════════════════
 //  HUD
 // ══════════════════════════════════════════
+function _updateLogStrip(text){
+  const el=document.getElementById('log-text');
+  if(el) el.textContent=text||'—';
+}
+
 function atualizarHUD(){
   renderBottomPanel();
   renderActionRow();
 }
 
+function _updateVerbBtns(){
+  const estados = {
+    'planejar_mover':  {mover:true,  atacar:false, skill:false},
+    'mover_ativo':     {mover:true,  atacar:false, skill:false},
+    'planejar_acao':   {mover:false, atacar:true,  skill:true},
+    'acao_ativa':      {mover:false, atacar:true,  skill:true},
+    'acao_pronta':     {mover:false, atacar:false, skill:false},
+    'resolvendo':      {mover:false, atacar:false, skill:false},
+    'turno_inimigo':   {mover:false, atacar:false, skill:false},
+    'aguardando':      {mover:false, atacar:false, skill:false},
+    'idle':            {mover:false, atacar:false, skill:false},
+  };
+  const e = estados[faseDoTurno] || {mover:false,atacar:false,skill:false};
+  ['mover','atacar','skill'].forEach(k=>{
+    const btn = document.getElementById('btn-'+k);
+    if(!btn) return;
+    btn.classList.toggle('ativo', e[k]);
+    btn.classList.toggle('inativo', !e[k]);
+    btn.disabled = !e[k];
+  });
+}
+
+function cancelarAcaoPlano(){
+  planoAtaque=null; modoAtaque=false; habAtual=null;
+  areaPreview=null; atkTargets=[];
+  faseDoTurno='planejar_acao';
+  _broadcastIntent();
+  renderActionRow(); renderBottomPanel();
+}
+window.cancelarAcaoPlano = cancelarAcaoPlano;
+
 function renderActionRow(){
   const row = document.getElementById('action-row');
   if(!row) return;
+  _updateVerbBtns();
 
   const configs = {
     'idle':           [],
     'planejar_mover': [
-      {id:'btn-mover',    icon:'👢', label:'MOVER',       fn:'clicarMover()',    ativo:true},
-      {id:'btn-nao-mover',icon:'⏭', label:'NÃO MOVER',   fn:'clicarNaoMover()', ativo:true},
+      {id:'btn-nao-mover',icon:'⏭', label:'SEM MOVER', fn:'clicarNaoMover()', ativo:true},
     ],
     'mover_ativo': [
       {id:'btn-cancelar', icon:'✕', label:'CANCELAR',  fn:'cancelarMover()',    ativo:true},
       ...(hexPreview ? [{id:'btn-ok-mov', icon:'✓', label:'OK', fn:'confirmarHexMover()', ativo:true}] : []),
     ],
     'planejar_acao': [
-      {id:'btn-atacar',   icon:'⚔️', label:'ATACAR',    fn:'clicarAtacar()',        ativo:true},
-      {id:'btn-skill',    icon:'📜', label:'SKILL',      fn:'abrirSkillPanel()',     ativo:true},
-      {id:'btn-finalizar',icon:'✓', label:'FINALIZAR',  fn:'finalizarTurno()',      ativo:true},
+      {id:'btn-finalizar',icon:'⏭', label:'PULAR ATAQUE', fn:'finalizarTurno()', ativo:true},
     ],
     'acao_ativa': [
       {id:'btn-cancelar', icon:'✕', label:'CANCELAR',   fn:'cancelarAtaqueAtual()', ativo:true},
@@ -1831,10 +1933,8 @@ function renderActionRow(){
         : []),
     ],
     'acao_pronta': [
+      {id:'btn-cancelar', icon:'✕', label:'CANCELAR',      fn:'cancelarAcaoPlano()', ativo:true},
       {id:'btn-finalizar',icon:'✓', label:'FINALIZAR TURNO', fn:'finalizarTurno()', ativo:true, extra:'destaque'},
-      ...(planoAtaque&&!planoAtaque.hab?.tipo?.match(/buff/)&&planoAtaque.alvo!==planoAtaque?.atacante
-        ? [{id:'btn-mudar-alvo',icon:'🔄', label:'MUDAR ALVO', fn:'voltarParaAlvo()', ativo:true}]
-        : []),
     ],
     'resolvendo':    [],
     'turno_inimigo': [],
@@ -1843,7 +1943,7 @@ function renderActionRow(){
 
   const btns = configs[faseDoTurno] || [];
   // Ajusta grid para número de botões
-  row.style.gridTemplateColumns = btns.length <= 1 ? '1fr' : btns.length === 2 ? '1fr 1fr' : `repeat(${btns.length},1fr)`;
+  row.style.gridTemplateColumns = btns.length <= 1 ? '1fr' : btns.length === 2 ? '1fr 2fr' : `repeat(${btns.length},1fr)`;
   row.innerHTML = btns.map(b=>`
     <button class="act-btn${b.ativo?' ativo':''}${b.extra?' '+b.extra:''}" id="${b.id}" onclick="${b.fn}">
       <span class="btn-icon">${b.icon}</span>
@@ -1875,6 +1975,7 @@ function iniciarTurno(unit){
   faseDoTurno='planejar_mover';
   const sub = unit.tipo==='heroi' ? 'escolha sua ação' : 'turno do inimigo';
   mostrarLetreiro('TURNO DO '+unit.nome.toUpperCase(), sub, '', 2000, ()=>{
+    _updateLogStrip('Turno de '+unit.nome);
     render(); renderActionRow(); renderBottomPanel();
   });
 }
@@ -2481,9 +2582,9 @@ function resolverMovimento(cb){
       mostrarLetreiro('TROPEÇOU!','perdeu o ataque','💀 Catástrofe — sem ação neste turno',1800,()=>cb(false));
     } else if(!r.sucesso){
       const metade=path.slice(0,Math.max(1,Math.ceil(path.length/2)));
-      animarMovimento(unit,metade,()=>{ _fbSyncUnit(unit); render(); cb(true); });
+      animarMovimento(unit,metade,()=>{ _fbSyncUnit(unit); render(); _updateLogStrip(unit.nome+' moveu parcialmente'); cb(true); });
     } else {
-      animarMovimento(unit,path,()=>{ _fbSyncUnit(unit); render(); cb(true); });
+      animarMovimento(unit,path,()=>{ _fbSyncUnit(unit); render(); _updateLogStrip(unit.nome+' moveu para '+hexLabel(unit.col,unit.row)); cb(true); });
     }
   });
 }
@@ -2532,9 +2633,9 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
       DiceOverlay.mostrar(playlist,results=>{
         const dmg=results[0].resultado;
         for(const e of areaAlvos) e.hp=Math.max(0,e.hp-dmg);
-        // Remove inimigos mortos imediatamente do mapa
         unidades=unidades.filter(u=>u.tipo!=='inimigo'||u.hp>0);
         if(window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
+        _updateLogStrip(atacante.nome+' causou '+dmg+' de dano em área');
         render(); renderBottomPanel(); cb();
       });
     });
@@ -2584,10 +2685,11 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
           }];
           if(window._fbBroadcastDice) window._fbBroadcastDice(dmgPlaylist);
           DiceOverlay.mostrar(dmgPlaylist, dmgResults=>{
-            alvo.hp=Math.max(0,alvo.hp-dmgResults[0].resultado);
-            // Remove inimigo morto imediatamente do mapa
+            const dmg=dmgResults[0].resultado;
+            alvo.hp=Math.max(0,alvo.hp-dmg);
             if(alvo.tipo==='inimigo'&&alvo.hp<=0) unidades=unidades.filter(u=>u!==alvo);
             if(window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
+            _updateLogStrip(atacante.nome+' atacou '+alvo.nome+' — '+dmg+' de dano');
             render(); renderBottomPanel(); cb();
           });
         } else {
@@ -2814,16 +2916,25 @@ function renderBottomPanel(){
   document.getElementById('pb-sp-val').textContent = u.maxSp>1?(u.sp+'/'+u.maxSp):'—';
   document.getElementById('pb-mov').textContent = '👢 '+u.mov+'/'+( MOV_CLASSE[u.nome]||u.mov);
 
-  // ── Centro de info: tracker visual de fases do plano ──
+  // ── Fase textual em #pb-fase ──
+  const faseTexto = {
+    planejar_mover:'planejando', mover_ativo:'movendo',
+    planejar_acao:'escolhendo', acao_ativa:'mirando',
+    acao_pronta:'pronto', resolvendo:'executando',
+    turno_inimigo:'inimigo age', aguardando:'aguardando', idle:''
+  };
+  const pbFase = document.getElementById('pb-fase');
+  if(pbFase) pbFase.textContent = faseTexto[faseDoTurno]||'';
+
+  // ── Faixa 2: detalhe contextual ──
   {
-    const elL=document.getElementById('pc-label');
-    const elM=document.getElementById('pc-main');
-    const elH=document.getElementById('pc-hex');
-    if(elL&&elM&&elH){
+    const elL = document.getElementById('pc-label');
+    const elBody = document.getElementById('pd-plan-body');
+    if(elL && elBody){
       const sep=`<span style="opacity:.30"> › </span>`;
-      const clA='color:#ddb840';   // fase ativa
-      const clD='color:#72d668';   // fase concluída
-      const clO='opacity:.28';     // fase inativa
+      const clA='color:#ddb840';
+      const clD='color:#72d668';
+      const clO='opacity:.28';
 
       const s1done  =!['planejar_mover','mover_ativo','idle'].includes(faseDoTurno);
       const s1active=['planejar_mover','mover_ativo'].includes(faseDoTurno);
@@ -2831,8 +2942,8 @@ function renderBottomPanel(){
       const s2active=['planejar_acao','acao_ativa'].includes(faseDoTurno);
       const s3active=faseDoTurno==='acao_pronta';
 
-      const movT =s1done?'✓ '+(planoMovimento?hexLabel(planoMovimento.col,planoMovimento.row):'sem mov'):'① Mover';
-      const acT  =s2done?'✓ '+(planoAtaque?.hab?.nome||'ação'):'② Ação';
+      const movT=s1done?'✓ '+(planoMovimento?hexLabel(planoMovimento.col,planoMovimento.row):'sem mov'):'① Mover';
+      const acT =s2done?'✓ '+(planoAtaque?.hab?.nome||'ação'):'② Ação';
       const tracker=`<span style="${s1done?clD:s1active?clA:clO}">${movT}</span>${sep}`+
                     `<span style="${s2done?clD:s2active?clA:clO}">${acT}</span>${sep}`+
                     `<span style="${s3active?clA:clO}">③ Confirmar</span>`;
@@ -2840,69 +2951,81 @@ function renderBottomPanel(){
       if(faseDoTurno==='aguardando'){
         const nm=_currentTurnPlayerId==='enemy'?'Inimigos':_currentTurnPlayerName||'outro jogador';
         elL.innerHTML=`<span style="${clO}">⏳ AGUARDANDO</span>`;
-        elM.textContent=nm; elH.textContent='turno de outro jogador';
+        elBody.textContent=nm;
       } else if(faseDoTurno==='turno_inimigo'){
         elL.innerHTML=`<span style="${clO}">⏳ INIMIGO</span>`;
-        elM.textContent='aguardando…'; elH.textContent='';
+        elBody.textContent='aguardando…';
       } else if(!selUnit){
         elL.innerHTML=`<span style="${clO}">Selecione um herói</span>`;
-        elM.textContent='—'; elH.textContent='';
+        elBody.textContent='—';
       } else if(faseDoTurno==='planejar_mover'){
         elL.innerHTML=tracker;
-        elM.textContent='Iniciar turno';
-        elH.textContent='MOVER → escolher destino  ·  NÃO MOVER → ir à ação';
+        elBody.innerHTML=`Iniciar turno &nbsp;<span style="opacity:.55;font-size:9px">MOVER ou SEM MOVER</span>`;
       } else if(faseDoTurno==='mover_ativo'){
         elL.innerHTML=tracker;
-        elM.textContent=hexPreview?hexLabel(hexPreview.col,hexPreview.row):'Toque em hex azul';
-        elH.textContent=hexPreview?'OK para confirmar  ·  CANCELAR para voltar':selUnit.mov+' hexes disponíveis';
+        elBody.innerHTML=hexPreview
+          ? `<span style="color:#7aa0c8">Destino:</span> ${hexLabel(hexPreview.col,hexPreview.row)} — confirme`
+          : `${selUnit.mov} hexes disponíveis`;
       } else if(faseDoTurno==='planejar_acao'){
         elL.innerHTML=tracker;
-        elM.textContent='Escolher ação';
-        elH.textContent='ATACAR  ·  SKILL  ·  FINALIZAR sem ação';
+        elBody.innerHTML=planoMovimento
+          ? `<span style="color:#a0d8a0">Movendo para ${hexLabel(planoMovimento.col,planoMovimento.row)}</span><br><span style="opacity:.65;font-size:9px">Escolha ATACAR ou AÇÃO</span>`
+          : `Escolha ATACAR ou AÇÃO`;
       } else if(faseDoTurno==='acao_ativa'){
         elL.innerHTML=tracker;
-        elM.textContent=habAtual?.nome||'?';
-        elH.textContent='Alcance '+(habAtual?.alcance||'?')+'  ·  selecione o alvo';
+        elBody.innerHTML=`<span style="color:#cc8844">${habAtual?.nome||'?'}</span> — Alcance ${habAtual?.alcance||'?'}`;
       } else if(faseDoTurno==='acao_pronta'){
         elL.innerHTML=tracker;
         const isSelf=planoAtaque?.alvo===planoAtaque?.atacante;
         const alvN=isSelf?'si mesmo':(planoAtaque?.alvo?.nome||(planoAtaque?.alvoHex?hexLabel(planoAtaque.alvoHex.col,planoAtaque.alvoHex.row):'?'));
-        elM.textContent=(planoAtaque?.hab?.nome||'?')+' → '+alvN;
-        elH.textContent='✓ toque FINALIZAR TURNO para executar';
+        elBody.innerHTML=`<span style="color:#e8c060">${planoAtaque?.hab?.nome||'?'}</span> → ${alvN}`;
       } else if(faseDoTurno==='resolvendo'){
         elL.innerHTML=`<span style="${clO}">⚙️ EXECUTANDO</span>`;
-        elM.textContent='…'; elH.textContent='';
+        elBody.textContent='…';
       } else {
         elL.textContent='Posição';
-        elM.textContent=hexLabel(selUnit.col,selUnit.row);
-        elH.textContent=moveHexes.length+' hexes de mov.';
+        elBody.textContent=hexLabel(selUnit.col,selUnit.row);
       }
     }
   }
 
-  // Target panel (enemy in attack mode)
-  const targetPanel = document.getElementById('panel-target');
+  // ── Coluna direita: inimigo em mira ──
   const enemy = (modoAtaque && atkTargets.length>0)
     ? unidades.find(e=>e.tipo==='inimigo'&&atkTargets.some(h=>h.col===e.col&&h.row===e.row))
     : null;
+  const ptSprite  = document.getElementById('pt-sprite');
+  const ptNome    = document.getElementById('pt-nome');
+  const ptStats   = document.getElementById('pt-stats');
+  const ptHpRow   = document.getElementById('pt-hp-row');
+  const pdRightInfo = document.getElementById('pd-right-info');
   if(enemy){
-    const ptSprite = document.getElementById('pt-sprite');
     if(enemy.imgSrc){
-      ptSprite.innerHTML = `<img src="${enemy.imgSrc}" alt="${enemy.nome}">`;
+      ptSprite.innerHTML=`<img src="${enemy.imgSrc}" alt="${enemy.nome}">`;
     } else {
-      ptSprite.innerHTML = `<span style="font-size:22px">${enemy.emoji||'👹'}</span>`;
+      ptSprite.innerHTML=`<span style="font-size:22px">${enemy.emoji||'👹'}</span>`;
     }
-    ptSprite.style.background = enemy.cor+'18';
-    ptSprite.style.borderColor = enemy.cor+'70';
-    document.getElementById('pt-nome').textContent = enemy.nome;
-    document.getElementById('pt-stats').textContent = '🛡️ '+(enemy.ac||8);
-    document.getElementById('pt-hp-bar').style.width = Math.round(enemy.hp/enemy.maxHp*100)+'%';
-    document.getElementById('pt-hp-val').textContent = enemy.hp+'/'+enemy.maxHp;
-    targetPanel.classList.add('visivel');
+    ptSprite.style.background=enemy.cor+'18';
+    ptSprite.style.borderColor=enemy.cor+'70';
+    ptNome.textContent=enemy.nome;
+    ptStats.textContent='🛡️ '+(enemy.ac||8);
+    document.getElementById('pt-hp-bar').style.width=Math.round(enemy.hp/enemy.maxHp*100)+'%';
+    document.getElementById('pt-hp-val').textContent=enemy.hp+'/'+enemy.maxHp;
+    [ptSprite,ptNome,ptStats,ptHpRow].forEach(el=>{ if(el) el.style.display=''; });
+    if(pdRightInfo) pdRightInfo.textContent='';
+  } else if(faseDoTurno==='acao_pronta'&&planoAtaque){
+    [ptSprite,ptNome,ptStats,ptHpRow].forEach(el=>{ if(el) el.style.display='none'; });
+    if(pdRightInfo){
+      const hab=planoAtaque.hab;
+      const alvN=planoAtaque.alvo===planoAtaque.atacante?'si mesmo':(planoAtaque.alvo?.nome||'—');
+      pdRightInfo.innerHTML=`<div style="color:rgba(180,150,80,.7)">Alvo: <b style="color:#e8c060">${alvN}</b></div>`+
+        (hab?.tipo?`<div style="font-size:9px;opacity:.6">${hab.tipo}</div>`:'');
+    }
   } else {
-    targetPanel.classList.remove('visivel');
+    [ptSprite,ptNome,ptStats,ptHpRow].forEach(el=>{ if(el) el.style.display='none'; });
+    if(pdRightInfo) pdRightInfo.textContent='';
   }
 
+  _updateVerbBtns();
 }
 
 function selecionarHabilidade(hab){
@@ -3334,7 +3457,7 @@ function onRoomUpdate(room){
 // ══════════════════════════════════════════
 function initScale(){
   if(document.getElementById('cin-conv')) return;
-  const minPanelH=130;
+  const minPanelH=200;
   const scaleByW=window.innerWidth/MAP_W;
   const scaleByH=(window.innerHeight-minPanelH)/MAP_H;
   _mapScale=Math.min(scaleByW,scaleByH);
@@ -3402,8 +3525,8 @@ function initScale(){
     bp.style.top=mapScreenH+'px'; bp.style.height=panelH+'px';
     bp.style.position='fixed'; bp.style.bottom='';
 
-    const infoH=panelH-72;
-    const pw=Math.max(44,Math.min(72,Math.round((infoH-12)*0.68)));
+    const infoH=80;
+    const pw=Math.max(44,Math.min(68,Math.round(infoH*0.78)));
     const pp=document.getElementById('panel-portrait');
     if(pp){ pp.style.width=pw+'px'; pp.style.height='auto'; }
     document.getElementById('atk-panel').style.bottom=(panelH+8)+'px';
