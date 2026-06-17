@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - claude/firebase-setup-check-ThkUc
   workflow_dispatch:
 
 permissions:
