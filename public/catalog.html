@@ -1011,7 +1011,9 @@ window.openNpcModal = function(id, _idx){
   </div>`;
 
   const sections = [
+    npc.historia       && ['História',          npc.historia],
     npc.descFisica     && ['Aparência Física',  npc.descFisica],
+    npc.interacao      && ['Perfil Social',     npc.interacao],
     npc.personalidade  && ['Personalidade',     npc.personalidade],
     npc.conhecimentos  && ['O que Sabe',        npc.conhecimentos],
     npc.formaDeFalar   && ['Forma de Falar',    npc.formaDeFalar],
@@ -1047,25 +1049,26 @@ window.openEnemyModal = function(id, _idx){
     <div class="sprite-label">Standee</div>
   </div>`;
 
+  const enSections = [
+    en.historia   && ['História',       en.historia],
+    en.interacao  && ['Comportamento',  en.interacao],
+    en.desc       && ['Descrição',      en.desc],
+  ].filter(Boolean).map(([t,c])=>`
+    <div class="section">
+      <div class="section-title">${t}</div>
+      <div class="section-text">${c}</div>
+    </div>`).join('');
+
   document.getElementById('modal-inner').innerHTML = `
     <div class="modal-header">
       <div class="modal-sprites" style="min-width:90px;max-width:120px">${enStSlot}</div>
       <div class="modal-title-area">
         <div class="modal-name">💀 ${en.nome}</div>
         <div class="modal-cat"><span class="cat-badge cat-inimigo">${en.tipo}</span></div>
-        <div class="modal-feat" style="margin-top:12px">${en.desc}</div>
+        <div class="modal-feat" style="margin-top:12px">${en.historia ? en.historia.slice(0,120)+'…' : en.desc}</div>
       </div>
     </div>
-    <div class="modal-body">
-      <div class="section">
-        <div class="section-title">Tipo de Criatura</div>
-        <div class="section-text">${en.tipo}</div>
-      </div>
-      <div class="section">
-        <div class="section-title">Descrição</div>
-        <div class="section-text">${en.desc}</div>
-      </div>
-    </div>`;
+    <div class="modal-body">${enSections || `<div class="section"><div class="section-title">Descrição</div><div class="section-text">${en.desc}</div></div>`}</div>`;
   openModal();
 };
 
