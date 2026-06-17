@@ -3212,6 +3212,13 @@ function _loadSprite(u){
         fb.onload=()=>{u.img=fb;renderUnits();};
         fb.onerror=()=>renderUnits();
         fb.src=`catalogo/mhoried/inimigos/${u.bestiaryId}/peca_tabuleiro/${u.bestiaryId}_peca.png`;
+      } else if(u.classId&&u.gender){
+        const _rsMap={mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r2',ladino_m:'_r3',ladino_f:'_r3'};
+        const rev=_rsMap[u.classId+'_'+u.gender]||'';
+        const fb=new Image();
+        fb.onload=()=>{u.img=fb;renderUnits();};
+        fb.onerror=()=>renderUnits();
+        fb.src=`catalogo/mhoried/classes/${u.classId}/peca_tabuleiro/${u.classId}_${u.gender}${rev}_peca.png`;
       } else { renderUnits(); }
     };
     img.src=u.imgSrc;
