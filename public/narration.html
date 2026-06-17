@@ -1126,17 +1126,33 @@ async function gerarFalaIA() {
     .map(id => `• ${NPCS[id].nome}: ${(NPCS[id].personalidade || '').split('.')[0]}`)
     .join('\n');
 
+  const ia = npc.ia || {};
+  const personalidade = ia.personalidade || npc.personalidade || '';
+  const formaFalar   = ia.forma_de_falar || npc.formaDeFalar || '';
+  const objetivosStr = ia.objetivos?.length
+    ? '- ' + ia.objetivos.join('\n- ')
+    : '';
+  const gatilhosPos = ia.gatilhos_positivos?.length
+    ? ia.gatilhos_positivos.join(', ')
+    : '';
+  const gatilhosNeg = ia.gatilhos_negativos?.length
+    ? ia.gatilhos_negativos.join(', ')
+    : '';
+
   const systemContent =
-`Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. Jogadores reais estão interagindo com você agora. Seja completamente este personagem.
+`${ia.prompt_sistema ? ia.prompt_sistema + '\n\n' : ''}Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. Jogadores reais estão interagindo com você agora. Seja completamente este personagem.
 
 QUEM VOCÊ É:
-${npc.personalidade}
+${personalidade}
 
 O QUE VOCÊ SABE (revele aos poucos conforme a conversa justificar — nunca tudo de uma vez):
-${npc.conhecimentos}
+${npc.conhecimentos || ''}
+${objetivosStr ? `\nSEUS OBJETIVOS ATUAIS:\n${objetivosStr}` : ''}
+${gatilhosPos ? `\nO QUE TE AGRADA: ${gatilhosPos}` : ''}
+${gatilhosNeg ? `\nO QUE TE IRRITA: ${gatilhosNeg}` : ''}
 
 SUA FORMA DE FALAR:
-${npc.formaDeFalar}
+${formaFalar}
 
 SITUAÇÃO ATUAL — ${cena?.titulo ?? ''}:
 ${situacaoNarrativa}
