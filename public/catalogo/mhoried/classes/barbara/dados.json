@@ -1,0 +1,12 @@
+{
+  "id": "barbara",
+  "nome": "Bárbara",
+  "emoji": "🪓",
+  "desc": "Força bruta e resistência. Maior PV de todas as classes.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "classe",
+  "assets": {
+    "retrato": "retrato/barbara_retrato.png",
+    "peca": "peca_tabuleiro/barbara_peca.png"
+  }
+}

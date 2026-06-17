@@ -236,6 +236,55 @@ html,body{
   font-style:italic;
 }
 
+/* ── Card de ATO (ação/reação separada da fala) ── */
+.dialogo-acao{
+  align-self:stretch;
+  background:rgba(200,150,30,.06);
+  border:1px solid rgba(190,140,30,.17);
+  border-radius:8px;
+  padding:6px 14px;
+  font-size:11px;
+  color:rgba(215,185,105,.58);
+  font-style:italic;
+  text-align:center;
+  letter-spacing:.3px;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  line-height:1.4;
+}
+.dialogo-acao-nome{
+  font-weight:700;font-style:normal;
+  color:rgba(240,200,80,.65);margin-right:2px;
+}
+
+/* ── NPC quick-pick chips ── */
+#npc-chips{
+  display:flex;gap:6px;flex-wrap:wrap;
+  padding:0 2px 2px;
+  min-height:0;
+}
+#npc-chips:empty{display:none;}
+.npc-chip{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 8px;border-radius:20px;
+  background:rgba(0,0,0,.4);
+  border:1px solid rgba(190,135,35,.25);
+  cursor:pointer;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  font-size:11px;color:rgba(230,200,110,.8);
+  font-family:'Georgia',serif;
+  transition:background .12s,border-color .12s;
+}
+.npc-chip:hover,.npc-chip.ativo{
+  background:rgba(190,135,35,.18);
+  border-color:rgba(190,135,35,.55);
+  color:#f5d878;
+}
+.npc-chip-img{
+  width:22px;height:28px;object-fit:cover;
+  object-position:top;border-radius:3px;
+  flex-shrink:0;
+}
+
 /* ── PAINEL DE CONTROLES (host) ── */
 #controles-host{
   flex-shrink:0;
@@ -490,6 +539,7 @@ html,body{
 
   <!-- Controles do host -->
   <div id="controles-host" style="display:none">
+    <div id="npc-chips"></div>
     <div id="controles-row1">
       <select id="sel-npc" onchange="onSelNpc()"></select>
       <button id="btn-gerar-ia" onclick="gerarFalaIA()">✨ Gerar com IA</button>
@@ -541,7 +591,8 @@ html,body{
 <div id="narr-status">Narração</div>
 
 <script type="module">
-import { NPCS, CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js';
+import { NPCS } from './catalogo/mhoried/loader.js';
+import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js';
 
 // ── Estado local ─────────────────────────────────────────────────
 const _pid = localStorage.getItem('oraculo.playerId') || (() => {
@@ -591,6 +642,7 @@ window.fecharCfgIA = fecharCfgIA;
 window.salvarCfgIA = salvarCfgIA;
 window.avancarIntro = avancarIntro;
 window.confirmarPronto = confirmarPronto;
+window.selecionarChip = selecionarChip;
 
 // ── Init ─────────────────────────────────────────────────────────
 function init() {
@@ -904,6 +956,15 @@ function criarElementoLinha(linha) {
     d.textContent = linha.texto;
     return d;
   }
+  if (tipo === 'acao') {
+    const d = document.createElement('div');
+    d.className = 'dialogo-acao';
+    const nomeStr = linha.oradorNome
+      ? `<span class="dialogo-acao-nome">${esc(linha.oradorNome)}</span>`
+      : '';
+    d.innerHTML = `<span style="opacity:.45;font-size:12px">✦</span><span>${nomeStr}${esc(linha.texto)}</span>`;
+    return d;
+  }
   // NPC (padrão)
   const npc = NPCS[linha.oradorId] || null;
   const spriteSrc = npc ? npc.sprite : '';
@@ -918,6 +979,25 @@ function criarElementoLinha(linha) {
       <div class="dialogo-npc-texto">${esc(linha.texto)}</div>
     </div>`;
   return d;
+}
+
+// Quebra resposta de IA em linhas separadas: [ACAO: ...] → card de ato, resto → fala
+function _parseRespostaIA(texto, npcId, npcNome, tsBase) {
+  const parts = [];
+  const re = /\[ACAO:\s*([^\]]+)\]/g;
+  let last = 0, m;
+  while ((m = re.exec(texto)) !== null) {
+    const antes = texto.slice(last, m.index).trim();
+    if (antes) parts.push({ tipo: 'npc', texto: antes });
+    parts.push({ tipo: 'acao', texto: m[1].trim() });
+    last = m.index + m[0].length;
+  }
+  const depois = texto.slice(last).trim();
+  if (depois) parts.push({ tipo: 'npc', texto: depois });
+  if (parts.length === 0) parts.push({ tipo: 'npc', texto });
+  return parts.map((p, i) => ({
+    tipo: p.tipo, oradorId: npcId, oradorNome: npcNome, texto: p.texto, ts: tsBase + i
+  }));
 }
 
 // ── Controles do host ────────────────────────────────────────────
@@ -940,6 +1020,42 @@ function preencherSelNpc() {
       ? `<option disabled>${o.label}</option>`
       : `<option value="${esc(o.value)}">${o.label}</option>`
   ).join('');
+
+  _atualizarNpcChips();
+}
+
+function _atualizarNpcChips() {
+  const chips = document.getElementById('npc-chips');
+  if (!chips) return;
+  const cena = CENAS[_cenaAtual];
+  const ids = cena?.npcsPresentes ?? [];
+  chips.innerHTML = ids.map(id => {
+    const npc = NPCS[id];
+    if (!npc) return '';
+    const sprUrl = npc.retrato || npc.sprite || '';
+    const imgHtml = sprUrl
+      ? `<img class="npc-chip-img" src="${esc(sprUrl)}" alt="" onerror="this.style.display='none'">`
+      : '';
+    return `<button class="npc-chip" id="chip-${esc(id)}" onclick="selecionarChip('${esc(id)}')">${imgHtml}${esc(npc.nome)}</button>`;
+  }).join('');
+  // Pré-selecionar npcEntrada
+  if (cena?.npcEntrada && ids.includes(cena.npcEntrada)) {
+    _marcarChipAtivo(cena.npcEntrada);
+    elSelNpc.value = cena.npcEntrada;
+    onSelNpc();
+  }
+}
+
+function selecionarChip(npcId) {
+  elSelNpc.value = npcId;
+  onSelNpc();
+  _marcarChipAtivo(npcId);
+}
+
+function _marcarChipAtivo(npcId) {
+  document.querySelectorAll('.npc-chip').forEach(c => c.classList.remove('ativo'));
+  const chip = document.getElementById('chip-' + npcId);
+  if (chip) chip.classList.add('ativo');
 }
 
 function onSelNpc() {
@@ -949,6 +1065,7 @@ function onSelNpc() {
   else {
     const npc = NPCS[v];
     elInputTexto.placeholder = npc ? `${npc.nome} diz…` : 'Fala do personagem…';
+    _marcarChipAtivo(v);
   }
 }
 
@@ -961,22 +1078,22 @@ async function enviarFala() {
   if (!texto) return;
   const npcId = elSelNpc.value;
 
-  let linha;
+  let linhas;
   if (npcId === '__narrador__') {
-    linha = { tipo: 'narrador', oradorId: 'narrador', oradorNome: 'Narrador', texto, ts: Date.now() };
+    linhas = [{ tipo: 'narrador', oradorId: 'narrador', oradorNome: 'Narrador', texto, ts: Date.now() }];
   } else if (npcId === '__jogador__') {
-    linha = { tipo: 'jogador', oradorId: _pid, oradorNome: _pname, texto, ts: Date.now() };
+    linhas = [{ tipo: 'jogador', oradorId: _pid, oradorNome: _pname, texto, ts: Date.now() }];
   } else {
     const npc = NPCS[npcId];
-    linha = { tipo: 'npc', oradorId: npcId, oradorNome: npc?.nome || npcId, texto, ts: Date.now() };
+    linhas = _parseRespostaIA(texto, npcId, npc?.nome || npcId, Date.now());
   }
 
   elInputTexto.value = '';
-  if (window._fbAddDialogue) await window._fbAddDialogue(linha);
-  else {
-    _dialogoLog = [..._dialogoLog, linha].slice(-60);
-    renderDialogo();
+  for (const linha of linhas) {
+    if (window._fbAddDialogue) await window._fbAddDialogue(linha);
+    else _dialogoLog = [..._dialogoLog, linha].slice(-60);
   }
+  if (!window._fbAddDialogue) renderDialogo();
 }
 
 // ── Geração com IA ────────────────────────────────────────────────
@@ -1028,7 +1145,8 @@ ${outrosNpcs ? `\nOUTROS PRESENTES NA CENA:\n${outrosNpcs}` : ''}
 REGRAS ABSOLUTAS:
 - Português brasileiro, primeira pessoa, como ${npc.nome} — jamais quebre o personagem
 - Máximo 3 frases por resposta; seja direto e vivo
-- Nunca use asteriscos para ações
+- Para ações físicas VISÍVEIS (expressão, gesto, postura, movimento) use EXATAMENTE o formato [ACAO: descrição em 3ª pessoa]. Exemplo: [ACAO: ${npc.nome} pousa as mãos na mesa e inclina o corpo levemente para a frente]. Coloque ANTES da fala. Nunca use asteriscos.
+- Se quiser dirigir-se especificamente a outro personagem presente, diga o nome dele na fala
 - Se precisar negociar, negocie de verdade — defenda seus interesses
 - Se desconfiar de algo, demonstre a desconfiança com seu jeito de falar
 - Se tiver urgência, transmita urgência
@@ -1080,11 +1198,6 @@ REGRAS ABSOLUTAS:
 // ── Iniciar batalha ───────────────────────────────────────────────
 async function iniciarBatalha() {
   if (!_isHost) return;
-  const cena = CENAS[_cenaAtual];
-  if (!cena?.temBatalha) {
-    const ok = confirm(`Esta cena não tem batalha mapeada.\n\nIniciar batalha mesmo assim?`);
-    if (!ok) return;
-  }
   if (window._fbSetStatus) {
     await window._fbSetStatus('battle', {
       postBattleConfirmados: {},

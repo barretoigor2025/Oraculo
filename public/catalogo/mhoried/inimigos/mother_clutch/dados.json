@@ -56,5 +56,7 @@
     "sprite_frente": "sprites/frente/mother_clutch_frente.png",
     "sprite_costas": "sprites/costas/mother_clutch_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/mother_clutch_peca.png"
-  }
+  },
+  "historia": "Experimento necromântico avançado de Choir — uma massa viva de membros de diferentes corpos costurados por magia negra e animados como entidade única. Criada especificamente para atacar o acampamento druídico de Cnoc na Ríthe.",
+  "interacao": "Sem fala e sem consciência além do impulso de capturar. Rola pelo acampamento à noite agarrando qualquer criatura viva. Só a visão dela exige verificação de susto."
 }

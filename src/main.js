@@ -1,5 +1,5 @@
 import './styles.css';
-import { CLASSES, standeeUrl } from './data/classes.js';
+import { CLASSES, standeeUrl, retratoUrl } from './data/classes.js';
 import { joinRoom, listenRoom, saveRoom, startNarration } from './firebase/roomService.js';
 import { firebaseApp } from './firebase/config.js';
 import { startGame } from './game/turnSystem.js';
@@ -10,7 +10,6 @@ const session = {
   playerId: localStorage.getItem('oraculo.playerId') ?? crypto.randomUUID(),
   playerName: '',
   classId: 'barbaro',
-  gender: 'm',
   roomId: '',
   room: null,
   unsubscribe: null,
@@ -31,13 +30,8 @@ function _persistSession() {
   localStorage.setItem('oraculo.playerId', session.playerId);
   localStorage.setItem('oraculo.playerName', session.playerName);
   localStorage.setItem('oraculo.classId', session.classId);
-  localStorage.setItem('oraculo.gender', session.gender);
   if (firebaseApp) localStorage.setItem('oraculo.fbConfig', JSON.stringify(firebaseApp.options));
   localStorage.setItem('oraculo.isHost', session.isHost ? '1' : '0');
-}
-
-function _retratoUrl(classId, gender) {
-  return `catalogo/mhoried/classes/${classId}/retrato/${classId}_${gender || 'm'}_retrato.png`;
 }
 
 function goToArena() {
@@ -151,7 +145,7 @@ function renderSlots() {
   for (let i = 0; i < 4; i++) {
     const c = chars[i];
     if (c) {
-      const portraitSrc = _retratoUrl(c.classId, c.gender);
+      const portraitSrc = retratoUrl(c.classId);
       const lvl = c.level || 1;
       const camp = c.campaign || 'Mhoried';
       html += `
@@ -181,10 +175,8 @@ function renderSlots() {
       const c = chars[Number(card.dataset.slot)];
       session.playerName = c.name;
       session.classId = c.classId;
-      session.gender = c.gender || 'm';
       localStorage.setItem('oraculo.playerName', c.name);
       localStorage.setItem('oraculo.classId', c.classId);
-      localStorage.setItem('oraculo.gender', c.gender || 'm');
       if (session.onlineMode) {
         showScreen('isc-lobby');
         bindLobbyButtons();
@@ -215,16 +207,13 @@ function renderSlots() {
 // ── Criação de personagem ────────────────────────────────────────────
 
 let selectedClassId = 'barbaro';
-let selectedGender = 'm';
 
 const _HAB_TIPO_COLOR = { melee: '#c88080', magia: '#8888f0', cura: '#70c070', buff: '#c0a040', projétil: '#70c0c0' };
 
 function initCreateScreen() {
   selectedClassId = 'barbaro';
-  selectedGender = 'm';
   renderClassCarousel();
   renderClassDetail();
-  renderGenderButtons();
 
   const btn = document.getElementById('btn-criar-personagem');
   if (btn) {
@@ -234,25 +223,13 @@ function initCreateScreen() {
   }
 }
 
-function renderGenderButtons() {
-  document.querySelectorAll('.isc-gender-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.gender === selectedGender);
-    btn.onclick = () => {
-      selectedGender = btn.dataset.gender;
-      renderGenderButtons();
-      renderClassCarousel();
-      renderClassDetail();
-    };
-  });
-}
-
 function renderClassCarousel() {
   const el = document.getElementById('isc-class-carousel');
   if (!el) return;
   el.innerHTML = Object.values(CLASSES).map(cls => `
     <button class="isc-cls-chip ${cls.id === selectedClassId ? 'selected' : ''}" data-class="${cls.id}">
       <div class="isc-cls-chip-img">
-        <img src="${_retratoUrl(cls.id, selectedGender)}" alt="" onerror="this.style.display='none'">
+        <img src="${retratoUrl(cls.id)}" alt="" onerror="this.style.display='none'">
         <span>${cls.icon}</span>
       </div>
       <span class="isc-cls-chip-name">${cls.name}</span>
@@ -289,7 +266,7 @@ function renderClassDetail() {
 
   el.innerHTML = `
     <div class="icd-left">
-      <img class="icd-peca" src="${standeeUrl(cls.id, selectedGender)}" alt="" onerror="this.style.display='none'">
+      <img class="icd-peca" src="${standeeUrl(cls.id)}" alt="" onerror="this.style.display='none'">
     </div>
     <div class="icd-right">
       <div class="icd-titulo">${cls.icon} ${escapeHtml(cls.name)}</div>
@@ -318,17 +295,15 @@ function confirmarPersonagem() {
   const character = {
     name, classId: selectedClassId, className: cls.name,
     icon: cls.icon, maxHp: cls.maxHp, movement: cls.movement, attack: cls.attack,
-    gender: selectedGender, level: 1, campaign: 'Mhoried',
+    level: 1, campaign: 'Mhoried',
   };
   chars.push(character);
   saveCharacters(chars);
 
   session.playerName = name;
   session.classId = selectedClassId;
-  session.gender = selectedGender;
   localStorage.setItem('oraculo.playerName', name);
   localStorage.setItem('oraculo.classId', selectedClassId);
-  localStorage.setItem('oraculo.gender', selectedGender);
 
   if (session.onlineMode) {
     showScreen('isc-lobby');
@@ -397,7 +372,7 @@ async function enterRoom(roomId, isHost) {
   showScreen('isc-room');
 
   try {
-    await joinRoom(session.roomId, session.playerId, { name: session.playerName || 'Viajante', classId: session.classId, gender: session.gender || localStorage.getItem('oraculo.gender') || 'm' });
+    await joinRoom(session.roomId, session.playerId, { name: session.playerName || 'Viajante', classId: session.classId });
   } catch (err) {
     alert(`Erro ao entrar na sala: ${err.message}`);
     showScreen(session.onlineMode ? 'isc-lobby' : 'isc-slots');
@@ -458,8 +433,7 @@ function renderRoomPlayers(room) {
 
   const players = Object.values(room.players ?? {});
   list.innerHTML = players.map(p => {
-    const gender = p.gender || 'm';
-    const portraitSrc = _retratoUrl(p.classId, gender);
+    const portraitSrc = retratoUrl(p.classId || 'barbaro');
     const className = CLASSES[p.classId]?.name || p.classId;
     const isMe = p.id === session.playerId;
     const isHost = isMe && session.isHost;

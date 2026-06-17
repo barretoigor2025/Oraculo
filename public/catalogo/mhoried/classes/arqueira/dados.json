@@ -1,0 +1,12 @@
+{
+  "id": "arqueira",
+  "nome": "Arqueira",
+  "emoji": "🏹",
+  "desc": "Combatente à distância. Precisão e velocidade equilibradas.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "classe",
+  "assets": {
+    "retrato": "retrato/arqueira_retrato.png",
+    "peca": "peca_tabuleiro/arqueira_peca.png"
+  }
+}

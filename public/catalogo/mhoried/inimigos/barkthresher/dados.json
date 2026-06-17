@@ -46,5 +46,7 @@
     "sprite_frente": "sprites/frente/barkthresher_frente.png",
     "sprite_costas": "sprites/costas/barkthresher_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/barkthresher_peca.png"
-  }
+  },
+  "historia": "Elementais de madeira viva que habitam Twinfold Hollow, animados pela energia dual e conflituosa do local. Atacam as Starshade Blooms por instinto — uma força adversa à existência das flores luminosas que florescem ali.",
+  "interacao": "Sem fala — fúria vegetal pura. Priorizam destruir as flores sobre atacar adventureiros. Não perseguem além de Twinfold Hollow."
 }

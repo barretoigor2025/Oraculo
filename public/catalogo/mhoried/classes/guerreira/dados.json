@@ -1,0 +1,12 @@
+{
+  "id": "guerreira",
+  "nome": "Guerreira",
+  "emoji": "⚔️",
+  "desc": "Especialista em combate corpo a corpo. Bônus extra de ataque.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "classe",
+  "assets": {
+    "retrato": "retrato/guerreira_retrato.png",
+    "peca": "peca_tabuleiro/guerreira_peca.png"
+  }
+}

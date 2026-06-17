@@ -46,5 +46,7 @@
     "sprite_frente": "sprites/frente/marrowwither_frente.png",
     "sprite_costas": "sprites/costas/marrowwither_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/marrowwither_peca.png"
-  }
+  },
+  "historia": "Experimento biológico-necromântico de Choir, o Marrowwither é um saco de carne viva com múltiplas bocas e tentáculos rápidos, criado para defender espaços subterrâneos.",
+  "interacao": "Sem fala — detecta calor e avança silenciosamente. Em grupo, cercam a presa antes de atacar. Não há negociação possível."
 }

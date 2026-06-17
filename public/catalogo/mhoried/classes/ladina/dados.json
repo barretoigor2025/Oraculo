@@ -1,0 +1,12 @@
+{
+  "id": "ladina",
+  "nome": "Ladina",
+  "emoji": "🗡️",
+  "desc": "Ágil e furtiva. Maior alcance de movimento por turno.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "classe",
+  "assets": {
+    "retrato": "retrato/ladina_retrato.png",
+    "peca": "peca_tabuleiro/ladina_peca.png"
+  }
+}

@@ -51,5 +51,7 @@
     "sprite_frente": "sprites/frente/javali_ensandecido_frente.png",
     "sprite_costas": "sprites/costas/javali_ensandecido_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/javali_ensandecido_peca.png"
-  }
+  },
+  "historia": "Javali de tamanho anormal corrompido pela energia mágica residual dos Blackwoods, que transformou um predador naturalmente agressivo em algo entre animal e força da natureza descontrolada.",
+  "interacao": "Sem fala — fúria instintiva absoluta. Usa a carga como ataque principal em linha reta para o alvo mais próximo. Berserker ao ver próprio sangue. Não há negociação possível."
 }

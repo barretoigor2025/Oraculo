@@ -45,5 +45,7 @@
     "sprite_frente": "sprites/frente/espantalho_assombrado_frente.png",
     "sprite_costas": "sprites/costas/espantalho_assombrado_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/espantalho_assombrado_peca.png"
-  }
+  },
+  "historia": "Constructos de palha, madeira e magia negra criados pelo necromante Choir e infiltrados em feiras e aldeias como decoração inofensiva antes de serem ativados remotamente.",
+  "interacao": "Não falam e não negociam — agem em silêncio absoluto, executando o objetivo designado com eficiência mecânica e indiferença total a qualquer tentativa de comunicação."
 }

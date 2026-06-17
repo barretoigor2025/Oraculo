@@ -1,0 +1,12 @@
+{
+  "id": "maga",
+  "nome": "Maga",
+  "emoji": "🪄",
+  "desc": "Usuária de magia arcana. Poder mágico elevado mas fisicamente frágil.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "classe",
+  "assets": {
+    "retrato": "retrato/maga_retrato.png",
+    "peca": "peca_tabuleiro/maga_peca.png"
+  }
+}

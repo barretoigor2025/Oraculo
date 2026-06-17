@@ -53,5 +53,7 @@
     "sprite_frente": "sprites/frente/manticora_albina_frente.png",
     "sprite_costas": "sprites/costas/manticora_albina_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/manticora_albina_peca.png"
-  }
+  },
+  "historia": "Predador apex do norte dos Blackwoods, a Manticora Albina é um exemplar raro de coloração completamente branca, o que a torna ainda mais perturbadora no ambiente sombrio da floresta.",
+  "interacao": "Não fala e não negocia — é puro instinto predatório. Espreita em silêncio, dispara espinhos para imobilizar e então avança. Carcaça de cervo negro usada como isca é a melhor abordagem tática."
 }
