@@ -50,5 +50,7 @@
     "sprite_frente": "sprites/frente/kobold_azul_frente.png",
     "sprite_costas": "sprites/costas/kobold_azul_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/kobold_azul_peca.png"
-  }
+  },
+  "historia": "Guerreiros tribais kobolds de pele azul-escura que compõem a espinha dorsal do exército do Rei Blunkin, obedecendo à cadeia de comando por medo e lealdade tribal em partes iguais.",
+  "interacao": "Não negociam individualmente — agem em bando, recuam se o grupo perde metade dos membros, e tentam flanquear antes de engajar. Preferem emboscadas noturnas e nunca lutam com honra."
 }

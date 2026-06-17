@@ -52,5 +52,7 @@
     "sprite_frente": "sprites/frente/log_wife_frente.png",
     "sprite_costas": "sprites/costas/log_wife_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/log_wife_peca.png"
-  }
+  },
+  "historia": "Espírito antigo ligado à podridão e ao crescimento fúngico dos Blackwoods, que ao longo dos séculos desenvolveu a capacidade de imitar aparência humana para atrair presas. Os cogumelos raros que crescem em seus troncos são subproduto de sua magia e ingrediente valioso.",
+  "interacao": "Aborda aventureiros disfarçada como mulher chorando e perdida, com voz sedutora e choro hipnótico que exige Verificação de Vontade. Fala de forma desesperada e vulnerável enquanto tenta atrair para perto. Quando desmascarada, o disfarce cai e o comportamento muda para hostilidade imediata — não há negociação nesse estado."
 }

@@ -47,5 +47,7 @@
     "sprite_frente": "sprites/frente/quay_grabber_frente.png",
     "sprite_costas": "sprites/costas/quay_grabber_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/quay_grabber_peca.png"
-  }
+  },
+  "historia": "Troll aquático que habita as profundezas do Poço dos Chorões, adaptado tanto para água quanto para terra ao longo de gerações. Predador territorial que defende seu domínio aquático com agressividade instintiva.",
+  "interacao": "Sem fala — ataca do fundo puxando pernas de quem estiver nas águas rasas. Regenera rapidamente; fogo ou ácido são necessários para dano permanente. Não negocia."
 }

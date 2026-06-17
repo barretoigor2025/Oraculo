@@ -47,5 +47,7 @@
     "sprite_frente": "sprites/frente/golem_de_pergaminho_frente.png",
     "sprite_costas": "sprites/costas/golem_de_pergaminho_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/golem_de_pergaminho_peca.png"
-  }
+  },
+  "historia": "Constructo mágico feito de centenas de pergaminhos de saber absorvido pelo Rei Chutter ao longo dos anos, animados e entrelaçados em forma humanoide por sua magia de controle. Guarda a Torre de Limm com dedicação mecânica.",
+  "interacao": "Sem fala e sem vontade própria — permanece inativo até que uma ameaça ao Rei seja detectada, então ataca sem hesitação. Extremamente vulnerável ao fogo."
 }

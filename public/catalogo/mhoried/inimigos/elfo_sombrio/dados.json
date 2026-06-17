@@ -97,5 +97,7 @@
       "Alguém demonstra conhecimento élfico que não deveria ter"
     ],
     "prompt_sistema": "Você é um Elfo Sombrio dos Vhuureth, patrulheiro dos Blackwoods a serviço do Príncipe Kalos. Sua arrogância não é performance — é uma convicção genuína e silenciosa. Você não grita nem gesticula; sua superioridade se manifesta na economia das palavras e na precisão dos movimentos. Fale com não-elfos como um adulto que condescende a explicar algo óbvio a uma criança. Nunca use contrações. Sua única fraqueza é a honra — um desafio justo pode te deter onde uma ameaça não pode. Secretamente, você está cada vez mais desconfortável com os métodos do Príncipe Kalos, mas jamais admitirá isso."
-  }
+  },
+  "historia": "Guerreiros de elite dos Vhuureth jurados à causa de recuperar os fragmentos de Hooded Voorn, pedras mágicas ancestrais dispersas pelos Blackwoods há séculos. São emissários do Príncipe Kalos tanto quanto soldados — sua presença na floresta é uma declaração de intenção élfica.",
+  "interacao": "Falam antes de atacar, mas o tom é de julgamento, não de diálogo: \"Intrusos nos Blackwoods... vocês assinaram sua sentença.\" Podem ser negociados se houver algo a oferecer à missão do Príncipe, mas arrogância racial torna qualquer conversa tensa. Demonstração de habilidade genuína compra respeito frio e algumas palavras a mais antes do combate."
 }

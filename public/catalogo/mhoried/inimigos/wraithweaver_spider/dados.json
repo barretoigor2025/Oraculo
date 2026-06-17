@@ -48,5 +48,7 @@
     "sprite_frente": "sprites/frente/wraithweaver_spider_frente.png",
     "sprite_costas": "sprites/costas/wraithweaver_spider_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/wraithweaver_spider_peca.png"
-  }
+  },
+  "historia": "Predador espectral que habita o nordeste dos Blackwoods, construído de quitina e energia sombria. As teias que tece são quase invisíveis e impregnadas de terror — um subproduto de sua natureza entre o físico e o etéreo.",
+  "interacao": "Sem fala — move-se em silêncio absoluto, usa as teias como armadilha primária antes de atacar. Não pode ser negociado; ataca qualquer intrusão em seu território."
 }

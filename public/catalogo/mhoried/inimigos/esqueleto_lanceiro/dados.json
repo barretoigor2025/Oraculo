@@ -47,5 +47,7 @@
     "sprite_frente": "sprites/frente/esqueleto_lanceiro_frente.png",
     "sprite_costas": "sprites/costas/esqueleto_lanceiro_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/esqueleto_lanceiro_peca.png"
-  }
+  },
+  "historia": "Guerreiros mortos animados por Choir para servir como guarda estacionária no Gloamreach e na Torre de Limm. Os ossos esverdeados indicam o tipo específico de necromancia usada — mais antiga e mais estável que a da maioria dos mortos-vivos.",
+  "interacao": "Sem fala — posição defensiva estática, ataca qualquer intruso que entre no raio de dez metros do posto designado. Não persegue além disso."
 }

@@ -47,5 +47,7 @@
     "sprite_frente": "sprites/frente/caranguejo_gigante_frente.png",
     "sprite_costas": "sprites/costas/caranguejo_gigante_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/caranguejo_gigante_peca.png"
-  }
+  },
+  "historia": "Caranguejo colossal conhecido como Mudwallower que habita as águas e bordas lamacentas do Bosque Afogado, com carapaça azul-violeta espinhosa de DR 6 que torna ataques convencionais quase inúteis.",
+  "interacao": "Sem fala — instinto territorial puro. A garra grande imobiliza e não solta até matar ou ST 18 para escapar. Lento mas quase indestrutível pela frente; a parte ventral é o ponto vulnerável."
 }

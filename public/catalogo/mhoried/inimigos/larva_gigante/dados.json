@@ -48,5 +48,7 @@
     "sprite_frente": "sprites/frente/larva_gigante_frente.png",
     "sprite_costas": "sprites/costas/larva_gigante_costas.png",
     "peca_tabuleiro": "peca_tabuleiro/larva_gigante_peca.png"
-  }
+  },
+  "historia": "Criatura primitiva que habita os subterrâneos e clareiras ao sul dos Blackwoods, provavelmente tão antiga quanto a floresta. O fluido ácido que segrega e seus órgãos internos são ingredientes raros de alto valor alquímico.",
+  "interacao": "Sem linguagem e sem consciência além do instinto — permanece enterrada aguardando presas, detecta calor e vibração. Não há negociação possível."
 }
