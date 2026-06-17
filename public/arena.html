@@ -964,10 +964,11 @@ const _hcd = _HERO_CLASS_DATA[_heroClassId] || _HERO_CLASS_DATA.mago;
 // ══════════════════════════════════════════
 //  UNIDADES
 // ══════════════════════════════════════════
+const _heroStandeeRev={mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r2',ladino_m:'_r3',ladino_f:'_r3'}[`${_heroClassId}_${_heroGender}`]||'';
 let unidades = [
   { nome:_hcd.nome, col:_fbIsHost?4:6, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
-    imgSrc:`catalogo/mhoried/classes/${_heroClassId}/sprites/costas/${_heroClassId}_${_heroGender}_costas.png`,
-    imgSrcAtaque:`catalogo/mhoried/classes/${_heroClassId}/sprites/frente/${_heroClassId}_${_heroGender}_frente.png`,
+    imgSrc:`catalogo/mhoried/classes/${_heroClassId}/peca_tabuleiro/${_heroClassId}_${_heroGender}${_heroStandeeRev}_peca.png`,
+    imgSrcAtaque:`catalogo/mhoried/classes/${_heroClassId}/peca_tabuleiro/${_heroClassId}_${_heroGender}${_heroStandeeRev}_peca.png`,
     img:null, tipo:'heroi', mov:_hcd.mov,
     hp:_hcd.hp, maxHp:_hcd.hp, sp:_hcd.sp, maxSp:_hcd.sp,
     portrait:`catalogo/mhoried/classes/${_heroClassId}/retrato/${_heroClassId}_${_heroGender}_retrato.png`,
