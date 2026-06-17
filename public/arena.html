@@ -950,29 +950,33 @@ const HABILIDADES = {
 //  HERÓI DINÂMICO (localStorage)
 // ══════════════════════════════════════════
 const _heroClassId = localStorage.getItem('oraculo.classId') || 'mago';
-const _heroGender  = localStorage.getItem('oraculo.gender')  || 'm';
 const _HERO_CLASS_DATA = {
-  guerreiro: { nome:'Guerreiro', emoji:'⚔️', cor:'#8a4a20', hp:90,  sp:80,  mov:5, itens:[{icon:'⚔️',nome:'Espada Longa',qtd:1},{icon:'🛡️',nome:'Escudo de Ferro',qtd:1},{icon:'🧪',nome:'Poção de Cura',qtd:2}] },
-  mago:      { nome:'Mago',      emoji:'🔮', cor:'#6644cc', hp:60,  sp:120, mov:4, itens:[{icon:'📖',nome:'Grimório Arcano',qtd:1},{icon:'🪄',nome:'Cajado do Crepúsculo',qtd:1},{icon:'🧪',nome:'Poção de Mana',qtd:3}] },
-  ladino:    { nome:'Ladino',    emoji:'🗡️', cor:'#336655', hp:70,  sp:90,  mov:6, itens:[{icon:'🗡️',nome:'Adaga',qtd:2},{icon:'🪤',nome:'Armadilha',qtd:1},{icon:'🧪',nome:'Poção de Fuga',qtd:2}] },
-  clerigo:   { nome:'Clérigo',   emoji:'✨', cor:'#aa8822', hp:80,  sp:100, mov:4, itens:[{icon:'✨',nome:'Cajado Sagrado',qtd:1},{icon:'📿',nome:'Amuleto Divino',qtd:1},{icon:'🧪',nome:'Poção de Cura',qtd:3}] },
   barbaro:   { nome:'Bárbaro',   emoji:'🪓', cor:'#9b2222', hp:110, sp:60,  mov:5, itens:[{icon:'🪓',nome:'Machado de Guerra',qtd:1},{icon:'🧪',nome:'Poção de Força',qtd:2}] },
+  barbara:   { nome:'Bárbara',   emoji:'🪓', cor:'#9b2222', hp:110, sp:60,  mov:5, itens:[{icon:'🪓',nome:'Machado de Guerra',qtd:1},{icon:'🧪',nome:'Poção de Força',qtd:2}] },
+  guerreiro: { nome:'Guerreiro', emoji:'⚔️', cor:'#8a4a20', hp:90,  sp:80,  mov:5, itens:[{icon:'⚔️',nome:'Espada Longa',qtd:1},{icon:'🛡️',nome:'Escudo de Ferro',qtd:1},{icon:'🧪',nome:'Poção de Cura',qtd:2}] },
+  guerreira: { nome:'Guerreira', emoji:'⚔️', cor:'#8a4a20', hp:90,  sp:80,  mov:5, itens:[{icon:'⚔️',nome:'Espada Longa',qtd:1},{icon:'🛡️',nome:'Escudo de Ferro',qtd:1},{icon:'🧪',nome:'Poção de Cura',qtd:2}] },
+  mago:      { nome:'Mago',      emoji:'🔮', cor:'#6644cc', hp:60,  sp:120, mov:4, itens:[{icon:'📖',nome:'Grimório Arcano',qtd:1},{icon:'🪄',nome:'Cajado do Crepúsculo',qtd:1},{icon:'🧪',nome:'Poção de Mana',qtd:3}] },
+  maga:      { nome:'Maga',      emoji:'🔮', cor:'#6644cc', hp:60,  sp:120, mov:4, itens:[{icon:'📖',nome:'Grimório Arcano',qtd:1},{icon:'🪄',nome:'Cajado do Crepúsculo',qtd:1},{icon:'🧪',nome:'Poção de Mana',qtd:3}] },
   arqueiro:  { nome:'Arqueiro',  emoji:'🏹', cor:'#4a6a2a', hp:75,  sp:85,  mov:5, itens:[{icon:'🏹',nome:'Arco Longo',qtd:1},{icon:'🗝️',nome:'Aljava',qtd:1},{icon:'🧪',nome:'Poção de Precisão',qtd:2}] },
+  arqueira:  { nome:'Arqueira',  emoji:'🏹', cor:'#4a6a2a', hp:75,  sp:85,  mov:5, itens:[{icon:'🏹',nome:'Arco Longo',qtd:1},{icon:'🗝️',nome:'Aljava',qtd:1},{icon:'🧪',nome:'Poção de Precisão',qtd:2}] },
+  ladino:    { nome:'Ladino',    emoji:'🗡️', cor:'#336655', hp:70,  sp:90,  mov:6, itens:[{icon:'🗡️',nome:'Adaga',qtd:2},{icon:'🪤',nome:'Armadilha',qtd:1},{icon:'🧪',nome:'Poção de Fuga',qtd:2}] },
+  ladina:    { nome:'Ladina',    emoji:'🗡️', cor:'#336655', hp:70,  sp:90,  mov:6, itens:[{icon:'🗡️',nome:'Adaga',qtd:2},{icon:'🪤',nome:'Armadilha',qtd:1},{icon:'🧪',nome:'Poção de Fuga',qtd:2}] },
+  clerigo:   { nome:'Clérigo',   emoji:'✨', cor:'#aa8822', hp:80,  sp:100, mov:4, itens:[{icon:'✨',nome:'Cajado Sagrado',qtd:1},{icon:'📿',nome:'Amuleto Divino',qtd:1},{icon:'🧪',nome:'Poção de Cura',qtd:3}] },
+  cleriga:   { nome:'Clérigo',   emoji:'✨', cor:'#aa8822', hp:80,  sp:100, mov:4, itens:[{icon:'✨',nome:'Cajado Sagrado',qtd:1},{icon:'📿',nome:'Amuleto Divino',qtd:1},{icon:'🧪',nome:'Poção de Cura',qtd:3}] },
 };
 const _hcd = _HERO_CLASS_DATA[_heroClassId] || _HERO_CLASS_DATA.mago;
 
 // ══════════════════════════════════════════
 //  UNIDADES
 // ══════════════════════════════════════════
-const _heroStandeeRev={mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r2',ladino_m:'_r3',ladino_f:'_r3'}[`${_heroClassId}_${_heroGender}`]||'';
 let unidades = [
   { nome:_hcd.nome, col:_fbIsHost?4:6, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
-    imgSrc:`catalogo/mhoried/classes/${_heroClassId}/peca_tabuleiro/${_heroClassId}_${_heroGender}${_heroStandeeRev}_peca.png`,
-    imgSrcAtaque:`catalogo/mhoried/classes/${_heroClassId}/peca_tabuleiro/${_heroClassId}_${_heroGender}${_heroStandeeRev}_peca.png`,
+    imgSrc:`catalogo/mhoried/classes/${_heroClassId}/peca_tabuleiro/${_heroClassId}_peca.png`,
+    imgSrcAtaque:`catalogo/mhoried/classes/${_heroClassId}/peca_tabuleiro/${_heroClassId}_peca.png`,
     img:null, tipo:'heroi', mov:_hcd.mov,
     hp:_hcd.hp, maxHp:_hcd.hp, sp:_hcd.sp, maxSp:_hcd.sp,
-    portrait:`catalogo/mhoried/classes/${_heroClassId}/retrato/${_heroClassId}_${_heroGender}_retrato.png`,
-    itens:_hcd.itens, classId:_heroClassId, gender:_heroGender },
+    portrait:`catalogo/mhoried/classes/${_heroClassId}/retrato/${_heroClassId}_retrato.png`,
+    itens:_hcd.itens, classId:_heroClassId },
   criarInimigo('espantalho_assombrado', 6, 3),
 ];
 
@@ -1814,7 +1818,7 @@ function renderUnits(){
       const clip = u.clipBottom || 0;
 
       let sw, drawH;
-      if(u.classId && u.gender && u.img.naturalWidth > 0){
+      if(u.classId && u.img.naturalWidth > 0){
         // Standee de classe: altura = storedH do PNG (calibrado no Size tab)
         // sem compressão para SW fixo. Mantém aspecto real.
         const _szH  = (()=>{try{return JSON.parse(localStorage.getItem('oraculo_sz_heights')||'{}')}catch(e){return{}}})();
@@ -3213,13 +3217,11 @@ function _loadSprite(u){
         fb.onload=()=>{u.img=fb;renderUnits();};
         fb.onerror=()=>renderUnits();
         fb.src=`catalogo/mhoried/inimigos/${u.bestiaryId}/peca_tabuleiro/${u.bestiaryId}_peca.png`;
-      } else if(u.classId&&u.gender){
-        const _rsMap={mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r2',ladino_m:'_r3',ladino_f:'_r3'};
-        const rev=_rsMap[u.classId+'_'+u.gender]||'';
+      } else if(u.classId){
         const fb=new Image();
         fb.onload=()=>{u.img=fb;renderUnits();};
         fb.onerror=()=>renderUnits();
-        fb.src=`catalogo/mhoried/classes/${u.classId}/peca_tabuleiro/${u.classId}_${u.gender}${rev}_peca.png`;
+        fb.src=`catalogo/mhoried/classes/${u.classId}/peca_tabuleiro/${u.classId}_peca.png`;
       } else { renderUnits(); }
     };
     img.src=u.imgSrc;
@@ -3361,19 +3363,17 @@ function onRoomUpdate(room){
   for(const p of others){
     let u=unidades.find(u=>u._fbId===p.id);
     if(!u){
-      const cd=_HERO_CLASS_DATA[p.classId]||_HERO_CLASS_DATA.mago;
-      const g=p.gender||'m';
-      const _rsr={mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r2',ladino_m:'_r3',ladino_f:'_r3'};
-      const _pr=_rsr[(p.classId||'mago')+'_'+g]||'';
+      const cid=p.classId||'mago';
+      const cd=_HERO_CLASS_DATA[cid]||_HERO_CLASS_DATA.mago;
       u={
         nome:p.name||cd.nome, col:p.x, row:p.y,
         emoji:cd.emoji, cor:cd.cor,
-        imgSrc:`catalogo/mhoried/classes/${p.classId||'mago'}/peca_tabuleiro/${p.classId||'mago'}_${g}${_pr}_peca.png`,
+        imgSrc:`catalogo/mhoried/classes/${cid}/peca_tabuleiro/${cid}_peca.png`,
         img:null, tipo:'heroi', mov:cd.mov,
         hp:p.hp||cd.hp, maxHp:p.maxHp||cd.hp,
         sp:p.mana||cd.sp, maxSp:p.maxMana||cd.sp,
-        portrait:`catalogo/mhoried/classes/${p.classId||'mago'}/retrato/${p.classId||'mago'}_${g}_retrato.png`,
-        itens:[], _fbId:p.id, classId:p.classId||'mago', gender:g,
+        portrait:`catalogo/mhoried/classes/${cid}/retrato/${cid}_retrato.png`,
+        itens:[], _fbId:p.id, classId:cid,
       };
       _loadSprite(u);
       unidades.push(u);

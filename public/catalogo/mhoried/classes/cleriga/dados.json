@@ -1,0 +1,12 @@
+{
+  "id": "cleriga",
+  "nome": "Clérigo",
+  "emoji": "✨",
+  "desc": "Guardiã divina. Resistência elevada e suporte ao grupo.",
+  "_campanha": "mhoried",
+  "_tipo_entidade": "classe",
+  "assets": {
+    "retrato": "retrato/cleriga_retrato.png",
+    "peca": "peca_tabuleiro/cleriga_peca.png"
+  }
+}
