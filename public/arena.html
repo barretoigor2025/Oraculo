@@ -3363,15 +3363,17 @@ function onRoomUpdate(room){
     if(!u){
       const cd=_HERO_CLASS_DATA[p.classId]||_HERO_CLASS_DATA.mago;
       const g=p.gender||'m';
+      const _rsr={mago_f:'_r',arqueiro_f:'_r',guerreiro_m:'_r',clerigo_m:'_r',clerigo_f:'_r2',ladino_m:'_r3',ladino_f:'_r3'};
+      const _pr=_rsr[(p.classId||'mago')+'_'+g]||'';
       u={
         nome:p.name||cd.nome, col:p.x, row:p.y,
         emoji:cd.emoji, cor:cd.cor,
-        imgSrc:`catalogo/mhoried/classes/${p.classId}/sprites/costas/${p.classId}_${g}_costas.png`,
+        imgSrc:`catalogo/mhoried/classes/${p.classId||'mago'}/peca_tabuleiro/${p.classId||'mago'}_${g}${_pr}_peca.png`,
         img:null, tipo:'heroi', mov:cd.mov,
         hp:p.hp||cd.hp, maxHp:p.maxHp||cd.hp,
         sp:p.mana||cd.sp, maxSp:p.maxMana||cd.sp,
-        portrait:`catalogo/mhoried/classes/${p.classId}/retrato/${p.classId}_${g}_retrato.png`,
-        itens:[], _fbId:p.id,
+        portrait:`catalogo/mhoried/classes/${p.classId||'mago'}/retrato/${p.classId||'mago'}_${g}_retrato.png`,
+        itens:[], _fbId:p.id, classId:p.classId||'mago', gender:g,
       };
       _loadSprite(u);
       unidades.push(u);
