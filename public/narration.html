@@ -642,6 +642,7 @@ window.fecharCfgIA = fecharCfgIA;
 window.salvarCfgIA = salvarCfgIA;
 window.avancarIntro = avancarIntro;
 window.confirmarPronto = confirmarPronto;
+window.selecionarChip = selecionarChip;
 
 // ── Init ─────────────────────────────────────────────────────────
 function init() {
@@ -1197,11 +1198,6 @@ REGRAS ABSOLUTAS:
 // ── Iniciar batalha ───────────────────────────────────────────────
 async function iniciarBatalha() {
   if (!_isHost) return;
-  const cena = CENAS[_cenaAtual];
-  if (!cena?.temBatalha) {
-    const ok = confirm(`Esta cena não tem batalha mapeada.\n\nIniciar batalha mesmo assim?`);
-    if (!ok) return;
-  }
   if (window._fbSetStatus) {
     await window._fbSetStatus('battle', {
       postBattleConfirmados: {},
