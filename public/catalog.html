@@ -667,8 +667,8 @@
 </div>
 
 <script type="module">
-import { NPCS, INIMIGOS_DATA as INIMIGOS_COMPLETO } from './catalogo/mhoried/loader.js';
-import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js';
+import { INIMIGOS_DATA as INIMIGOS_COMPLETO } from './catalogo/mhoried/loader.js';
+import { NPCS, CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js';
 
 // ── DATA ──────────────────────────────────────────────────────────────
 
@@ -1049,7 +1049,67 @@ window.openEnemyModal = function(id, _idx){
     <div class="sprite-label">Standee</div>
   </div>`;
 
-  const enSections = [
+  // GURPS stats grid
+  let gurpsHtml = '';
+  if(en.gurps){
+    const g = en.gurps;
+    const statPairs = [
+      ['ST',g.st],['DX',g.dx],['IQ',g.iq],['HT',g.ht],
+      ['HP',g.hp],['PV',g.fp],['MOV',g.move],['ESQ',g.dodge],
+      ['DR',g.dr],['SPD',g.speed],
+    ];
+    gurpsHtml = `<div class="section">
+      <div class="section-title">Atributos GURPS</div>
+      <div class="attrs-grid" style="grid-template-columns:repeat(5,1fr)">
+        ${statPairs.map(([k,v])=>`<div class="attr-box"><div class="av">${v??'—'}</div><div class="ak">${k}</div></div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Ataque
+  const ataqueHtml = en.ataque ? `<div class="section">
+    <div class="section-title">Ataque</div>
+    <div class="section-text" style="font-size:11px;line-height:1.6">${en.ataque}</div>
+  </div>` : '';
+
+  // Traços
+  const tracosHtml = en.tracos?.length ? `<div class="section">
+    <div class="section-title">Traços</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">
+      ${en.tracos.map(t=>`<span style="font-size:9px;padding:2px 7px;border-radius:4px;background:rgba(200,160,64,.08);border:1px solid rgba(200,160,64,.18);color:rgba(200,175,110,.75)">${t}</span>`).join('')}
+    </div>
+  </div>` : '';
+
+  // Habilidades
+  const habsHtml = en.habs?.length ? `<div class="section">
+    <div class="section-title">Perícias de Combate</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">
+      ${en.habs.map(h=>`<span style="font-size:9px;padding:2px 7px;border-radius:4px;background:rgba(80,120,200,.1);border:1px solid rgba(80,120,200,.2);color:rgba(140,180,240,.8)">${h}</span>`).join('')}
+    </div>
+  </div>` : '';
+
+  // Magias
+  const magiasHtml = en.magias?.length ? `<div class="section">
+    <div class="section-title">Magias</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">
+      ${en.magias.map(m=>`<span style="font-size:9px;padding:2px 7px;border-radius:4px;background:rgba(160,80,200,.1);border:1px solid rgba(160,80,200,.25);color:rgba(200,140,255,.8)">${m}</span>`).join('')}
+    </div>
+  </div>` : '';
+
+  // Fala em batalha
+  const falaHtml = en.fala_batalha ? `<div class="section">
+    <div class="section-title">Fala em Batalha</div>
+    <div class="section-text" style="font-style:italic;font-size:11px;color:rgba(220,190,110,.7)">${en.fala_batalha}</div>
+  </div>` : '';
+
+  // Comportamento tático
+  const compHtml = en.comportamento ? `<div class="section">
+    <div class="section-title">Tática</div>
+    <div class="section-text" style="font-size:11px">${en.comportamento}</div>
+  </div>` : '';
+
+  // Texto sections
+  const textSections = [
     en.historia   && ['História',       en.historia],
     en.interacao  && ['Comportamento',  en.interacao],
     en.desc       && ['Descrição',      en.desc],
@@ -1068,7 +1128,16 @@ window.openEnemyModal = function(id, _idx){
         <div class="modal-feat" style="margin-top:12px">${en.historia ? en.historia.slice(0,120)+'…' : en.desc}</div>
       </div>
     </div>
-    <div class="modal-body">${enSections || `<div class="section"><div class="section-title">Descrição</div><div class="section-text">${en.desc}</div></div>`}</div>`;
+    <div class="modal-body">
+      ${textSections}
+      ${gurpsHtml}
+      ${ataqueHtml}
+      ${tracosHtml}
+      ${habsHtml}
+      ${magiasHtml}
+      ${falaHtml}
+      ${compHtml}
+    </div>`;
   openModal();
 };
 
@@ -1763,7 +1832,7 @@ function updateCount(tab){
   const labels = {
     classes: `${Object.keys(CLASSES_DATA).length} classes`,
     npcs:    `${Object.keys(NPCS).length} personagens`,
-    inimigos:`${INIMIGOS_DATA.length} criaturas`,
+    inimigos:`${(INIMIGOS_COMPLETO||INIMIGOS_DATA).length} criaturas`,
   };
   document.getElementById('count-label').textContent = labels[tab]||'';
 }
