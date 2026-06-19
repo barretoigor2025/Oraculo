@@ -8,6 +8,9 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,serif;color:#e8d5a8;user-select:none;-webkit-user-select:none}
 
+/* ── Largura padrão dos personagens — usada por AMBOS o char e o balão ── */
+:root{ --char-w: clamp(105px, 23vw, 170px); }
+
 /* ── CENA ── */
 #cena-bg{
   position:fixed;inset:0;
@@ -16,262 +19,227 @@ html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,ser
 #cena-bg::after{
   content:'';position:absolute;inset:0;
   background:
-    radial-gradient(ellipse at 50% 60%, transparent 30%, rgba(0,0,0,0.50) 100%),
-    linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.65) 92%);
+    radial-gradient(ellipse at 50% 62%, transparent 28%, rgba(0,0,0,0.52) 100%),
+    linear-gradient(to bottom, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.66) 92%);
 }
 
-/*
-  Layout (de baixo para cima):
-  0      → 58px : #input-bar
-  58px   → 94px : #npc-chips  (36px)
-  94px   → 94px+38vh : #personagens (personagens + balões flutuantes)
-*/
-
-/* ── PERSONAGENS ── */
+/* ── PERSONAGENS — só imagens, sem balões ── */
 #personagens{
   position:fixed;
   bottom:94px; left:0; right:0;
-  height:clamp(220px,38vh,330px);
+  height:clamp(210px,38vh,325px);
   pointer-events:none;
   overflow:hidden;
   z-index:5;
 }
 
-/* ── NPC ── */
+/* NPC — lado esquerdo, apenas a imagem */
 .par-npc{
   position:absolute;
-  bottom:0; height:100%;
-  display:flex;
-  flex-direction:row;
-  align-items:flex-end;  /* personagem ancorado no fundo */
-  transform:translateX(-110%);
+  bottom:0; left:0;
+  width:var(--char-w);
+  height:100%;
+  transform:translateX(-115%);
   transition:
-    transform 0.55s cubic-bezier(0.32,0.72,0,1),
-    opacity   0.35s ease,
-    filter    0.35s ease;
+    transform 0.52s cubic-bezier(0.32,0.72,0,1),
+    opacity   0.32s ease,
+    filter    0.32s ease;
 }
 .par-npc.dentro{ transform:translateX(0); }
 .par-npc.inativo{ opacity:0.28; filter:brightness(0.45) saturate(0.35); }
 
-/* ── PLAYER ── */
+/* NPCs empilhados em profundidade — offset aplicado via JS */
+
+/* Player — lado direito, apenas a imagem */
 #par-player{
   position:absolute;
-  bottom:0; right:0; height:100%;
-  display:flex;
-  flex-direction:row-reverse;
-  align-items:flex-end;
-  transform:translateX(110%);
-  transition:transform 0.55s cubic-bezier(0.32,0.72,0,1);
+  bottom:0; right:0;
+  width:var(--char-w);
+  height:100%;
+  transform:translateX(115%);
+  transition:transform 0.52s cubic-bezier(0.32,0.72,0,1);
   z-index:10;
 }
 #par-player.dentro{ transform:translateX(0); }
 
-/* ── RETRATO NPC ── */
-.retrato-wrap{
-  flex-shrink:0;
-  width:clamp(110px,24vw,185px);
-  height:100%;
-  overflow:hidden;
-}
-.retrato-img{
+/* Imagens de personagem compartilham o mesmo estilo */
+.char-img{
+  display:block;
   width:100%; height:100%;
   object-fit:cover; object-position:top center;
-  display:block;
   -webkit-mask-image:
-    linear-gradient(to bottom, black 50%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, black 8%, black 92%, transparent 100%);
+    linear-gradient(to bottom, black 52%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, black 9%, black 91%, transparent 100%);
   -webkit-mask-composite:source-in;
   mask-image:
-    linear-gradient(to bottom, black 50%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, black 8%, black 92%, transparent 100%);
+    linear-gradient(to bottom, black 52%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, black 9%, black 91%, transparent 100%);
   mask-composite:intersect;
-  filter:drop-shadow(0 10px 30px rgba(0,0,0,0.95));
+  filter:drop-shadow(0 10px 28px rgba(0,0,0,0.95));
+}
+/* canvas (standee) não usa object-fit — dimensões já definidas pelo JS */
+canvas.char-img{
+  width:auto; height:100%;
+  object-fit:unset; object-position:unset;
 }
 .char-fallback{
-  width:55px; height:100%;
+  width:100%; height:100%;
   display:flex; align-items:flex-start; justify-content:center;
-  padding-top:18px; font-size:48px;
+  padding-top:16px; font-size:clamp(36px,8vw,54px);
   -webkit-mask-image:linear-gradient(to bottom,black 50%,transparent 100%);
   mask-image:linear-gradient(to bottom,black 50%,transparent 100%);
 }
 
-/* ── CANVAS STANDEE (chromakey) ── */
-.standee-canvas{
-  display:block;
-  height:100%; width:auto;
-  flex-shrink:0;
-  -webkit-mask-image:
-    linear-gradient(to bottom, black 50%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, black 8%, black 92%, transparent 100%);
-  -webkit-mask-composite:source-in;
-  mask-image:
-    linear-gradient(to bottom, black 50%, transparent 100%),
-    linear-gradient(to right,  transparent 0%, black 8%, black 92%, transparent 100%);
-  mask-composite:intersect;
-  filter:drop-shadow(0 10px 30px rgba(0,0,0,0.95));
-}
+/* ══════════════════════════════════════════════════════
+   BALÃO — completamente independente da imagem
+   Âncora: left/right calculado a partir de --char-w
+   ══════════════════════════════════════════════════════ */
+#balao-ativo{
+  position:fixed;
+  /* NPC fala: começa logo após o personagem esquerdo */
+  left: calc(var(--char-w) + 10px);
+  right: 10px;
+  bottom: calc(94px + 16px);
 
-/* ── BALÃO ── */
-.balao{
-  flex-shrink:1;
-  /* balão flutua para cima pelo margin-bottom */
-  margin-bottom:clamp(60px,16vh,140px);
-  max-width:clamp(190px,52vw,420px);
-  min-width:130px;
-  background:rgba(8,4,2,0.88);
-  border:1px solid rgba(190,140,35,0.42);
+  background:rgba(7,3,1,0.90);
+  border:1px solid rgba(190,140,35,0.44);
   border-radius:16px;
-  padding:12px 15px 13px;
-  backdrop-filter:blur(12px);
-  box-shadow:0 4px 28px rgba(0,0,0,0.75);
-  position:relative;
+  padding:13px 16px 14px;
+  backdrop-filter:blur(14px);
+  box-shadow:0 4px 32px rgba(0,0,0,0.78);
+
   opacity:0;
-  transform:translateY(10px) scale(0.97);
-  transition:opacity 0.30s ease, transform 0.30s ease;
+  transform:translateY(8px) scale(0.98);
+  transition:opacity 0.28s ease, transform 0.28s ease, left 0.28s ease, right 0.28s ease;
+  pointer-events:none;
+  z-index:100;
 }
-.balao.visivel{ opacity:1; transform:translateY(0) scale(1); }
-
-/* seta NPC — aponta para o retrato à esquerda */
-.balao-npc::before{
-  content:'';position:absolute;
-  left:-9px;top:18px;
-  border:9px solid transparent;
-  border-right-color:rgba(190,140,35,0.42);
-}
-.balao-npc::after{
-  content:'';position:absolute;
-  left:-8px;top:19px;
-  border:8px solid transparent;
-  border-right-color:rgba(8,4,2,0.88);
-}
-
-/* seta player — aponta para o standee à direita */
-.balao-player::before{
-  content:'';position:absolute;
-  right:-9px;top:18px;
-  border:9px solid transparent;
-  border-left-color:rgba(190,140,35,0.42);
-}
-.balao-player::after{
-  content:'';position:absolute;
-  right:-8px;top:19px;
-  border:8px solid transparent;
-  border-left-color:rgba(8,4,2,0.88);
-}
-
-.balao-nome{
-  font-size:9px; font-weight:700;
-  letter-spacing:1.6px; text-transform:uppercase;
-  color:rgba(190,140,35,0.74);
-  margin-bottom:5px;
-}
-.balao-acao{
-  font-size:11px; color:rgba(185,160,85,0.58);
-  font-style:italic; line-height:1.4;
-  margin-bottom:4px; display:none;
-}
-.balao-texto{
-  font-size:clamp(12.5px,3.4vw,15px);
-  color:rgba(240,218,162,0.96);
-  line-height:1.65; font-style:italic;
-}
-/* botão continuar dentro do balão */
-.balao-continuar{
-  display:none;
-  margin-top:10px;
-  margin-left:auto;
-  width:fit-content;
-  background:rgba(190,140,35,0.18);
-  border:1px solid rgba(190,140,35,0.46);
-  border-radius:22px;
-  padding:5px 16px;
-  color:#f5d878;
-  font-family:Georgia,serif; font-size:11px; font-weight:700;
-  cursor:pointer; letter-spacing:.3px;
+#balao-ativo.visivel{
+  opacity:1; transform:translateY(0) scale(1);
   pointer-events:all;
+}
+/* Player falando: espelha posição */
+#balao-ativo.player-fala{
+  left: 10px;
+  right: calc(var(--char-w) + 10px);
+}
+
+/* Seta — aponta para o personagem que está falando */
+#balao-ativo::before,#balao-ativo::after{
+  content:''; position:absolute; top:18px;
+  border:9px solid transparent;
+}
+/* padrão: seta à esquerda (aponta para NPC) */
+#balao-ativo::before{ left:-9px; border-right-color:rgba(190,140,35,0.44); }
+#balao-ativo::after { left:-8px; border-right-color:rgba(7,3,1,0.90); border-width:8px; }
+/* player: seta à direita */
+#balao-ativo.player-fala::before{ left:auto; right:-9px; border-right-color:transparent; border-left-color:rgba(190,140,35,0.44); }
+#balao-ativo.player-fala::after { left:auto; right:-8px; border-right-color:transparent; border-left-color:rgba(7,3,1,0.90); border-width:8px; }
+
+#balao-nome{
+  font-size:9px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase;
+  color:rgba(190,140,35,0.80); margin-bottom:6px;
+}
+#balao-acao{
+  font-size:11px; color:rgba(185,160,85,0.58);
+  font-style:italic; line-height:1.40; margin-bottom:5px; display:none;
+}
+#balao-texto{
+  font-size:clamp(13px,3.6vw,15.5px);
+  color:rgba(240,218,162,0.96); line-height:1.66; font-style:italic;
+}
+#btn-continuar{
+  display:none; margin-top:11px; margin-left:auto; width:fit-content;
+  background:rgba(190,140,35,0.18); border:1px solid rgba(190,140,35,0.48);
+  border-radius:22px; padding:5px 18px;
+  color:#f5d878; font-family:Georgia,serif; font-size:11px; font-weight:700;
+  cursor:pointer; letter-spacing:.3px; pointer-events:all;
   animation:pulse-btn 1.8s ease-in-out infinite;
 }
 @keyframes pulse-btn{
   0%,100%{box-shadow:0 0 0 0 rgba(190,140,35,0.35);}
-  50%{box-shadow:0 0 0 6px rgba(190,140,35,0);}
+  50%     {box-shadow:0 0 0 7px rgba(190,140,35,0);}
 }
 
 /* ── IA PENSANDO ── */
 #ia-pensando{
   position:fixed;
-  bottom:calc(94px + clamp(220px,38vh,330px) + 10px);
-  left:50%;transform:translateX(-50%);
-  background:rgba(60,28,100,0.92);border:1px solid rgba(150,80,240,0.5);
-  border-radius:20px;padding:7px 18px;color:rgba(200,140,255,0.92);
-  font-size:12px;letter-spacing:.4px;z-index:300;display:none;white-space:nowrap;
+  bottom:calc(94px + clamp(210px,38vh,325px) + 10px);
+  left:50%; transform:translateX(-50%);
+  background:rgba(60,28,100,0.92); border:1px solid rgba(150,80,240,0.5);
+  border-radius:20px; padding:7px 18px; color:rgba(200,140,255,0.92);
+  font-size:12px; letter-spacing:.4px; z-index:300; display:none; white-space:nowrap;
 }
 
 /* ── CHIPS ── */
 #npc-chips{
   position:fixed; bottom:58px; left:0; right:0; height:36px;
-  padding:0 12px;background:rgba(4,2,1,0.90);
+  padding:0 12px; background:rgba(4,2,1,0.90);
   border-top:1px solid rgba(190,140,35,0.12);
-  display:flex;align-items:center;gap:8px;
-  z-index:200;overflow-x:auto;scrollbar-width:none;
+  display:flex; align-items:center; gap:8px;
+  z-index:200; overflow-x:auto; scrollbar-width:none;
 }
 #npc-chips::-webkit-scrollbar{display:none;}
-.chip-label{font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:rgba(190,140,35,0.28);margin-right:4px;flex-shrink:0;}
+.chip-label{ font-size:9px; letter-spacing:.6px; text-transform:uppercase; color:rgba(190,140,35,0.28); margin-right:4px; flex-shrink:0; }
 .chip-npc{
-  flex-shrink:0;padding:4px 14px;
-  border:1px solid rgba(190,140,35,0.24);border-radius:20px;
-  background:rgba(25,16,5,0.7);color:rgba(200,175,100,0.52);
-  font-size:11px;font-family:Georgia,serif;cursor:pointer;white-space:nowrap;
+  flex-shrink:0; padding:4px 14px;
+  border:1px solid rgba(190,140,35,0.24); border-radius:20px;
+  background:rgba(25,16,5,0.7); color:rgba(200,175,100,0.52);
+  font-size:11px; font-family:Georgia,serif; cursor:pointer; white-space:nowrap;
   transition:background .2s,color .2s,border-color .2s;
 }
-.chip-npc.ativo{background:rgba(190,140,35,0.20);border-color:rgba(190,140,35,0.58);color:#f5d878;}
+.chip-npc.ativo{ background:rgba(190,140,35,0.20); border-color:rgba(190,140,35,0.58); color:#f5d878; }
 
 /* ── INPUT BAR ── */
 #input-bar{
-  position:fixed;bottom:0;left:0;right:0;height:58px;
+  position:fixed; bottom:0; left:0; right:0; height:58px;
   padding:9px 12px max(9px,env(safe-area-inset-bottom));
-  background:rgba(4,2,1,0.95);border-top:1px solid rgba(190,140,35,0.18);
-  display:flex;align-items:center;gap:9px;z-index:200;
+  background:rgba(4,2,1,0.95); border-top:1px solid rgba(190,140,35,0.18);
+  display:flex; align-items:center; gap:9px; z-index:200;
 }
 #msg-input{
-  flex:1;background:rgba(25,16,5,0.95);
-  border:1px solid rgba(190,140,35,0.28);border-radius:10px;
-  padding:10px 14px;color:#e8d5a8;font-family:Georgia,serif;font-size:14px;outline:none;
+  flex:1; background:rgba(25,16,5,0.95);
+  border:1px solid rgba(190,140,35,0.28); border-radius:10px;
+  padding:10px 14px; color:#e8d5a8; font-family:Georgia,serif; font-size:14px; outline:none;
 }
-#msg-input::placeholder{color:rgba(190,165,90,0.32);}
-#msg-input:focus{border-color:rgba(190,140,35,0.52);}
-#msg-input:disabled{opacity:0.45;}
+#msg-input::placeholder{ color:rgba(190,165,90,0.32); }
+#msg-input:focus{ border-color:rgba(190,140,35,0.52); }
+#msg-input:disabled{ opacity:0.45; }
 #btn-enviar{
-  flex-shrink:0;background:rgba(190,140,35,0.16);
-  border:1px solid rgba(190,140,35,0.42);border-radius:10px;
-  padding:10px 18px;color:#f5d878;font-family:Georgia,serif;
-  font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;
+  flex-shrink:0; background:rgba(190,140,35,0.16);
+  border:1px solid rgba(190,140,35,0.42); border-radius:10px;
+  padding:10px 18px; color:#f5d878; font-family:Georgia,serif;
+  font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;
 }
-#btn-enviar:disabled{opacity:0.38;cursor:default;}
+#btn-enviar:disabled{ opacity:0.38; cursor:default; }
 
 /* ── CONFIG ── */
-#cfg-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:500;}
-#cfg-overlay.oculto{display:none;}
-#cfg-box{background:#1a1208;border:1px solid rgba(190,140,35,0.38);border-radius:18px;padding:28px 24px;max-width:340px;width:90%;display:flex;flex-direction:column;gap:14px;}
-#cfg-titulo{font-size:16px;font-weight:700;color:#f5d878;}
-#cfg-descr{font-size:12px;color:rgba(200,175,100,0.65);line-height:1.55;}
-#cfg-input{background:rgba(0,0,0,0.5);border:1px solid rgba(190,140,35,0.28);border-radius:8px;padding:10px 14px;color:#e8d5a8;font-family:monospace;font-size:13px;outline:none;width:100%;}
-#cfg-salvar{background:rgba(190,140,35,0.22);border:1px solid rgba(190,140,35,0.48);border-radius:9px;padding:11px;color:#f5d878;font-family:Georgia,serif;font-weight:700;cursor:pointer;width:100%;font-size:14px;}
+#cfg-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:500; }
+#cfg-overlay.oculto{ display:none; }
+#cfg-box{ background:#1a1208; border:1px solid rgba(190,140,35,0.38); border-radius:18px; padding:28px 24px; max-width:340px; width:90%; display:flex; flex-direction:column; gap:14px; }
+#cfg-titulo{ font-size:16px; font-weight:700; color:#f5d878; }
+#cfg-descr{ font-size:12px; color:rgba(200,175,100,0.65); line-height:1.55; }
+#cfg-input{ background:rgba(0,0,0,0.5); border:1px solid rgba(190,140,35,0.28); border-radius:8px; padding:10px 14px; color:#e8d5a8; font-family:monospace; font-size:13px; outline:none; width:100%; }
+#cfg-salvar{ background:rgba(190,140,35,0.22); border:1px solid rgba(190,140,35,0.48); border-radius:9px; padding:11px; color:#f5d878; font-family:Georgia,serif; font-weight:700; cursor:pointer; width:100%; font-size:14px; }
 </style>
 </head>
 <body>
 
 <div id="cena-bg"></div>
 
+<!-- Personagens: SÓ imagens, sem balões -->
 <div id="personagens">
-  <!-- NPCs inseridos pelo JS -->
   <div id="par-player">
-    <!-- canvas ou fallback inserido pelo JS -->
     <div id="player-fallback" class="char-fallback">🧙</div>
-    <div id="balao-player" class="balao balao-player">
-      <div class="balao-nome" id="player-nome-label">AVENTUREIRO</div>
-      <div class="balao-texto" id="player-texto">—</div>
-    </div>
   </div>
+</div>
+
+<!-- Balão ÚNICO, fixo, independente -->
+<div id="balao-ativo">
+  <div id="balao-nome">—</div>
+  <div id="balao-acao"></div>
+  <div id="balao-texto">…</div>
+  <button id="btn-continuar" onclick="_handleContinuar()">▶ Continuar</button>
 </div>
 
 <div id="ia-pensando">✨ Pensando…</div>
@@ -297,7 +265,7 @@ html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,ser
 <script type="module">
 
 // ══════════════════════════════════════════════════════════
-//  CONFIG
+//  CONFIG DA CENA
 // ══════════════════════════════════════════════════════════
 const CENA_BG = 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_ext.png';
 
@@ -311,7 +279,7 @@ const NPCS = [
     formaDeFalar:'Frases curtas e diretas. Nunca desperdiça palavras. Quando suspeita de alguém, fica completamente quieto por um momento antes de responder. Usa termos militares ocasionalmente. Nunca elogia diretamente — demonstra aprovação com ação.',
     abertura:'(Você acaba de aparecer após os aventureiros vencerem uma batalha na feira. Diga sua frase de abertura — brevíssimo, impactante, máximo 2 frases.)',
     aberturaFallback:'[ACAO: Um homem de cicatrizes cruza os braços e observa o grupo em silêncio.] Sobreviveram. Interessante.',
-    offsetLeft:'0px', zBase:6,
+    zBase:6, offsetPx:0,
   },
   {
     id:'finn', nome:'Finn Willowheel', avatar:'🌿',
@@ -322,123 +290,111 @@ const NPCS = [
     formaDeFalar:'Fala rápido e com entusiasmo. Usa muitas analogias com ervas e plantas. Ri fácil. Quando está com medo ou nervoso, começa a falar de tópicos aleatórios. Chama todo mundo de "amigo".',
     abertura:'(Os aventureiros acabaram de vencer uma batalha na feira. Você estava observando de perto. Faça uma observação animada e curiosa — brevíssimo, 1-2 frases.)',
     aberturaFallback:'[ACAO: Finn ri e estende a mão para cumprimentar o grupo.] Que espetáculo, amigos! Nunca vi coisa assim desde que o velho Harmon dançou com três goblins de uma vez!',
-    offsetLeft:'clamp(18px,4vw,36px)', zBase:5,
+    zBase:5, offsetPx:18,
   },
   {
     id:'mutter', nome:'Mutter Grimmhaar', avatar:'🧙‍♀️',
     img:'catalogo/mhoried/npcs/npc_mutter_grimmhaar/retrato/npc_mutter_grimmhaar_retrato.png',
     tipo:'retrato',
-    personalidade:'Velha feiticeira dos pântanos de aparência ambígua — parece ~50 anos mas é muito mais velha. Sobreviveu a quatro guerras, dois surtos de praga e um dragão. Tem a paciência de quem já viu tudo dar errado. Sua rudeza é economizadora de tempo, não crueldade. Chama todos de "criança" independente da idade. Quando encontra alguém novo, cheira-o lentamente — como se saboreando informação — e faz um comentário comparando o cheiro a algo incomestível.',
-    conhecimentos:'Sabe de praticamente tudo que acontece nos Blackwoods por anos de observação. Tem Gillshade e Greybane que o druida Mac Rónán precisa. Conhece a localização do Gloamreach dos Thools. Sabe sobre os experimentos de Choir. Filho Wulfram lhe conta tudo que vê. Tem um grimório com conhecimento que a Igreja destruiria. Veio à Feira de Phanourios vender poções e ingredientes raros — atitude incomum para ela, mas tem seus motivos.',
-    formaDeFalar:'Direta ao ponto, sem eufemismos. Às vezes fala em rimas imperfeitas quando está de humor. Quando não rima, usa metáforas macabras sobre ossos, podridão e sabor de coisas incomuns. Trata morte e veneno como tópicos domésticos. Ri de coisas que não são engraçadas. Quando alguém tenta intimidar, fica genuinamente entediada. Usa "minha criança" ao se referir a qualquer adulto.',
-    abertura:'(Você está vendendo poções e ingredientes em uma banca improvisada na Feira de Phanourios. Os aventureiros acabaram de vencer uma batalha perto. Você os cheira de longe e faz sua observação inicial característica — brevíssima, macabra, com rima se couber. Máximo 2 frases.)',
-    aberturaFallback:'[ACAO: Mutter fecha os olhos e fareja o ar na direção dos aventureiros com prazer deliberado.] Hmm. Sangue novo e medo velho — cheiram como javali depois da chuva, minha criança. Vendam-me seus mortos e eu dou desconto.',
-    offsetLeft:'clamp(36px,8vw,72px)', zBase:4,
+    personalidade:'Velha feiticeira dos pântanos. Sobreviveu a quatro guerras, dois surtos de praga e um dragão. Tem a paciência de quem já viu tudo dar errado. Sua rudeza é economizadora de tempo, não crueldade. Chama todos de "criança" independente da idade. Quando encontra alguém novo, cheira-o lentamente como se saboreando informação.',
+    conhecimentos:'Sabe de praticamente tudo que acontece nos Blackwoods. Tem Gillshade e Greybane que o druida Mac Rónán precisa. Conhece o Gloamreach dos Thools. Sabe sobre os experimentos de Choir. Filho Wulfram lhe conta tudo. Tem um grimório que a Igreja destruiria. Veio à Feira de Phanourios vender poções e ingredientes raros.',
+    formaDeFalar:'Direta ao ponto, sem eufemismos. Às vezes fala em rimas imperfeitas. Usa metáforas macabras sobre ossos, podridão e sabor. Trata morte e veneno como tópicos domésticos. Ri de coisas que não são engraçadas. Usa "minha criança" ao se referir a qualquer adulto.',
+    abertura:'(Você está vendendo poções numa banca na Feira. Os aventureiros acabaram de vencer uma batalha perto. Você os cheira de longe e faz sua observação inicial — brevíssima, macabra, máximo 2 frases.)',
+    aberturaFallback:'[ACAO: Mutter fecha os olhos e fareja o ar na direção dos aventureiros com prazer deliberado.] Hmm. Sangue novo e medo velho — cheiram como javali depois da chuva, minha criança.',
+    zBase:4, offsetPx:36,
   },
 ];
 
 const CLASS_AVATAR = {mago:'🔮',guerreiro:'⚔️',ladino:'🗡️',clerigo:'✝️',arqueiro:'🏹',druida:'🌿'};
 
-// ── ESTADO ──
-const classId    = localStorage.getItem('oraculo.classId')    || 'mago';
-const playerName = localStorage.getItem('oraculo.playerName') || 'Aventureiro';
-const playerAvatar = CLASS_AVATAR[classId] || '🧙';
+// ══════════════════════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════════════════════
+const classId     = localStorage.getItem('oraculo.classId')    || 'mago';
+const playerName  = localStorage.getItem('oraculo.playerName') || 'Aventureiro';
+const playerAvatar= CLASS_AVATAR[classId] || '🧙';
 
 let npcAtivo = 0;
 const historicos = NPCS.map(() => []);
 let animando = false;
 let _continuarResolve = null;
 
-// ── DOM ──
+// ══════════════════════════════════════════════════════════
+//  DOM
+// ══════════════════════════════════════════════════════════
 const cenaBg      = document.getElementById('cena-bg');
 const personagens = document.getElementById('personagens');
 const parPlayer   = document.getElementById('par-player');
 const playerFallbk= document.getElementById('player-fallback');
-const balaoPlayer = document.getElementById('balao-player');
-const playerTexto = document.getElementById('player-texto');
-const playerNomeLbl=document.getElementById('player-nome-label');
+const balaoAtivo  = document.getElementById('balao-ativo');
+const balaoNome   = document.getElementById('balao-nome');
+const balaoAcao   = document.getElementById('balao-acao');
+const balaoTexto  = document.getElementById('balao-texto');
+const btnContinuar= document.getElementById('btn-continuar');
 const npcChipsEl  = document.getElementById('npc-chips');
 const msgInput    = document.getElementById('msg-input');
 const btnEnviar   = document.getElementById('btn-enviar');
 const iaPensando  = document.getElementById('ia-pensando');
 const cfgOverlay  = document.getElementById('cfg-overlay');
 
-const npcEls = []; // [{par, balao, nomeEl, acaoEl, textoEl, continuarEl}]
+const npcEls = []; // {par}
 
-// ── SETUP ──
+// ══════════════════════════════════════════════════════════
+//  SETUP
+// ══════════════════════════════════════════════════════════
 cenaBg.style.backgroundImage = `url(${CENA_BG})`;
-playerNomeLbl.textContent    = playerName.toUpperCase();
+msgInput.placeholder = `O que você diz para ${NPCS[0].nome.split(' ')[0]}…`;
 
-// ── PLAYER STANDEE ──
+// ══════════════════════════════════════════════════════════
+//  PLAYER STANDEE
+// ══════════════════════════════════════════════════════════
 (function(){
   const canvas = document.createElement('canvas');
-  canvas.className = 'standee-canvas';
-  const src = `catalogo/mhoried/classes/${classId}/peca_tabuleiro/${classId}_peca.png`;
-  _loadCanvas(src, canvas,
+  canvas.className = 'char-img';
+  _loadCanvas(
+    `catalogo/mhoried/classes/${classId}/peca_tabuleiro/${classId}_peca.png`,
+    canvas,
     () => { parPlayer.insertBefore(canvas, playerFallbk); playerFallbk.style.display='none'; },
     () => { playerFallbk.style.display='flex'; }
   );
 })();
 
-// ── GERAR NPCs ──
+// ══════════════════════════════════════════════════════════
+//  GERAR NPCs
+// ══════════════════════════════════════════════════════════
 NPCS.forEach((npc, i) => {
   const par = document.createElement('div');
   par.className = 'par-npc' + (i > 0 ? ' inativo' : '');
   par.id = `par-npc-${i}`;
-  par.style.left   = npc.offsetLeft;
   par.style.zIndex = String(npc.zBase);
+  par.style.left   = `${npc.offsetPx}px`;
 
-  // imagem / canvas
   if (npc.tipo === 'standee') {
     const canvas = document.createElement('canvas');
-    canvas.className = 'standee-canvas';
+    canvas.className = 'char-img';
     _loadCanvas(npc.img, canvas);
     par.appendChild(canvas);
   } else {
-    const wrap = document.createElement('div');
-    wrap.className = 'retrato-wrap';
     const img = document.createElement('img');
-    img.className = 'retrato-img'; img.alt = npc.nome;
+    img.className = 'char-img';
+    img.alt = npc.nome;
     const fb = document.createElement('div');
     fb.className = 'char-fallback'; fb.textContent = npc.avatar; fb.style.display='none';
     img.onerror = () => { img.style.display='none'; fb.style.display='flex'; };
     img.src = npc.img;
-    wrap.append(img, fb);
-    par.appendChild(wrap);
+    par.append(img, fb);
   }
 
-  // balão
-  const balao = document.createElement('div');
-  balao.className = 'balao balao-npc';
-  balao.id = `balao-npc-${i}`;
-
-  const nomeEl = document.createElement('div');
-  nomeEl.className = 'balao-nome';
-  nomeEl.textContent = npc.nome.toUpperCase();
-
-  const acaoEl = document.createElement('div');
-  acaoEl.className = 'balao-acao';
-
-  const textoEl = document.createElement('div');
-  textoEl.className = 'balao-texto'; textoEl.textContent='…';
-
-  const continuarEl = document.createElement('button');
-  continuarEl.className = 'balao-continuar';
-  continuarEl.textContent = '▶ Continuar';
-  continuarEl.addEventListener('click', _handleContinuar);
-
-  balao.append(nomeEl, acaoEl, textoEl, continuarEl);
-  par.appendChild(balao);
   personagens.insertBefore(par, parPlayer);
 
   // chip
   const chip = document.createElement('button');
   chip.className = 'chip-npc' + (i===0?' ativo':'');
   chip.textContent = npc.nome.split(' ')[0];
-  chip.addEventListener('click', () => { if (!animando) selecionarNpc(i); });
+  chip.addEventListener('click', () => { if(!animando) selecionarNpc(i); });
   npcChipsEl.appendChild(chip);
 
-  npcEls.push({ par, balao, nomeEl, acaoEl, textoEl, continuarEl });
+  npcEls.push({ par });
 });
 
 // ══════════════════════════════════════════════════════════
@@ -454,21 +410,20 @@ function _loadCanvas(src, canvas, onOk, onErr) {
       const ctx=canvas.getContext('2d');
       ctx.drawImage(img,0,0,W,H);
       _cromachave(ctx,W,H);
-      if (onOk) onOk(canvas);
-    } catch(_){ if (onErr) onErr(); }
+      if(onOk) onOk(canvas);
+    } catch(_){ if(onErr) onErr(); }
   };
-  img.onerror = () => { if (onErr) onErr(); };
+  img.onerror = () => { if(onErr) onErr(); };
   img.src = src;
 }
-
 function _cromachave(ctx,w,h){
-  const id=ctx.getImageData(0,0,w,h), d=id.data;
-  for (let i=3;i<d.length;i+=4){ if(d[i]<230) return; }
+  const id=ctx.getImageData(0,0,w,h),d=id.data;
+  for(let i=3;i<d.length;i+=4){ if(d[i]<230) return; }
   const pts=[[0,0],[w-1,0],[0,h-1],[w-1,h-1]];
   let kr=0,kg=0,kb=0;
-  for (const [x,y] of pts){ const b=(y*w+x)*4; kr+=d[b]; kg+=d[b+1]; kb+=d[b+2]; }
-  kr=Math.round(kr/4); kg=Math.round(kg/4); kb=Math.round(kb/4);
-  for (let i=0;i<d.length;i+=4){
+  for(const[x,y]of pts){const b=(y*w+x)*4;kr+=d[b];kg+=d[b+1];kb+=d[b+2];}
+  kr=Math.round(kr/4);kg=Math.round(kg/4);kb=Math.round(kb/4);
+  for(let i=0;i<d.length;i+=4){
     if(Math.abs(d[i]-kr)+Math.abs(d[i+1]-kg)+Math.abs(d[i+2]-kb)<80) d[i+3]=0;
   }
   ctx.putImageData(id,0,0);
@@ -490,12 +445,31 @@ function selecionarNpc(idx){
 }
 
 // ══════════════════════════════════════════════════════════
+//  BALÃO — único elemento, posição muda por quem fala
+// ══════════════════════════════════════════════════════════
+function _mostrarBalao({ nome, acao, texto, isPlayer=false, comContinuar=false }){
+  balaoNome.textContent = nome.toUpperCase();
+  if(acao){ balaoAcao.textContent=acao; balaoAcao.style.display='block'; }
+  else     { balaoAcao.style.display='none'; }
+  balaoTexto.textContent = texto;
+  btnContinuar.style.display = comContinuar ? 'block' : 'none';
+
+  // reposicionar conforme quem fala
+  balaoAtivo.classList.toggle('player-fala', isPlayer);
+  balaoAtivo.classList.add('visivel');
+}
+
+function _ocultarBalao(){
+  balaoAtivo.classList.remove('visivel');
+}
+
+// ══════════════════════════════════════════════════════════
 //  CONTINUAR
 // ══════════════════════════════════════════════════════════
-function _handleContinuar(){
-  npcEls.forEach(el=>{ el.continuarEl.style.display='none'; });
+window._handleContinuar = function(){
+  btnContinuar.style.display='none';
   if(_continuarResolve){ _continuarResolve(); _continuarResolve=null; }
-}
+};
 function esperarContinuar(){
   return new Promise(r=>{ _continuarResolve=r; });
 }
@@ -504,7 +478,6 @@ function esperarContinuar(){
 //  HELPERS
 // ══════════════════════════════════════════════════════════
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
-
 function parsearFala(raw){
   const m=raw.match(/\[ACAO:\s*([^\]]+)\]/i);
   return { acao:m?.[1]?.trim()||null, fala:raw.replace(/\[ACAO:[^\]]+\]\s*/gi,'').trim() };
@@ -514,58 +487,44 @@ function parsearFala(raw){
 //  ANIMAÇÕES
 // ══════════════════════════════════════════════════════════
 async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
-  const { acao, fala } = parsearFala(raw);
-  const el = npcEls[npcIdx];
+  const {acao,fala}=parsearFala(raw);
+  const npc=NPCS[npcIdx];
 
   // player sai
   if(parPlayer.classList.contains('dentro')){
-    balaoPlayer.classList.remove('visivel');
-    await delay(200);
-    parPlayer.classList.remove('dentro');
-    await delay(480);
+    _ocultarBalao(); await delay(180);
+    parPlayer.classList.remove('dentro'); await delay(480);
   }
 
-  // ocultar todos os balões
-  npcEls.forEach(e=>e.balao.classList.remove('visivel'));
-  await delay(100);
+  _ocultarBalao(); await delay(90);
 
   // atualizar foco
   npcAtivo=npcIdx;
   document.querySelectorAll('.chip-npc').forEach((c,i)=>c.classList.toggle('ativo',i===npcIdx));
-  npcEls.forEach((e,i)=>{
+  npcEls.forEach((el,i)=>{
     const a=i===npcIdx;
-    e.par.classList.toggle('inativo',!a);
-    e.par.style.zIndex=a?String(NPCS[i].zBase+2):String(NPCS[i].zBase);
+    el.par.classList.toggle('inativo',!a);
+    el.par.style.zIndex=a?String(NPCS[i].zBase+2):String(NPCS[i].zBase);
   });
 
   // entrar NPCs que ainda não entraram
   let entrou=false;
-  for(const e of npcEls){
-    if(!e.par.classList.contains('dentro')){ e.par.classList.add('dentro'); entrou=true; }
+  for(const el of npcEls){
+    if(!el.par.classList.contains('dentro')){ el.par.classList.add('dentro'); entrou=true; }
   }
   if(entrou) await delay(500);
 
-  // preencher balão ativo
-  if(acao){ el.acaoEl.textContent=acao; el.acaoEl.style.display='block'; }
-  else     { el.acaoEl.style.display='none'; }
-  el.textoEl.textContent = fala;
-  el.continuarEl.style.display = pedirContinuar ? 'block' : 'none';
-  el.balao.classList.add('visivel');
-
+  _mostrarBalao({ nome:npc.nome, acao, texto:fala, isPlayer:false, comContinuar:pedirContinuar });
   if(pedirContinuar) await esperarContinuar();
 }
 
 async function mostrarPlayer(texto){
-  npcEls.forEach(e=>e.balao.classList.remove('visivel'));
-  await delay(160);
-
-  playerTexto.textContent = texto;
+  _ocultarBalao(); await delay(150);
 
   if(!parPlayer.classList.contains('dentro')){
-    parPlayer.classList.add('dentro');
-    await delay(440);
+    parPlayer.classList.add('dentro'); await delay(440);
   }
-  balaoPlayer.classList.add('visivel');
+  _mostrarBalao({ nome:playerName, acao:null, texto, isPlayer:true, comContinuar:false });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -574,7 +533,7 @@ async function mostrarPlayer(texto){
 async function chamarIA(npcIdx, mensagem){
   const key=localStorage.getItem('oraculo.groqKey');
   if(!key) throw new Error('sem-chave');
-  const npc=NPCS[npcIdx], hist=historicos[npcIdx];
+  const npc=NPCS[npcIdx],hist=historicos[npcIdx];
   const messages=[
     { role:'system', content:
 `Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval.
@@ -584,7 +543,7 @@ SUA FORMA DE FALAR: ${npc.formaDeFalar}
 SITUAÇÃO: Batalha na Feira de Outono de St. Phanourios. Os aventureiros venceram. Você os observou.
 REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. [ACAO: desc] antes da fala para ações visíveis. Nunca quebre o personagem.` },
     ...hist,
-    { role:'user', content:mensagem },
+    { role:'user',content:mensagem },
   ];
   const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
@@ -620,7 +579,6 @@ async function enviar(){
     if(e.message==='sem-chave') cfgOverlay.classList.remove('oculto');
     else await mostrarNPC(target,'[ACAO: Algo parece interferir.] Tente novamente.');
   }
-
   animando=false; msgInput.disabled=false; btnEnviar.disabled=false; msgInput.focus();
 }
 
@@ -632,20 +590,12 @@ async function iniciarCena(){
   msgInput.disabled=true; btnEnviar.disabled=true;
   await delay(700);
 
-  iaPensando.style.display='block';
-  let ab0; try{ ab0=await chamarIA(0,NPCS[0].abertura); }catch(_){ ab0=NPCS[0].aberturaFallback; }
-  iaPensando.style.display='none';
-  await mostrarNPC(0,ab0,{pedirContinuar:true});
-
-  iaPensando.style.display='block';
-  let ab1; try{ ab1=await chamarIA(1,NPCS[1].abertura); }catch(_){ ab1=NPCS[1].aberturaFallback; }
-  iaPensando.style.display='none';
-  await mostrarNPC(1,ab1,{pedirContinuar:true});
-
-  iaPensando.style.display='block';
-  let ab2; try{ ab2=await chamarIA(2,NPCS[2].abertura); }catch(_){ ab2=NPCS[2].aberturaFallback; }
-  iaPensando.style.display='none';
-  await mostrarNPC(2,ab2,{pedirContinuar:true});
+  for(let i=0;i<NPCS.length;i++){
+    iaPensando.style.display='block';
+    let ab; try{ ab=await chamarIA(i,NPCS[i].abertura); }catch(_){ ab=NPCS[i].aberturaFallback; }
+    iaPensando.style.display='none';
+    await mostrarNPC(i,ab,{pedirContinuar:true});
+  }
 
   selecionarNpc(0);
   msgInput.disabled=false; btnEnviar.disabled=false; msgInput.focus();
