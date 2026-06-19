@@ -221,6 +221,13 @@ export const CENAS = {
     beatNarrativo: 'CENA-CHAVE: Morwenna está em torpor mágico na jaula. Se libertada, revela ter visto elfos sombrios visitando Mutter, ouvido falar de "uma caixa" que a bruxa guarda, e sabe a direção dos kobolds. Mutter não a liberta por capricho — há uma razão que ela pode revelar se pressionada com habilidade.',
     pistas: ['morwenna_prisioneira', 'grimoirio_mutter', 'caixa_secreta_mutter', 'visitas_elfos_sombrios'],
     alertaNarrador: 'O narrador deve descrever a jaula com Morwenna imediatamente ao entrar — não esperar os jogadores procurarem. A contradição entre a bruxa "prestativa" e a prisioneira em torpor é o gancho moral central desta cena.',
+    gatilhos_saida: [
+      {
+        dc: 13,
+        descricaoContexto: 'Uma figura feminina — Morwenna — está presa numa jaula de madeira encantada no canto da choupana, em torpor mágico. Correntes de madeira encantada prendem seus tornozelos. Ela viu elfos sombrios visitando Mutter e sabe sobre uma caixa secreta que a bruxa guarda.',
+        textoFallback: 'Antes de dar o último passo para fora, uma brisa traz um cheiro estranho do interior — algo entre madeira úmida e respiração fraca.',
+      }
+    ],
   },
 
   cnoc_na_rithe: {
@@ -256,6 +263,13 @@ export const CENAS = {
     beatNarrativo: 'MÚLTIPLOS BEATS: (1) Blunkin pode ser bajulado — elogios excessivos funcionam melhor que ameaças. (2) Mac Rónán está preso numa jaula atrás do trono de Blunkin — libertá-lo é o objetivo principal. (3) Dvalinn quer vingança nos elfos mas pode ser convencido a esperar. (4) Krink, Drizzle e Murznut são dissidentes que QUEREM que os aventureiros libertem os prisioneiros — podem ser aliados ocultos dentro da cidade se abordados com discrição. (5) Drizzle pode ter "achado" informações cruciais sem perceber.',
     pistas: ['cristal_rachado_trono', 'localizacao_gloamreach', 'mapa_kobold_town', 'segredo_krink_dissidentes'],
     alertaNarrador: 'A Kobold Town tem DUAS dinâmicas simultâneas: a negociação/confronto oficial com Blunkin, e a aliança clandestina possível com os três kobolds dissidentes. O narrador deve criar oportunidade para os jogadores perceberem que há kobolds que os observam de forma diferente dos outros.',
+    gatilhos_entrada: [
+      {
+        dc: 14,
+        descricaoContexto: 'Três kobolds (Krink, Drizzle, Murznut) observam o grupo da periferia, escondidos entre as construções, com olhares distintos — curiosidade genuína e esperança ao invés do ódio padrão dos kobolds de Blunkin. Krink faz um gesto discreto com a pata quando percebe que alguém pode estar olhando.',
+        textoFallback: 'Ao entrar na cidade kobold, por um instante, algo na periferia do campo de visão se move de forma diferente dos guardas — mais cauteloso, mais ansioso.',
+      }
+    ],
   },
 
   gloamreach: {
@@ -276,6 +290,13 @@ export const CENAS = {
     beatNarrativo: 'CENA DE RECONHECIMENTO: O Duque Oswald está aqui como Grimhollow Thool. (1) IDENTIDADE: A marca de lúpulo no ombro é a prova — quem a reconhece e chamar Oswald pelo nome tem chance de fazer a consciência humana emergir. Gregoras e Finn Willowheel sabem disso. (2) PORTAL: Existe um portal neste templo que conecta ao Gloamreach e à Torre de Limm — o escape final do Rei Chutter. Encontrá-lo muda a estratégia final. (3) MORAL: Matar todos os Thools para avançar significa potencialmente matar humanos transformados. Há redemption arc possível ou é necessário avançar a qualquer custo? (4) SE OSWALD FOR RECONHECIDO: DC 18 para persuadi-lo — a besta resiste, mas Oswald emerge. Promessa de cura é necessária.',
     pistas: ['marca_lupulo_oswald', 'portal_torre_limm', 'thools_transformados_humanos'],
     alertaNarrador: 'O narrador DEVE descrever a hesitação de um dos Thools de forma que os aventureiros possam notar — não como um evento óbvio, mas como um detalhe que recompensa atenção. A marca de lúpulo deve ser visível apenas se alguém olhar especificamente. Que Oswald esteja ali não é um segredo que deve ser revelado — é uma descoberta que a party faz ou não faz com base no que o narrador descreve.',
+    gatilhos_entrada: [
+      {
+        dc: 15,
+        descricaoContexto: 'Um dos Thools (Oswald transformado) hesita por uma fração de segundo ao ver o grupo — um comportamento anômalo entre criaturas sem vontade própria. Na parte interna do pulso desse Thool há uma marca em forma de baga-de-espinheiro, símbolo dos Laskaris de Mhoried. O dedo anular do pé direito tem uma anomalia.',
+        textoFallback: 'Entre os Thools que patrulham, um movimento chama a atenção por um milésimo de segundo — algo que não deveria estar ali nessas criaturas sem vontade.',
+      }
+    ],
   },
 
   torre_limm: {
@@ -404,6 +425,13 @@ export const CENAS = {
     pistas: ['visões_passado', 'sepultura_jariella', 'espada_selvimar', 'premonição_jariella'],
     beatNarrativo: 'CENA ESPIRITUAL: Jariella aparece como visão na água do poço para qualquer um que beber. Ela comunica em fragmentos: (1) seus ossos estão em lugar que ela pode revelar, (2) a espada Selvimar ainda canta nas águas, (3) o Príncipe Kalos a conhecia e a desrespeitou — qualquer aparição mais clara recebe imagem distorcida e perturbadora. ITEM LENDÁRIO: Selvimar é espada encantada (Puissance+1, Accuracy+1, Breathe Water, Resist Lightning) — quem a encontrar ganha também Jariella como presença espiritual que julga as ações da party.',
     alertaNarrador: 'O narrador deve descrever a presença de Jariella como ambiente antes de ser interação — a névoa, o reflexo, a sensação de ser observado. A água do poço revela visões APENAS para quem beber voluntariamente. O espírito de Jariella está preso ao bosque pela recusa em partir sem que a espada seja encontrada — essa tragédia deve ser sentida, não apenas narrada.',
+    gatilhos_entrada: [
+      {
+        dc: 11,
+        descricaoContexto: 'O espírito de Jariella está presente nas águas do Poço dos Chorões — uma silhueta translúcida que só é visível por um momento no reflexo da água antes de se dissipar. Ela está presa aqui e não pode partir sem que a Espada Selvimar seja encontrada. Mencionar a espada faz o espírito se tornar visível e comunicativo.',
+        textoFallback: 'Ao se aproximar do poço, por um instante o reflexo na água mostra algo que não está presente — uma forma, um contorno, uma presença que observa de baixo.',
+      }
+    ],
   },
 
   ruins_simithari: {
@@ -424,6 +452,13 @@ export const CENAS = {
     pistas: ['pista_choir', 'varinha_fariborz_blink', 'plano_traicao_choir', 'lista_protegidos_choir'],
     beatNarrativo: 'REVELAÇÃO DUPLA: (1) TRAIÇÃO: Choir planeja trair Chutter — pergaminho com plano explícito. Isso muda a dinâmica da campanha — os aventureiros podem usar isso como alavanca com Chutter, deixar acontecer como aliança inesperada, ou tentar avisar Chutter por razões próprias. (2) HUMANIDADE: A lista de "protegidos" de Choir revela que o necromante frio e clínico tem uma fraqueza emocional que ele jamais admitiria. Quem está nessa lista? Isso é propositalmente ambíguo — o narrador pode decidir baseado na campanha.',
     alertaNarrador: 'A descoberta do plano de traição deve ser gradual — primeiro os jogadores encontram as notas de laboratório (científicas, frias, perturbadoras), depois encontram o pergaminho da traição quase acidentalmente. O contraste entre a crueldade clínica dos experimentos e a humanidade da lista de protegidos é o impacto emocional central desta cena.',
+    gatilhos_saida: [
+      {
+        dc: 12,
+        descricaoContexto: 'Num nicho entre os livros, um pergaminho com o selo do Choir descreve em detalhes como trair o Rei Chutter entregando-o ao clã rival — assinado com um glifo que corresponde exatamente ao símbolo usado pelo Choir como seu favorito. É a prova da conspiração A.',
+        textoFallback: 'Ao virar as costas para os livros, uma leve perturbação no ar faz um canto específico da sala chamar atenção — como se algo ali pedisse para ser visto.',
+      }
+    ],
   },
 
   kobolds_dissidentes: {
@@ -442,6 +477,13 @@ export const CENAS = {
     beatNarrativo: 'CENA DE OPORTUNIDADE: Os três kobolds dissidentes podem ser aliados valiosos ANTES de entrar na Cidade Kobold. (1) KRINK sabe a planta da cidade, turnos de guarda, e onde Mac Rónán está preso. Tratá-lo como "Estrategista" (mesmo fingindo) o torna colaborativo. (2) DRIZZLE pode ter "achado" informações que ninguém mais tem — chave do segundo andar de Blunkin, mapa esboçado dos Thools, informação sobre a prisão de Mac Rónán (dita sem perceber a importância). Objetos brilhantes funcionam melhor que ouro. (3) MURZNUT pode ser recrutado automaticamente se Drizzle e Krink já foram — DC 8 caso contrário. Tem filhote de animal escondido. Chora sozinho e não sabe por quê. (4) OS TRÊS JUNTOS: Podem guiar a party pela cidade kobold evitando as principais patrulhas — uma rota alternativa que torna a missão de resgate muito mais segura.',
     pistas: ['planta_kobold_town', 'turno_guardas_blunkin', 'localizacao_mac_ronan_preso', 'chave_blunkin'],
     alertaNarrador: 'Esta cena pode acontecer ANTES da Cidade Kobold, como descoberta ao explorar a periferia do território. Os três kobolds não devem parecer ameaçadores — devem parecer exatamente o que são: refugiados que apostaram tudo em algo que ainda não sabem se vai funcionar. Drizzle vai se distrair com qualquer objeto brilhante dos aventureiros. Deixe isso acontecer de forma cômica mas genuína.',
+    gatilhos_entrada: [
+      {
+        dc: 12,
+        descricaoContexto: 'Três kobolds (Krink, Drizzle, Murznut) estão escondidos na copa das árvores observando os aventureiros. Krink tem um pergaminho rabiscado com a planta da Kobold Town. Drizzle segura o que parece ser uma chave. Murznut esconde algo pequeno e vivo dentro da túnica. Eles não fogem — estão esperando para ver se o grupo parece digno de confiança.',
+        textoFallback: 'Uma folha cai de uma árvore sem vento. Depois outra. Algo nesta clareira observa, esperando para ver o que vocês farão.',
+      }
+    ],
   },
 
   ysoria_revelacao: {

@@ -41,6 +41,17 @@ if(_cfg&&_rid){
       try{await updateDoc(rd,{[`narration.introConfirmados.${playerId}`]:true,'narration.ts':Date.now()});}
       catch(e){console.warn('fbAddIntroConfirm:',e);}
     };
+    window._fbRespondPercepcao=async(pid,resposta)=>{
+      try{await updateDoc(rd,{[`narration.percepcao.respostas.${pid}`]:resposta,'narration.ts':Date.now()});}
+      catch(e){console.warn('fbRespondPercepcao:',e);}
+    };
+    window._fbAtualizarPercepcao=async(fields)=>{
+      try{
+        const u={'narration.ts':Date.now()};
+        for(const[k,v]of Object.entries(fields)) u[`narration.percepcao.${k}`]=v;
+        await updateDoc(rd,u);
+      }catch(e){console.warn('fbAtualizarPercepcao:',e);}
+    };
     window._fbListenRoom=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
   }catch(e){console.warn('Narração Firebase init:',e);}
 }
@@ -401,6 +412,84 @@ html,body{
 }
 #ia-loading.oculto{opacity:0;pointer-events:none;}
 
+/* ── MODAL DE PERCEPÇÃO ── */
+#percepcao-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.80);
+  display:flex;align-items:center;justify-content:center;
+  z-index:500;
+  backdrop-filter:blur(5px);
+}
+#percepcao-overlay.oculto{display:none;}
+#percepcao-box{
+  background:linear-gradient(160deg,#1c1408,#0f0b05);
+  border:1px solid rgba(190,140,35,0.45);
+  border-radius:18px;
+  padding:28px 22px 24px;
+  max-width:370px;width:92%;
+  display:flex;flex-direction:column;gap:14px;
+  text-align:center;
+  box-shadow:0 0 50px rgba(190,140,35,0.18);
+}
+#percepcao-icon{font-size:34px;line-height:1;}
+#percepcao-atmosfera{
+  font-size:13.5px;color:rgba(225,195,115,0.92);
+  font-style:italic;line-height:1.65;
+}
+#percepcao-linha-dc{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-size:13px;color:#f5d878;font-weight:700;letter-spacing:.8px;
+}
+.perc-badge{
+  background:rgba(190,140,35,0.18);
+  border:1px solid rgba(190,140,35,0.45);
+  border-radius:6px;padding:2px 9px;font-size:11px;
+}
+#percepcao-btns-resposta{display:flex;gap:10px;}
+#percepcao-btns-resposta button{
+  flex:1;padding:13px 8px;border-radius:11px;border:none;
+  font-family:inherit;font-size:13px;cursor:pointer;font-weight:700;
+  transition:opacity .2s;
+}
+#percepcao-btns-resposta button:disabled{opacity:.4;cursor:default;}
+#btn-perc-sim{
+  background:rgba(60,110,170,0.28);
+  border:1px solid rgba(74,130,200,0.6) !important;
+  color:#a8d4f5;
+}
+#btn-perc-nao{
+  background:rgba(110,55,55,0.28);
+  border:1px solid rgba(160,80,80,0.5) !important;
+  color:#d4a0a0;
+}
+#percepcao-aguardando{font-size:12px;color:rgba(190,165,90,0.7);}
+#percepcao-count-text{font-style:italic;margin-bottom:8px;}
+#percepcao-respostas-list{
+  display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+}
+.perc-resp-chip{
+  padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;
+  background:rgba(0,0,0,0.3);border:1px solid rgba(190,140,35,0.2);
+  color:rgba(210,185,105,0.65);
+}
+.perc-resp-chip.sim{border-color:rgba(74,130,200,0.5);color:#a8d4f5;}
+.perc-resp-chip.nao{border-color:rgba(160,80,80,0.45);color:#d4a0a0;}
+.perc-resp-chip.rolou{border-color:rgba(90,190,80,0.5);color:#a0e08c;}
+#percepcao-rolar-div{display:flex;flex-direction:column;align-items:center;gap:8px;}
+#btn-rolar-perc{
+  padding:14px 0;width:100%;
+  background:rgba(60,110,170,0.22);
+  border:2px solid rgba(74,130,200,0.6);
+  border-radius:13px;
+  color:#a8d4f5;font-family:inherit;font-size:16px;font-weight:700;
+  cursor:pointer;letter-spacing:1px;transition:opacity .2s;
+}
+#btn-rolar-perc:disabled{opacity:.35;cursor:default;}
+#percepcao-dado-result{
+  font-size:32px;font-weight:900;color:#f5d878;
+  letter-spacing:3px;min-height:40px;
+}
+
 /* ── INDICADOR DE CENA SEM IMAGEM ── */
 .sem-imagem #cena-imagem{display:none;}
 .sem-imagem #cena-placeholder{display:flex;}
@@ -558,6 +647,31 @@ html,body{
 
 </div>
 
+<!-- Modal de Teste de Percepção -->
+<div id="percepcao-overlay" class="oculto">
+  <div id="percepcao-box">
+    <div id="percepcao-icon">👁</div>
+    <div id="percepcao-atmosfera">—</div>
+    <div id="percepcao-linha-dc">
+      <span class="perc-badge">🎲 DC</span>
+      <span id="percepcao-dc-val">12</span>
+      <span>— Percepção</span>
+    </div>
+    <div id="percepcao-btns-resposta">
+      <button id="btn-perc-sim" onclick="responderPercepcao(true)">🎲 Sim, tento</button>
+      <button id="btn-perc-nao" onclick="responderPercepcao(false)">✕ Prefiro não</button>
+    </div>
+    <div id="percepcao-aguardando" class="oculto">
+      <div id="percepcao-count-text">Aguardando todos responderem…</div>
+      <div id="percepcao-respostas-list"></div>
+    </div>
+    <div id="percepcao-rolar-div" class="oculto">
+      <button id="btn-rolar-perc" onclick="rolarPercepcao()">🎲 Rolar d20</button>
+      <div id="percepcao-dado-result">—</div>
+    </div>
+  </div>
+</div>
+
 <!-- Intro cinematográfico de cena -->
 <div id="intro-cinematico" class="oculto">
   <div id="intro-bg"></div>
@@ -607,6 +721,7 @@ let _modoImagem = 'exterior';
 let _lastRoom   = null;
 let _dialogoLog = [];
 let _unsubRoom = null;
+let _percepcaoEmAndamento = false;
 
 // ── Referências DOM ──────────────────────────────────────────────
 const elTitulo = document.getElementById('narr-titulo');
@@ -643,6 +758,8 @@ window.salvarCfgIA = salvarCfgIA;
 window.avancarIntro = avancarIntro;
 window.confirmarPronto = confirmarPronto;
 window.selecionarChip = selecionarChip;
+window.responderPercepcao = responderPercepcao;
+window.rolarPercepcao = rolarPercepcao;
 
 // ── Init ─────────────────────────────────────────────────────────
 function init() {
@@ -710,6 +827,18 @@ function onRoomUpdate(room) {
         btnEl.onclick = null;
       }
     }
+  }
+
+  // Verificar estado de percepção
+  const percepcao = narr.percepcao;
+  if (percepcao?.ativo) {
+    mostrarModalPercepcao(percepcao);
+    if (_isHost) {
+      if (percepcao.fase === 'perguntando') _verificarRespostasCompletas(percepcao);
+      else if (percepcao.fase === 'rolando') _verificarRolamentosCompletos(percepcao);
+    }
+  } else if (!percepcao?.ativo && _percepcaoEmAndamento) {
+    ocultarModalPercepcao();
   }
 }
 
@@ -834,6 +963,14 @@ function avancarIntro() {
   const overlay = document.getElementById('intro-cinematico');
   if (_introIdx >= _introSlides.length) {
     overlay.classList.add('oculto');
+    // Disparar gatilho de entrada após fechar o intro (host only)
+    if (_isHost) {
+      const cena = CENAS[_cenaAtual];
+      const gatilhosEntrada = cena?.gatilhos_entrada || [];
+      if (gatilhosEntrada.length > 0 && !_percepcaoEmAndamento) {
+        setTimeout(() => triggerTestePercepcao(gatilhosEntrada[0], 'entrada', null), 900);
+      }
+    }
     return;
   }
   const bg      = document.getElementById('intro-bg');
@@ -909,14 +1046,270 @@ function setModoImagem(modo) {
   else { _modoImagem = modo; atualizarCena(); atualizarBotoesModo(); }
 }
 
-function navegarCena(delta) {
+// ── Sistema de Percepção ─────────────────────────────────────────
+
+async function triggerTestePercepcao(gatilho, tipoTrigger, cenaDestino) {
+  if (!_isHost || _percepcaoEmAndamento) return;
+  const apiKey = localStorage.getItem('oraculo.groqKey');
+  const cena = CENAS[_cenaAtual];
+  let textoAtmosfera = gatilho.textoFallback || 'Algo neste lugar retém a atenção por um momento fugaz…';
+  if (apiKey) textoAtmosfera = await _gerarAtmosferaPercepcao(gatilho, cena, apiKey);
+
+  const data = {
+    ativo: true,
+    fase: 'perguntando',
+    dc: gatilho.dc || 12,
+    trigger: tipoTrigger,
+    cenaId: _cenaAtual,
+    cenaDestinoId: cenaDestino || null,
+    textoAtmosfera,
+    textoContexto: gatilho.descricaoContexto,
+    respostas: {}
+  };
+
+  if (window._fbUpdateNarration) {
+    await window._fbUpdateNarration({ percepcao: data });
+  } else {
+    if (!_lastRoom) _lastRoom = {};
+    if (!_lastRoom.narration) _lastRoom.narration = {};
+    _lastRoom.narration.percepcao = data;
+    mostrarModalPercepcao(data);
+  }
+}
+
+async function _gerarAtmosferaPercepcao(gatilho, cena, apiKey) {
+  try {
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 110,
+        temperature: 0.88,
+        messages: [
+          { role: 'system', content: 'Você é o Narrador de uma campanha de RPG de fantasia medieval. Gere 1-2 frases atmosféricas que dão ao grupo a sensação de que algo pode ter passado despercebido — sem revelar o quê. Use segunda pessoa plural (vocês). Crie tensão sutil e cinematográfica. NÃO nomeie o elemento oculto diretamente.' },
+          { role: 'user', content: `Local: "${cena?.titulo}". Elemento oculto (NÃO revelar): ${gatilho.descricaoContexto}. Gere o texto de percepção.` }
+        ]
+      })
+    });
+    const d = await resp.json();
+    return d.choices?.[0]?.message?.content?.trim() || gatilho.textoFallback || 'Algo neste lugar retém a atenção por um momento fugaz…';
+  } catch { return gatilho.textoFallback || 'Algo neste lugar retém a atenção por um momento fugaz…'; }
+}
+
+function _getNomeJogador(pid) {
+  return _lastRoom?.players?.[pid]?.nome || (pid === _pid ? _pname : pid.slice(0, 8));
+}
+
+function mostrarModalPercepcao(percepcao) {
+  if (!percepcao?.ativo) { ocultarModalPercepcao(); return; }
+  _percepcaoEmAndamento = true;
+
+  document.getElementById('percepcao-overlay').classList.remove('oculto');
+  document.getElementById('percepcao-atmosfera').textContent = percepcao.textoAtmosfera || '';
+  document.getElementById('percepcao-dc-val').textContent = percepcao.dc || 12;
+
+  const btnsDiv     = document.getElementById('percepcao-btns-resposta');
+  const aguardDiv   = document.getElementById('percepcao-aguardando');
+  const rolarDiv    = document.getElementById('percepcao-rolar-div');
+  const minha       = percepcao.respostas?.[_pid];
+  const jogadores   = Object.keys(_lastRoom?.players || {});
+  const efetivos    = jogadores.length > 0 ? jogadores : [_pid];
+
+  if (percepcao.fase === 'perguntando') {
+    if (!minha) {
+      btnsDiv.classList.remove('oculto');
+      aguardDiv.classList.add('oculto');
+      rolarDiv.classList.add('oculto');
+      btnsDiv.querySelectorAll('button').forEach(b => b.disabled = false);
+    } else {
+      btnsDiv.classList.add('oculto');
+      rolarDiv.classList.add('oculto');
+      aguardDiv.classList.remove('oculto');
+      _renderChips(percepcao, efetivos);
+    }
+  } else if (percepcao.fase === 'rolando') {
+    btnsDiv.classList.add('oculto');
+    aguardDiv.classList.remove('oculto');
+    if (minha?.aceito && minha?.resultado == null) {
+      rolarDiv.classList.remove('oculto');
+      document.getElementById('btn-rolar-perc').disabled = false;
+      document.getElementById('percepcao-dado-result').textContent = '—';
+    } else if (minha?.aceito && minha?.resultado != null) {
+      rolarDiv.classList.remove('oculto');
+      document.getElementById('btn-rolar-perc').disabled = true;
+      document.getElementById('percepcao-dado-result').textContent = String(minha.resultado);
+    } else {
+      rolarDiv.classList.add('oculto');
+    }
+    _renderChips(percepcao, efetivos);
+  } else if (percepcao.fase === 'resolvido') {
+    ocultarModalPercepcao();
+  }
+}
+
+function _renderChips(percepcao, efetivos) {
+  const listDiv   = document.getElementById('percepcao-respostas-list');
+  const respostas = percepcao.respostas || {};
+  listDiv.innerHTML = efetivos.map(pid => {
+    const r    = respostas[pid];
+    const nome = _getNomeJogador(pid);
+    if (!r) return `<span class="perc-resp-chip">⌛ ${nome}</span>`;
+    if (percepcao.fase === 'rolando' && r.aceito && r.resultado != null)
+      return `<span class="perc-resp-chip rolou">🎲 ${nome}: ${r.resultado}</span>`;
+    if (r.aceito) return `<span class="perc-resp-chip sim">✓ ${nome}</span>`;
+    return `<span class="perc-resp-chip nao">✕ ${nome}</span>`;
+  }).join('');
+  const responderam = efetivos.filter(p => respostas[p] != null).length;
+  document.getElementById('percepcao-count-text').textContent =
+    percepcao.fase === 'rolando'
+      ? 'Aguardando todos rolarem…'
+      : `${responderam}/${efetivos.length} responderam`;
+}
+
+function ocultarModalPercepcao() {
+  _percepcaoEmAndamento = false;
+  document.getElementById('percepcao-overlay').classList.add('oculto');
+}
+
+async function responderPercepcao(aceito) {
+  document.getElementById('percepcao-btns-resposta').querySelectorAll('button').forEach(b => b.disabled = true);
+  const resposta = { aceito, resultado: null };
+  if (window._fbRespondPercepcao) {
+    await window._fbRespondPercepcao(_pid, resposta);
+  } else {
+    const perc = _lastRoom?.narration?.percepcao;
+    if (perc) { perc.respostas[_pid] = resposta; mostrarModalPercepcao(perc); if (_isHost) _verificarRespostasCompletas(perc); }
+  }
+}
+
+async function rolarPercepcao() {
+  document.getElementById('btn-rolar-perc').disabled = true;
+  const roll = Math.floor(Math.random() * 20) + 1;
+  document.getElementById('percepcao-dado-result').textContent = String(roll);
+  if (window._fbRespondPercepcao) {
+    const minha = _lastRoom?.narration?.percepcao?.respostas?.[_pid] || { aceito: true };
+    await window._fbRespondPercepcao(_pid, { ...minha, resultado: roll });
+  } else {
+    const perc = _lastRoom?.narration?.percepcao;
+    if (perc?.respostas?.[_pid]) { perc.respostas[_pid].resultado = roll; mostrarModalPercepcao(perc); if (_isHost) _verificarRolamentosCompletos(perc); }
+  }
+}
+
+async function _verificarRespostasCompletas(percepcao) {
+  if (!_isHost) return;
+  const jogadores = Object.keys(_lastRoom?.players || {});
+  const efetivos  = jogadores.length > 0 ? jogadores : [_pid];
+  const respostas = percepcao.respostas || {};
+  if (!efetivos.every(p => respostas[p] != null)) return;
+  const alguemAceitou = efetivos.some(p => respostas[p]?.aceito);
+  if (!alguemAceitou) {
+    await _resolverPercepcao(percepcao);
+  } else {
+    if (window._fbAtualizarPercepcao) await window._fbAtualizarPercepcao({ fase: 'rolando' });
+    else { percepcao.fase = 'rolando'; mostrarModalPercepcao(percepcao); }
+  }
+}
+
+async function _verificarRolamentosCompletos(percepcao) {
+  if (!_isHost) return;
+  const jogadores = Object.keys(_lastRoom?.players || {});
+  const efetivos  = jogadores.length > 0 ? jogadores : [_pid];
+  const respostas = percepcao.respostas || {};
+  const aceitaram = efetivos.filter(p => respostas[p]?.aceito);
+  if (aceitaram.length > 0 && !aceitaram.every(p => respostas[p]?.resultado != null)) return;
+  await _resolverPercepcao(percepcao);
+}
+
+async function _resolverPercepcao(percepcao) {
+  if (!_isHost) return;
+  const dc        = percepcao.dc || 12;
+  const jogadores = Object.keys(_lastRoom?.players || {});
+  const efetivos  = jogadores.length > 0 ? jogadores : [_pid];
+  const respostas = percepcao.respostas || {};
+  const passaram  = efetivos.filter(p => (respostas[p]?.resultado || 0) >= dc);
+  const apiKey    = localStorage.getItem('oraculo.groqKey');
+  const ts        = Date.now();
+
+  let textoReveal = percepcao.textoContexto;
+  if (passaram.length > 0 && apiKey) textoReveal = await _gerarRevealPercepcao(percepcao, passaram, apiKey);
+
+  if (passaram.length > 0) {
+    const rolls = passaram.map(p => `${_getNomeJogador(p)}: ${respostas[p]?.resultado ?? '?'}`).join(' · ');
+    await window._fbAddDialogue?.({ tipo:'narrador', oradorId:'narrador', oradorNome:'Narrador', texto:`[👁 PERCEPÇÃO — SUCESSO (${rolls})] ${textoReveal}`, ts });
+  }
+
+  const falharam = efetivos.filter(p => !passaram.includes(p));
+  if (falharam.length > 0) {
+    const rolls = falharam.map(p => {
+      const r = respostas[p];
+      if (!r || !r.aceito) return `${_getNomeJogador(p)}: recusou`;
+      return `${_getNomeJogador(p)}: ${r.resultado ?? '?'}`;
+    }).join(' · ');
+    await window._fbAddDialogue?.({ tipo:'narrador', oradorId:'narrador', oradorNome:'Narrador', texto:`[👁 PERCEPÇÃO — FALHA (${rolls})] A sensação passa rapidamente.`, ts: ts + 1 });
+  }
+
+  const updatePerc = { percepcao: { ativo: false, fase: 'resolvido' } };
+  if (percepcao.trigger === 'saida' && percepcao.cenaDestinoId) {
+    Object.assign(updatePerc, { cenaId: percepcao.cenaDestinoId, modoImagem: 'exterior', introConfirmados: {} });
+  }
+
+  if (window._fbUpdateNarration) {
+    await window._fbUpdateNarration(updatePerc);
+  } else {
+    if (_lastRoom?.narration) _lastRoom.narration.percepcao = { ativo: false, fase: 'resolvido' };
+    ocultarModalPercepcao();
+    if (percepcao.trigger === 'saida' && percepcao.cenaDestinoId) {
+      _cenaAtual = percepcao.cenaDestinoId; _modoImagem = 'exterior';
+      atualizarCena(); atualizarBotoesModo(); atualizarBotoesCena();
+    }
+  }
+}
+
+async function _gerarRevealPercepcao(percepcao, passaram, apiKey) {
+  try {
+    const nomes = passaram.map(p => _getNomeJogador(p)).join(' e ');
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 170,
+        temperature: 0.82,
+        messages: [
+          { role: 'system', content: `Você é o Narrador de uma campanha de RPG de fantasia medieval. ${nomes} passou(aram) no teste de Percepção. Revele o elemento descoberto de forma dramática e cinematográfica em 2-3 frases. Use segunda pessoa (você/vocês). NÃO use asteriscos. Seja impactante e preciso.` },
+          { role: 'user', content: `O que ${nomes} percebeu: ${percepcao.textoContexto}` }
+        ]
+      })
+    });
+    const d = await resp.json();
+    return d.choices?.[0]?.message?.content?.trim() || percepcao.textoContexto;
+  } catch { return percepcao.textoContexto; }
+}
+
+async function navegarCena(delta) {
   if (!_isHost) return;
   const idx = CENAS_ORDEM.indexOf(_cenaAtual);
   const novoIdx = idx + delta;
   if (novoIdx < 0 || novoIdx >= CENAS_ORDEM.length) return;
   const novaCena = CENAS_ORDEM[novoIdx];
+
+  // Gatilho de saída: verificar antes de avançar
+  if (delta > 0 && !_percepcaoEmAndamento) {
+    const cena = CENAS[_cenaAtual];
+    const gatilhosSaida = cena?.gatilhos_saida || [];
+    if (gatilhosSaida.length > 0) {
+      await triggerTestePercepcao(gatilhosSaida[0], 'saida', novaCena);
+      return; // navegação acontece após resolução da percepção
+    }
+  }
+
+  _executarNavegacao(novaCena);
+}
+
+function _executarNavegacao(novaCena) {
   if (window._fbUpdateNarration) {
-    window._fbUpdateNarration({ cenaId: novaCena, modoImagem: 'exterior', introConfirmados: {} });
+    window._fbUpdateNarration({ cenaId: novaCena, modoImagem: 'exterior', introConfirmados: {}, percepcao: { ativo: false } });
   } else {
     _cenaAtual = novaCena; _modoImagem = 'exterior';
     atualizarCena(); atualizarBotoesModo(); atualizarBotoesCena();
