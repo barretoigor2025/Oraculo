@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,viewport-fit=cover">
 <title>Oráculo — Narração</title>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script type="module">
 import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import{getFirestore,doc,onSnapshot,updateDoc,getDoc}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
@@ -475,7 +476,8 @@ html,body{
 .perc-resp-chip.sim{border-color:rgba(74,130,200,0.5);color:#a8d4f5;}
 .perc-resp-chip.nao{border-color:rgba(160,80,80,0.45);color:#d4a0a0;}
 .perc-resp-chip.rolou{border-color:rgba(90,190,80,0.5);color:#a0e08c;}
-#percepcao-rolar-div{display:flex;flex-direction:column;align-items:center;gap:8px;}
+#percepcao-rolar-div{display:flex;flex-direction:column;align-items:center;gap:6px;}
+#perc-dado-wrap{width:130px;height:130px;display:flex;align-items:center;justify-content:center;}
 #btn-rolar-perc{
   padding:14px 0;width:100%;
   background:rgba(60,110,170,0.22);
@@ -667,6 +669,7 @@ html,body{
     </div>
     <div id="percepcao-rolar-div" class="oculto">
       <button id="btn-rolar-perc" onclick="rolarPercepcao()">🎲 Rolar d20</button>
+      <div id="perc-dado-wrap"></div>
       <div id="percepcao-dado-result">—</div>
     </div>
   </div>
@@ -1046,6 +1049,93 @@ function setModoImagem(modo) {
   else { _modoImagem = modo; atualizarCena(); atualizarBotoesModo(); }
 }
 
+// ── Dado 3D (mesmo visual da arena) ─────────────────────────────
+const PercDiceOverlay=(function(){
+  'use strict';
+  let _rend=null,_scene=null,_cam=null;
+  let _mesh=null,_raf=null,_t0=null,_lastTS=null;
+  let _svx=0,_svy=0,_svz=0,_resultShown=false,_onStop=null;
+  const _SZ=130,FE=1.05,SF=1.78,SS=2.28;
+
+  function _makeMesh(){
+    const g=new THREE.IcosahedronGeometry(72,0);
+    const mat=new THREE.MeshStandardMaterial({color:0xbf1a0c,roughness:0.28,metalness:0.08,side:THREE.DoubleSide});
+    const m=new THREE.Mesh(g,mat);
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g,20),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.45})));
+    return m;
+  }
+
+  function _initThree(){
+    const cv=document.getElementById('perc-dado-canvas');
+    if(!cv||typeof THREE==='undefined') return false;
+    if(_rend&&_rend.domElement===cv){_rend.setSize(_SZ,_SZ);return true;}
+    _rend=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+    _rend.setPixelRatio(Math.min(devicePixelRatio,2));
+    _rend.setSize(_SZ,_SZ);
+    _rend.setClearColor(0x000000,0);
+    _scene=new THREE.Scene();
+    _cam=new THREE.PerspectiveCamera(38,1,1,2000);
+    _cam.position.set(0,0,350);
+    _scene.add(new THREE.AmbientLight(0xffffff,.5));
+    const key=new THREE.DirectionalLight(0xffe8cc,1.15);key.position.set(100,180,120);_scene.add(key);
+    const fill=new THREE.DirectionalLight(0xaad0ff,.38);fill.position.set(-80,40,60);_scene.add(fill);
+    const rim=new THREE.PointLight(0xff3311,.55,900);rim.position.set(-150,80,-220);_scene.add(rim);
+    return true;
+  }
+
+  function _bounce(t){
+    if(t<1/2.75)return 7.5625*t*t;
+    if(t<2/2.75){t-=1.5/2.75;return 7.5625*t*t+.75;}
+    if(t<2.5/2.75){t-=2.25/2.75;return 7.5625*t*t+.9375;}
+    t-=2.625/2.75;return 7.5625*t*t+.984375;
+  }
+
+  function _loop(ts){
+    if(!_t0)_t0=ts;
+    const dt=_lastTS?(ts-_lastTS)/1000:0;_lastTS=ts;
+    const t=(ts-_t0)/1000;
+    if(_mesh){
+      const fp=Math.min(t/FE,1);
+      _mesh.position.y=150-150*_bounce(fp);
+      if(fp>.70&&fp<.90){const sh=(0.90-fp)/0.20;_cam.position.x=(Math.random()-.5)*7*sh;_cam.position.y=(Math.random()-.5)*5*sh;}
+      else{_cam.position.x*=0.85;_cam.position.y*=0.85;}
+      let sm;
+      if(t<SF)sm=1;
+      else if(t<SS)sm=Math.pow(1-(t-SF)/(SS-SF),2.5);
+      else{sm=0;if(!_resultShown){_resultShown=true;_rend.render(_scene,_cam);if(_onStop)_onStop();}return;}
+      _mesh.rotation.x+=_svx*sm*dt;_mesh.rotation.y+=_svy*sm*dt;_mesh.rotation.z+=_svz*sm*dt;
+    }
+    _rend.render(_scene,_cam);_raf=requestAnimationFrame(_loop);
+  }
+
+  function rolar(onResult){
+    const wrap=document.getElementById('perc-dado-wrap');
+    if(!wrap||typeof THREE==='undefined'){onResult(Math.floor(Math.random()*20)+1);return;}
+    // Criar/reusar canvas
+    if(!document.getElementById('perc-dado-canvas')){
+      const cv=document.createElement('canvas');
+      cv.id='perc-dado-canvas';cv.width=_SZ;cv.height=_SZ;
+      cv.style.cssText=`width:${_SZ}px;height:${_SZ}px;display:block`;
+      wrap.innerHTML='';wrap.appendChild(cv);
+    }
+    if(!_initThree()){onResult(Math.floor(Math.random()*20)+1);return;}
+    _cam.position.set(0,0,350);
+    if(_mesh){_scene.remove(_mesh);_mesh=null;}
+    if(_raf){cancelAnimationFrame(_raf);_raf=null;}
+    _mesh=_makeMesh();_mesh.position.set(0,150,0);_scene.add(_mesh);
+    const b=18;
+    _svx=(Math.random()-.5)*b+(Math.random()>.5?8:-8);
+    _svy=(Math.random()-.5)*b+(Math.random()>.5?8:-8);
+    _svz=(Math.random()-.5)*(b*.7);
+    const roll=Math.floor(Math.random()*20)+1;
+    _t0=null;_lastTS=null;_resultShown=false;
+    _onStop=()=>onResult(roll);
+    _raf=requestAnimationFrame(_loop);
+  }
+
+  return {rolar};
+})();
+
 // ── Sistema de Percepção ─────────────────────────────────────────
 
 async function triggerTestePercepcao(gatilho, tipoTrigger, cenaDestino) {
@@ -1185,15 +1275,18 @@ async function responderPercepcao(aceito) {
 
 async function rolarPercepcao() {
   document.getElementById('btn-rolar-perc').disabled = true;
-  const roll = Math.floor(Math.random() * 20) + 1;
-  document.getElementById('percepcao-dado-result').textContent = String(roll);
-  if (window._fbRespondPercepcao) {
-    const minha = _lastRoom?.narration?.percepcao?.respostas?.[_pid] || { aceito: true };
-    await window._fbRespondPercepcao(_pid, { ...minha, resultado: roll });
-  } else {
-    const perc = _lastRoom?.narration?.percepcao;
-    if (perc?.respostas?.[_pid]) { perc.respostas[_pid].resultado = roll; mostrarModalPercepcao(perc); if (_isHost) _verificarRolamentosCompletos(perc); }
-  }
+  document.getElementById('percepcao-dado-result').textContent = '…';
+
+  PercDiceOverlay.rolar(async (roll) => {
+    document.getElementById('percepcao-dado-result').textContent = String(roll);
+    if (window._fbRespondPercepcao) {
+      const minha = _lastRoom?.narration?.percepcao?.respostas?.[_pid] || { aceito: true };
+      await window._fbRespondPercepcao(_pid, { ...minha, resultado: roll });
+    } else {
+      const perc = _lastRoom?.narration?.percepcao;
+      if (perc?.respostas?.[_pid]) { perc.respostas[_pid].resultado = roll; mostrarModalPercepcao(perc); if (_isHost) _verificarRolamentosCompletos(perc); }
+    }
+  });
 }
 
 async function _verificarRespostasCompletas(percepcao) {
