@@ -319,6 +319,27 @@ const historicos = NPCS.map(() => []);
 let animando = false;
 let _continuarResolve = null;
 
+// ── LOG COMPARTILHADO DA CENA ──
+const logCena = [];
+const MAX_LOG_CENA = 22;
+
+function registrarEvento(quem, texto, tipo='fala'){
+  if(!texto||texto.trim()==='---') return;
+  logCena.push({quem, texto:texto.trim(), tipo});
+  if(logCena.length>MAX_LOG_CENA) logCena.shift();
+}
+
+function _gerarContextoCena(npcIdx){
+  const nomesPresentes = NPCS.map(n=>n.nome).join(', ');
+  const linhas = logCena.length
+    ? logCena.map(e=>e.tipo==='acao'
+        ? `[${e.quem} ${e.texto}]`
+        : `${e.quem}: "${e.texto}"`
+      ).join('\n')
+    : '(a cena acaba de começar)';
+  return `QUEM ESTÁ PRESENTE NA CENA: ${nomesPresentes} e ${playerName} (o aventureiro).\nVocês estão no mesmo espaço e ouvem tudo que acontece ao redor.\n\nDIÁLOGOS E AÇÕES DA CENA (ordem cronológica):\n${linhas}`;
+}
+
 // ══════════════════════════════════════════════════════════
 //  DOM
 // ══════════════════════════════════════════════════════════
@@ -490,6 +511,10 @@ async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
   const {acao,fala}=parsearFala(raw);
   const npc=NPCS[npcIdx];
 
+  // Registrar no log compartilhado (antes de animar, para que contexto já exista)
+  if(acao) registrarEvento(npc.nome, acao, 'acao');
+  if(fala) registrarEvento(npc.nome, fala, 'fala');
+
   // player sai
   if(parPlayer.classList.contains('dentro')){
     _ocultarBalao(); await delay(180);
@@ -519,6 +544,7 @@ async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
 }
 
 async function mostrarPlayer(texto){
+  registrarEvento(playerName, texto, 'fala');
   _ocultarBalao(); await delay(150);
 
   if(!parPlayer.classList.contains('dentro')){
@@ -534,14 +560,18 @@ async function chamarIA(npcIdx, mensagem){
   const key=localStorage.getItem('oraculo.groqKey');
   if(!key) throw new Error('sem-chave');
   const npc=NPCS[npcIdx],hist=historicos[npcIdx];
+  const contextoCena = _gerarContextoCena(npcIdx);
   const messages=[
     { role:'system', content:
-`Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval.
+`Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. NUNCA quebre o personagem.
+
 QUEM VOCÊ É: ${npc.personalidade}
-O QUE VOCÊ SABE (revele aos poucos): ${npc.conhecimentos}
+O QUE VOCÊ SABE (revele gradualmente): ${npc.conhecimentos}
 SUA FORMA DE FALAR: ${npc.formaDeFalar}
-SITUAÇÃO: Batalha na Feira de Outono de St. Phanourios. Os aventureiros venceram. Você os observou.
-REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. [ACAO: desc] antes da fala para ações visíveis. Nunca quebre o personagem.` },
+
+${contextoCena}
+
+REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. [ACAO: desc] antes da fala para ações físicas visíveis. Se um objeto foi dado ou recebido na cena, você sabe e pode referenciá-lo. Reaja ao contexto da cena, não apenas à última fala.` },
     ...hist,
     { role:'user',content:mensagem },
   ];
@@ -553,6 +583,29 @@ REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. [ACAO: desc] ante
   const data=await resp.json();
   if(data.error) throw new Error(data.error.message);
   return data.choices?.[0]?.message?.content?.trim()||'…';
+}
+
+// ══════════════════════════════════════════════════════════
+//  REAÇÃO ESPONTÂNEA DE NPC (30% de chance após cada troca)
+// ══════════════════════════════════════════════════════════
+async function _verificarReacao(npcQueRespondeuIdx){
+  if(Math.random() > 0.30) return;
+  const outrosIdx = NPCS.map((_,i)=>i).filter(i=>i!==npcQueRespondeuIdx);
+  if(!outrosIdx.length) return;
+  const reatorIdx = outrosIdx[Math.floor(Math.random()*outrosIdx.length)];
+
+  const ultimosEventos = logCena.slice(-4)
+    .map(e=>e.tipo==='acao'?`[${e.quem} ${e.texto}]`:`${e.quem}: "${e.texto}"`).join('\n');
+  const prompt = `Você observou o que acabou de acontecer:\n${ultimosEventos}\n\nReaja em 1 frase brevíssima no seu estilo característico — ou escreva exatamente "---" para ficar em silêncio.`;
+
+  try {
+    const reacao = await chamarIA(reatorIdx, prompt);
+    if(!reacao||reacao.trim().startsWith('---')) return;
+    historicos[reatorIdx].push({role:'user',content:prompt});
+    historicos[reatorIdx].push({role:'assistant',content:reacao});
+    await delay(650);
+    await mostrarNPC(reatorIdx, reacao, {pedirContinuar:false});
+  } catch(_){ /* silencioso — reação é opcional */ }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -574,6 +627,12 @@ async function enviar(){
     historicos[target].push({role:'assistant',content:resp});
     iaPensando.style.display='none';
     await mostrarNPC(target,resp);
+    // Verificar se outro NPC quer reagir espontaneamente
+    await _verificarReacao(target);
+    // Restaurar foco no NPC que o jogador estava conversando
+    npcAtivo=target;
+    document.querySelectorAll('.chip-npc').forEach((c,i)=>c.classList.toggle('ativo',i===target));
+    msgInput.placeholder=`O que você diz para ${NPCS[target].nome.split(' ')[0]}…`;
   }catch(e){
     iaPensando.style.display='none';
     if(e.message==='sem-chave') cfgOverlay.classList.remove('oculto');
