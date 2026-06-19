@@ -91,75 +91,72 @@ canvas.char-img{
 }
 
 /* ══════════════════════════════════════════════════════
-   BALÃO — completamente independente da imagem
-   Âncora: left/right calculado a partir de --char-w
+   STRIP DE DIÁLOGO — fila de falas que sobe pela cena
    ══════════════════════════════════════════════════════ */
-#balao-ativo{
+#dialogo-strip{
   position:fixed;
-  /* NPC fala: começa logo após o personagem esquerdo */
-  left: calc(var(--char-w) + 10px);
-  right: 10px;
-  bottom: calc(94px + 16px);
-
-  background:rgba(7,3,1,0.90);
-  border:1px solid rgba(190,140,35,0.44);
-  border-radius:16px;
-  padding:13px 16px 14px;
-  backdrop-filter:blur(14px);
-  box-shadow:0 4px 32px rgba(0,0,0,0.78);
-
-  opacity:0;
-  transform:translateY(8px) scale(0.98);
-  transition:opacity 0.28s ease, transform 0.28s ease, left 0.28s ease, right 0.28s ease;
-  pointer-events:none;
+  bottom:94px; left:0; right:0;
+  display:flex; flex-direction:column; gap:3px;
+  padding:0 12px 10px;
   z-index:100;
+  pointer-events:none;
+  /* fade suave das mensagens mais antigas no topo */
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0%, black 28%);
+  mask-image:linear-gradient(to bottom, transparent 0%, black 28%);
 }
-#balao-ativo.visivel{
-  opacity:1; transform:translateY(0) scale(1);
+
+.dlg-msg{
+  padding:7px 14px 8px;
+  background:rgba(7,3,1,0.86);
+  border:1px solid rgba(190,140,35,0.16);
+  border-radius:12px;
+  backdrop-filter:blur(14px);
+  opacity:0.28;
+  transition:opacity 0.38s ease, border-color 0.38s ease;
+  pointer-events:none;
+  animation:dlg-entrada 0.28s ease both;
+}
+.dlg-msg.recente{
+  opacity:1;
+  border-color:rgba(190,140,35,0.46);
   pointer-events:all;
 }
-/* Player falando: espelha posição */
-#balao-ativo.player-fala{
-  left: 10px;
-  right: calc(var(--char-w) + 10px);
+/* player: acento azul à esquerda */
+.dlg-msg.player{ border-left:2.5px solid rgba(100,155,220,0.55); }
+
+.dlg-nome{
+  font-size:8px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase;
+  color:rgba(190,140,35,0.72); margin-bottom:3px;
+}
+.dlg-msg.player .dlg-nome{ color:rgba(110,160,230,0.78); }
+
+.dlg-acao{
+  font-size:10.5px; color:rgba(185,160,85,0.55);
+  font-style:italic; margin-bottom:3px;
+}
+.dlg-texto{
+  font-size:clamp(12.5px,3.4vw,15px);
+  color:rgba(240,218,162,0.95); line-height:1.58; font-style:italic;
 }
 
-/* Seta — aponta para o personagem que está falando */
-#balao-ativo::before,#balao-ativo::after{
-  content:''; position:absolute; top:18px;
-  border:9px solid transparent;
-}
-/* padrão: seta à esquerda (aponta para NPC) */
-#balao-ativo::before{ left:-9px; border-right-color:rgba(190,140,35,0.44); }
-#balao-ativo::after { left:-8px; border-right-color:rgba(7,3,1,0.90); border-width:8px; }
-/* player: seta à direita */
-#balao-ativo.player-fala::before{ left:auto; right:-9px; border-right-color:transparent; border-left-color:rgba(190,140,35,0.44); }
-#balao-ativo.player-fala::after { left:auto; right:-8px; border-right-color:transparent; border-left-color:rgba(7,3,1,0.90); border-width:8px; }
-
-#balao-nome{
-  font-size:9px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase;
-  color:rgba(190,140,35,0.80); margin-bottom:6px;
-}
-#balao-acao{
-  font-size:11px; color:rgba(185,160,85,0.58);
-  font-style:italic; line-height:1.40; margin-bottom:5px; display:none;
-}
-#balao-texto{
-  font-size:clamp(13px,3.6vw,15.5px);
-  color:rgba(240,218,162,0.96); line-height:1.66; font-style:italic;
-}
-#btn-continuar{
-  display:none; margin-top:11px; margin-left:auto; width:fit-content;
+.btn-continuar-strip{
+  display:block; margin-top:8px; margin-left:auto; width:fit-content;
   background:rgba(190,140,35,0.18); border:1px solid rgba(190,140,35,0.48);
-  border-radius:22px; padding:5px 18px;
+  border-radius:22px; padding:4px 16px;
   color:#f5d878; font-family:Georgia,serif; font-size:11px; font-weight:700;
   cursor:pointer; letter-spacing:.3px; pointer-events:all;
   animation:pulse-btn 1.8s ease-in-out infinite;
+}
+
+@keyframes dlg-entrada{
+  from{ opacity:0; transform:translateY(10px); }
+  to  { opacity:1; transform:translateY(0); }
 }
 @keyframes pulse-btn{
   0%,100%{box-shadow:0 0 0 0 rgba(190,140,35,0.35);}
   50%     {box-shadow:0 0 0 7px rgba(190,140,35,0);}
 }
+
 
 /* ── IA PENSANDO ── */
 #ia-pensando{
@@ -234,13 +231,8 @@ canvas.char-img{
   </div>
 </div>
 
-<!-- Balão ÚNICO, fixo, independente -->
-<div id="balao-ativo">
-  <div id="balao-nome">—</div>
-  <div id="balao-acao"></div>
-  <div id="balao-texto">…</div>
-  <button id="btn-continuar" onclick="_handleContinuar()">▶ Continuar</button>
-</div>
+<!-- Strip de diálogo — falas empilhadas que sobem -->
+<div id="dialogo-strip"></div>
 
 <div id="ia-pensando">✨ Pensando…</div>
 
@@ -350,11 +342,7 @@ const cenaBg      = document.getElementById('cena-bg');
 const personagens = document.getElementById('personagens');
 const parPlayer   = document.getElementById('par-player');
 const playerFallbk= document.getElementById('player-fallback');
-const balaoAtivo  = document.getElementById('balao-ativo');
-const balaoNome   = document.getElementById('balao-nome');
-const balaoAcao   = document.getElementById('balao-acao');
-const balaoTexto  = document.getElementById('balao-texto');
-const btnContinuar= document.getElementById('btn-continuar');
+const dialogoStrip= document.getElementById('dialogo-strip');
 const npcChipsEl  = document.getElementById('npc-chips');
 const msgInput    = document.getElementById('msg-input');
 const btnEnviar   = document.getElementById('btn-enviar');
@@ -469,29 +457,63 @@ function selecionarNpc(idx){
 }
 
 // ══════════════════════════════════════════════════════════
-//  BALÃO — único elemento, posição muda por quem fala
+//  STRIP DE DIÁLOGO
 // ══════════════════════════════════════════════════════════
-function _mostrarBalao({ nome, acao, texto, isPlayer=false, comContinuar=false }){
-  balaoNome.textContent = nome.toUpperCase();
-  if(acao){ balaoAcao.textContent=acao; balaoAcao.style.display='block'; }
-  else     { balaoAcao.style.display='none'; }
-  balaoTexto.textContent = texto;
-  btnContinuar.style.display = comContinuar ? 'block' : 'none';
+const MAX_MSGS_STRIP = 3;
+const _msgBuffer = [];
 
-  // reposicionar conforme quem fala
-  balaoAtivo.classList.toggle('player-fala', isPlayer);
-  balaoAtivo.classList.add('visivel');
-}
+function _adicionarFala({ nome, acao, texto, isPlayer=false, comContinuar=false }){
+  // Dimmer todas as mensagens existentes
+  document.querySelectorAll('.dlg-msg').forEach(el=>el.classList.remove('recente'));
 
-function _ocultarBalao(){
-  balaoAtivo.classList.remove('visivel');
+  const msg = document.createElement('div');
+  msg.className = 'dlg-msg' + (isPlayer ? ' player' : '');
+
+  const nomeEl = document.createElement('div');
+  nomeEl.className = 'dlg-nome';
+  nomeEl.textContent = nome.toUpperCase();
+  msg.appendChild(nomeEl);
+
+  if(acao){
+    const acaoEl = document.createElement('div');
+    acaoEl.className = 'dlg-acao';
+    acaoEl.textContent = acao;
+    msg.appendChild(acaoEl);
+  }
+
+  const textoEl = document.createElement('div');
+  textoEl.className = 'dlg-texto';
+  textoEl.textContent = texto;
+  msg.appendChild(textoEl);
+
+  if(comContinuar){
+    const btn = document.createElement('button');
+    btn.className = 'btn-continuar-strip';
+    btn.textContent = '▶ Continuar';
+    btn.onclick = ()=>window._handleContinuar();
+    msg.appendChild(btn);
+  }
+
+  dialogoStrip.appendChild(msg);
+  _msgBuffer.push(msg);
+
+  // Remover mensagens além do limite (fade out suave)
+  while(_msgBuffer.length > MAX_MSGS_STRIP){
+    const old = _msgBuffer.shift();
+    old.style.transition = 'opacity 0.25s';
+    old.style.opacity = '0';
+    setTimeout(()=>old.remove(), 260);
+  }
+
+  // Ativar .recente no próximo frame para triggerar a transição
+  requestAnimationFrame(()=>msg.classList.add('recente'));
 }
 
 // ══════════════════════════════════════════════════════════
 //  CONTINUAR
 // ══════════════════════════════════════════════════════════
 window._handleContinuar = function(){
-  btnContinuar.style.display='none';
+  document.querySelectorAll('.btn-continuar-strip').forEach(b=>b.remove());
   if(_continuarResolve){ _continuarResolve(); _continuarResolve=null; }
 };
 function esperarContinuar(){
@@ -514,19 +536,11 @@ async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
   const {acao,fala}=parsearFala(raw);
   const npc=NPCS[npcIdx];
 
-  // Registrar no log compartilhado (antes de animar, para que contexto já exista)
+  // Registrar no log compartilhado
   if(acao) registrarEvento(npc.nome, acao, 'acao');
   if(fala) registrarEvento(npc.nome, fala, 'fala');
 
-  // player sai
-  if(parPlayer.classList.contains('dentro')){
-    _ocultarBalao(); await delay(180);
-    parPlayer.classList.remove('dentro'); await delay(480);
-  }
-
-  _ocultarBalao(); await delay(90);
-
-  // atualizar foco
+  // Atualizar foco (dim/bright dos personagens)
   npcAtivo=npcIdx;
   document.querySelectorAll('.chip-npc').forEach((c,i)=>c.classList.toggle('ativo',i===npcIdx));
   npcEls.forEach((el,i)=>{
@@ -535,25 +549,22 @@ async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
     el.par.style.zIndex=a?String(NPCS[i].zBase+2):String(NPCS[i].zBase);
   });
 
-  // entrar NPCs que ainda não entraram
+  // Entrar NPCs que ainda não entraram
   let entrou=false;
   for(const el of npcEls){
     if(!el.par.classList.contains('dentro')){ el.par.classList.add('dentro'); entrou=true; }
   }
   if(entrou) await delay(500);
 
-  _mostrarBalao({ nome:npc.nome, acao, texto:fala, isPlayer:false, comContinuar:pedirContinuar });
+  _adicionarFala({ nome:npc.nome, acao, texto:fala, isPlayer:false, comContinuar:pedirContinuar });
   if(pedirContinuar) await esperarContinuar();
 }
 
 async function mostrarPlayer(texto){
   registrarEvento(playerName, texto, 'fala');
-  _ocultarBalao(); await delay(150);
-
-  if(!parPlayer.classList.contains('dentro')){
-    parPlayer.classList.add('dentro'); await delay(440);
-  }
-  _mostrarBalao({ nome:playerName, acao:null, texto, isPlayer:true, comContinuar:false });
+  // Player fica fixo na cena — só adiciona a fala no strip
+  _adicionarFala({ nome:playerName, acao:null, texto, isPlayer:true, comContinuar:false });
+  await delay(320); // pausa narrativa antes do NPC responder
 }
 
 // ══════════════════════════════════════════════════════════
@@ -661,6 +672,10 @@ async function iniciarCena(){
     iaPensando.style.display='none';
     await mostrarNPC(i,ab,{pedirContinuar:true});
   }
+
+  // Player entra uma vez e permanece na cena durante toda a sessão
+  parPlayer.classList.add('dentro');
+  await delay(480);
 
   selecionarNpc(0);
   msgInput.disabled=false; btnEnviar.disabled=false; msgInput.focus();
