@@ -277,6 +277,7 @@ const NPCS = [
     personalidade:'Mercenário veterano de meia-idade, ex-soldado do exército de Mhoried. Cicatrizes e postura comunicam mais do que palavras. Leal até a morte com quem confia, perigoso com quem trai. Fala pouco e pesa cada palavra. Respeita força e honestidade acima de tudo. Humor seco difícil de perceber.',
     conhecimentos:'Sabe que algo está errado em Gloamreach — pessoas desaparecem e voltam "diferentes". Conhece Finn Willowheel desde a infância. Desconfia do Rei Chutter mas não sabe por quê ainda. Está procurando alguém na feira e não quer revelar quem.',
     formaDeFalar:'Frases curtas e diretas. Nunca desperdiça palavras. Quando suspeita de alguém, fica completamente quieto por um momento antes de responder. Usa termos militares ocasionalmente. Nunca elogia diretamente — demonstra aprovação com ação.',
+    reatividade: 0.10,
     abertura:'(Você acaba de aparecer após os aventureiros vencerem uma batalha na feira. Diga sua frase de abertura — brevíssimo, impactante, máximo 2 frases.)',
     aberturaFallback:'[ACAO: Um homem de cicatrizes cruza os braços e observa o grupo em silêncio.] Sobreviveram. Interessante.',
     zBase:6, offsetPx:0,
@@ -288,6 +289,7 @@ const NPCS = [
     personalidade:'Meio-halfling comerciante jovem, animado e curioso. Vende ervas, temperos e itens curiosos. Observador nato — nota detalhes que outros ignoram. Parece inocente mas guarda segredos comerciais com astúcia. Amigo de longa data de Grégoras.',
     conhecimentos:'Conhece quase todos os comerciantes da feira. Sabe que uma caixa misteriosa passou pela feira há dois dias — alguém pagou muito bem para que ninguém soubesse. Conhece atalhos por Phanourios e sabe onde ficam os Kobolds pacíficos.',
     formaDeFalar:'Fala rápido e com entusiasmo. Usa muitas analogias com ervas e plantas. Ri fácil. Quando está com medo ou nervoso, começa a falar de tópicos aleatórios. Chama todo mundo de "amigo".',
+    reatividade: 0.42,
     abertura:'(Os aventureiros acabaram de vencer uma batalha na feira. Você estava observando de perto. Faça uma observação animada e curiosa — brevíssimo, 1-2 frases.)',
     aberturaFallback:'[ACAO: Finn ri e estende a mão para cumprimentar o grupo.] Que espetáculo, amigos! Nunca vi coisa assim desde que o velho Harmon dançou com três goblins de uma vez!',
     zBase:5, offsetPx:18,
@@ -299,6 +301,7 @@ const NPCS = [
     personalidade:'Velha feiticeira dos pântanos. Sobreviveu a quatro guerras, dois surtos de praga e um dragão. Tem a paciência de quem já viu tudo dar errado. Sua rudeza é economizadora de tempo, não crueldade. Chama todos de "criança" independente da idade. Quando encontra alguém novo, cheira-o lentamente como se saboreando informação.',
     conhecimentos:'Sabe de praticamente tudo que acontece nos Blackwoods. Tem Gillshade e Greybane que o druida Mac Rónán precisa. Conhece o Gloamreach dos Thools. Sabe sobre os experimentos de Choir. Filho Wulfram lhe conta tudo. Tem um grimório que a Igreja destruiria. Veio à Feira de Phanourios vender poções e ingredientes raros.',
     formaDeFalar:'Direta ao ponto, sem eufemismos. Às vezes fala em rimas imperfeitas. Usa metáforas macabras sobre ossos, podridão e sabor. Trata morte e veneno como tópicos domésticos. Ri de coisas que não são engraçadas. Usa "minha criança" ao se referir a qualquer adulto.',
+    reatividade: 0.20,
     abertura:'(Você está vendendo poções numa banca na Feira. Os aventureiros acabaram de vencer uma batalha perto. Você os cheira de longe e faz sua observação inicial — brevíssima, macabra, máximo 2 frases.)',
     aberturaFallback:'[ACAO: Mutter fecha os olhos e fareja o ar na direção dos aventureiros com prazer deliberado.] Hmm. Sangue novo e medo velho — cheiram como javali depois da chuva, minha criança.',
     zBase:4, offsetPx:36,
@@ -589,14 +592,17 @@ REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. [ACAO: desc] ante
 //  REAÇÃO ESPONTÂNEA DE NPC (30% de chance após cada troca)
 // ══════════════════════════════════════════════════════════
 async function _verificarReacao(npcQueRespondeuIdx){
-  if(Math.random() > 0.30) return;
   const outrosIdx = NPCS.map((_,i)=>i).filter(i=>i!==npcQueRespondeuIdx);
   if(!outrosIdx.length) return;
+  // Escolher um NPC candidato aleatório entre os outros
   const reatorIdx = outrosIdx[Math.floor(Math.random()*outrosIdx.length)];
+  const reator = NPCS[reatorIdx];
+  // Chance de reação é determinada pela personalidade do NPC, não por um parâmetro externo
+  if(Math.random() > (reator.reatividade ?? 0.20)) return;
 
   const ultimosEventos = logCena.slice(-4)
     .map(e=>e.tipo==='acao'?`[${e.quem} ${e.texto}]`:`${e.quem}: "${e.texto}"`).join('\n');
-  const prompt = `Você observou o que acabou de acontecer:\n${ultimosEventos}\n\nReaja em 1 frase brevíssima no seu estilo característico — ou escreva exatamente "---" para ficar em silêncio.`;
+  const prompt = `Você observou o que acabou de acontecer:\n${ultimosEventos}\n\nDado exatamente quem você é e seu jeito de ser, você diria algo agora? Se sim, reaja em 1 frase brevíssima e no seu estilo. Se não (porque você naturalmente ficaria em silêncio neste momento), responda exatamente "---".`;
 
   try {
     const reacao = await chamarIA(reatorIdx, prompt);
