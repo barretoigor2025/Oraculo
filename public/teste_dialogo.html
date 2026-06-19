@@ -91,71 +91,129 @@ canvas.char-img{
 }
 
 /* ══════════════════════════════════════════════════════
-   STRIP DE DIÁLOGO — fila de falas que sobe pela cena
+   BALÃO — centralizado entre os dois personagens
    ══════════════════════════════════════════════════════ */
-#dialogo-strip{
+#balao-ativo{
   position:fixed;
-  bottom:94px; left:0; right:0;
-  display:flex; flex-direction:column; gap:3px;
-  padding:0 12px 10px;
-  z-index:100;
-  pointer-events:none;
-  /* fade suave das mensagens mais antigas no topo */
-  -webkit-mask-image:linear-gradient(to bottom, transparent 0%, black 28%);
-  mask-image:linear-gradient(to bottom, transparent 0%, black 28%);
-}
+  left: calc(var(--char-w) + 10px);
+  right: calc(var(--char-w) + 10px);
+  bottom: calc(94px + 14px);
 
-.dlg-msg{
-  padding:7px 14px 8px;
-  background:rgba(7,3,1,0.86);
-  border:1px solid rgba(190,140,35,0.16);
-  border-radius:12px;
-  backdrop-filter:blur(14px);
-  opacity:0.28;
-  transition:opacity 0.38s ease, border-color 0.38s ease;
+  background:rgba(7,3,1,0.91);
+  border:1px solid rgba(190,140,35,0.44);
+  border-radius:16px;
+  padding:13px 16px 14px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 4px 32px rgba(0,0,0,0.82);
+
+  opacity:0;
+  transform:translateY(8px) scale(0.98);
+  transition:opacity 0.28s ease, transform 0.28s ease;
   pointer-events:none;
-  animation:dlg-entrada 0.28s ease both;
+  z-index:100;
 }
-.dlg-msg.recente{
-  opacity:1;
-  border-color:rgba(190,140,35,0.46);
+#balao-ativo.visivel{
+  opacity:1; transform:translateY(0) scale(1);
   pointer-events:all;
 }
-/* player: acento azul à esquerda */
-.dlg-msg.player{ border-left:2.5px solid rgba(100,155,220,0.55); }
 
-.dlg-nome{
-  font-size:8px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase;
-  color:rgba(190,140,35,0.72); margin-bottom:3px;
+/* Seta — aponta para quem está falando */
+#balao-ativo::before,#balao-ativo::after{
+  content:''; position:absolute; top:18px;
+  border:9px solid transparent;
 }
-.dlg-msg.player .dlg-nome{ color:rgba(110,160,230,0.78); }
+/* padrão: seta à esquerda (NPC) */
+#balao-ativo::before{ left:-9px; border-right-color:rgba(190,140,35,0.44); }
+#balao-ativo::after { left:-8px; border-right-color:rgba(7,3,1,0.91); border-width:8px; }
+/* player: seta à direita */
+#balao-ativo.player-fala::before{ left:auto; right:-9px; border-right-color:transparent; border-left-color:rgba(190,140,35,0.44); }
+#balao-ativo.player-fala::after { left:auto; right:-8px; border-right-color:transparent; border-left-color:rgba(7,3,1,0.91); border-width:8px; }
 
-.dlg-acao{
-  font-size:10.5px; color:rgba(185,160,85,0.55);
-  font-style:italic; margin-bottom:3px;
+#balao-nome{
+  font-size:9px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase;
+  color:rgba(190,140,35,0.80); margin-bottom:6px;
 }
-.dlg-texto{
-  font-size:clamp(12.5px,3.4vw,15px);
-  color:rgba(240,218,162,0.95); line-height:1.58; font-style:italic;
+#balao-acao{
+  font-size:11px; color:rgba(185,160,85,0.58);
+  font-style:italic; line-height:1.40; margin-bottom:5px; display:none;
 }
-
-.btn-continuar-strip{
-  display:block; margin-top:8px; margin-left:auto; width:fit-content;
+#balao-texto{
+  font-size:clamp(13px,3.6vw,15.5px);
+  color:rgba(240,218,162,0.96); line-height:1.66; font-style:italic;
+}
+#btn-continuar{
+  display:none; margin-top:11px; margin-left:auto; width:fit-content;
   background:rgba(190,140,35,0.18); border:1px solid rgba(190,140,35,0.48);
-  border-radius:22px; padding:4px 16px;
+  border-radius:22px; padding:5px 18px;
   color:#f5d878; font-family:Georgia,serif; font-size:11px; font-weight:700;
   cursor:pointer; letter-spacing:.3px; pointer-events:all;
   animation:pulse-btn 1.8s ease-in-out infinite;
-}
-
-@keyframes dlg-entrada{
-  from{ opacity:0; transform:translateY(10px); }
-  to  { opacity:1; transform:translateY(0); }
 }
 @keyframes pulse-btn{
   0%,100%{box-shadow:0 0 0 0 rgba(190,140,35,0.35);}
   50%     {box-shadow:0 0 0 7px rgba(190,140,35,0);}
 }
+
+/* ── BOTÃO HISTÓRICO ── */
+#btn-historico{
+  position:fixed; top:12px; right:12px; z-index:150;
+  background:rgba(7,3,1,0.75); border:1px solid rgba(190,140,35,0.30);
+  border-radius:50%; width:38px; height:38px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px; cursor:pointer; backdrop-filter:blur(10px);
+  transition:border-color .2s, background .2s;
+}
+#btn-historico:hover{ background:rgba(40,25,5,0.90); border-color:rgba(190,140,35,0.60); }
+
+/* ── DRAWER DE HISTÓRICO ── */
+#historico-drawer{
+  position:fixed; inset:0; z-index:400;
+  background:rgba(4,2,1,0.96);
+  display:flex; flex-direction:column;
+  transition:opacity .22s ease, transform .22s ease;
+}
+#historico-drawer.oculto{ display:none; }
+
+#hd-header{
+  flex-shrink:0; padding:16px 18px 12px;
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid rgba(190,140,35,0.15);
+}
+#hd-titulo{ font-size:13px; font-weight:700; letter-spacing:.6px; color:#f5d878; }
+#hd-fechar{
+  background:none; border:none; color:rgba(190,165,90,0.6);
+  font-size:20px; cursor:pointer; padding:4px 8px;
+}
+
+#hd-corpo{
+  flex:1; overflow-y:auto; padding:14px 18px 24px;
+  display:flex; flex-direction:column; gap:10px;
+  scrollbar-width:thin; scrollbar-color:rgba(190,140,35,0.25) transparent;
+}
+
+.hd-entrada{
+  padding:8px 12px;
+  border-left:2px solid rgba(190,140,35,0.28);
+}
+.hd-entrada.player{ border-left-color:rgba(100,155,220,0.45); }
+.hd-entrada.acao{ border-left-color:rgba(185,160,85,0.25); padding:4px 12px; }
+
+.hd-quem{
+  font-size:8px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+  color:rgba(190,140,35,0.60); margin-bottom:4px;
+}
+.hd-entrada.player .hd-quem{ color:rgba(110,160,230,0.65); }
+.hd-entrada.acao .hd-quem{ display:none; }
+
+.hd-texto{
+  font-size:13px; color:rgba(220,195,140,0.88);
+  line-height:1.58; font-style:italic;
+}
+.hd-entrada.acao .hd-texto{
+  font-size:11px; color:rgba(185,160,85,0.52);
+}
+
+.hd-vazio{ font-size:13px; color:rgba(190,140,35,0.35); font-style:italic; text-align:center; padding:40px; }
 
 
 /* ── IA PENSANDO ── */
@@ -231,8 +289,25 @@ canvas.char-img{
   </div>
 </div>
 
-<!-- Strip de diálogo — falas empilhadas que sobem -->
-<div id="dialogo-strip"></div>
+<!-- Balão da fala atual -->
+<div id="balao-ativo">
+  <div id="balao-nome">—</div>
+  <div id="balao-acao"></div>
+  <div id="balao-texto">…</div>
+  <button id="btn-continuar" onclick="_handleContinuar()">▶ Continuar</button>
+</div>
+
+<!-- Botão de histórico -->
+<button id="btn-historico" onclick="_abrirHistorico()">📜</button>
+
+<!-- Drawer de histórico completo -->
+<div id="historico-drawer" class="oculto">
+  <div id="hd-header">
+    <span id="hd-titulo">📜 Histórico da Cena</span>
+    <button id="hd-fechar" onclick="_fecharHistorico()">✕</button>
+  </div>
+  <div id="hd-corpo"></div>
+</div>
 
 <div id="ia-pensando">✨ Pensando…</div>
 
@@ -342,7 +417,12 @@ const cenaBg      = document.getElementById('cena-bg');
 const personagens = document.getElementById('personagens');
 const parPlayer   = document.getElementById('par-player');
 const playerFallbk= document.getElementById('player-fallback');
-const dialogoStrip= document.getElementById('dialogo-strip');
+const balaoAtivo  = document.getElementById('balao-ativo');
+const balaoNome   = document.getElementById('balao-nome');
+const balaoAcao   = document.getElementById('balao-acao');
+const balaoTexto  = document.getElementById('balao-texto');
+const btnContinuar= document.getElementById('btn-continuar');
+const hdCorpo     = document.getElementById('hd-corpo');
 const npcChipsEl  = document.getElementById('npc-chips');
 const msgInput    = document.getElementById('msg-input');
 const btnEnviar   = document.getElementById('btn-enviar');
@@ -457,65 +537,55 @@ function selecionarNpc(idx){
 }
 
 // ══════════════════════════════════════════════════════════
-//  STRIP DE DIÁLOGO
+//  BALÃO
 // ══════════════════════════════════════════════════════════
-const MAX_MSGS_STRIP = 3;
-const _msgBuffer = [];
+function _mostrarBalao({ nome, acao, texto, isPlayer=false, comContinuar=false }){
+  balaoNome.textContent = nome.toUpperCase();
+  if(acao){ balaoAcao.textContent=acao; balaoAcao.style.display='block'; }
+  else     { balaoAcao.style.display='none'; }
+  balaoTexto.textContent = texto;
+  btnContinuar.style.display = comContinuar ? 'block' : 'none';
+  balaoAtivo.classList.toggle('player-fala', isPlayer);
+  balaoAtivo.classList.add('visivel');
+}
 
-function _adicionarFala({ nome, acao, texto, isPlayer=false, comContinuar=false }){
-  // Dimmer todas as mensagens existentes
-  document.querySelectorAll('.dlg-msg').forEach(el=>el.classList.remove('recente'));
-
-  const msg = document.createElement('div');
-  msg.className = 'dlg-msg' + (isPlayer ? ' player' : '');
-
-  const nomeEl = document.createElement('div');
-  nomeEl.className = 'dlg-nome';
-  nomeEl.textContent = nome.toUpperCase();
-  msg.appendChild(nomeEl);
-
-  if(acao){
-    const acaoEl = document.createElement('div');
-    acaoEl.className = 'dlg-acao';
-    acaoEl.textContent = acao;
-    msg.appendChild(acaoEl);
-  }
-
-  const textoEl = document.createElement('div');
-  textoEl.className = 'dlg-texto';
-  textoEl.textContent = texto;
-  msg.appendChild(textoEl);
-
-  if(comContinuar){
-    const btn = document.createElement('button');
-    btn.className = 'btn-continuar-strip';
-    btn.textContent = '▶ Continuar';
-    btn.onclick = ()=>window._handleContinuar();
-    msg.appendChild(btn);
-  }
-
-  dialogoStrip.appendChild(msg);
-  _msgBuffer.push(msg);
-
-  // Remover mensagens além do limite (fade out suave)
-  while(_msgBuffer.length > MAX_MSGS_STRIP){
-    const old = _msgBuffer.shift();
-    old.style.transition = 'opacity 0.25s';
-    old.style.opacity = '0';
-    setTimeout(()=>old.remove(), 260);
-  }
-
-  // Ativar .recente no próximo frame para triggerar a transição
-  requestAnimationFrame(()=>msg.classList.add('recente'));
+function _ocultarBalao(){
+  balaoAtivo.classList.remove('visivel');
 }
 
 // ══════════════════════════════════════════════════════════
 //  CONTINUAR
 // ══════════════════════════════════════════════════════════
 window._handleContinuar = function(){
-  document.querySelectorAll('.btn-continuar-strip').forEach(b=>b.remove());
+  btnContinuar.style.display='none';
   if(_continuarResolve){ _continuarResolve(); _continuarResolve=null; }
 };
+
+// ══════════════════════════════════════════════════════════
+//  HISTÓRICO
+// ══════════════════════════════════════════════════════════
+function _abrirHistorico(){
+  if(!logCena.length){
+    hdCorpo.innerHTML='<div class="hd-vazio">Nenhuma fala registrada ainda.</div>';
+  } else {
+    hdCorpo.innerHTML = logCena.map(e=>{
+      const cls = e.tipo==='acao' ? 'hd-entrada acao'
+                : (e.quem===playerName ? 'hd-entrada player' : 'hd-entrada');
+      const texto = e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : e.texto;
+      return `<div class="${cls}">
+        <div class="hd-quem">${e.quem.toUpperCase()}</div>
+        <div class="hd-texto">${texto}</div>
+      </div>`;
+    }).join('');
+    // scroll para o final (última fala)
+    requestAnimationFrame(()=>{ hdCorpo.scrollTop = hdCorpo.scrollHeight; });
+  }
+  document.getElementById('historico-drawer').classList.remove('oculto');
+}
+
+function _fecharHistorico(){
+  document.getElementById('historico-drawer').classList.add('oculto');
+}
 function esperarContinuar(){
   return new Promise(r=>{ _continuarResolve=r; });
 }
@@ -540,6 +610,8 @@ async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
   if(acao) registrarEvento(npc.nome, acao, 'acao');
   if(fala) registrarEvento(npc.nome, fala, 'fala');
 
+  _ocultarBalao(); await delay(120);
+
   // Atualizar foco (dim/bright dos personagens)
   npcAtivo=npcIdx;
   document.querySelectorAll('.chip-npc').forEach((c,i)=>c.classList.toggle('ativo',i===npcIdx));
@@ -556,15 +628,16 @@ async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
   }
   if(entrou) await delay(500);
 
-  _adicionarFala({ nome:npc.nome, acao, texto:fala, isPlayer:false, comContinuar:pedirContinuar });
+  _mostrarBalao({ nome:npc.nome, acao, texto:fala, isPlayer:false, comContinuar:pedirContinuar });
   if(pedirContinuar) await esperarContinuar();
 }
 
 async function mostrarPlayer(texto){
   registrarEvento(playerName, texto, 'fala');
-  // Player fica fixo na cena — só adiciona a fala no strip
-  _adicionarFala({ nome:playerName, acao:null, texto, isPlayer:true, comContinuar:false });
-  await delay(320); // pausa narrativa antes do NPC responder
+  _ocultarBalao(); await delay(120);
+  // Player é fixo — só troca o balão para o lado direito
+  _mostrarBalao({ nome:playerName, acao:null, texto, isPlayer:true, comContinuar:false });
+  await delay(700);
 }
 
 // ══════════════════════════════════════════════════════════
