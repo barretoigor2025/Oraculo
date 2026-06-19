@@ -706,7 +706,7 @@ REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. [ACAO: desc] ante
     { role:'user',content:mensagem },
   ];
   const controller = new AbortController();
-  const timer = setTimeout(()=>controller.abort(), 12000);
+  const timer = setTimeout(()=>controller.abort(), 18000);
   try {
     const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST', signal:controller.signal,
@@ -776,8 +776,14 @@ async function enviar(){
     msgInput.placeholder=`O que você diz para ${NPCS[target].nome.split(' ')[0]}…`;
   }catch(e){
     iaPensando.style.display='none';
-    if(e.message==='sem-chave') cfgOverlay.classList.remove('oculto');
-    else await mostrarNPC(target,'[ACAO: Algo parece interferir.] Tente novamente.');
+    if(e.message==='sem-chave'){
+      cfgOverlay.classList.remove('oculto');
+    } else {
+      let motivo = 'Tente novamente.';
+      if(e.name==='AbortError') motivo = 'A IA demorou demais. Tente novamente.';
+      else if(e.message) motivo = e.message.slice(0,90);
+      await mostrarNPC(target,`[ACAO: Algo interfere na resposta.] ${motivo}`);
+    }
   }
   animando=false; msgInput.disabled=false; btnEnviar.disabled=false;
   // Sem .focus() — teclado só abre quando o usuário tocar no campo
