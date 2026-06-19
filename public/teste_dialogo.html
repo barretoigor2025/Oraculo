@@ -27,7 +27,7 @@ html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,ser
 #personagens{
   position:fixed;
   bottom:94px; left:0; right:0;   /* pés logo acima da barra de chips */
-  height:clamp(320px,60vh,600px);
+  height:clamp(180px,32vh,320px);
   pointer-events:none;
   overflow:hidden;
   z-index:5;
@@ -140,17 +140,11 @@ canvas.char-img{
   50%     {box-shadow:0 0 0 7px rgba(190,140,35,0);}
 }
 
-/* ── CARD DO PLAYER ── */
+/* ── CARD DO PLAYER — pilha de falas (1+ jogadores), some só quando o NPC responde ── */
 #player-card{
   position:fixed;
   top:72px; left:12px; right:12px;
-  background:rgba(4,8,20,0.92);
-  border:1px solid rgba(100,155,220,0.40);
-  border-radius:16px;
-  padding:10px 14px 12px;
-  backdrop-filter:blur(16px);
-  box-shadow:0 4px 32px rgba(0,0,0,0.82);
-  display:flex; align-items:center; gap:13px;
+  display:flex; flex-direction:column; gap:8px;
   opacity:0; pointer-events:none;
   transform:translateY(-6px) scale(0.98);
   transition:opacity 0.28s ease, transform 0.28s ease;
@@ -158,22 +152,31 @@ canvas.char-img{
 }
 #player-card.visivel{ opacity:1; transform:translateY(0) scale(1); pointer-events:all; }
 
-#pc-portrait-wrap{
-  flex-shrink:0; width:54px; height:54px;
-  border-radius:50%; overflow:hidden;
-  border:1.5px solid rgba(100,155,220,0.35);
+.pc-fala{
+  background:rgba(4,8,20,0.92);
+  border:1px solid rgba(100,155,220,0.40);
+  border-radius:14px;
+  padding:9px 13px 10px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 4px 32px rgba(0,0,0,0.82);
+  display:flex; align-items:center; gap:12px;
+}
+/* retrato RETANGULAR (não círculo) */
+.pc-retrato-wrap{
+  flex-shrink:0; width:44px; height:56px;
+  border-radius:8px; overflow:hidden;
+  border:1px solid rgba(100,155,220,0.35);
   background:rgba(10,15,30,0.7);
   display:flex; align-items:center; justify-content:center;
 }
-#pc-retrato{ width:100%; height:100%; object-fit:cover; object-position:top center; display:none; }
-#pc-retrato.carregado{ display:block; }
-#pc-avatar{ font-size:24px; }
+.pc-retrato-wrap img{ width:100%; height:100%; object-fit:cover; object-position:top center; }
+.pc-retrato-wrap .pc-emoji{ font-size:24px; }
 
-#pc-nome{
+.pc-nome{
   font-size:8px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase;
   color:rgba(110,160,230,0.80); margin-bottom:5px;
 }
-#pc-texto{
+.pc-texto{
   font-size:clamp(13px,3.6vw,15px);
   color:rgba(215,230,255,0.94); line-height:1.60; font-style:italic;
 }
@@ -317,17 +320,8 @@ canvas.char-img{
   <button id="btn-continuar" onclick="_handleContinuar()">▶ Continuar</button>
 </div>
 
-<!-- Card do player (aparece quando player fala) -->
-<div id="player-card">
-  <div id="pc-portrait-wrap">
-    <img id="pc-retrato" alt="">
-    <span id="pc-avatar">🧙</span>
-  </div>
-  <div id="pc-body">
-    <div id="pc-nome">—</div>
-    <div id="pc-texto">…</div>
-  </div>
-</div>
+<!-- Card do player: pilha de falas dos jogadores; permanece até o NPC responder -->
+<div id="player-card"></div>
 
 <!-- Botão de histórico -->
 <button id="btn-historico" onclick="_abrirHistorico()">📜</button>
@@ -453,10 +447,6 @@ const balaoAcao   = document.getElementById('balao-acao');
 const balaoTexto  = document.getElementById('balao-texto');
 const btnContinuar= document.getElementById('btn-continuar');
 const playerCard  = document.getElementById('player-card');
-const pcNome      = document.getElementById('pc-nome');
-const pcTexto     = document.getElementById('pc-texto');
-const pcRetrato   = document.getElementById('pc-retrato');
-const pcAvatar    = document.getElementById('pc-avatar');
 const hdCorpo     = document.getElementById('hd-corpo');
 const npcChipsEl  = document.getElementById('npc-chips');
 const msgInput    = document.getElementById('msg-input');
@@ -473,11 +463,12 @@ const parPlayer = document.getElementById('par-player'); // null — player usa 
 cenaBg.style.backgroundImage = `url(${CENA_BG})`;
 msgInput.placeholder = `O que você diz para ${NPCS[0].nome.split(' ')[0]}…`;
 
-// ── Retrato do player no card ──
-pcAvatar.textContent = playerAvatar;
-pcRetrato.onerror = () => { pcRetrato.style.display='none'; pcAvatar.style.display='block'; };
-pcRetrato.onload  = () => { pcRetrato.classList.add('carregado'); pcAvatar.style.display='none'; };
-pcRetrato.src = `catalogo/mhoried/classes/${classId}/retrato/${classId}_retrato.png`;
+// ── Identidade do jogador local (preparado para múltiplos jogadores) ──
+const PLAYER_LOCAL = {
+  nome: playerName,
+  avatar: playerAvatar,
+  retrato: `catalogo/mhoried/classes/${classId}/retrato/${classId}_retrato.png`,
+};
 
 // ══════════════════════════════════════════════════════════
 //  GERAR NPCs
@@ -600,28 +591,52 @@ function selecionarNpc(idx){
 // ══════════════════════════════════════════════════════════
 //  BALÃO (NPC) e CARD (player)
 // ══════════════════════════════════════════════════════════
-function _mostrarBalao({ nome, acao, texto, isPlayer=false, comContinuar=false }){
-  if(isPlayer){
-    // Card do player
-    pcNome.textContent = `${playerName}`;
-    pcTexto.textContent = texto;
-    balaoAtivo.classList.remove('visivel');
-    playerCard.classList.add('visivel');
-  } else {
-    // Balão do NPC
-    balaoNome.textContent = nome.toUpperCase();
-    if(acao){ balaoAcao.textContent=acao; balaoAcao.style.display='block'; }
-    else     { balaoAcao.style.display='none'; }
-    balaoTexto.textContent = texto;
-    btnContinuar.style.display = comContinuar ? 'block' : 'none';
-    playerCard.classList.remove('visivel');
-    balaoAtivo.classList.add('visivel');
+function _mostrarBalaoNPC({ nome, acao, texto, comContinuar=false }){
+  balaoNome.textContent = nome.toUpperCase();
+  if(acao){ balaoAcao.textContent=acao; balaoAcao.style.display='block'; }
+  else     { balaoAcao.style.display='none'; }
+  balaoTexto.textContent = texto;
+  btnContinuar.style.display = comContinuar ? 'block' : 'none';
+  playerCard.classList.remove('visivel');
+  balaoAtivo.classList.add('visivel');
+}
+
+// Acrescenta a fala de um jogador à pilha (suporta 2+ jogadores) e mantém
+// o card visível. A pilha só é limpa quando o NPC responde (_ocultarBalao).
+function _empilharFalaPlayer({ nome, avatar, retrato, texto }){
+  balaoAtivo.classList.remove('visivel');         // esconde balão do NPC, não o card
+  const row = document.createElement('div');
+  row.className = 'pc-fala';
+  const wrap = document.createElement('div');
+  wrap.className = 'pc-retrato-wrap';
+  const emoji = document.createElement('span');
+  emoji.className = 'pc-emoji'; emoji.textContent = avatar || '🧙';
+  wrap.appendChild(emoji);
+  if(retrato){
+    const img = document.createElement('img');
+    img.alt = nome; img.style.display='none';
+    img.onload  = () => { img.style.display='block'; emoji.style.display='none'; };
+    img.onerror = () => { img.remove(); };
+    img.src = retrato;
+    wrap.appendChild(img);
   }
+  const body = document.createElement('div');
+  const nm = document.createElement('div'); nm.className='pc-nome'; nm.textContent = nome;
+  const tx = document.createElement('div'); tx.className='pc-texto'; tx.textContent = texto;
+  body.append(nm, tx);
+  row.append(wrap, body);
+  playerCard.appendChild(row);
+  playerCard.classList.add('visivel');
+}
+
+function _limparFalasPlayer(){
+  playerCard.classList.remove('visivel');
+  playerCard.innerHTML = '';
 }
 
 function _ocultarBalao(){
   balaoAtivo.classList.remove('visivel');
-  playerCard.classList.remove('visivel');
+  _limparFalasPlayer();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -693,16 +708,15 @@ async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
   }
   if(entrou) await delay(500);
 
-  _mostrarBalao({ nome:npc.nome, acao, texto:fala, isPlayer:false, comContinuar:pedirContinuar });
+  _mostrarBalaoNPC({ nome:npc.nome, acao, texto:fala, comContinuar:pedirContinuar });
   if(pedirContinuar) await esperarContinuar();
 }
 
-async function mostrarPlayer(texto){
-  registrarEvento(playerName, texto, 'fala');
-  _ocultarBalao(); await delay(120);
-  // Player é fixo — só troca o balão para o lado direito
-  _mostrarBalao({ nome:playerName, acao:null, texto, isPlayer:true, comContinuar:false });
-  await delay(700);
+async function mostrarPlayer(texto, player=PLAYER_LOCAL){
+  registrarEvento(player.nome, texto, 'fala');
+  // Empilha a fala no card; ele permanece (acumulando 2+ jogadores) até o NPC responder
+  _empilharFalaPlayer({ nome:player.nome, avatar:player.avatar, retrato:player.retrato, texto });
+  await delay(450);
 }
 
 // ══════════════════════════════════════════════════════════
