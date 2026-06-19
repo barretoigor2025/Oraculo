@@ -26,34 +26,35 @@ html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,ser
 /* ── PERSONAGENS — só imagens, sem balões ── */
 #personagens{
   position:fixed;
-  bottom:94px; left:0; right:0;
-  height:clamp(210px,38vh,325px);
+  bottom:58px; left:0; right:0;
+  height:clamp(300px,54vh,480px);
   pointer-events:none;
   overflow:hidden;
   z-index:5;
 }
 
-/* NPC — colado no canto esquerdo */
+/* NPC — corpo inteiro, colado no canto esquerdo
+   (a imagem tem ~20% de margem transparente; o translateX puxa o corpo
+   até a borda da tela) */
 .par-npc{
   position:absolute;
   bottom:0; left:0;
-  width:var(--char-w);
+  width:auto;            /* largura = largura natural do canvas */
   height:100%;
-  transform:translateX(-115%);
+  transform:translateX(-130%);
   transition:
     transform 0.52s cubic-bezier(0.32,0.72,0,1),
     opacity   0.32s ease,
     filter    0.32s ease;
 }
-.par-npc.dentro{ transform:translateX(0); }
+.par-npc.dentro{ transform:translateX(-23%); }
 .par-npc.inativo{ opacity:0.28; filter:brightness(0.45) saturate(0.35); }
-/* NPCs espelhados para ficarem virados para dentro (direita) */
-.par-npc .char-img{ transform:scaleX(-1); }
 
-/* NPCs: sem fade lateral — colados no canto esquerdo */
+/* NPCs espelhados (olhar para dentro) e SEM fade — aparecem por completo */
 .par-npc .char-img{
-  -webkit-mask-image: linear-gradient(to bottom, black 52%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 52%, transparent 100%);
+  transform:scaleX(-1);
+  -webkit-mask-image:none;
+  mask-image:none;
 }
 
 /* Player — standee removido da cena, representado por card de texto */
@@ -243,7 +244,7 @@ canvas.char-img{
 /* ── IA PENSANDO ── */
 #ia-pensando{
   position:fixed;
-  bottom:calc(94px + clamp(210px,38vh,325px) + 10px);
+  bottom:106px;
   left:50%; transform:translateX(-50%);
   background:rgba(60,28,100,0.92); border:1px solid rgba(150,80,240,0.5);
   border-radius:20px; padding:7px 18px; color:rgba(200,140,255,0.92);
