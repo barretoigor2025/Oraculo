@@ -26,20 +26,19 @@ html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,ser
 /* ── PERSONAGENS — só imagens, sem balões ── */
 #personagens{
   position:fixed;
-  bottom:58px; left:0; right:0;
-  height:clamp(300px,54vh,480px);
+  bottom:94px; left:0; right:0;   /* pés logo acima da barra de chips */
+  height:clamp(320px,60vh,600px);
   pointer-events:none;
   overflow:hidden;
   z-index:5;
 }
 
-/* NPC — corpo inteiro, colado no canto esquerdo
-   (a imagem tem ~20% de margem transparente; o translateX puxa o corpo
-   até a borda da tela) */
+/* NPC — canvas já recortado no contorno: cola no canto e no chão,
+   corpo inteiro, sem cortar nada */
 .par-npc{
   position:absolute;
   bottom:0; left:0;
-  width:auto;            /* largura = largura natural do canvas */
+  width:auto;            /* largura = largura natural do canvas recortado */
   height:100%;
   transform:translateX(-130%);
   transition:
@@ -47,7 +46,7 @@ html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,ser
     opacity   0.32s ease,
     filter    0.32s ease;
 }
-.par-npc.dentro{ transform:translateX(-23%); }
+.par-npc.dentro{ transform:translateX(0); }
 .par-npc.inativo{ opacity:0.28; filter:brightness(0.45) saturate(0.35); }
 
 /* NPCs espelhados (olhar para dentro) e SEM fade — aparecem por completo */
@@ -527,15 +526,37 @@ function _loadCanvas(src, canvas, onOk, onErr) {
   img.onload = () => {
     try {
       const H=900, W=Math.round(H*img.naturalWidth/img.naturalHeight);
-      canvas.width=W; canvas.height=H;
-      const ctx=canvas.getContext('2d');
-      ctx.drawImage(img,0,0,W,H);
-      _cromachave(ctx,W,H);
+      // Desenha + chromakey num canvas temporário
+      const tmp=document.createElement('canvas');
+      tmp.width=W; tmp.height=H;
+      const tctx=tmp.getContext('2d');
+      tctx.drawImage(img,0,0,W,H);
+      _cromachave(tctx,W,H);
+      // Recorta no contorno exato do personagem (bbox dos pixels opacos),
+      // assim ele cola no canto/chão sem margem transparente e sem cortar nada
+      const bb=_bboxOpaco(tctx,W,H);
+      const cw=bb.r-bb.l+1, ch=bb.b-bb.t+1;
+      canvas.width=cw; canvas.height=ch;
+      canvas.getContext('2d').drawImage(tmp, bb.l,bb.t,cw,ch, 0,0,cw,ch);
       if(onOk) onOk(canvas);
     } catch(_){ if(onErr) onErr(); }
   };
   img.onerror = () => { if(onErr) onErr(); };
   img.src = src;
+}
+// Bounding box dos pixels visíveis (alpha > limiar)
+function _bboxOpaco(ctx,w,h){
+  const d=ctx.getImageData(0,0,w,h).data;
+  let l=w,r=-1,t=h,b=-1;
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      if(d[(y*w+x)*4+3] > 24){
+        if(x<l)l=x; if(x>r)r=x; if(y<t)t=y; if(y>b)b=y;
+      }
+    }
+  }
+  if(r<l||b<t) return {l:0,t:0,r:w-1,b:h-1};
+  return {l,t,r,b};
 }
 function _cromachave(ctx,w,h){
   const id=ctx.getImageData(0,0,w,h),d=id.data;
