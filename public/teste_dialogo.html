@@ -324,6 +324,17 @@ const NPCS = [
     aberturaFallback:'[ACAO: Finn ri e estende a mão para cumprimentar o grupo.] Que espetáculo, amigos! Nunca vi coisa assim desde que o velho Harmon dançou com três goblins de uma vez!',
     offsetLeft:'clamp(18px,4vw,36px)', zBase:5,
   },
+  {
+    id:'mutter', nome:'Mutter Grimmhaar', avatar:'🧙‍♀️',
+    img:'catalogo/mhoried/npcs/npc_mutter_grimmhaar/retrato/npc_mutter_grimmhaar_retrato.png',
+    tipo:'retrato',
+    personalidade:'Velha feiticeira dos pântanos de aparência ambígua — parece ~50 anos mas é muito mais velha. Sobreviveu a quatro guerras, dois surtos de praga e um dragão. Tem a paciência de quem já viu tudo dar errado. Sua rudeza é economizadora de tempo, não crueldade. Chama todos de "criança" independente da idade. Quando encontra alguém novo, cheira-o lentamente — como se saboreando informação — e faz um comentário comparando o cheiro a algo incomestível.',
+    conhecimentos:'Sabe de praticamente tudo que acontece nos Blackwoods por anos de observação. Tem Gillshade e Greybane que o druida Mac Rónán precisa. Conhece a localização do Gloamreach dos Thools. Sabe sobre os experimentos de Choir. Filho Wulfram lhe conta tudo que vê. Tem um grimório com conhecimento que a Igreja destruiria. Veio à Feira de Phanourios vender poções e ingredientes raros — atitude incomum para ela, mas tem seus motivos.',
+    formaDeFalar:'Direta ao ponto, sem eufemismos. Às vezes fala em rimas imperfeitas quando está de humor. Quando não rima, usa metáforas macabras sobre ossos, podridão e sabor de coisas incomuns. Trata morte e veneno como tópicos domésticos. Ri de coisas que não são engraçadas. Quando alguém tenta intimidar, fica genuinamente entediada. Usa "minha criança" ao se referir a qualquer adulto.',
+    abertura:'(Você está vendendo poções e ingredientes em uma banca improvisada na Feira de Phanourios. Os aventureiros acabaram de vencer uma batalha perto. Você os cheira de longe e faz sua observação inicial característica — brevíssima, macabra, com rima se couber. Máximo 2 frases.)',
+    aberturaFallback:'[ACAO: Mutter fecha os olhos e fareja o ar na direção dos aventureiros com prazer deliberado.] Hmm. Sangue novo e medo velho — cheiram como javali depois da chuva, minha criança. Vendam-me seus mortos e eu dou desconto.',
+    offsetLeft:'clamp(36px,8vw,72px)', zBase:4,
+  },
 ];
 
 const CLASS_AVATAR = {mago:'🔮',guerreiro:'⚔️',ladino:'🗡️',clerigo:'✝️',arqueiro:'🏹',druida:'🌿'};
@@ -630,6 +641,11 @@ async function iniciarCena(){
   let ab1; try{ ab1=await chamarIA(1,NPCS[1].abertura); }catch(_){ ab1=NPCS[1].aberturaFallback; }
   iaPensando.style.display='none';
   await mostrarNPC(1,ab1,{pedirContinuar:true});
+
+  iaPensando.style.display='block';
+  let ab2; try{ ab2=await chamarIA(2,NPCS[2].abertura); }catch(_){ ab2=NPCS[2].aberturaFallback; }
+  iaPensando.style.display='none';
+  await mostrarNPC(2,ab2,{pedirContinuar:true});
 
   selecionarNpc(0);
   msgInput.disabled=false; btnEnviar.disabled=false; msgInput.focus();
