@@ -95,8 +95,9 @@ canvas.char-img{
    ══════════════════════════════════════════════════════ */
 #balao-ativo{
   position:fixed;
+  /* NPC fala: abre à direita do NPC, vai até a borda */
   left: calc(var(--char-w) + 10px);
-  right: calc(var(--char-w) + 10px);
+  right: 10px;
   bottom: calc(94px + 14px);
 
   background:rgba(7,3,1,0.91);
@@ -125,7 +126,8 @@ canvas.char-img{
 /* padrão: seta à esquerda (NPC) */
 #balao-ativo::before{ left:-9px; border-right-color:rgba(190,140,35,0.44); }
 #balao-ativo::after { left:-8px; border-right-color:rgba(7,3,1,0.91); border-width:8px; }
-/* player: seta à direita */
+/* player: balão espelha + seta à direita */
+#balao-ativo.player-fala{ left: 10px; right: calc(var(--char-w) + 10px); }
 #balao-ativo.player-fala::before{ left:auto; right:-9px; border-right-color:transparent; border-left-color:rgba(190,140,35,0.44); }
 #balao-ativo.player-fala::after { left:auto; right:-8px; border-right-color:transparent; border-left-color:rgba(7,3,1,0.91); border-width:8px; }
 
