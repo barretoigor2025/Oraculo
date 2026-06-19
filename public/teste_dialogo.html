@@ -9,7 +9,7 @@
 html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,serif;color:#e8d5a8;user-select:none;-webkit-user-select:none}
 
 /* ── Largura padrão dos personagens — usada por AMBOS o char e o balão ── */
-:root{ --char-w: clamp(105px, 23vw, 170px); }
+:root{ --char-w: clamp(130px, 32vw, 200px); }
 
 /* ── CENA ── */
 #cena-bg{
@@ -52,18 +52,8 @@ html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,ser
 
 /* NPCs empilhados em profundidade — offset aplicado via JS */
 
-/* Player — colado no canto direito, virado para a esquerda (para dentro) */
-#par-player{
-  position:absolute;
-  bottom:0; right:0;
-  width:var(--char-w);
-  height:100%;
-  transform:translateX(115%);
-  transition:transform 0.52s cubic-bezier(0.32,0.72,0,1);
-  z-index:10;
-}
-#par-player.dentro{ transform:translateX(0); }
-#par-player .char-img{ transform:scaleX(-1); }
+/* Player — standee removido da cena, representado por card de texto */
+#par-player{ display:none; }
 
 /* Imagens de personagem compartilham o mesmo estilo */
 .char-img{
@@ -144,6 +134,44 @@ canvas.char-img{
 @keyframes pulse-btn{
   0%,100%{box-shadow:0 0 0 0 rgba(190,140,35,0.35);}
   50%     {box-shadow:0 0 0 7px rgba(190,140,35,0);}
+}
+
+/* ── CARD DO PLAYER ── */
+#player-card{
+  position:fixed;
+  top:72px; left:12px; right:12px;
+  background:rgba(4,8,20,0.92);
+  border:1px solid rgba(100,155,220,0.40);
+  border-radius:16px;
+  padding:10px 14px 12px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 4px 32px rgba(0,0,0,0.82);
+  display:flex; align-items:center; gap:13px;
+  opacity:0; pointer-events:none;
+  transform:translateY(-6px) scale(0.98);
+  transition:opacity 0.28s ease, transform 0.28s ease;
+  z-index:200;
+}
+#player-card.visivel{ opacity:1; transform:translateY(0) scale(1); pointer-events:all; }
+
+#pc-portrait-wrap{
+  flex-shrink:0; width:54px; height:54px;
+  border-radius:50%; overflow:hidden;
+  border:1.5px solid rgba(100,155,220,0.35);
+  background:rgba(10,15,30,0.7);
+  display:flex; align-items:center; justify-content:center;
+}
+#pc-retrato{ width:100%; height:100%; object-fit:cover; object-position:top center; display:none; }
+#pc-retrato.carregado{ display:block; }
+#pc-avatar{ font-size:24px; }
+
+#pc-nome{
+  font-size:8px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase;
+  color:rgba(110,160,230,0.80); margin-bottom:5px;
+}
+#pc-texto{
+  font-size:clamp(13px,3.6vw,15px);
+  color:rgba(215,230,255,0.94); line-height:1.60; font-style:italic;
 }
 
 /* ── BOTÃO HISTÓRICO ── */
@@ -274,19 +302,27 @@ canvas.char-img{
 
 <div id="cena-bg"></div>
 
-<!-- Personagens: SÓ imagens, sem balões -->
-<div id="personagens">
-  <div id="par-player">
-    <div id="player-fallback" class="char-fallback">🧙</div>
-  </div>
-</div>
+<!-- Personagens: só NPCs -->
+<div id="personagens"></div>
 
-<!-- Balão da fala atual -->
+<!-- Balão NPC -->
 <div id="balao-ativo">
   <div id="balao-nome">—</div>
   <div id="balao-acao"></div>
   <div id="balao-texto">…</div>
   <button id="btn-continuar" onclick="_handleContinuar()">▶ Continuar</button>
+</div>
+
+<!-- Card do player (aparece quando player fala) -->
+<div id="player-card">
+  <div id="pc-portrait-wrap">
+    <img id="pc-retrato" alt="">
+    <span id="pc-avatar">🧙</span>
+  </div>
+  <div id="pc-body">
+    <div id="pc-nome">—</div>
+    <div id="pc-texto">…</div>
+  </div>
 </div>
 
 <!-- Botão de histórico -->
@@ -296,7 +332,7 @@ canvas.char-img{
 <div id="historico-drawer" class="oculto">
   <div id="hd-header">
     <span id="hd-titulo">📜 Histórico da Cena</span>
-    <button id="hd-fechar" onclick="_fecharHistorico()">✕</button>
+    <button id="hd-fechar" onclick="_fecharHistorico();" >✕</button>
   </div>
   <div id="hd-corpo"></div>
 </div>
@@ -339,7 +375,7 @@ const NPCS = [
     reatividade: 0.10,
     abertura:'(Você acaba de aparecer após os aventureiros vencerem uma batalha na feira. Diga sua frase de abertura — brevíssimo, impactante, máximo 2 frases.)',
     aberturaFallback:'[ACAO: Um homem de cicatrizes cruza os braços e observa o grupo em silêncio.] Sobreviveram. Interessante.',
-    zBase:6, offsetPx:0, espelhar:false,
+    zBase:6, offsetPx:0,
   },
   {
     id:'finn', nome:'Finn Willowheel', avatar:'🌿',
@@ -351,7 +387,7 @@ const NPCS = [
     reatividade: 0.42,
     abertura:'(Os aventureiros acabaram de vencer uma batalha na feira. Você estava observando de perto. Faça uma observação animada e curiosa — brevíssimo, 1-2 frases.)',
     aberturaFallback:'[ACAO: Finn ri e estende a mão para cumprimentar o grupo.] Que espetáculo, amigos! Nunca vi coisa assim desde que o velho Harmon dançou com três goblins de uma vez!',
-    zBase:5, offsetPx:6, espelhar:false,
+    zBase:5, offsetPx:6,
   },
   {
     id:'mutter', nome:'Mutter Grimmhaar', avatar:'🧙‍♀️',
@@ -363,7 +399,7 @@ const NPCS = [
     reatividade: 0.20,
     abertura:'(Você está vendendo poções numa banca na Feira. Os aventureiros acabaram de vencer uma batalha perto. Você os cheira de longe e faz sua observação inicial — brevíssima, macabra, máximo 2 frases.)',
     aberturaFallback:'[ACAO: Mutter fecha os olhos e fareja o ar na direção dos aventureiros com prazer deliberado.] Hmm. Sangue novo e medo velho — cheiram como javali depois da chuva, minha criança.',
-    zBase:4, offsetPx:12, espelhar:false,
+    zBase:4, offsetPx:12,
   },
 ];
 
@@ -407,13 +443,16 @@ function _gerarContextoCena(npcIdx){
 // ══════════════════════════════════════════════════════════
 const cenaBg      = document.getElementById('cena-bg');
 const personagens = document.getElementById('personagens');
-const parPlayer   = document.getElementById('par-player');
-const playerFallbk= document.getElementById('player-fallback');
 const balaoAtivo  = document.getElementById('balao-ativo');
 const balaoNome   = document.getElementById('balao-nome');
 const balaoAcao   = document.getElementById('balao-acao');
 const balaoTexto  = document.getElementById('balao-texto');
 const btnContinuar= document.getElementById('btn-continuar');
+const playerCard  = document.getElementById('player-card');
+const pcNome      = document.getElementById('pc-nome');
+const pcTexto     = document.getElementById('pc-texto');
+const pcRetrato   = document.getElementById('pc-retrato');
+const pcAvatar    = document.getElementById('pc-avatar');
 const hdCorpo     = document.getElementById('hd-corpo');
 const npcChipsEl  = document.getElementById('npc-chips');
 const msgInput    = document.getElementById('msg-input');
@@ -429,19 +468,11 @@ const npcEls = []; // {par}
 cenaBg.style.backgroundImage = `url(${CENA_BG})`;
 msgInput.placeholder = `O que você diz para ${NPCS[0].nome.split(' ')[0]}…`;
 
-// ══════════════════════════════════════════════════════════
-//  PLAYER STANDEE
-// ══════════════════════════════════════════════════════════
-(function(){
-  const canvas = document.createElement('canvas');
-  canvas.className = 'char-img';
-  _loadCanvas(
-    `catalogo/mhoried/classes/${classId}/peca_tabuleiro/${classId}_peca.png`,
-    canvas,
-    () => { parPlayer.insertBefore(canvas, playerFallbk); playerFallbk.style.display='none'; },
-    () => { playerFallbk.style.display='flex'; }
-  );
-})();
+// ── Retrato do player no card ──
+pcAvatar.textContent = playerAvatar;
+pcRetrato.onerror = () => { pcRetrato.style.display='none'; pcAvatar.style.display='block'; };
+pcRetrato.onload  = () => { pcRetrato.classList.add('carregado'); pcAvatar.style.display='none'; };
+pcRetrato.src = `catalogo/mhoried/classes/${classId}/retrato/${classId}_retrato.png`;
 
 // ══════════════════════════════════════════════════════════
 //  GERAR NPCs
@@ -540,20 +571,30 @@ function selecionarNpc(idx){
 }
 
 // ══════════════════════════════════════════════════════════
-//  BALÃO
+//  BALÃO (NPC) e CARD (player)
 // ══════════════════════════════════════════════════════════
 function _mostrarBalao({ nome, acao, texto, isPlayer=false, comContinuar=false }){
-  balaoNome.textContent = nome.toUpperCase();
-  if(acao){ balaoAcao.textContent=acao; balaoAcao.style.display='block'; }
-  else     { balaoAcao.style.display='none'; }
-  balaoTexto.textContent = texto;
-  btnContinuar.style.display = comContinuar ? 'block' : 'none';
-  balaoAtivo.classList.toggle('player-fala', isPlayer);
-  balaoAtivo.classList.add('visivel');
+  if(isPlayer){
+    // Card do player
+    pcNome.textContent = `${playerName}`;
+    pcTexto.textContent = texto;
+    balaoAtivo.classList.remove('visivel');
+    playerCard.classList.add('visivel');
+  } else {
+    // Balão do NPC
+    balaoNome.textContent = nome.toUpperCase();
+    if(acao){ balaoAcao.textContent=acao; balaoAcao.style.display='block'; }
+    else     { balaoAcao.style.display='none'; }
+    balaoTexto.textContent = texto;
+    btnContinuar.style.display = comContinuar ? 'block' : 'none';
+    playerCard.classList.remove('visivel');
+    balaoAtivo.classList.add('visivel');
+  }
 }
 
 function _ocultarBalao(){
   balaoAtivo.classList.remove('visivel');
+  playerCard.classList.remove('visivel');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -565,30 +606,24 @@ window._handleContinuar = function(){
 };
 
 // ══════════════════════════════════════════════════════════
-//  HISTÓRICO
+//  HISTÓRICO — exposto globalmente para o onclick funcionar
 // ══════════════════════════════════════════════════════════
-function _abrirHistorico(){
-  if(!logCena.length){
-    hdCorpo.innerHTML='<div class="hd-vazio">Nenhuma fala registrada ainda.</div>';
-  } else {
-    hdCorpo.innerHTML = logCena.map(e=>{
-      const cls = e.tipo==='acao' ? 'hd-entrada acao'
-                : (e.quem===playerName ? 'hd-entrada player' : 'hd-entrada');
-      const texto = e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : e.texto;
-      return `<div class="${cls}">
-        <div class="hd-quem">${e.quem.toUpperCase()}</div>
-        <div class="hd-texto">${texto}</div>
-      </div>`;
-    }).join('');
-    // scroll para o final (última fala)
-    requestAnimationFrame(()=>{ hdCorpo.scrollTop = hdCorpo.scrollHeight; });
-  }
+window._abrirHistorico = function(){
+  hdCorpo.innerHTML = logCena.length
+    ? logCena.map(e=>{
+        const cls = e.tipo==='acao' ? 'hd-entrada acao'
+                  : (e.quem===playerName ? 'hd-entrada player' : 'hd-entrada');
+        const txt = e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : e.texto;
+        return `<div class="${cls}"><div class="hd-quem">${e.quem.toUpperCase()}</div><div class="hd-texto">${txt}</div></div>`;
+      }).join('')
+    : '<div class="hd-vazio">Nenhuma fala registrada ainda.</div>';
+  requestAnimationFrame(()=>{ hdCorpo.scrollTop = hdCorpo.scrollHeight; });
   document.getElementById('historico-drawer').classList.remove('oculto');
-}
+};
 
-function _fecharHistorico(){
+window._fecharHistorico = function(){
   document.getElementById('historico-drawer').classList.add('oculto');
-}
+};
 function esperarContinuar(){
   return new Promise(r=>{ _continuarResolve=r; });
 }
@@ -748,10 +783,6 @@ async function iniciarCena(){
     iaPensando.style.display='none';
     await mostrarNPC(i,ab,{pedirContinuar:true});
   }
-
-  // Player entra uma vez e permanece na cena durante toda a sessão
-  parPlayer.classList.add('dentro');
-  await delay(480);
 
   selecionarNpc(0);
   msgInput.disabled=false; btnEnviar.disabled=false; msgInput.focus();
