@@ -111,7 +111,7 @@ canvas.char-img{
   transform:translateY(8px) scale(0.98);
   transition:opacity 0.28s ease, transform 0.28s ease;
   pointer-events:none;
-  z-index:100;
+  z-index:4; /* abaixo dos personagens (z-index 5+) — NPCs ficam na frente */
 }
 #balao-ativo.visivel{
   opacity:1; transform:translateY(0) scale(1);
@@ -512,13 +512,24 @@ function _loadCanvas(src, canvas, onOk, onErr) {
 }
 function _cromachave(ctx,w,h){
   const id=ctx.getImageData(0,0,w,h),d=id.data;
+  // Pula se a imagem já tem transparência
   for(let i=3;i<d.length;i+=4){ if(d[i]<230) return; }
-  const pts=[[0,0],[w-1,0],[0,h-1],[w-1,h-1]];
+  // Amostrar mais pontos da borda para média mais precisa do fundo
+  const pts=[
+    [0,0],[w-1,0],[0,h-1],[w-1,h-1],
+    [Math.floor(w/2),0],[0,Math.floor(h/2)],
+    [w-1,Math.floor(h/2)],[Math.floor(w/2),h-1],
+  ];
   let kr=0,kg=0,kb=0;
   for(const[x,y]of pts){const b=(y*w+x)*4;kr+=d[b];kg+=d[b+1];kb+=d[b+2];}
-  kr=Math.round(kr/4);kg=Math.round(kg/4);kb=Math.round(kb/4);
+  kr=Math.round(kr/pts.length);kg=Math.round(kg/pts.length);kb=Math.round(kb/pts.length);
   for(let i=0;i<d.length;i+=4){
-    if(Math.abs(d[i]-kr)+Math.abs(d[i+1]-kg)+Math.abs(d[i+2]-kb)<80) d[i+3]=0;
+    const dist=Math.abs(d[i]-kr)+Math.abs(d[i+1]-kg)+Math.abs(d[i+2]-kb);
+    if(dist<52){
+      d[i+3]=0;                                    // totalmente transparente
+    } else if(dist<95){
+      d[i+3]=Math.round((dist-52)/43*255);          // borda suave gradual
+    }
   }
   ctx.putImageData(id,0,0);
 }
