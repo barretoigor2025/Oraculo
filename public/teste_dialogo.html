@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Oráculo — Diálogo de Cena</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,serif;color:#e8d5a8;user-select:none;-webkit-user-select:none}
+
+/* ── CENA ── */
+#cena-bg{
+  position:fixed;inset:0;
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+}
+#cena-bg::after{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 50% 60%, transparent 30%, rgba(0,0,0,0.55) 100%),
+    linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.62) 85%);
+}
+
+/* ── ÁREA DOS PERSONAGENS ── */
+#personagens{
+  position:fixed;
+  bottom:58px;left:0;right:0;
+  height:calc(100dvh - 58px);
+  pointer-events:none;
+  overflow:hidden;
+}
+
+/* wrapper do par retrato+balão */
+.par{
+  position:absolute;
+  bottom:0;
+  display:flex;
+  align-items:flex-end;
+  gap:0;
+  transition:transform 0.55s cubic-bezier(0.32,0.72,0,1);
+}
+#par-npc{
+  left:0;
+  flex-direction:row;
+  transform:translateX(-110%);
+}
+#par-npc.dentro{transform:translateX(0);}
+
+#par-player{
+  right:0;
+  flex-direction:row-reverse;
+  transform:translateX(110%);
+}
+#par-player.dentro{transform:translateX(0);}
+
+/* ── RETRATO ── */
+.retrato-wrap{
+  flex-shrink:0;
+  position:relative;
+  width:clamp(100px,24vw,190px);
+  height:clamp(180px,45vw,360px);
+  overflow:hidden;
+}
+.retrato-img{
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:top center;
+  display:block;
+  /* fade: sai nas bordas laterais e na base */
+  -webkit-mask-image:
+    linear-gradient(to bottom, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%),
+    linear-gradient(to right,  rgba(0,0,0,0) 0%, rgba(0,0,0,1) 12%, rgba(0,0,0,1) 88%, rgba(0,0,0,0) 100%);
+  -webkit-mask-composite:source-in;
+  mask-image:
+    linear-gradient(to bottom, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%),
+    linear-gradient(to right,  rgba(0,0,0,0) 0%, rgba(0,0,0,1) 12%, rgba(0,0,0,1) 88%, rgba(0,0,0,0) 100%);
+  mask-composite:intersect;
+  filter:drop-shadow(0 8px 28px rgba(0,0,0,0.9));
+}
+/* player usa emoji/silhueta quando sem imagem */
+.retrato-fallback{
+  width:100%;height:100%;
+  display:flex;align-items:flex-start;justify-content:center;
+  padding-top:20px;font-size:clamp(36px,9vw,64px);
+  background:linear-gradient(to bottom,rgba(60,45,20,0.5),rgba(0,0,0,0));
+  -webkit-mask-image:linear-gradient(to bottom,black 50%,transparent 100%);
+  mask-image:linear-gradient(to bottom,black 50%,transparent 100%);
+}
+
+/* ── BALÃO ── */
+.balao{
+  flex-shrink:1;
+  max-width:clamp(160px,42vw,320px);
+  min-width:120px;
+  background:rgba(10,6,2,0.86);
+  border:1px solid rgba(190,140,35,0.42);
+  border-radius:18px;
+  padding:13px 17px 14px;
+  margin-bottom:clamp(28px,7vh,90px);
+  backdrop-filter:blur(12px);
+  box-shadow:0 4px 30px rgba(0,0,0,0.75);
+  position:relative;
+  /* animação própria do balão */
+  opacity:0;
+  transform:translateY(12px) scale(0.97);
+  transition:opacity 0.32s ease,transform 0.32s ease;
+}
+.balao.visivel{opacity:1;transform:translateY(0) scale(1);}
+
+/* seta NPC (lado esquerdo do balão, aponta para o retrato) */
+#balao-npc::before{
+  content:'';position:absolute;
+  left:-9px;top:22px;
+  border:9px solid transparent;
+  border-right-color:rgba(190,140,35,0.42);
+}
+#balao-npc::after{
+  content:'';position:absolute;
+  left:-8px;top:23px;
+  border:8px solid transparent;
+  border-right-color:rgba(10,6,2,0.86);
+}
+
+/* seta player (lado direito do balão, aponta para o retrato) */
+#balao-player::before{
+  content:'';position:absolute;
+  right:-9px;top:22px;
+  border:9px solid transparent;
+  border-left-color:rgba(190,140,35,0.42);
+}
+#balao-player::after{
+  content:'';position:absolute;
+  right:-8px;top:23px;
+  border:8px solid transparent;
+  border-left-color:rgba(10,6,2,0.86);
+}
+
+.balao-nome{
+  font-size:10px;font-weight:700;
+  letter-spacing:1.8px;text-transform:uppercase;
+  color:rgba(190,140,35,0.72);
+  margin-bottom:6px;
+}
+.balao-acao{
+  font-size:11px;color:rgba(185,160,85,0.58);
+  font-style:italic;line-height:1.45;
+  margin-bottom:5px;display:none;
+}
+.balao-texto{
+  font-size:clamp(12px,3.2vw,14.5px);
+  color:rgba(238,218,162,0.95);
+  line-height:1.68;font-style:italic;
+}
+
+/* ── BARRA DE INPUT ── */
+#input-bar{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  height:58px;
+  padding:9px 12px max(9px,env(safe-area-inset-bottom));
+  background:rgba(4,2,1,0.95);
+  border-top:1px solid rgba(190,140,35,0.18);
+  display:flex;align-items:center;gap:9px;
+  z-index:200;
+}
+#msg-input{
+  flex:1;
+  background:rgba(25,16,5,0.95);
+  border:1px solid rgba(190,140,35,0.28);
+  border-radius:10px;
+  padding:10px 14px;
+  color:#e8d5a8;
+  font-family:Georgia,serif;font-size:14px;
+  outline:none;
+}
+#msg-input::placeholder{color:rgba(190,165,90,0.32);}
+#msg-input:focus{border-color:rgba(190,140,35,0.52);}
+#msg-input:disabled{opacity:0.45;}
+#btn-enviar{
+  flex-shrink:0;
+  background:rgba(190,140,35,0.16);
+  border:1px solid rgba(190,140,35,0.42);
+  border-radius:10px;
+  padding:10px 18px;
+  color:#f5d878;font-family:Georgia,serif;
+  font-weight:700;font-size:13px;
+  cursor:pointer;white-space:nowrap;
+}
+#btn-enviar:disabled{opacity:0.38;cursor:default;}
+
+/* ── IA PENSANDO ── */
+#ia-pensando{
+  position:fixed;
+  bottom:70px;left:50%;transform:translateX(-50%);
+  background:rgba(60,28,100,0.92);
+  border:1px solid rgba(150,80,240,0.5);
+  border-radius:20px;
+  padding:7px 18px;
+  color:rgba(200,140,255,0.92);
+  font-size:12px;letter-spacing:.4px;
+  z-index:300;display:none;
+  white-space:nowrap;
+}
+
+/* ── CONFIG IA ── */
+#cfg-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.9);
+  display:flex;align-items:center;justify-content:center;
+  z-index:500;
+}
+#cfg-overlay.oculto{display:none;}
+#cfg-box{
+  background:#1a1208;border:1px solid rgba(190,140,35,0.38);
+  border-radius:18px;padding:28px 24px;
+  max-width:340px;width:90%;
+  display:flex;flex-direction:column;gap:14px;
+}
+#cfg-titulo{font-size:16px;font-weight:700;color:#f5d878;}
+#cfg-descr{font-size:12px;color:rgba(200,175,100,0.65);line-height:1.55;}
+#cfg-input{
+  background:rgba(0,0,0,0.5);border:1px solid rgba(190,140,35,0.28);
+  border-radius:8px;padding:10px 14px;
+  color:#e8d5a8;font-family:monospace;font-size:13px;
+  outline:none;width:100%;
+}
+#cfg-salvar{
+  background:rgba(190,140,35,0.22);border:1px solid rgba(190,140,35,0.48);
+  border-radius:9px;padding:11px;
+  color:#f5d878;font-family:Georgia,serif;font-weight:700;
+  cursor:pointer;width:100%;font-size:14px;
+}
+</style>
+</head>
+<body>
+
+<div id="cena-bg"></div>
+
+<div id="personagens">
+
+  <!-- NPC — esquerda -->
+  <div id="par-npc" class="par">
+    <div class="retrato-wrap">
+      <img id="npc-img" class="retrato-img" alt="">
+      <div id="npc-fallback" class="retrato-fallback" style="display:none">🗡️</div>
+    </div>
+    <div id="balao-npc" class="balao">
+      <div class="balao-nome" id="npc-nome-label">—</div>
+      <div class="balao-acao" id="npc-acao"></div>
+      <div class="balao-texto" id="npc-texto">…</div>
+    </div>
+  </div>
+
+  <!-- Player — direita -->
+  <div id="par-player" class="par">
+    <div class="retrato-wrap">
+      <div id="player-fallback" class="retrato-fallback">🧙</div>
+    </div>
+    <div id="balao-player" class="balao">
+      <div class="balao-nome" id="player-nome-label">AVENTUREIRO</div>
+      <div class="balao-texto" id="player-texto">—</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="ia-pensando">✨ Pensando…</div>
+
+<div id="input-bar">
+  <input id="msg-input" type="text" placeholder="O que você diz…" autocomplete="off" spellcheck="false">
+  <button id="btn-enviar">Enviar →</button>
+</div>
+
+<div id="cfg-overlay" class="oculto">
+  <div id="cfg-box">
+    <div id="cfg-titulo">Chave da API Groq</div>
+    <div id="cfg-descr">Necessária para o NPC responder com IA. Guardada apenas neste dispositivo (localStorage).</div>
+    <input id="cfg-input" type="password" placeholder="gsk_..." autocomplete="off">
+    <button id="cfg-salvar">Salvar e iniciar →</button>
+  </div>
+</div>
+
+<script type="module">
+
+// ══════════════════════════════════════════════════════════
+//  CONFIGURAÇÃO DO TESTE
+// ══════════════════════════════════════════════════════════
+const NPC_DADOS = {
+  nome:   'Grégoras Pellos',
+  img:    'catalogo/mhoried/npcs/npc_gregoras_pellos/retrato/npc_gregoras_pellos_retrato.png',
+  personalidade: `Mercenário veterano de meia-idade, ex-soldado do exército de Mhoried. Cicatrizes e postura comunicam mais do que palavras. Leal até a morte com quem confia, perigoso com quem trai. Fala pouco e pesa cada palavra. Respeita força e honestidade acima de tudo. Humor seco difícil de perceber.`,
+  conhecimentos: `Sabe que algo está errado em Gloamreach — pessoas desaparecem e voltam "diferentes". Conhece Finn Willowheel desde a infância. Desconfia do Rei Chutter mas não sabe por quê ainda. Está procurando alguém na feira e não quer revelar quem.`,
+  formaDeFalar: `Frases curtas e diretas. Nunca desperdiça palavras. Quando suspeita de alguém, fica completamente quieto por um momento antes de responder. Usa termos militares ocasionalmente. Nunca elogia diretamente — demonstra aprovação com ação.`,
+};
+
+const CENA_BG = 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_ext.png';
+
+// ══════════════════════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════════════════════
+let historico = [];
+let animando  = false;
+
+// ══════════════════════════════════════════════════════════
+//  DOM
+// ══════════════════════════════════════════════════════════
+const cenaBg     = document.getElementById('cena-bg');
+const parNpc     = document.getElementById('par-npc');
+const npcImg     = document.getElementById('npc-img');
+const npcFallbk  = document.getElementById('npc-fallback');
+const balaoNpc   = document.getElementById('balao-npc');
+const npcNomeLbl = document.getElementById('npc-nome-label');
+const npcAcao    = document.getElementById('npc-acao');
+const npcTexto   = document.getElementById('npc-texto');
+
+const parPlayer   = document.getElementById('par-player');
+const balaoPlayer = document.getElementById('balao-player');
+const playerTexto = document.getElementById('player-texto');
+
+const msgInput   = document.getElementById('msg-input');
+const btnEnviar  = document.getElementById('btn-enviar');
+const iaPensando = document.getElementById('ia-pensando');
+const cfgOverlay = document.getElementById('cfg-overlay');
+
+// ══════════════════════════════════════════════════════════
+//  SETUP INICIAL
+// ══════════════════════════════════════════════════════════
+cenaBg.style.backgroundImage  = `url(${CENA_BG})`;
+npcNomeLbl.textContent         = NPC_DADOS.nome.toUpperCase();
+
+npcImg.onload  = () => { npcImg.style.display = 'block'; npcFallbk.style.display = 'none'; };
+npcImg.onerror = () => { npcImg.style.display = 'none';  npcFallbk.style.display = 'flex'; };
+npcImg.src     = NPC_DADOS.img;
+
+// ══════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+function parsearFala(raw) {
+  const m    = raw.match(/\[ACAO:\s*([^\]]+)\]/i);
+  const acao = m ? m[1].trim() : null;
+  const fala = raw.replace(/\[ACAO:[^\]]+\]\s*/gi, '').trim();
+  return { acao, fala };
+}
+
+// ══════════════════════════════════════════════════════════
+//  ANIMAÇÕES
+// ══════════════════════════════════════════════════════════
+async function mostrarNPC(raw) {
+  const { acao, fala } = parsearFala(raw);
+
+  // Se player está visível → saída
+  if (parPlayer.classList.contains('dentro')) {
+    balaoPlayer.classList.remove('visivel');
+    await delay(200);
+    parPlayer.classList.remove('dentro');
+    await delay(520);
+  }
+
+  // Se NPC já estava → esconder balão brevemente para nova fala
+  if (parNpc.classList.contains('dentro')) {
+    balaoNpc.classList.remove('visivel');
+    await delay(160);
+  }
+
+  // Preencher conteúdo
+  if (acao) { npcAcao.textContent = acao; npcAcao.style.display = 'block'; }
+  else       { npcAcao.style.display = 'none'; }
+  npcTexto.textContent = fala;
+
+  // Entrar NPC se estava fora
+  if (!parNpc.classList.contains('dentro')) {
+    parNpc.classList.add('dentro');
+    await delay(480);
+  }
+
+  // Mostrar balão
+  balaoNpc.classList.add('visivel');
+}
+
+async function mostrarPlayer(texto) {
+  // NPC permanece visível mas balão some
+  balaoNpc.classList.remove('visivel');
+  await delay(180);
+
+  playerTexto.textContent = texto;
+
+  if (!parPlayer.classList.contains('dentro')) {
+    parPlayer.classList.add('dentro');
+    await delay(450);
+  }
+
+  balaoPlayer.classList.add('visivel');
+}
+
+// ══════════════════════════════════════════════════════════
+//  IA (Groq)
+// ══════════════════════════════════════════════════════════
+async function chamarIA(mensagem) {
+  const key = localStorage.getItem('oraculo.groqKey');
+  if (!key) throw new Error('sem-chave');
+
+  const messages = [
+    {
+      role: 'system',
+      content:
+`Você é ${NPC_DADOS.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. Jogadores reais estão interagindo com você agora.
+
+QUEM VOCÊ É:
+${NPC_DADOS.personalidade}
+
+O QUE VOCÊ SABE (revele aos poucos conforme a conversa justificar):
+${NPC_DADOS.conhecimentos}
+
+SUA FORMA DE FALAR:
+${NPC_DADOS.formaDeFalar}
+
+SITUAÇÃO: Acabou de acontecer uma batalha na Feira de Outono de St. Phanourios. O grupo de aventureiros venceu. Você os observou.
+
+REGRAS ABSOLUTAS:
+- Português brasileiro, primeira pessoa, como ${NPC_DADOS.nome} — nunca quebre o personagem
+- Máximo 2-3 frases por resposta
+- Para ações físicas VISÍVEIS use [ACAO: descrição em 3ª pessoa] ANTES da fala
+- Se tiver segredo, proteja-o até ser convencido
+- Reaja ao que foi dito — não responda no vácuo`
+    },
+    ...historico,
+    { role: 'user', content: mensagem }
+  ];
+
+  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 200, messages }),
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.choices?.[0]?.message?.content?.trim() || '…';
+}
+
+// ══════════════════════════════════════════════════════════
+//  LOOP DE CONVERSA
+// ══════════════════════════════════════════════════════════
+async function enviar() {
+  const txt = msgInput.value.trim();
+  if (!txt || animando) return;
+
+  animando = true;
+  msgInput.disabled = true;
+  btnEnviar.disabled = true;
+  msgInput.value = '';
+
+  await mostrarPlayer(txt);
+  historico.push({ role: 'user', content: txt });
+
+  await delay(900);
+
+  iaPensando.style.display = 'block';
+  try {
+    const resp = await chamarIA(txt);
+    historico.push({ role: 'assistant', content: resp });
+    iaPensando.style.display = 'none';
+    await mostrarNPC(resp);
+  } catch (e) {
+    iaPensando.style.display = 'none';
+    if (e.message === 'sem-chave') {
+      cfgOverlay.classList.remove('oculto');
+    } else {
+      await mostrarNPC('[ACAO: Grégoras franze o cenho por um instante.] Algo interferiu. Tente novamente.');
+    }
+  }
+
+  animando = false;
+  msgInput.disabled = false;
+  btnEnviar.disabled = false;
+  msgInput.focus();
+}
+
+// ══════════════════════════════════════════════════════════
+//  CONFIG KEY
+// ══════════════════════════════════════════════════════════
+document.getElementById('cfg-salvar').addEventListener('click', () => {
+  const v = document.getElementById('cfg-input').value.trim();
+  if (!v) return;
+  localStorage.setItem('oraculo.groqKey', v);
+  cfgOverlay.classList.add('oculto');
+  iniciarCena();
+});
+
+// ══════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════
+async function iniciarCena() {
+  if (!localStorage.getItem('oraculo.groqKey')) {
+    cfgOverlay.classList.remove('oculto');
+    return;
+  }
+
+  msgInput.disabled = true;
+  btnEnviar.disabled = true;
+
+  await delay(700);
+
+  // Fala de abertura gerada pela IA
+  iaPensando.style.display = 'block';
+  try {
+    const abertura = await chamarIA(
+      '(Você acaba de aparecer após os aventureiros vencerem uma batalha na feira. ' +
+      'Diga sua frase de abertura — seja brevíssimo e impactante. Não mais que 2 frases.)'
+    );
+    iaPensando.style.display = 'none';
+    // Abertura não entra no histórico (contexto implícito)
+    await mostrarNPC(abertura);
+  } catch {
+    iaPensando.style.display = 'none';
+    await mostrarNPC('[ACAO: Um homem de cicatrizes cruza os braços e observa o grupo em silêncio.] Sobreviveram. Interessante.');
+  }
+
+  msgInput.disabled = false;
+  btnEnviar.disabled = false;
+  msgInput.focus();
+}
+
+// ══════════════════════════════════════════════════════════
+//  EVENTOS
+// ══════════════════════════════════════════════════════════
+btnEnviar.addEventListener('click', enviar);
+msgInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); }
+});
+
+iniciarCena();
+</script>
+</body>
+</html>
