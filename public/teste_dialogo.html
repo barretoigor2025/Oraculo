@@ -50,7 +50,11 @@ html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,ser
 /* NPCs espelhados para ficarem virados para dentro (direita) */
 .par-npc .char-img{ transform:scaleX(-1); }
 
-/* NPCs empilhados em profundidade — offset aplicado via JS */
+/* NPCs: sem fade lateral — colados no canto esquerdo */
+.par-npc .char-img{
+  -webkit-mask-image: linear-gradient(to bottom, black 52%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 52%, transparent 100%);
+}
 
 /* Player — standee removido da cena, representado por card de texto */
 #par-player{ display:none; }
@@ -375,7 +379,7 @@ const NPCS = [
     reatividade: 0.10,
     abertura:'(Você acaba de aparecer após os aventureiros vencerem uma batalha na feira. Diga sua frase de abertura — brevíssimo, impactante, máximo 2 frases.)',
     aberturaFallback:'[ACAO: Um homem de cicatrizes cruza os braços e observa o grupo em silêncio.] Sobreviveram. Interessante.',
-    zBase:6, offsetPx:0,
+    zBase:6, offsetPx:0, tipo:'standee',
   },
   {
     id:'finn', nome:'Finn Willowheel', avatar:'🌿',
@@ -387,7 +391,7 @@ const NPCS = [
     reatividade: 0.42,
     abertura:'(Os aventureiros acabaram de vencer uma batalha na feira. Você estava observando de perto. Faça uma observação animada e curiosa — brevíssimo, 1-2 frases.)',
     aberturaFallback:'[ACAO: Finn ri e estende a mão para cumprimentar o grupo.] Que espetáculo, amigos! Nunca vi coisa assim desde que o velho Harmon dançou com três goblins de uma vez!',
-    zBase:5, offsetPx:6,
+    zBase:5, offsetPx:0,
   },
   {
     id:'mutter', nome:'Mutter Grimmhaar', avatar:'🧙‍♀️',
@@ -399,7 +403,7 @@ const NPCS = [
     reatividade: 0.20,
     abertura:'(Você está vendendo poções numa banca na Feira. Os aventureiros acabaram de vencer uma batalha perto. Você os cheira de longe e faz sua observação inicial — brevíssima, macabra, máximo 2 frases.)',
     aberturaFallback:'[ACAO: Mutter fecha os olhos e fareja o ar na direção dos aventureiros com prazer deliberado.] Hmm. Sangue novo e medo velho — cheiram como javali depois da chuva, minha criança.',
-    zBase:4, offsetPx:12,
+    zBase:4, offsetPx:0,
   },
 ];
 
@@ -461,6 +465,7 @@ const iaPensando  = document.getElementById('ia-pensando');
 const cfgOverlay  = document.getElementById('cfg-overlay');
 
 const npcEls = []; // {par}
+const parPlayer = document.getElementById('par-player'); // null — player usa card, não standee
 
 // ══════════════════════════════════════════════════════════
 //  SETUP
@@ -700,14 +705,20 @@ REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. [ACAO: desc] ante
     ...hist,
     { role:'user',content:mensagem },
   ];
-  const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-    method:'POST',
-    headers:{'Authorization':`Bearer ${key}`,'content-type':'application/json'},
-    body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:200,messages}),
-  });
-  const data=await resp.json();
-  if(data.error) throw new Error(data.error.message);
-  return data.choices?.[0]?.message?.content?.trim()||'…';
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), 12000);
+  try {
+    const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST', signal:controller.signal,
+      headers:{'Authorization':`Bearer ${key}`,'content-type':'application/json'},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:200,messages}),
+    });
+    const data=await resp.json();
+    if(data.error) throw new Error(data.error.message);
+    return data.choices?.[0]?.message?.content?.trim()||'…';
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -727,18 +738,15 @@ async function _verificarReacao(npcQueRespondeuIdx){
   const prompt = `Você observou o que acabou de acontecer:\n${ultimosEventos}\n\nDado exatamente quem você é e seu jeito de ser, você diria algo agora? Se sim, reaja em 1 frase brevíssima e no seu estilo. Se não (porque você naturalmente ficaria em silêncio neste momento), responda exatamente "---".`;
 
   try {
+    iaPensando.style.display='block';
     const reacao = await chamarIA(reatorIdx, prompt);
+    iaPensando.style.display='none';
     if(!reacao||reacao.trim().startsWith('---')) return;
     historicos[reatorIdx].push({role:'user',content:prompt});
     historicos[reatorIdx].push({role:'assistant',content:reacao});
-    // Deixar o usuário ler o balão atual antes de o reator aparecer
-    if(balaoAtivo.classList.contains('visivel')){
-      btnContinuar.style.display='block';
-      await esperarContinuar();
-    }
     await delay(300);
     await mostrarNPC(reatorIdx, reacao, {pedirContinuar:false});
-  } catch(_){ /* silencioso — reação é opcional */ }
+  } catch(_){ iaPensando.style.display='none'; /* silencioso — reação é opcional */ }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -759,8 +767,8 @@ async function enviar(){
     const resp=await chamarIA(target,txt);
     historicos[target].push({role:'assistant',content:resp});
     iaPensando.style.display='none';
-    await mostrarNPC(target,resp);
-    // Verificar se outro NPC quer reagir espontaneamente
+    await mostrarNPC(target,resp,{pedirContinuar:true});
+    // Verificar se outro NPC quer reagir — só depois do usuário ler
     await _verificarReacao(target);
     // Restaurar foco no NPC que o jogador estava conversando
     npcAtivo=target;
