@@ -731,7 +731,12 @@ async function _verificarReacao(npcQueRespondeuIdx){
     if(!reacao||reacao.trim().startsWith('---')) return;
     historicos[reatorIdx].push({role:'user',content:prompt});
     historicos[reatorIdx].push({role:'assistant',content:reacao});
-    await delay(650);
+    // Deixar o usuário ler o balão atual antes de o reator aparecer
+    if(balaoAtivo.classList.contains('visivel')){
+      btnContinuar.style.display='block';
+      await esperarContinuar();
+    }
+    await delay(300);
     await mostrarNPC(reatorIdx, reacao, {pedirContinuar:false});
   } catch(_){ /* silencioso — reação é opcional */ }
 }
@@ -766,7 +771,8 @@ async function enviar(){
     if(e.message==='sem-chave') cfgOverlay.classList.remove('oculto');
     else await mostrarNPC(target,'[ACAO: Algo parece interferir.] Tente novamente.');
   }
-  animando=false; msgInput.disabled=false; btnEnviar.disabled=false; msgInput.focus();
+  animando=false; msgInput.disabled=false; btnEnviar.disabled=false;
+  // Sem .focus() — teclado só abre quando o usuário tocar no campo
 }
 
 // ══════════════════════════════════════════════════════════
@@ -785,7 +791,8 @@ async function iniciarCena(){
   }
 
   selecionarNpc(0);
-  msgInput.disabled=false; btnEnviar.disabled=false; msgInput.focus();
+  msgInput.disabled=false; btnEnviar.disabled=false;
+  // Sem .focus() — teclado só abre quando o usuário tocar no campo
 }
 
 // ── CFG ──
