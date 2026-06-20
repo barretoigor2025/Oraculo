@@ -325,6 +325,7 @@ function mostrarIniciando(){
   clearInterval(pingTimer);
   if(unsub){ unsub(); unsub = null; }
   document.getElementById('iniciando-overlay').classList.add('visivel');
+  sessionStorage.setItem('oraculo.freshSimStart', Date.now().toString());
   setTimeout(() => { window.location.href = DESTINO; }, 2400);
 }
 
