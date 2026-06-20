@@ -255,7 +255,7 @@ canvas.char-img{
 
 /* ── CHIPS ── */
 #npc-chips{
-  position:fixed; bottom:58px; left:0; right:0; height:36px;
+  position:fixed; bottom:86px; left:0; right:0; height:36px;
   padding:0 12px; background:rgba(4,2,1,0.90);
   border-top:1px solid rgba(190,140,35,0.12);
   display:flex; align-items:center; gap:8px;
@@ -383,12 +383,46 @@ canvas.char-img{
   padding:12px 32px; color:#f5d878; font-family:Georgia,serif;
   font-size:14px; font-weight:700; cursor:pointer; letter-spacing:.5px;
 }
+
+/* ── TURNO BAR ── */
+#turno-bar {
+  position:fixed; bottom:58px; left:0; right:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:4px 12px; background:rgba(4,2,1,0.88);
+  border-top:1px solid rgba(190,140,35,0.10);
+  z-index:201; min-height:28px;
+}
+#turno-players { display:flex; gap:8px; align-items:center; flex:1; }
+.turno-player-chip {
+  font-size:10px; padding:2px 10px; border-radius:20px;
+  border:1px solid rgba(190,140,35,0.18); color:rgba(200,175,100,0.45);
+  background:transparent; transition:all .2s;
+}
+.turno-player-chip.ativo {
+  border-color:rgba(190,140,35,0.55); color:#f5d878;
+  background:rgba(190,140,35,0.14);
+}
+#turno-vez {
+  font-size:10px; color:rgba(190,140,35,0.45); letter-spacing:.5px;
+  white-space:nowrap; flex-shrink:0;
+}
+
+/* ── MODO SOLO BADGE ── */
+#solo-badge {
+  position:fixed; top:max(12px,env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+  z-index:300; font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+  color:rgba(200,140,80,0.70); padding:3px 12px;
+  background:rgba(60,28,5,0.80); border-radius:20px;
+  border:1px solid rgba(190,100,35,0.30); pointer-events:none;
+  display:none;
+}
 </style>
 </head>
 <body>
 
 <div id="cena-bg"></div>
 <div id="cena-titulo">Feira de Phanourios</div>
+<div id="solo-badge">Modo Solo</div>
 
 <div id="personagens"></div>
 
@@ -423,6 +457,12 @@ canvas.char-img{
   <button id="btn-ir-castelo" class="btn-acao-cena" onclick="irAoCastelo()" style="display:none">⚔️ Ir ao Castelo →</button>
   <button id="btn-perc" class="btn-acao-cena" onclick="testePercepcao()" style="display:none" title="Teste de Percepção (DC 12)">🎲</button>
   <button id="btn-encerrar" class="btn-acao-cena encerrar" onclick="encerrarSimulacao()" style="display:none">← Sair</button>
+</div>
+
+<!-- Turno bar (multiplayer) -->
+<div id="turno-bar" style="display:none">
+  <div id="turno-players"></div>
+  <div id="turno-vez"></div>
 </div>
 
 <div id="input-bar">
@@ -462,6 +502,8 @@ canvas.char-img{
 </div>
 
 <script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // ══════════════════════════════════════════════════════════
 //  NPCs
@@ -506,6 +548,18 @@ const NPCS = [
 ];
 
 // ══════════════════════════════════════════════════════════
+//  FIREBASE CONFIG
+// ══════════════════════════════════════════════════════════
+const FB_CONFIG = {
+  apiKey: 'AIzaSyDaMymxJBFo9zaPuflFwhh14fslaaeh324',
+  authDomain: 'oraculo-rpg-dadfe.firebaseapp.com',
+  projectId: 'oraculo-rpg-dadfe',
+  storageBucket: 'oraculo-rpg-dadfe.firebasestorage.app',
+  messagingSenderId: '287997672755',
+  appId: '1:287997672755:web:9094e22e975696dcdc9246'
+};
+
+// ══════════════════════════════════════════════════════════
 //  ESTADO
 // ══════════════════════════════════════════════════════════
 let cenaAtual = 'feira';
@@ -521,7 +575,7 @@ const playerName = localStorage.getItem('oraculo.playerName') || 'Aventureiro';
 const CLASS_AVATAR = {mago:'🔮',guerreiro:'⚔️',ladino:'🗡️',clerigo:'✝️',arqueiro:'🏹',druida:'🌿'};
 const playerAvatar = CLASS_AVATAR[classId] || '🗡️';
 
-// LOG COMPARTILHADO DA CENA
+// LOG COMPARTILHADO DA CENA (solo mode)
 const logCena = [];
 const MAX_LOG_CENA = 22;
 
@@ -529,6 +583,29 @@ function registrarEvento(quem, texto, tipo='fala'){
   if(!texto||texto.trim()==='---') return;
   logCena.push({quem, texto:texto.trim(), tipo});
   if(logCena.length>MAX_LOG_CENA) logCena.shift();
+}
+
+// ── Multiplayer state ──
+let _modoMultiplayer = false;
+let _db = null;
+let _sessaoRef = null;
+let _sessao = null;
+let _myId = null;
+let _myNome = playerName;
+let _myClassId = classId;
+let _renderedCount = 0;
+let _unsubSnapshot = null;
+let _pingInterval = null;
+let _fbInitTimeout = null;
+
+// Generate a stable ID for this browser session
+function _getMyId(){
+  let id = sessionStorage.getItem('oraculo.sessionId');
+  if(!id){
+    id = 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
+    sessionStorage.setItem('oraculo.sessionId', id);
+  }
+  return id;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -549,6 +626,10 @@ const msgInput    = document.getElementById('msg-input');
 const btnEnviar   = document.getElementById('btn-enviar');
 const iaPensando  = document.getElementById('ia-pensando');
 const cfgOverlay  = document.getElementById('cfg-overlay');
+const turnoBbar   = document.getElementById('turno-bar');
+const turnoPlayers= document.getElementById('turno-players');
+const turnoVez    = document.getElementById('turno-vez');
+const soloBadge   = document.getElementById('solo-badge');
 
 const npcEls = []; // {par}
 
@@ -759,10 +840,20 @@ function esperarContinuar(){
 //  HISTÓRICO
 // ══════════════════════════════════════════════════════════
 window._abrirHistorico = function(){
-  hdCorpo.innerHTML = logCena.length
-    ? logCena.map(e=>{
+  // Multiplayer: use sessao log; solo: use logCena
+  const entries = _modoMultiplayer && _sessao
+    ? (_sessao.log || []).map(e => ({
+        quem: e.quem,
+        texto: e.texto,
+        tipo: e.tipo === 'player' ? 'fala' : (e.tipo === 'npc' ? 'fala' : e.tipo),
+        isPlayer: e.tipo === 'player',
+      }))
+    : logCena.map(e => ({ ...e, isPlayer: e.quem === playerName }));
+
+  hdCorpo.innerHTML = entries.length
+    ? entries.map(e=>{
         const cls = e.tipo==='acao' ? 'hd-entrada acao'
-                  : (e.quem===playerName ? 'hd-entrada player' : 'hd-entrada');
+                  : (e.isPlayer ? 'hd-entrada player' : 'hd-entrada');
         const txt = e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : e.texto;
         return `<div class="${cls}"><div class="hd-quem">${e.quem.toUpperCase()}</div><div class="hd-texto">${txt}</div></div>`;
       }).join('')
@@ -796,10 +887,28 @@ function _gerarContextoCena(npcIdx){
   const local = cenaAtual === 'feira'
     ? 'Feira de Phanourios, após uma batalha contra espantalhos animados'
     : 'Salão privado do Castelo de Mhoried';
-  const linhas = logCena.length
-    ? logCena.map(e => e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : `${e.quem}: "${e.texto}"`).join('\n')
-    : '(a cena acaba de começar)';
-  return `LOCAL: ${local}.\nPRESENTES: ${nomesPresentes} e ${playerName} (o aventureiro).\n\nDIÁLOGOS E AÇÕES (cronológico):\n${linhas}`;
+
+  // Build log from multiplayer or local
+  let linhas;
+  if(_modoMultiplayer && _sessao && (_sessao.log || []).length){
+    const log = _sessao.log || [];
+    linhas = log.map(e => {
+      if(e.tipo === 'npc' || e.tipo === 'player'){
+        return `${e.quem}: "${e.texto}"`;
+      }
+      return '';
+    }).filter(Boolean).join('\n');
+  } else {
+    linhas = logCena.length
+      ? logCena.map(e => e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : `${e.quem}: "${e.texto}"`).join('\n')
+      : '(a cena acaba de começar)';
+  }
+
+  const jogadoresNomes = _modoMultiplayer && _sessao
+    ? Object.values(_sessao.jogadores || {}).map(j => j.nome).join(', ')
+    : playerName;
+
+  return `LOCAL: ${local}.\nPRESENTES: ${nomesPresentes} e ${jogadoresNomes} (aventureiros).\n\nDIÁLOGOS E AÇÕES (cronológico):\n${linhas || '(a cena acaba de começar)'}`;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -838,6 +947,36 @@ async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
 
   _mostrarBalaoNPC({ nome:npc.nome, acao, texto:fala, comContinuar:pedirContinuar });
   if(pedirContinuar) await esperarContinuar();
+}
+
+// Versão local (multiplayer) — apenas exibe sem registrar no logCena
+async function mostrarNPCLocal(npcIdx, raw){
+  const {acao, fala} = parsearFala(raw);
+  const npc = NPCS[npcIdx];
+
+  _ocultarBalao(); await delay(120);
+
+  npcAtivo = npcIdx;
+  document.querySelectorAll('.chip-npc').forEach(c => {
+    c.classList.toggle('ativo', parseInt(c.dataset.npcIdx) === npcIdx);
+  });
+  NPCS.forEach((n, i) => {
+    if(!n.cenas.includes(cenaAtual)) return;
+    const a = i === npcIdx;
+    npcEls[i].par.classList.toggle('inativo', !a);
+    npcEls[i].par.style.zIndex = a ? String(n.zBase+2) : String(n.zBase);
+  });
+
+  let entrou = false;
+  NPCS.forEach((n, i) => {
+    if(!n.cenas.includes(cenaAtual)) return;
+    if(!npcEls[i].par.classList.contains('dentro')){
+      npcEls[i].par.classList.add('dentro'); entrou = true;
+    }
+  });
+  if(entrou) await delay(500);
+
+  _mostrarBalaoNPC({ nome:npc.nome, acao, texto:fala, comContinuar:false });
 }
 
 async function mostrarPlayer(texto, player=PLAYER_LOCAL){
@@ -891,42 +1030,219 @@ async function _verificarReacao(npcQueRespondeuIdx){
   const outrosIdx = NPCS
     .map((_,i) => i)
     .filter(i => i !== npcQueRespondeuIdx && NPCS[i].cenas.includes(cenaAtual));
-  if(!outrosIdx.length) return;
+  if(!outrosIdx.length) return null;
   const reatorIdx = outrosIdx[Math.floor(Math.random()*outrosIdx.length)];
   const reator = NPCS[reatorIdx];
-  if(Math.random() > (reator.reatividade ?? 0.20)) return;
+  if(Math.random() > (reator.reatividade ?? 0.20)) return null;
 
-  const ultimosEventos = logCena.slice(-4)
-    .map(e => e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : `${e.quem}: "${e.texto}"`).join('\n');
-  const prompt = `Você observou o que acabou de acontecer:\n${ultimosEventos}\n\nDado exatamente quem você é e seu jeito de ser, você diria algo agora? Se sim, reaja em 1 frase brevíssima e no seu estilo. Se não (porque você naturalmente ficaria em silêncio neste momento), responda exatamente "---".`;
+  const recentLog = _modoMultiplayer && _sessao
+    ? (_sessao.log || []).slice(-4).map(e => `${e.quem}: "${e.texto}"`).join('\n')
+    : logCena.slice(-4).map(e => e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : `${e.quem}: "${e.texto}"`).join('\n');
+
+  const prompt = `Você observou o que acabou de acontecer:\n${recentLog}\n\nDado exatamente quem você é e seu jeito de ser, você diria algo agora? Se sim, reaja em 1 frase brevíssima e no seu estilo. Se não (porque você naturalmente ficaria em silêncio neste momento), responda exatamente "---".`;
 
   try {
     iaPensando.style.display='block';
     const reacao = await chamarIA(reatorIdx, prompt);
     iaPensando.style.display='none';
-    if(!reacao||reacao.trim().startsWith('---')) return;
+    if(!reacao||reacao.trim().startsWith('---')) return null;
     historicos[reatorIdx].push({role:'user', content:prompt});
     historicos[reatorIdx].push({role:'assistant', content:reacao});
-    await delay(300);
-    await mostrarNPC(reatorIdx, reacao, {pedirContinuar:false});
-  } catch(_){ iaPensando.style.display='none'; }
+    if(!_modoMultiplayer){
+      await delay(300);
+      await mostrarNPC(reatorIdx, reacao, {pedirContinuar:false});
+    }
+    return { idx: reatorIdx, raw: reacao };
+  } catch(_){ iaPensando.style.display='none'; return null; }
 }
 
 // ══════════════════════════════════════════════════════════
-//  IR AO CASTELO
+//  FIRESTORE — MULTIPLAYER
 // ══════════════════════════════════════════════════════════
-window.irAoCastelo = async function(){
+async function _appendLog(entry){
+  if(!_sessaoRef) return;
+  const e = { ...entry, uid: Date.now().toString(36) + Math.random().toString(36).slice(2,5), ts: Date.now() };
+  await updateDoc(_sessaoRef, { log: arrayUnion(e) });
+}
+
+async function entrarSessao(){
+  _myId = _getMyId();
+  _myNome = playerName;
+  _myClassId = classId;
+
+  const snap = await getDoc(_sessaoRef);
+  if(!snap.exists()){
+    // Create session as host
+    await setDoc(_sessaoRef, {
+      cena: 'feira',
+      hostId: _myId,
+      turnoPlayerId: _myId,
+      turnoOrdem: [_myId],
+      jogadores: {
+        [_myId]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() }
+      },
+      log: [],
+      iaPensando: false,
+      transicao: null,
+    });
+  } else {
+    // Join existing session
+    const data = snap.data();
+    const jaPresente = data.turnoOrdem && data.turnoOrdem.includes(_myId);
+    const updates = {
+      [`jogadores.${_myId}`]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() }
+    };
+    if(!jaPresente){
+      updates.turnoOrdem = arrayUnion(_myId);
+    }
+    await updateDoc(_sessaoRef, updates);
+  }
+
+  // Start ping
+  _pingInterval = setInterval(async () => {
+    try {
+      await updateDoc(_sessaoRef, { [`jogadores.${_myId}.lastPing`]: Date.now() });
+    } catch(_){}
+  }, 20000);
+
+  // Start listening
+  _unsubSnapshot = onSnapshot(_sessaoRef, (doc) => {
+    if(doc.exists()) _processar(doc.data());
+  });
+
+  // Check if host and log is empty — generate opening
+  const freshSnap = await getDoc(_sessaoRef);
+  if(freshSnap.exists()){
+    const data = freshSnap.data();
+    if(data.hostId === _myId && (!data.log || data.log.length === 0)){
+      await _gerarAbertura();
+    }
+  }
+}
+
+async function _gerarAbertura(){
+  if(!localStorage.getItem('oraculo.groqKey')){
+    cfgOverlay.classList.remove('oculto');
+    return;
+  }
+  atualizarChips();
+  await delay(700);
+
+  // Gregoras
+  iaPensando.style.display='block';
+  let ab0;
+  try{ ab0 = await chamarIA(0, NPCS[0].abertura); }
+  catch(_){ ab0 = NPCS[0].aberturaFallback; }
+  iaPensando.style.display='none';
+  historicos[0].push({role:'user', content:NPCS[0].abertura});
+  historicos[0].push({role:'assistant', content:ab0});
+  await _appendLog({ quem:NPCS[0].nome, texto:ab0, tipo:'npc', npcIdx:0 });
+
+  // Finn
+  iaPensando.style.display='block';
+  let ab1;
+  try{ ab1 = await chamarIA(1, NPCS[1].abertura); }
+  catch(_){ ab1 = NPCS[1].aberturaFallback; }
+  iaPensando.style.display='none';
+  historicos[1].push({role:'user', content:NPCS[1].abertura});
+  historicos[1].push({role:'assistant', content:ab1});
+  await _appendLog({ quem:NPCS[1].nome, texto:ab1, tipo:'npc', npcIdx:1 });
+
+  // Show castelo button
+  await updateDoc(_sessaoRef, { btnCastelo: true });
+}
+
+function _processar(data){
+  _sessao = data;
+
+  // Scene transition
+  if(data.transicao === 'castelo' && cenaAtual !== 'castelo'){
+    _executarTransicaoCastelLocal();
+  }
+
+  // iaPensando indicator
+  iaPensando.style.display = data.iaPensando ? 'block' : 'none';
+
+  // Show castelo button if set
+  if(data.btnCastelo && cenaAtual === 'feira'){
+    document.getElementById('btn-ir-castelo').style.display = '';
+  }
+
+  // Process new log entries
+  const log = data.log || [];
+  const novos = log.slice(_renderedCount);
+  if(novos.length > 0){
+    _renderedCount = log.length;
+    _renderEntradas(novos);
+  }
+
+  // Turn UI
+  _atualizarTurnoUI(data);
+}
+
+async function _renderEntradas(entries){
+  for(const e of entries){
+    if(e.tipo === 'npc'){
+      await mostrarNPCLocal(e.npcIdx, e.texto);
+      await delay(300);
+    } else if(e.tipo === 'player'){
+      const av = CLASS_AVATAR[e.classId] || '⚔️';
+      _empilharFalaPlayer({ nome: e.quem, avatar: av, retrato: null, texto: e.texto });
+      await delay(200);
+    }
+  }
+}
+
+function _atualizarTurnoUI(data){
+  const jogadores = data.jogadores || {};
+  const ordem = data.turnoOrdem || [];
+  if(ordem.length <= 1 && !Object.keys(jogadores).length){
+    turnoBbar.style.display = 'none';
+    return;
+  }
+
+  turnoBbar.style.display = 'flex';
+
+  // Player chips
+  turnoPlayers.innerHTML = '';
+  for(const id of ordem){
+    const j = jogadores[id];
+    if(!j) continue;
+    const chip = document.createElement('span');
+    chip.className = 'turno-player-chip' + (id === data.turnoPlayerId ? ' ativo' : '');
+    chip.textContent = j.nome;
+    turnoPlayers.appendChild(chip);
+  }
+
+  // Vez indicator
+  const isMyTurn = data.turnoPlayerId === _myId;
+  if(isMyTurn){
+    turnoVez.textContent = 'Sua vez';
+    msgInput.disabled = false;
+    btnEnviar.disabled = false;
+    msgInput.placeholder = `O que você diz para ${NPCS[npcAtivo]?.nome?.split(' ')[0] || 'o NPC'}…`;
+  } else {
+    const vezDe = jogadores[data.turnoPlayerId];
+    turnoVez.textContent = vezDe ? `Vez de ${vezDe.nome}…` : 'Aguardando…';
+    msgInput.disabled = true;
+    btnEnviar.disabled = true;
+    msgInput.placeholder = vezDe ? `Vez de ${vezDe.nome}…` : 'Aguardando…';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  IR AO CASTELO — MULTIPLAYER
+// ══════════════════════════════════════════════════════════
+async function _executarTransicaoCastelLocal(){
   if(animando) return;
   animando = true;
+  cenaAtual = 'castelo'; // set early to prevent re-trigger
+
   msgInput.disabled = true;
   btnEnviar.disabled = true;
   document.getElementById('btn-ir-castelo').style.display = 'none';
 
-  // 1. Gregoras conduz o grupo
-  await mostrarNPC(0, '[ACAO: Faz um gesto seco com a cabeça, virando-se para caminhar.] Venham. A Duquesa não gosta de esperar.', {pedirContinuar:true});
-  _ocultarBalao();
-
-  // 2. Fade out
+  // Fade out
   cenaBgEl.style.transition = 'opacity 0.7s ease';
   cenaBgEl.style.opacity = '0';
   NPCS.forEach((_,i) => {
@@ -936,33 +1252,97 @@ window.irAoCastelo = async function(){
   });
   await delay(750);
 
-  // 3. Troca cena
-  cenaAtual = 'castelo';
+  // Troca cena
   cenaBgEl.style.backgroundImage = "url(catalogo/mhoried/cenarios/conversacao/castelo_mhoried/imagem/castelo_int.png)";
   cenaTituloEl.textContent = 'Castelo de Mhoried';
 
-  // Esconde Finn
   npcEls[1].par.style.display = 'none';
   npcEls[1].par.classList.remove('dentro','inativo');
-
-  // Mostra Catherine (ainda fora da tela)
   npcEls[2].par.style.display = '';
 
-  // 4. Fade in
   await delay(200);
   cenaBgEl.style.opacity = '1';
   await delay(900);
 
-  // 5. Gregoras anuncia Catherine
+  atualizarChips();
+  document.getElementById('btn-perc').style.display = '';
+  document.getElementById('btn-encerrar').style.display = '';
+  selecionarNpc(2);
+
+  animando = false;
+  // input state will be managed by turno UI
+}
+
+window.irAoCastelo = async function(){
+  if(animando) return;
+  if(_modoMultiplayer){
+    // Only active player triggers this
+    if(_sessao?.turnoPlayerId !== _myId) return;
+    // Gregoras conducts group — write to log
+    const gregRaw = '[ACAO: Faz um gesto seco com a cabeça, virando-se para caminhar.] Venham. A Duquesa não gosta de esperar.';
+    await _appendLog({ quem:NPCS[0].nome, texto:gregRaw, tipo:'npc', npcIdx:0 });
+    await delay(1200);
+
+    // Catherine opening
+    iaPensando.style.display='block';
+    let ab;
+    try{ ab = await chamarIA(2, NPCS[2].abertura); }
+    catch(_){ ab = NPCS[2].aberturaFallback; }
+    iaPensando.style.display='none';
+    historicos[2].push({role:'user', content:NPCS[2].abertura});
+    historicos[2].push({role:'assistant', content:ab});
+
+    // Write Gregoras castle announcement + Catherine opening + transition
+    const annRaw = '[ACAO: Bate suavemente na porta do salão privado e a empurra, indicando que entrem.] Milady. Os aventureiros que a senhora queria conhecer.';
+    await _appendLog({ quem:NPCS[0].nome, texto:annRaw, tipo:'npc', npcIdx:0 });
+    await _appendLog({ quem:NPCS[2].nome, texto:ab, tipo:'npc', npcIdx:2 });
+
+    // Signal all clients to transition
+    await updateDoc(_sessaoRef, { transicao: 'castelo', btnCastelo: false });
+  } else {
+    // Solo mode
+    await irAoCastelo_solo();
+  }
+};
+
+async function irAoCastelo_solo(){
+  if(animando) return;
+  animando = true;
+  msgInput.disabled = true;
+  btnEnviar.disabled = true;
+  document.getElementById('btn-ir-castelo').style.display = 'none';
+
+  await mostrarNPC(0, '[ACAO: Faz um gesto seco com a cabeça, virando-se para caminhar.] Venham. A Duquesa não gosta de esperar.', {pedirContinuar:true});
+  _ocultarBalao();
+
+  cenaBgEl.style.transition = 'opacity 0.7s ease';
+  cenaBgEl.style.opacity = '0';
+  NPCS.forEach((_,i) => {
+    if(npcEls[i].par.classList.contains('dentro')){
+      npcEls[i].par.classList.remove('dentro');
+    }
+  });
+  await delay(750);
+
+  cenaAtual = 'castelo';
+  cenaBgEl.style.backgroundImage = "url(catalogo/mhoried/cenarios/conversacao/castelo_mhoried/imagem/castelo_int.png)";
+  cenaTituloEl.textContent = 'Castelo de Mhoried';
+
+  npcEls[1].par.style.display = 'none';
+  npcEls[1].par.classList.remove('dentro','inativo');
+  npcEls[2].par.style.display = '';
+
+  await delay(200);
+  cenaBgEl.style.opacity = '1';
+  await delay(900);
+
   await mostrarNPC(0, '[ACAO: Bate suavemente na porta do salão privado e a empurra, indicando que entrem.] Milady. Os aventureiros que a senhora queria conhecer.', {pedirContinuar:true});
   _ocultarBalao();
 
-  // 6. Catherine entra
   await delay(300);
   npcEls[2].par.classList.add('dentro');
   await delay(700);
 
-  // 7. Abertura da Catherine
   atualizarChips();
   iaPensando.style.display='block';
   let ab;
@@ -971,7 +1351,6 @@ window.irAoCastelo = async function(){
   iaPensando.style.display='none';
   await mostrarNPC(2, ab, {pedirContinuar:true});
 
-  // 8. Ativa cena 2
   document.getElementById('btn-perc').style.display = '';
   document.getElementById('btn-encerrar').style.display = '';
   selecionarNpc(2);
@@ -979,7 +1358,7 @@ window.irAoCastelo = async function(){
   animando = false;
   msgInput.disabled = false;
   btnEnviar.disabled = false;
-};
+}
 
 // ══════════════════════════════════════════════════════════
 //  TESTE DE PERCEPÇÃO (DC 12)
@@ -1000,7 +1379,6 @@ window.testePercepcao = async function(){
   resultEl.innerHTML = '';
   fechEl.style.display = 'none';
 
-  // Animação de dado rolando
   const t0 = Date.now();
   await new Promise(r => {
     const iv = setInterval(() => {
@@ -1040,7 +1418,12 @@ window.testePercepcao = async function(){
   fechEl.style.display = 'block';
 
   if(ok){
-    registrarEvento(playerName, `[Observa Catherine com atenção — ${narr.slice(0,60)}…]`, 'acao');
+    const percNarr = `[Observa Catherine com atenção — ${narr.slice(0,60)}…]`;
+    if(_modoMultiplayer){
+      await _appendLog({ quem:playerName, texto:percNarr, tipo:'sistema' });
+    } else {
+      registrarEvento(playerName, percNarr, 'acao');
+    }
   }
 };
 
@@ -1056,10 +1439,68 @@ window.encerrarSimulacao = function(){
 };
 
 // ══════════════════════════════════════════════════════════
-//  LOOP DE CONVERSA
+//  LOOP DE CONVERSA — MULTIPLAYER
 // ══════════════════════════════════════════════════════════
 async function enviar(){
   const txt = msgInput.value.trim();
+  if(!txt || animando) return;
+
+  if(_modoMultiplayer){
+    if(_sessao?.turnoPlayerId !== _myId) return;
+    animando = true; msgInput.disabled = true; btnEnviar.disabled = true; msgInput.value = '';
+
+    // 1. Write player message to Firestore
+    await _appendLog({ quem: _myNome, texto: txt, tipo: 'player', classId: _myClassId });
+
+    // 2. Set iaPensando
+    await updateDoc(_sessaoRef, { iaPensando: true });
+
+    // 3. Call Groq (only active player does this)
+    const target = npcAtivo;
+    historicos[target].push({ role: 'user', content: txt });
+    try {
+      const resp = await chamarIA(target, txt);
+      historicos[target].push({ role: 'assistant', content: resp });
+
+      // 4. Write NPC response to Firestore
+      await _appendLog({ quem: NPCS[target].nome, texto: resp, tipo: 'npc', npcIdx: target });
+
+      // 5. Check spontaneous reaction
+      const reacao = await _verificarReacao(target);
+      if(reacao){
+        await _appendLog({ quem: NPCS[reacao.idx].nome, texto: reacao.raw, tipo: 'npc', npcIdx: reacao.idx });
+      }
+    } catch(e){
+      if(e.message === 'sem-chave'){
+        cfgOverlay.classList.remove('oculto');
+      } else {
+        let motivo = 'Tente novamente.';
+        if(e.name==='AbortError') motivo = 'A IA demorou demais. Tente novamente.';
+        else if(e.message) motivo = e.message.slice(0,90);
+        await _appendLog({ quem:'sistema', texto:motivo, tipo:'sistema' });
+      }
+    }
+
+    // 6. Clear iaPensando, advance turn
+    const ordem = _sessao?.turnoOrdem || [_myId];
+    const meuIdx = ordem.indexOf(_myId);
+    const proxIdx = (meuIdx + 1) % ordem.length;
+    await updateDoc(_sessaoRef, {
+      iaPensando: false,
+      turnoPlayerId: ordem[proxIdx],
+    });
+
+    animando = false;
+  } else {
+    // Solo mode
+    await enviar_solo(txt);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  LOOP DE CONVERSA — SOLO
+// ══════════════════════════════════════════════════════════
+async function enviar_solo(txt){
   if(!txt||animando) return;
   animando=true; msgInput.disabled=true; btnEnviar.disabled=true; msgInput.value='';
 
@@ -1075,7 +1516,6 @@ async function enviar(){
     iaPensando.style.display='none';
     await mostrarNPC(target, resp, {pedirContinuar:true});
     await _verificarReacao(target);
-    // Restaura foco
     npcAtivo = target;
     document.querySelectorAll('.chip-npc').forEach(c => {
       c.classList.toggle('ativo', parseInt(c.dataset.npcIdx) === target);
@@ -1096,15 +1536,14 @@ async function enviar(){
 }
 
 // ══════════════════════════════════════════════════════════
-//  INIT — só cena 1 (feira)
+//  INIT — MULTIPLAYER com fallback solo
 // ══════════════════════════════════════════════════════════
-async function iniciarCena(){
+async function iniciarCena_solo(){
   if(!localStorage.getItem('oraculo.groqKey')){ cfgOverlay.classList.remove('oculto'); return; }
   msgInput.disabled=true; btnEnviar.disabled=true;
   atualizarChips();
   await delay(700);
 
-  // Abre com Gregoras
   iaPensando.style.display='block';
   let ab0;
   try{ ab0 = await chamarIA(0, NPCS[0].abertura); }
@@ -1112,7 +1551,6 @@ async function iniciarCena(){
   iaPensando.style.display='none';
   await mostrarNPC(0, ab0, {pedirContinuar:true});
 
-  // Finn entra logo depois
   iaPensando.style.display='block';
   let ab1;
   try{ ab1 = await chamarIA(1, NPCS[1].abertura); }
@@ -1120,10 +1558,51 @@ async function iniciarCena(){
   iaPensando.style.display='none';
   await mostrarNPC(1, ab1, {pedirContinuar:true});
 
-  // Foco volta para Gregoras, libera interação
   selecionarNpc(0);
   document.getElementById('btn-ir-castelo').style.display = '';
   msgInput.disabled=false; btnEnviar.disabled=false;
+}
+
+async function iniciarCena(){
+  // Try Firebase multiplayer
+  let fbReady = false;
+  const fbTimeout = new Promise(resolve => {
+    _fbInitTimeout = setTimeout(() => resolve(false), 5000);
+  });
+
+  const fbConnect = (async () => {
+    try {
+      const app = initializeApp(FB_CONFIG);
+      _db = getFirestore(app);
+      _sessaoRef = doc(_db, 'sessoes', 'simulacao-dialogo');
+      // Test connection with a quick read
+      await getDoc(_sessaoRef);
+      clearTimeout(_fbInitTimeout);
+      return true;
+    } catch(e){
+      console.warn('Firebase connection failed:', e);
+      return false;
+    }
+  })();
+
+  fbReady = await Promise.race([fbConnect, fbTimeout]);
+
+  if(fbReady){
+    _modoMultiplayer = true;
+    console.log('Multiplayer mode active');
+    if(!localStorage.getItem('oraculo.groqKey')){
+      cfgOverlay.classList.remove('oculto');
+      return;
+    }
+    atualizarChips();
+    await entrarSessao();
+  } else {
+    // Fallback to solo mode
+    _modoMultiplayer = false;
+    soloBadge.style.display = 'block';
+    console.log('Fallback to solo mode');
+    await iniciarCena_solo();
+  }
 }
 
 // ── EVENT LISTENERS ──
@@ -1134,7 +1613,7 @@ document.getElementById('cfg-salvar').addEventListener('click', () => {
   cfgOverlay.classList.add('oculto');
   iniciarCena();
 });
-btnEnviar.addEventListener('click', enviar);
+btnEnviar.addEventListener('click', () => enviar());
 msgInput.addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();enviar();} });
 
 iniciarCena();
