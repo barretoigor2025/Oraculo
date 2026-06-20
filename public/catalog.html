@@ -54,6 +54,21 @@
       font-weight: 400;
     }
     .header-top span { font-size: 10px; color: var(--text-dim); margin-left: auto; }
+    .btn-sim {
+      flex-shrink: 0; margin-left: auto;
+      background: rgba(200,160,64,0.13);
+      border: 1px solid rgba(200,160,64,0.38);
+      border-radius: 22px; padding: 6px 16px;
+      color: var(--gold2); font-family: inherit;
+      font-size: 11px; font-weight: 700; letter-spacing: .5px;
+      text-decoration: none; white-space: nowrap;
+      transition: background .2s, border-color .2s;
+    }
+    .btn-sim:hover {
+      background: rgba(200,160,64,0.24);
+      border-color: rgba(200,160,64,0.65);
+    }
+    .header-top span { margin-left: 10px; }
 
     .tabs { display: flex; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .tabs::-webkit-scrollbar { display: none; }
@@ -627,6 +642,7 @@
 <header>
   <div class="header-top">
     <h1>⚔️ Oráculo — Catálogo de Personagens</h1>
+    <a class="btn-sim" href="index.html">🎮 Sala de Simulação</a>
     <span id="count-label"></span>
   </div>
   <nav class="tabs">
