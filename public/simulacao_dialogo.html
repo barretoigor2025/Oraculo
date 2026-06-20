@@ -1271,12 +1271,16 @@ function _processar(data){
 async function _renderEntradas(entries){
   for(const e of entries){
     if(e.tipo === 'npc'){
-      await mostrarNPCLocal(e.npcIdx, e.texto);
-      await delay(200);
+      // Multiplayer: NPC balloon is managed by pendingNpc/Continuar flow.
+      // Replaying confirmed entries here races with _mostrarPendingNpc → skip.
+      if(!_modoMultiplayer){
+        await mostrarNPCLocal(e.npcIdx, e.texto);
+        await delay(200);
+      }
     } else if(e.tipo === 'player'){
       const av = CLASS_AVATAR[e.classId] || '⚔️';
       _empilharFalaPlayer({ nome: e.quem, avatar: av, retrato: null, texto: e.texto });
-      await delay(150);
+      if(!_modoMultiplayer) await delay(150);
     }
   }
 }
