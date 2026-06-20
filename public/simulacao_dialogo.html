@@ -501,9 +501,11 @@ canvas.char-img{
   </div>
 </div>
 
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+// Helper — usa FieldValue estático do compat SDK
+const FV = () => firebase.firestore.FieldValue;
 
 // ══════════════════════════════════════════════════════════
 //  NPCs
@@ -1062,7 +1064,7 @@ async function _verificarReacao(npcQueRespondeuIdx){
 async function _appendLog(entry){
   if(!_sessaoRef) return;
   const e = { ...entry, uid: Date.now().toString(36) + Math.random().toString(36).slice(2,5), ts: Date.now() };
-  await updateDoc(_sessaoRef, { log: arrayUnion(e) });
+  await _sessaoRef.update({ log: FV().arrayUnion(e) });
 }
 
 async function entrarSessao(){
@@ -1070,10 +1072,10 @@ async function entrarSessao(){
   _myNome = playerName;
   _myClassId = classId;
 
-  const snap = await getDoc(_sessaoRef);
-  if(!snap.exists()){
+  const snap = await _sessaoRef.get();
+  if(!snap.exists){
     // Create session as host
-    await setDoc(_sessaoRef, {
+    await _sessaoRef.set({
       cena: 'feira',
       hostId: _myId,
       turnoPlayerId: _myId,
@@ -1095,26 +1097,26 @@ async function entrarSessao(){
       [`jogadores.${_myId}`]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() }
     };
     if(!jaPresente){
-      updates.turnoOrdem = arrayUnion(_myId);
+      updates.turnoOrdem = FV().arrayUnion(_myId);
     }
-    await updateDoc(_sessaoRef, updates);
+    await _sessaoRef.update(updates);
   }
 
   // Start ping
   _pingInterval = setInterval(async () => {
     try {
-      await updateDoc(_sessaoRef, { [`jogadores.${_myId}.lastPing`]: Date.now() });
+      await _sessaoRef.update({ [`jogadores.${_myId}.lastPing`]: Date.now() });
     } catch(_){}
   }, 20000);
 
   // Start listening
-  _unsubSnapshot = onSnapshot(_sessaoRef, (doc) => {
-    if(doc.exists()) _processar(doc.data());
+  _unsubSnapshot = _sessaoRef.onSnapshot((doc) => {
+    if(doc.exists) _processar(doc.data());
   });
 
   // Check if host and log is empty — generate opening
-  const freshSnap = await getDoc(_sessaoRef);
-  if(freshSnap.exists()){
+  const freshSnap = await _sessaoRef.get();
+  if(freshSnap.exists){
     const data = freshSnap.data();
     if(data.hostId === _myId && (!data.log || data.log.length === 0)){
       await _gerarAbertura();
@@ -1151,7 +1153,7 @@ async function _gerarAbertura(){
   await _appendLog({ quem:NPCS[1].nome, texto:ab1, tipo:'npc', npcIdx:1 });
 
   // Show castelo button
-  await updateDoc(_sessaoRef, { btnCastelo: true });
+  await _sessaoRef.update({ btnCastelo: true });
 }
 
 function _processar(data){
@@ -1313,14 +1315,14 @@ window.irAoCastelo = async function(){
   const votos = _sessao?.votos_castelo || [];
   if(votos.includes(_myId)) return; // já votou
 
-  await updateDoc(_sessaoRef, { votos_castelo: arrayUnion(_myId) });
+  await _sessaoRef.update({ votos_castelo: FV().arrayUnion(_myId) });
   // UI update happens via onSnapshot → _processar
 };
 
 // Chamado pelo host quando todos os votos chegaram
 async function _executarTransicaoParaCastelo(){
   // Marcar como iniciada para evitar double-trigger
-  await updateDoc(_sessaoRef, { transicao_iniciada: true });
+  await _sessaoRef.update({ transicao_iniciada: true });
 
   // Grégoras conduz o grupo
   const gregRaw = '[ACAO: Faz um gesto seco com a cabeça, virando-se para caminhar.] Venham. A Duquesa não gosta de esperar.';
@@ -1328,13 +1330,13 @@ async function _executarTransicaoParaCastelo(){
   await delay(800);
 
   // Catherine via Groq
-  await updateDoc(_sessaoRef, { iaPensando: true });
+  await _sessaoRef.update({ iaPensando: true });
   let ab;
   try{ ab = await chamarIA(2, NPCS[2].abertura); }
   catch(_){ ab = NPCS[2].aberturaFallback; }
   historicos[2].push({ role:'user', content: NPCS[2].abertura });
   historicos[2].push({ role:'assistant', content: ab });
-  await updateDoc(_sessaoRef, { iaPensando: false });
+  await _sessaoRef.update({ iaPensando: false });
 
   // Grégoras anuncia, Catherine fala → todos recebem via log
   const annRaw = '[ACAO: Bate suavemente na porta do salão privado e a empurra, indicando que entrem.] Milady. Os aventureiros que a senhora queria conhecer.';
@@ -1342,7 +1344,7 @@ async function _executarTransicaoParaCastelo(){
   await _appendLog({ quem: NPCS[2].nome, texto: ab, tipo: 'npc', npcIdx: 2 });
 
   // Sinaliza transição para todos
-  await updateDoc(_sessaoRef, { transicao: 'castelo', btnCastelo: false });
+  await _sessaoRef.update({ transicao: 'castelo', btnCastelo: false });
 }
 
 async function irAoCastelo_solo(){
@@ -1493,7 +1495,7 @@ async function enviar(){
     await _appendLog({ quem: _myNome, texto: txt, tipo: 'player', classId: _myClassId });
 
     // 2. Set iaPensando
-    await updateDoc(_sessaoRef, { iaPensando: true });
+    await _sessaoRef.update({ iaPensando: true });
 
     // 3. Call Groq (only active player does this)
     const target = npcAtivo;
@@ -1525,7 +1527,7 @@ async function enviar(){
     const ordem = _sessao?.turnoOrdem || [_myId];
     const meuIdx = ordem.indexOf(_myId);
     const proxIdx = (meuIdx + 1) % ordem.length;
-    await updateDoc(_sessaoRef, {
+    await _sessaoRef.update({
       iaPensando: false,
       turnoPlayerId: ordem[proxIdx],
     });
@@ -1604,43 +1606,23 @@ async function iniciarCena_solo(){
 }
 
 async function iniciarCena(){
-  // Try Firebase multiplayer
-  let fbReady = false;
-  const fbTimeout = new Promise(resolve => {
-    _fbInitTimeout = setTimeout(() => resolve(false), 5000);
-  });
-
-  const fbConnect = (async () => {
-    try {
-      const app = initializeApp(FB_CONFIG);
-      _db = getFirestore(app);
-      _sessaoRef = doc(_db, 'sessoes', 'simulacao-dialogo');
-      // Test connection with a quick read
-      await getDoc(_sessaoRef);
-      clearTimeout(_fbInitTimeout);
-      return true;
-    } catch(e){
-      console.warn('Firebase connection failed:', e);
-      return false;
-    }
-  })();
-
-  fbReady = await Promise.race([fbConnect, fbTimeout]);
-
-  if(fbReady){
+  try {
+    if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    _db = firebase.firestore();
+    _sessaoRef = _db.collection('lobbies').doc('sim-dialogo');
+    await _sessaoRef.get();
     _modoMultiplayer = true;
-    console.log('Multiplayer mode active');
-    if(!localStorage.getItem('oraculo.groqKey')){
-      cfgOverlay.classList.remove('oculto');
-      return;
-    }
+  } catch(e){
+    console.warn('Firebase connection failed:', e);
+    _modoMultiplayer = false;
+    soloBadge.style.display = 'block';
+  }
+
+  if(_modoMultiplayer){
+    if(!localStorage.getItem('oraculo.groqKey')){ cfgOverlay.classList.remove('oculto'); return; }
     atualizarChips();
     await entrarSessao();
   } else {
-    // Fallback to solo mode
-    _modoMultiplayer = false;
-    soloBadge.style.display = 'block';
-    console.log('Fallback to solo mode');
     await iniciarCena_solo();
   }
 }
