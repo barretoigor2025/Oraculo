@@ -1084,6 +1084,8 @@ async function entrarSessao(){
       log: [],
       iaPensando: false,
       transicao: null,
+      transicao_iniciada: false,
+      votos_castelo: [],
     });
   } else {
     // Join existing session
@@ -1163,9 +1165,39 @@ function _processar(data){
   // iaPensando indicator
   iaPensando.style.display = data.iaPensando ? 'block' : 'none';
 
-  // Show castelo button if set
-  if(data.btnCastelo && cenaAtual === 'feira'){
-    document.getElementById('btn-ir-castelo').style.display = '';
+  // Botão "Ir ao Castelo" — visível a qualquer jogador, controla votos
+  const btnCastel = document.getElementById('btn-ir-castelo');
+  if(btnCastel){
+    if(data.btnCastelo && cenaAtual === 'feira'){
+      btnCastel.style.display = '';
+    }
+    if(data.btnCastelo && cenaAtual === 'feira'){
+      const votos  = data.votos_castelo || [];
+      const total  = (data.turnoOrdem || []).length || 1;
+      const jáVotei = votos.includes(_myId);
+      if(jáVotei){
+        btnCastel.textContent = `✓ Aguardando (${votos.length}/${total})…`;
+        btnCastel.disabled = true;
+        btnCastel.style.opacity = '0.55';
+      } else {
+        const pendentes = total - votos.length;
+        btnCastel.textContent = votos.length > 0
+          ? `⚔️ Ir ao Castelo (${votos.length}/${total} prontos)`
+          : '⚔️ Ir ao Castelo →';
+        btnCastel.disabled = false;
+        btnCastel.style.opacity = '';
+      }
+    }
+  }
+
+  // Voto unânime: quando todos votaram, host executa a transição
+  const votCast  = data.votos_castelo || [];
+  const totJog   = (data.turnoOrdem || []).length;
+  const allVoted = totJog > 0 && votCast.length >= totJog;
+  if(allVoted && !data.transicao_iniciada && data.transicao !== 'castelo' && cenaAtual !== 'castelo'){
+    if(data.hostId === _myId){
+      _executarTransicaoParaCastelo();
+    }
   }
 
   // Process new log entries
@@ -1273,37 +1305,45 @@ async function _executarTransicaoCastelLocal(){
   // input state will be managed by turno UI
 }
 
+// Qualquer jogador pode votar a qualquer momento — a cena só avança quando TODOS votarem
 window.irAoCastelo = async function(){
-  if(animando) return;
-  if(_modoMultiplayer){
-    // Only active player triggers this
-    if(_sessao?.turnoPlayerId !== _myId) return;
-    // Gregoras conducts group — write to log
-    const gregRaw = '[ACAO: Faz um gesto seco com a cabeça, virando-se para caminhar.] Venham. A Duquesa não gosta de esperar.';
-    await _appendLog({ quem:NPCS[0].nome, texto:gregRaw, tipo:'npc', npcIdx:0 });
-    await delay(1200);
+  if(cenaAtual !== 'feira') return;
+  if(!_modoMultiplayer){ await irAoCastelo_solo(); return; }
 
-    // Catherine opening
-    iaPensando.style.display='block';
-    let ab;
-    try{ ab = await chamarIA(2, NPCS[2].abertura); }
-    catch(_){ ab = NPCS[2].aberturaFallback; }
-    iaPensando.style.display='none';
-    historicos[2].push({role:'user', content:NPCS[2].abertura});
-    historicos[2].push({role:'assistant', content:ab});
+  const votos = _sessao?.votos_castelo || [];
+  if(votos.includes(_myId)) return; // já votou
 
-    // Write Gregoras castle announcement + Catherine opening + transition
-    const annRaw = '[ACAO: Bate suavemente na porta do salão privado e a empurra, indicando que entrem.] Milady. Os aventureiros que a senhora queria conhecer.';
-    await _appendLog({ quem:NPCS[0].nome, texto:annRaw, tipo:'npc', npcIdx:0 });
-    await _appendLog({ quem:NPCS[2].nome, texto:ab, tipo:'npc', npcIdx:2 });
-
-    // Signal all clients to transition
-    await updateDoc(_sessaoRef, { transicao: 'castelo', btnCastelo: false });
-  } else {
-    // Solo mode
-    await irAoCastelo_solo();
-  }
+  await updateDoc(_sessaoRef, { votos_castelo: arrayUnion(_myId) });
+  // UI update happens via onSnapshot → _processar
 };
+
+// Chamado pelo host quando todos os votos chegaram
+async function _executarTransicaoParaCastelo(){
+  // Marcar como iniciada para evitar double-trigger
+  await updateDoc(_sessaoRef, { transicao_iniciada: true });
+
+  // Grégoras conduz o grupo
+  const gregRaw = '[ACAO: Faz um gesto seco com a cabeça, virando-se para caminhar.] Venham. A Duquesa não gosta de esperar.';
+  await _appendLog({ quem: NPCS[0].nome, texto: gregRaw, tipo: 'npc', npcIdx: 0 });
+  await delay(800);
+
+  // Catherine via Groq
+  await updateDoc(_sessaoRef, { iaPensando: true });
+  let ab;
+  try{ ab = await chamarIA(2, NPCS[2].abertura); }
+  catch(_){ ab = NPCS[2].aberturaFallback; }
+  historicos[2].push({ role:'user', content: NPCS[2].abertura });
+  historicos[2].push({ role:'assistant', content: ab });
+  await updateDoc(_sessaoRef, { iaPensando: false });
+
+  // Grégoras anuncia, Catherine fala → todos recebem via log
+  const annRaw = '[ACAO: Bate suavemente na porta do salão privado e a empurra, indicando que entrem.] Milady. Os aventureiros que a senhora queria conhecer.';
+  await _appendLog({ quem: NPCS[0].nome, texto: annRaw, tipo: 'npc', npcIdx: 0 });
+  await _appendLog({ quem: NPCS[2].nome, texto: ab, tipo: 'npc', npcIdx: 2 });
+
+  // Sinaliza transição para todos
+  await updateDoc(_sessaoRef, { transicao: 'castelo', btnCastelo: false });
+}
 
 async function irAoCastelo_solo(){
   if(animando) return;
