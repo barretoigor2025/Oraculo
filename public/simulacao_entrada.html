@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Oráculo — Entrar na Simulação</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{min-height:100%;background:#050302;font-family:Georgia,serif;color:#e8d5a8;}
+body{
+  min-height:100vh;
+  background:
+    linear-gradient(to bottom,rgba(3,1,0,0.38) 0%,rgba(3,1,0,0.70) 55%,rgba(3,1,0,0.94) 100%),
+    url('catalogo/mhoried/cenarios/conversacao/castelo_mhoried/imagem/castelo_ext.png') top center/cover no-repeat fixed;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:max(24px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
+  gap:20px;
+}
+
+#logo{
+  font-size:11px;letter-spacing:6px;text-transform:uppercase;
+  color:rgba(245,216,120,0.35);text-align:center;
+}
+
+#card{
+  width:100%;max-width:400px;
+  background:rgba(7,4,1,0.92);
+  border:1px solid rgba(190,140,35,0.26);
+  border-radius:22px;padding:26px 22px;
+  display:flex;flex-direction:column;gap:18px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 8px 48px rgba(0,0,0,0.70);
+}
+
+#titulo{
+  font-size:clamp(16px,5vw,20px);font-weight:700;
+  color:#f5d878;text-align:center;letter-spacing:.3px;
+}
+#subtitulo{
+  font-size:11px;color:rgba(200,175,100,0.38);
+  text-align:center;font-style:italic;margin-top:-12px;
+}
+
+.lbl{
+  font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(190,140,35,0.38);margin-bottom:4px;
+}
+
+#nome-input{
+  background:rgba(20,12,4,0.90);
+  border:1px solid rgba(190,140,35,0.28);border-radius:10px;
+  padding:12px 14px;color:#e8d5a8;font-family:Georgia,serif;
+  font-size:15px;outline:none;width:100%;
+  transition:border-color .2s;
+}
+#nome-input::placeholder{color:rgba(190,165,90,0.30);}
+#nome-input:focus{border-color:rgba(190,140,35,0.58);}
+
+#classes-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+}
+.btn-classe{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:11px 6px;
+  background:rgba(20,12,4,0.80);
+  border:1px solid rgba(190,140,35,0.16);border-radius:12px;
+  color:rgba(200,175,100,0.46);font-family:Georgia,serif;
+  font-size:11px;cursor:pointer;
+  transition:background .2s,border-color .2s,color .2s,box-shadow .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-classe .cl-emoji{font-size:20px;}
+.btn-classe:hover{background:rgba(50,30,5,0.80);border-color:rgba(190,140,35,0.36);}
+.btn-classe.selecionado{
+  background:rgba(190,140,35,0.16);
+  border-color:rgba(190,140,35,0.68);
+  color:#f5d878;
+  box-shadow:0 0 12px rgba(190,140,35,0.16);
+}
+
+#btn-entrar{
+  width:100%;height:58px;
+  background:rgba(180,130,30,0.20);
+  border:1.5px solid rgba(220,170,50,0.55);border-radius:14px;
+  color:#f5d878;font-family:Georgia,serif;font-size:17px;font-weight:700;
+  cursor:pointer;letter-spacing:.4px;
+  transition:background .22s,border-color .22s,box-shadow .22s;
+  -webkit-tap-highlight-color:transparent;
+  margin-top:2px;
+}
+#btn-entrar:hover{
+  background:rgba(200,150,35,0.30);
+  border-color:rgba(245,216,120,0.75);
+  box-shadow:0 0 28px rgba(200,150,35,0.24);
+}
+
+#btn-voltar{
+  font-size:12px;color:rgba(190,140,35,0.34);
+  text-decoration:none;text-align:center;
+  transition:color .2s;
+}
+#btn-voltar:hover{color:rgba(190,140,35,0.68);}
+
+/* Overlay de entrada */
+#entrando-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(3,1,0,0.97);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.4s ease;
+}
+#entrando-overlay.visivel{opacity:1;pointer-events:all;}
+.ent-icon{font-size:56px;}
+.ent-label{
+  font-size:11px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(190,140,35,0.50);
+}
+.ent-nome{font-size:clamp(20px,6vw,26px);font-weight:700;color:#f5d878;}
+.ent-dots{display:flex;gap:8px;margin-top:10px;}
+.ent-dot{
+  width:7px;height:7px;border-radius:50%;background:rgba(190,140,35,0.35);
+  animation:edot 1.2s ease-in-out infinite;
+}
+.ent-dot:nth-child(2){animation-delay:.22s;}
+.ent-dot:nth-child(3){animation-delay:.44s;}
+@keyframes edot{
+  0%,100%{opacity:0.25;transform:scale(0.72);}
+  50%{opacity:1;transform:scale(1.18);}
+}
+</style>
+</head>
+<body>
+
+<div id="logo">🔮 ORÁCULO</div>
+
+<div id="card">
+  <div id="titulo">Sala de Simulação — Diálogo</div>
+  <div id="subtitulo">Feira de Phanourios · Castelo de Mhoried</div>
+
+  <div>
+    <div class="lbl">Seu nome</div>
+    <input id="nome-input" type="text" placeholder="Nome do aventureiro…" autocomplete="off" spellcheck="false">
+  </div>
+
+  <div>
+    <div class="lbl">Sua classe</div>
+    <div id="classes-grid">
+      <button class="btn-classe" data-id="guerreiro"><span class="cl-emoji">⚔️</span>Guerreiro</button>
+      <button class="btn-classe" data-id="mago"><span class="cl-emoji">🔮</span>Mago</button>
+      <button class="btn-classe" data-id="clerigo"><span class="cl-emoji">✝️</span>Clérigo</button>
+      <button class="btn-classe" data-id="ladino"><span class="cl-emoji">🗡️</span>Ladino</button>
+      <button class="btn-classe" data-id="arqueiro"><span class="cl-emoji">🏹</span>Arqueiro</button>
+      <button class="btn-classe" data-id="druida"><span class="cl-emoji">🌿</span>Druida</button>
+    </div>
+  </div>
+
+  <button id="btn-entrar">Entrar na Sala →</button>
+</div>
+
+<a id="btn-voltar" href="catalog.html">← Voltar ao Catálogo</a>
+
+<div id="entrando-overlay">
+  <div class="ent-icon" id="ent-icon">⚔️</div>
+  <div class="ent-label">Entrando na sala de simulação</div>
+  <div class="ent-nome" id="ent-nome">—</div>
+  <div class="ent-dots">
+    <div class="ent-dot"></div>
+    <div class="ent-dot"></div>
+    <div class="ent-dot"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const CLASS_EMOJI = {guerreiro:'⚔️',mago:'🔮',clerigo:'✝️',ladino:'🗡️',arqueiro:'🏹',druida:'🌿'};
+
+  const nomeInput = document.getElementById('nome-input');
+  const btns = document.querySelectorAll('.btn-classe');
+  let classeSelecionada = localStorage.getItem('oraculo.classId') || 'guerreiro';
+
+  // Preencher do localStorage
+  const savedNome = localStorage.getItem('oraculo.playerName');
+  if(savedNome) nomeInput.value = savedNome;
+  btns.forEach(b => b.classList.toggle('selecionado', b.dataset.id === classeSelecionada));
+
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      classeSelecionada = btn.dataset.id;
+      btns.forEach(b => b.classList.toggle('selecionado', b === btn));
+    });
+  });
+
+  document.getElementById('btn-entrar').addEventListener('click', () => {
+    const nome = nomeInput.value.trim() || 'Aventureiro';
+    localStorage.setItem('oraculo.playerName', nome);
+    localStorage.setItem('oraculo.classId', classeSelecionada);
+
+    // Mostrar overlay de entrada
+    document.getElementById('ent-icon').textContent = CLASS_EMOJI[classeSelecionada] || '⚔️';
+    document.getElementById('ent-nome').textContent = nome;
+    requestAnimationFrame(() =>
+      document.getElementById('entrando-overlay').classList.add('visivel')
+    );
+    setTimeout(() => { window.location.href = 'lobby.html'; }, 1600);
+  });
+
+  nomeInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter') document.getElementById('btn-entrar').click();
+  });
+})();
+</script>
+</body>
+</html>
