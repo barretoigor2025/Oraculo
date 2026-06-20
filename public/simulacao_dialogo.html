@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Oráculo — Simulação de Diálogo</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,serif;color:#e8d5a8;user-select:none;-webkit-user-select:none}
+
+/* ── Largura padrão dos personagens — usada por AMBOS o char e o balão ── */
+:root{ --char-w: clamp(130px, 32vw, 200px); }
+
+/* ── CENA ── */
+#cena-bg{
+  position:fixed;inset:0;
+  background-size:cover;background-position:top center;background-repeat:no-repeat;
+  transition:opacity 0.7s ease;
+}
+#cena-bg::after{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 50% 62%, transparent 28%, rgba(0,0,0,0.52) 100%),
+    linear-gradient(to bottom, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.66) 92%);
+}
+
+/* ── INDICADOR DE LOCALIZAÇÃO ── */
+#cena-titulo{
+  position:fixed; top:max(12px,env(safe-area-inset-top)); left:12px;
+  z-index:100; font-size:8px; letter-spacing:2px; text-transform:uppercase;
+  color:rgba(200,175,100,0.45); padding:4px 12px;
+  background:rgba(4,2,1,0.60); border-radius:20px;
+  border:1px solid rgba(190,140,35,0.18); pointer-events:none;
+  transition:opacity 0.4s;
+}
+
+/* ── PERSONAGENS — só imagens, sem balões ── */
+#personagens{
+  position:fixed;
+  bottom:94px; left:0; right:0;
+  height:clamp(180px,32vh,320px);
+  pointer-events:none;
+  overflow:hidden;
+  z-index:5;
+}
+
+/* NPC — canvas já recortado no contorno */
+.par-npc{
+  position:absolute; bottom:0; left:0; width:auto; height:100%;
+  transform:translateX(-130%);
+  transition: transform 0.52s cubic-bezier(0.32,0.72,0,1), opacity 0.32s ease, filter 0.32s ease;
+  filter:drop-shadow(0 10px 28px rgba(0,0,0,0.92)) brightness(1) saturate(1);
+}
+.par-npc.dentro{ transform:translateX(0); }
+.par-npc.inativo{ opacity:0.28; filter:drop-shadow(0 0 0 rgba(0,0,0,0)) brightness(0.45) saturate(0.35); }
+
+/* NPCs espelhados e SEM fade */
+.par-npc .char-img{
+  transform:scaleX(-1);
+  -webkit-mask-image:none;
+  mask-image:none;
+}
+
+/* Player — não exibido como standee */
+#par-player{ display:none; }
+
+/* Imagens de personagem */
+.char-img{
+  display:block;
+  width:100%; height:100%;
+  object-fit:cover; object-position:top center;
+  -webkit-mask-image:
+    linear-gradient(to bottom, black 52%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, black 9%, black 91%, transparent 100%);
+  -webkit-mask-composite:source-in;
+  mask-image:
+    linear-gradient(to bottom, black 52%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, black 9%, black 91%, transparent 100%);
+  mask-composite:intersect;
+}
+/* canvas (standee) não usa object-fit */
+canvas.char-img{
+  width:auto; height:100%;
+  object-fit:unset; object-position:unset;
+  filter:none;
+}
+.char-fallback{
+  width:100%; height:100%;
+  display:flex; align-items:flex-start; justify-content:center;
+  padding-top:16px; font-size:clamp(36px,8vw,54px);
+  -webkit-mask-image:linear-gradient(to bottom,black 50%,transparent 100%);
+  mask-image:linear-gradient(to bottom,black 50%,transparent 100%);
+}
+
+/* ══════════════════════════════════════════════════════
+   BALÃO — flutua no TOPO, acima das cabeças
+   ══════════════════════════════════════════════════════ */
+#balao-ativo{
+  position:fixed;
+  top: 72px;
+  left: 12px; right: 12px;
+  background:rgba(7,3,1,0.91);
+  border:1px solid rgba(190,140,35,0.44);
+  border-radius:16px;
+  padding:13px 16px 14px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 4px 32px rgba(0,0,0,0.82);
+  opacity:0;
+  transform:translateY(-6px) scale(0.98);
+  transition:opacity 0.28s ease, transform 0.28s ease;
+  pointer-events:none;
+  z-index:200;
+}
+#balao-ativo.visivel{
+  opacity:1; transform:translateY(0) scale(1);
+  pointer-events:all;
+}
+#balao-ativo.player-fala #balao-nome{ color:rgba(110,160,230,0.85); }
+
+#balao-nome{
+  font-size:9px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase;
+  color:rgba(190,140,35,0.80); margin-bottom:6px;
+}
+#balao-acao{
+  font-size:11px; color:rgba(185,160,85,0.58);
+  font-style:italic; line-height:1.40; margin-bottom:5px; display:none;
+}
+#balao-texto{
+  font-size:clamp(13px,3.6vw,15.5px);
+  color:rgba(240,218,162,0.96); line-height:1.66; font-style:italic;
+}
+#btn-continuar{
+  display:none; margin-top:11px; margin-left:auto; width:fit-content;
+  background:rgba(190,140,35,0.18); border:1px solid rgba(190,140,35,0.48);
+  border-radius:22px; padding:5px 18px;
+  color:#f5d878; font-family:Georgia,serif; font-size:11px; font-weight:700;
+  cursor:pointer; letter-spacing:.3px; pointer-events:all;
+  animation:pulse-btn 1.8s ease-in-out infinite;
+}
+@keyframes pulse-btn{
+  0%,100%{box-shadow:0 0 0 0 rgba(190,140,35,0.35);}
+  50%     {box-shadow:0 0 0 7px rgba(190,140,35,0);}
+}
+
+/* ── CARD DO PLAYER ── */
+#player-card{
+  position:fixed;
+  top:72px; left:12px; right:12px;
+  display:flex; flex-direction:column; gap:8px;
+  opacity:0; pointer-events:none;
+  transform:translateY(-6px) scale(0.98);
+  transition:opacity 0.28s ease, transform 0.28s ease;
+  z-index:200;
+}
+#player-card.visivel{ opacity:1; transform:translateY(0) scale(1); pointer-events:all; }
+
+.pc-fala{
+  background:rgba(4,8,20,0.92);
+  border:1px solid rgba(100,155,220,0.40);
+  border-radius:14px;
+  padding:9px 13px 10px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 4px 32px rgba(0,0,0,0.82);
+  display:flex; align-items:center; gap:12px;
+}
+.pc-retrato-wrap{
+  flex-shrink:0; width:44px; height:56px;
+  border-radius:8px; overflow:hidden;
+  border:1px solid rgba(100,155,220,0.35);
+  background:rgba(10,15,30,0.7);
+  display:flex; align-items:center; justify-content:center;
+}
+.pc-retrato-wrap img{ width:100%; height:100%; object-fit:cover; object-position:top center; }
+.pc-retrato-wrap .pc-emoji{ font-size:24px; }
+
+.pc-nome{
+  font-size:8px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase;
+  color:rgba(110,160,230,0.80); margin-bottom:5px;
+}
+.pc-texto{
+  font-size:clamp(13px,3.6vw,15px);
+  color:rgba(215,230,255,0.94); line-height:1.60; font-style:italic;
+}
+
+/* ── BOTÃO HISTÓRICO ── */
+#btn-historico{
+  position:fixed; top:12px; right:12px; z-index:300;
+  background:rgba(7,3,1,0.75); border:1px solid rgba(190,140,35,0.30);
+  border-radius:50%; width:38px; height:38px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px; cursor:pointer; backdrop-filter:blur(10px);
+  transition:border-color .2s, background .2s;
+}
+#btn-historico:hover{ background:rgba(40,25,5,0.90); border-color:rgba(190,140,35,0.60); }
+
+/* ── DRAWER DE HISTÓRICO ── */
+#historico-drawer{
+  position:fixed; inset:0; z-index:400;
+  background:rgba(4,2,1,0.96);
+  display:flex; flex-direction:column;
+  transition:opacity .22s ease, transform .22s ease;
+}
+#historico-drawer.oculto{ display:none; }
+
+#hd-header{
+  flex-shrink:0; padding:16px 18px 12px;
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid rgba(190,140,35,0.15);
+}
+#hd-titulo{ font-size:13px; font-weight:700; letter-spacing:.6px; color:#f5d878; }
+#hd-fechar{
+  background:none; border:none; color:rgba(190,165,90,0.6);
+  font-size:20px; cursor:pointer; padding:4px 8px;
+}
+
+#hd-corpo{
+  flex:1; overflow-y:auto; padding:14px 18px 24px;
+  display:flex; flex-direction:column; gap:10px;
+  scrollbar-width:thin; scrollbar-color:rgba(190,140,35,0.25) transparent;
+}
+
+.hd-entrada{
+  padding:8px 12px;
+  border-left:2px solid rgba(190,140,35,0.28);
+}
+.hd-entrada.player{ border-left-color:rgba(100,155,220,0.45); }
+.hd-entrada.acao{ border-left-color:rgba(185,160,85,0.25); padding:4px 12px; }
+
+.hd-quem{
+  font-size:8px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+  color:rgba(190,140,35,0.60); margin-bottom:4px;
+}
+.hd-entrada.player .hd-quem{ color:rgba(110,160,230,0.65); }
+.hd-entrada.acao .hd-quem{ display:none; }
+
+.hd-texto{
+  font-size:13px; color:rgba(220,195,140,0.88);
+  line-height:1.58; font-style:italic;
+}
+.hd-entrada.acao .hd-texto{
+  font-size:11px; color:rgba(185,160,85,0.52);
+}
+
+.hd-vazio{ font-size:13px; color:rgba(190,140,35,0.35); font-style:italic; text-align:center; padding:40px; }
+
+/* ── IA PENSANDO ── */
+#ia-pensando{
+  position:fixed;
+  bottom:106px;
+  left:50%; transform:translateX(-50%);
+  background:rgba(60,28,100,0.92); border:1px solid rgba(150,80,240,0.5);
+  border-radius:20px; padding:7px 18px; color:rgba(200,140,255,0.92);
+  font-size:12px; letter-spacing:.4px; z-index:300; display:none; white-space:nowrap;
+}
+
+/* ── CHIPS ── */
+#npc-chips{
+  position:fixed; bottom:58px; left:0; right:0; height:36px;
+  padding:0 12px; background:rgba(4,2,1,0.90);
+  border-top:1px solid rgba(190,140,35,0.12);
+  display:flex; align-items:center; gap:8px;
+  z-index:200; overflow-x:auto; scrollbar-width:none;
+}
+#npc-chips::-webkit-scrollbar{display:none;}
+.chip-label{ font-size:9px; letter-spacing:.6px; text-transform:uppercase; color:rgba(190,140,35,0.28); margin-right:4px; flex-shrink:0; }
+.chip-npc{
+  flex-shrink:0; padding:4px 14px;
+  border:1px solid rgba(190,140,35,0.24); border-radius:20px;
+  background:rgba(25,16,5,0.7); color:rgba(200,175,100,0.52);
+  font-size:11px; font-family:Georgia,serif; cursor:pointer; white-space:nowrap;
+  transition:background .2s,color .2s,border-color .2s;
+}
+.chip-npc.ativo{ background:rgba(190,140,35,0.20); border-color:rgba(190,140,35,0.58); color:#f5d878; }
+
+/* ── BOTÕES DE AÇÃO NO CHIP BAR ── */
+.chip-spacer{ flex:1; min-width:4px; }
+.btn-acao-cena{
+  flex-shrink:0; padding:5px 14px;
+  border:1px solid rgba(190,140,35,0.48); border-radius:20px;
+  background:rgba(190,140,35,0.18); color:#f5d878;
+  font-size:11px; font-family:Georgia,serif; cursor:pointer; white-space:nowrap;
+  transition:background .2s; -webkit-tap-highlight-color:transparent;
+}
+.btn-acao-cena.encerrar{
+  border-color:rgba(200,80,60,0.40); background:rgba(200,80,60,0.12);
+  color:rgba(235,130,110,0.90);
+}
+.btn-acao-cena:disabled{ opacity:0.3; cursor:default; }
+
+/* ── INPUT BAR ── */
+#input-bar{
+  position:fixed; bottom:0; left:0; right:0; height:58px;
+  padding:9px 12px max(9px,env(safe-area-inset-bottom));
+  background:rgba(4,2,1,0.95); border-top:1px solid rgba(190,140,35,0.18);
+  display:flex; align-items:center; gap:9px; z-index:200;
+}
+#msg-input{
+  flex:1; background:rgba(25,16,5,0.95);
+  border:1px solid rgba(190,140,35,0.28); border-radius:10px;
+  padding:10px 14px; color:#e8d5a8; font-family:Georgia,serif; font-size:14px; outline:none;
+}
+#msg-input::placeholder{ color:rgba(190,165,90,0.32); }
+#msg-input:focus{ border-color:rgba(190,140,35,0.52); }
+#msg-input:disabled{ opacity:0.45; }
+#btn-enviar{
+  flex-shrink:0; background:rgba(190,140,35,0.16);
+  border:1px solid rgba(190,140,35,0.42); border-radius:10px;
+  padding:10px 18px; color:#f5d878; font-family:Georgia,serif;
+  font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;
+}
+#btn-enviar:disabled{ opacity:0.38; cursor:default; }
+
+/* ── CONFIG ── */
+#cfg-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:500; }
+#cfg-overlay.oculto{ display:none; }
+#cfg-box{ background:#1a1208; border:1px solid rgba(190,140,35,0.38); border-radius:18px; padding:28px 24px; max-width:340px; width:90%; display:flex; flex-direction:column; gap:14px; }
+#cfg-titulo{ font-size:16px; font-weight:700; color:#f5d878; }
+#cfg-descr{ font-size:12px; color:rgba(200,175,100,0.65); line-height:1.55; }
+#cfg-input{ background:rgba(0,0,0,0.5); border:1px solid rgba(190,140,35,0.28); border-radius:8px; padding:10px 14px; color:#e8d5a8; font-family:monospace; font-size:13px; outline:none; width:100%; }
+#cfg-salvar{ background:rgba(190,140,35,0.22); border:1px solid rgba(190,140,35,0.48); border-radius:9px; padding:11px; color:#f5d878; font-family:Georgia,serif; font-weight:700; cursor:pointer; width:100%; font-size:14px; }
+
+/* ── OVERLAY DE PERCEPÇÃO ── */
+#perc-overlay{
+  position:fixed; inset:0; z-index:600;
+  background:rgba(0,0,0,0.85);
+  display:flex; align-items:center; justify-content:center;
+}
+#perc-overlay.oculto{ display:none; }
+#perc-box{
+  background:#0e0a05; border:1px solid rgba(190,140,35,0.45);
+  border-radius:20px; padding:28px 24px; max-width:300px; width:88%;
+  display:flex; flex-direction:column; align-items:center; gap:12px;
+  text-align:center;
+}
+#perc-titulo{ font-size:12px; letter-spacing:2px; text-transform:uppercase; color:rgba(190,140,35,0.7); }
+#perc-dc{ font-size:10px; color:rgba(200,175,100,0.4); letter-spacing:1px; }
+#perc-dado{
+  font-size:64px; font-weight:700; color:#f5d878;
+  min-height:80px; display:flex; align-items:center; justify-content:center;
+  transition:color 0.3s;
+}
+#perc-resultado{ display:flex; flex-direction:column; align-items:center; gap:6px; width:100%; }
+#perc-math{ font-size:16px; font-weight:700; color:#f5d878; margin-top:4px; }
+#perc-vs{ font-size:10px; color:rgba(200,175,100,0.4); letter-spacing:1px; }
+#perc-status{
+  font-size:13px; font-weight:700; letter-spacing:2px;
+  padding:4px 16px; border-radius:20px;
+}
+#perc-status.sucesso{ color:#7af07a; border:1px solid rgba(120,220,120,0.35); background:rgba(60,160,60,0.12); }
+#perc-status.falha{ color:#f07a7a; border:1px solid rgba(220,120,120,0.35); background:rgba(160,60,60,0.12); }
+#perc-narr{
+  font-size:13px; color:rgba(220,195,145,0.88);
+  line-height:1.65; font-style:italic; margin-top:4px;
+}
+#perc-fechar{
+  margin-top:8px; background:rgba(190,140,35,0.18);
+  border:1px solid rgba(190,140,35,0.42); border-radius:10px;
+  padding:9px 28px; color:#f5d878; font-family:Georgia,serif;
+  font-size:13px; cursor:pointer;
+}
+
+/* ── TELA DE ENCERRAMENTO ── */
+#fim-overlay{
+  position:fixed; inset:0; z-index:700;
+  background:rgba(0,0,0,0); display:flex; align-items:center; justify-content:center;
+  transition:background 0.8s;
+}
+#fim-overlay.ativo{ background:rgba(0,0,0,0.92); }
+#fim-overlay.oculto{ display:none; }
+#fim-box{
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+  text-align:center; padding:32px 24px; max-width:320px;
+  opacity:0; transform:translateY(16px);
+  transition:opacity 0.6s 0.4s, transform 0.6s 0.4s;
+}
+#fim-overlay.ativo #fim-box{ opacity:1; transform:translateY(0); }
+#fim-icon{ font-size:48px; }
+#fim-titulo{ font-size:20px; font-weight:700; letter-spacing:2px; color:#f5d878; }
+#fim-texto{ font-size:14px; color:rgba(220,195,145,0.80); line-height:1.7; font-style:italic; }
+#fim-voltar{
+  margin-top:8px; background:rgba(190,140,35,0.18);
+  border:1px solid rgba(190,140,35,0.48); border-radius:12px;
+  padding:12px 32px; color:#f5d878; font-family:Georgia,serif;
+  font-size:14px; font-weight:700; cursor:pointer; letter-spacing:.5px;
+}
+</style>
+</head>
+<body>
+
+<div id="cena-bg"></div>
+<div id="cena-titulo">Feira de Phanourios</div>
+
+<div id="personagens"></div>
+
+<!-- Balão NPC -->
+<div id="balao-ativo">
+  <div id="balao-nome">—</div>
+  <div id="balao-acao"></div>
+  <div id="balao-texto">…</div>
+  <button id="btn-continuar" onclick="_handleContinuar()">▶ Continuar</button>
+</div>
+
+<!-- Card do player -->
+<div id="player-card"></div>
+
+<!-- Botão de histórico -->
+<button id="btn-historico" onclick="_abrirHistorico()">📜</button>
+
+<!-- Drawer de histórico -->
+<div id="historico-drawer" class="oculto">
+  <div id="hd-header">
+    <span id="hd-titulo">📜 Histórico da Cena</span>
+    <button id="hd-fechar" onclick="_fecharHistorico()">✕</button>
+  </div>
+  <div id="hd-corpo"></div>
+</div>
+
+<div id="ia-pensando">✨ Pensando…</div>
+
+<div id="npc-chips">
+  <span class="chip-label">Falar com:</span>
+  <div class="chip-spacer"></div>
+  <button id="btn-ir-castelo" class="btn-acao-cena" onclick="irAoCastelo()" style="display:none">⚔️ Ir ao Castelo →</button>
+  <button id="btn-perc" class="btn-acao-cena" onclick="testePercepcao()" style="display:none" title="Teste de Percepção (DC 12)">🎲</button>
+  <button id="btn-encerrar" class="btn-acao-cena encerrar" onclick="encerrarSimulacao()" style="display:none">← Sair</button>
+</div>
+
+<div id="input-bar">
+  <input id="msg-input" type="text" placeholder="O que você diz…" autocomplete="off" spellcheck="false">
+  <button id="btn-enviar">Enviar →</button>
+</div>
+
+<!-- Config overlay -->
+<div id="cfg-overlay" class="oculto">
+  <div id="cfg-box">
+    <div id="cfg-titulo">Chave da API Groq</div>
+    <div id="cfg-descr">Necessária para os NPCs responderem com IA. Guardada apenas neste dispositivo (localStorage).</div>
+    <input id="cfg-input" type="password" placeholder="gsk_..." autocomplete="off">
+    <button id="cfg-salvar">Salvar e iniciar →</button>
+  </div>
+</div>
+
+<!-- Overlay de Percepção -->
+<div id="perc-overlay" class="oculto">
+  <div id="perc-box">
+    <div id="perc-titulo">🎲 Teste de Percepção</div>
+    <div id="perc-dc">DC 12 — Percepção</div>
+    <div id="perc-dado">?</div>
+    <div id="perc-resultado"></div>
+    <button id="perc-fechar" onclick="document.getElementById('perc-overlay').classList.add('oculto')" style="display:none">Fechar</button>
+  </div>
+</div>
+
+<!-- Tela de encerramento -->
+<div id="fim-overlay" class="oculto">
+  <div id="fim-box">
+    <div id="fim-icon">🏰</div>
+    <div id="fim-titulo">Simulação Concluída</div>
+    <div id="fim-texto">Os aventureiros saem do Castelo de Mhoried. Uma missão começa — os espantalhos de Choir não foram o fim, apenas o primeiro sinal.</div>
+    <button id="fim-voltar" onclick="window.location.href='index.html'">← Voltar ao Lobby</button>
+  </div>
+</div>
+
+<script type="module">
+
+// ══════════════════════════════════════════════════════════
+//  NPCs
+// ══════════════════════════════════════════════════════════
+const NPCS = [
+  {
+    id:'gregoras', nome:'Grégoras Pellos', avatar:'⚔️',
+    img:'catalogo/mhoried/npcs/npc_gregoras_pellos/peca_tabuleiro/npc_gregoras_pellos_peca.png',
+    tipo:'standee', zBase:6, offsetPx:0,
+    cenas:['feira','castelo'],
+    personalidade:'Mercenário veterano de meia-idade, ex-soldado do exército de Mhoried. Cicatrizes e postura comunicam mais do que palavras. Leal até a morte com quem confia, perigoso com quem trai. Fala pouco e pesa cada palavra. Respeita força e honestidade acima de tudo. Humor seco difícil de perceber.',
+    conhecimentos:'Sabe que algo está errado em Gloamreach — pessoas desaparecem e voltam "diferentes". Conhece Finn Willowheel desde a infância. Desconfia do Rei Chutter mas não sabe por quê ainda. Foi ele quem pediu à Duquesa que recebesse os aventureiros. Conhece o caminho para o Castelo e a rotina da Duquesa.',
+    formaDeFalar:'Frases curtas e diretas. Nunca desperdiça palavras. Quando suspeita de alguém, fica completamente quieto por um momento antes de responder. Usa termos militares ocasionalmente. Nunca elogia diretamente — demonstra aprovação com ação.',
+    reatividade:0.10,
+    abertura:'(Os aventureiros acabaram de vencer uma batalha na feira — espantalhos animados por necromancia. Você estava observando. Diga sua frase de abertura — brevíssima, máximo 2 frases, no seu estilo seco.)',
+    aberturaFallback:'[ACAO: Um homem de cicatrizes cruza os braços e observa o grupo em silêncio por um momento.] Sobreviveram. Interessante.',
+  },
+  {
+    id:'finn', nome:'Finn Willowheel', avatar:'🌿',
+    img:'catalogo/mhoried/npcs/npc_finn_willowheel/peca_tabuleiro/npc_finn_willowheel_peca.png',
+    tipo:'standee', zBase:5, offsetPx:28,
+    cenas:['feira'],
+    personalidade:'Meio-halfling comerciante jovem, animado e curioso. Vende ervas, temperos e itens curiosos. Observador nato — nota detalhes que outros ignoram. Parece inocente mas guarda segredos comerciais com astúcia. Amigo de longa data de Grégoras.',
+    conhecimentos:'Conhece quase todos os comerciantes da feira. Sabe que uma caixa misteriosa passou pela feira há dois dias — alguém pagou muito bem para que ninguém soubesse. Conhece atalhos por Phanourios e sabe onde ficam os Kobolds pacíficos. Conhece Catherine Laskaris desde criança — ela comprava ervas medicinais para o pai.',
+    formaDeFalar:'Fala rápido e com entusiasmo. Usa muitas analogias com ervas e plantas. Ri fácil. Quando está com medo ou nervoso, começa a falar de tópicos aleatórios. Chama todo mundo de "amigo".',
+    reatividade:0.42,
+    abertura:'(Os aventureiros acabaram de vencer uma batalha. Você estava observando de perto entre as barracas. Faça uma observação animada e curiosa — brevíssima, 1-2 frases, no seu estilo.)',
+    aberturaFallback:'[ACAO: Finn ri e estende a mão para cumprimentar o grupo, quase derrubando uma cestinha de ervas.] Que espetáculo, amigos! Nunca vi coisa assim desde que o velho Harmon dançou com três goblins de uma vez!',
+  },
+  {
+    id:'catherine', nome:'Duquesa Catherine', avatar:'👑',
+    img:'catalogo/mhoried/npcs/npc_catherine_laskaris/peca_tabuleiro/npc_catherine_laskaris_peca.png',
+    tipo:'standee', zBase:8, offsetPx:12,
+    cenas:['castelo'],
+    personalidade:'Catherine Laskaris governa Mhoried com inteligência e compaixão calculada. Cresceu numa corte onde cada palavra é uma jogada e aprendeu a usar a gentileza como ferramenta sem perder a genuinidade por trás dela. Sob a compostura há uma pessoa que perdeu muito e recusa-se a perder mais.',
+    conhecimentos:'Sabe que os espantalhos foram animados por Choir — mago corrupto que está realizando experimentos proibidos. Quer que os aventureiros investiguem Gloamreach, onde as pessoas desaparecem. Suspeita do Rei Chutter mas ainda não tem provas. Sabe que o Duque Oswald Thool (seu irmão) foi transformado. Pode oferecer 5.000 peças de ouro e terras por ajuda. Conhece Finn Willowheel desde criança. Mantém correspondência secreta com o Alto Druida Mac Rónán.',
+    formaDeFalar:'Voz calma e melodiosa. Usa "nós" institucional às vezes. Nunca eleva a voz — quando mais grave a situação, mais suave o tom. Faz perguntas que já sabe a resposta para avaliar honestidade. Frases longas e elaboradas com calor genuíno quando confia em quem tem à frente. Silêncios deliberados são tão expressivos quanto as palavras. Nunca mente diretamente — enquadra, omite, reformula.',
+    reatividade:0.15,
+    abertura:'(Grégoras acabou de trazer os aventureiros ao seu salão privado. Eles demonstraram coragem e competência ao lidar com os espantalhos na feira. Você se vira da janela onde estava olhando para a praça ainda agitada lá embaixo. Faça sua abertura — elegante, avaliadora, revele interesse genuíno mas controlado. Máximo 2 frases.)',
+    aberturaFallback:'[ACAO: Catherine se vira lentamente da janela, o olhar percorrendo cada rosto com atenção medida antes de pousar em nenhum específico.] Grégoras raramente me traz pessoas sem razão suficiente para tal. Sentem-se, por favor — Mhoried tem muito a conversar com vocês.',
+  },
+];
+
+// ══════════════════════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════════════════════
+let cenaAtual = 'feira';
+let npcAtivo = 0;
+const historicos = NPCS.map(() => []);
+let animando = false;
+let _continuarResolve = null;
+let _percUsado = false;
+
+const PERC_MOD = {guerreiro:1, mago:3, clerigo:3, ladino:5, arqueiro:4, druida:3};
+const classId = localStorage.getItem('oraculo.classId') || 'guerreiro';
+const playerName = localStorage.getItem('oraculo.playerName') || 'Aventureiro';
+const CLASS_AVATAR = {mago:'🔮',guerreiro:'⚔️',ladino:'🗡️',clerigo:'✝️',arqueiro:'🏹',druida:'🌿'};
+const playerAvatar = CLASS_AVATAR[classId] || '🗡️';
+
+// LOG COMPARTILHADO DA CENA
+const logCena = [];
+const MAX_LOG_CENA = 22;
+
+function registrarEvento(quem, texto, tipo='fala'){
+  if(!texto||texto.trim()==='---') return;
+  logCena.push({quem, texto:texto.trim(), tipo});
+  if(logCena.length>MAX_LOG_CENA) logCena.shift();
+}
+
+// ══════════════════════════════════════════════════════════
+//  DOM
+// ══════════════════════════════════════════════════════════
+const cenaBgEl    = document.getElementById('cena-bg');
+const cenaTituloEl= document.getElementById('cena-titulo');
+const personagens = document.getElementById('personagens');
+const balaoAtivo  = document.getElementById('balao-ativo');
+const balaoNome   = document.getElementById('balao-nome');
+const balaoAcao   = document.getElementById('balao-acao');
+const balaoTexto  = document.getElementById('balao-texto');
+const btnContinuar= document.getElementById('btn-continuar');
+const playerCard  = document.getElementById('player-card');
+const hdCorpo     = document.getElementById('hd-corpo');
+const npcChipsEl  = document.getElementById('npc-chips');
+const msgInput    = document.getElementById('msg-input');
+const btnEnviar   = document.getElementById('btn-enviar');
+const iaPensando  = document.getElementById('ia-pensando');
+const cfgOverlay  = document.getElementById('cfg-overlay');
+
+const npcEls = []; // {par}
+
+// ══════════════════════════════════════════════════════════
+//  SETUP INICIAL
+// ══════════════════════════════════════════════════════════
+cenaBgEl.style.backgroundImage = `url(catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_ext.png)`;
+msgInput.placeholder = `O que você diz para ${NPCS[0].nome.split(' ')[0]}…`;
+
+const PLAYER_LOCAL = {
+  nome: playerName,
+  avatar: playerAvatar,
+  retrato: `catalogo/mhoried/classes/${classId}/retrato/${classId}_retrato.png`,
+};
+
+// ══════════════════════════════════════════════════════════
+//  GERAR NPCs
+// ══════════════════════════════════════════════════════════
+NPCS.forEach((npc, i) => {
+  const par = document.createElement('div');
+  par.className = 'par-npc';
+  par.id = `par-npc-${i}`;
+  par.style.zIndex = String(npc.zBase);
+  par.style.left = `${npc.offsetPx}px`;
+
+  // NPCs fora da cena inicial ficam escondidos
+  if(!npc.cenas.includes(cenaAtual)){
+    par.style.display = 'none';
+  } else if(i > 0){
+    par.classList.add('inativo');
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.className = 'char-img';
+  _loadCanvas(npc.img, canvas);
+  par.appendChild(canvas);
+
+  personagens.appendChild(par);
+  npcEls.push({ par });
+});
+
+// ══════════════════════════════════════════════════════════
+//  CANVAS + CHROMAKEY
+// ══════════════════════════════════════════════════════════
+function _loadCanvas(src, canvas, onOk, onErr) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    try {
+      const H=900, W=Math.round(H*img.naturalWidth/img.naturalHeight);
+      const tmp=document.createElement('canvas');
+      tmp.width=W; tmp.height=H;
+      const tctx=tmp.getContext('2d');
+      tctx.drawImage(img,0,0,W,H);
+      _cromachave(tctx,W,H);
+      const bb=_bboxOpaco(tctx,W,H);
+      const cw=bb.r-bb.l+1, ch=bb.b-bb.t+1;
+      canvas.width=cw; canvas.height=ch;
+      canvas.getContext('2d').drawImage(tmp, bb.l,bb.t,cw,ch, 0,0,cw,ch);
+      if(onOk) onOk(canvas);
+    } catch(_){ if(onErr) onErr(); }
+  };
+  img.onerror = () => { if(onErr) onErr(); };
+  img.src = src;
+}
+
+function _bboxOpaco(ctx,w,h){
+  const d=ctx.getImageData(0,0,w,h).data;
+  let l=w,r=-1,t=h,b=-1;
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      if(d[(y*w+x)*4+3] > 24){
+        if(x<l)l=x; if(x>r)r=x; if(y<t)t=y; if(y>b)b=y;
+      }
+    }
+  }
+  if(r<l||b<t) return {l:0,t:0,r:w-1,b:h-1};
+  return {l,t,r,b};
+}
+
+function _cromachave(ctx,w,h){
+  const id=ctx.getImageData(0,0,w,h),d=id.data;
+  for(let i=3;i<d.length;i+=4){ if(d[i]<230) return; }
+  const pts=[
+    [0,0],[w-1,0],[0,h-1],[w-1,h-1],
+    [Math.floor(w/2),0],[0,Math.floor(h/2)],
+    [w-1,Math.floor(h/2)],[Math.floor(w/2),h-1],
+  ];
+  let kr=0,kg=0,kb=0;
+  for(const[x,y]of pts){const b=(y*w+x)*4;kr+=d[b];kg+=d[b+1];kb+=d[b+2];}
+  kr=Math.round(kr/pts.length);kg=Math.round(kg/pts.length);kb=Math.round(kb/pts.length);
+  for(let i=0;i<d.length;i+=4){
+    const dist=Math.abs(d[i]-kr)+Math.abs(d[i+1]-kg)+Math.abs(d[i+2]-kb);
+    if(dist<52){
+      d[i+3]=0;
+    } else if(dist<95){
+      d[i+3]=Math.round((dist-52)/43*255);
+    }
+  }
+  ctx.putImageData(id,0,0);
+}
+
+// ══════════════════════════════════════════════════════════
+//  CHIPS — dinâmico por cena
+// ══════════════════════════════════════════════════════════
+function atualizarChips(){
+  document.querySelectorAll('.chip-npc').forEach(c => c.remove());
+
+  const spacer = npcChipsEl.querySelector('.chip-spacer');
+  NPCS.forEach((npc, i) => {
+    if(!npc.cenas.includes(cenaAtual)) return;
+    const chip = document.createElement('button');
+    chip.className = 'chip-npc';
+    chip.dataset.npcIdx = i;
+    chip.textContent = npc.nome.split(' ')[0];
+    chip.addEventListener('click', () => { if(!animando) selecionarNpc(i); });
+    // Inserir antes do spacer (que precede os botões de ação)
+    npcChipsEl.insertBefore(chip, spacer);
+  });
+
+  // Marcar o ativo
+  document.querySelectorAll('.chip-npc').forEach(c => {
+    c.classList.toggle('ativo', parseInt(c.dataset.npcIdx) === npcAtivo);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  SELECIONAR NPC (índice absoluto)
+// ══════════════════════════════════════════════════════════
+function selecionarNpc(idx){
+  if(idx === npcAtivo && document.querySelector('.chip-npc.ativo')) return;
+  npcAtivo = idx;
+  document.querySelectorAll('.chip-npc').forEach(c => {
+    c.classList.toggle('ativo', parseInt(c.dataset.npcIdx) === idx);
+  });
+  // Só afeta NPCs da cena atual
+  NPCS.forEach((npc, i) => {
+    if(!npc.cenas.includes(cenaAtual)) return;
+    const a = i === idx;
+    npcEls[i].par.classList.toggle('inativo', !a);
+    npcEls[i].par.style.zIndex = a ? String(npc.zBase+2) : String(npc.zBase);
+  });
+  msgInput.placeholder = `O que você diz para ${NPCS[idx].nome.split(' ')[0]}…`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  BALÃO (NPC) e CARD (player)
+// ══════════════════════════════════════════════════════════
+function _mostrarBalaoNPC({ nome, acao, texto, comContinuar=false }){
+  balaoNome.textContent = nome.toUpperCase();
+  if(acao){ balaoAcao.textContent=acao; balaoAcao.style.display='block'; }
+  else     { balaoAcao.style.display='none'; }
+  balaoTexto.textContent = texto;
+  btnContinuar.style.display = comContinuar ? 'block' : 'none';
+  playerCard.classList.remove('visivel');
+  balaoAtivo.classList.add('visivel');
+}
+
+function _empilharFalaPlayer({ nome, avatar, retrato, texto }){
+  balaoAtivo.classList.remove('visivel');
+  const row = document.createElement('div');
+  row.className = 'pc-fala';
+  const wrap = document.createElement('div');
+  wrap.className = 'pc-retrato-wrap';
+  const emoji = document.createElement('span');
+  emoji.className = 'pc-emoji'; emoji.textContent = avatar || '🧙';
+  wrap.appendChild(emoji);
+  if(retrato){
+    const img = document.createElement('img');
+    img.alt = nome; img.style.display='none';
+    img.onload  = () => { img.style.display='block'; emoji.style.display='none'; };
+    img.onerror = () => { img.remove(); };
+    img.src = retrato;
+    wrap.appendChild(img);
+  }
+  const body = document.createElement('div');
+  const nm = document.createElement('div'); nm.className='pc-nome'; nm.textContent = nome;
+  const tx = document.createElement('div'); tx.className='pc-texto'; tx.textContent = texto;
+  body.append(nm, tx);
+  row.append(wrap, body);
+  playerCard.appendChild(row);
+  playerCard.classList.add('visivel');
+}
+
+function _limparFalasPlayer(){
+  playerCard.classList.remove('visivel');
+  playerCard.innerHTML = '';
+}
+
+function _ocultarBalao(){
+  balaoAtivo.classList.remove('visivel');
+  _limparFalasPlayer();
+}
+
+// ══════════════════════════════════════════════════════════
+//  CONTINUAR
+// ══════════════════════════════════════════════════════════
+window._handleContinuar = function(){
+  btnContinuar.style.display='none';
+  if(_continuarResolve){ _continuarResolve(); _continuarResolve=null; }
+};
+
+function esperarContinuar(){
+  return new Promise(r=>{ _continuarResolve=r; });
+}
+
+// ══════════════════════════════════════════════════════════
+//  HISTÓRICO
+// ══════════════════════════════════════════════════════════
+window._abrirHistorico = function(){
+  hdCorpo.innerHTML = logCena.length
+    ? logCena.map(e=>{
+        const cls = e.tipo==='acao' ? 'hd-entrada acao'
+                  : (e.quem===playerName ? 'hd-entrada player' : 'hd-entrada');
+        const txt = e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : e.texto;
+        return `<div class="${cls}"><div class="hd-quem">${e.quem.toUpperCase()}</div><div class="hd-texto">${txt}</div></div>`;
+      }).join('')
+    : '<div class="hd-vazio">Nenhuma fala registrada ainda.</div>';
+  requestAnimationFrame(()=>{ hdCorpo.scrollTop = hdCorpo.scrollHeight; });
+  document.getElementById('historico-drawer').classList.remove('oculto');
+};
+
+window._fecharHistorico = function(){
+  document.getElementById('historico-drawer').classList.add('oculto');
+};
+
+// ══════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+function parsearFala(raw){
+  const m = raw.match(/\[ACAO:\s*([^\]]+)\]/i);
+  return { acao: m?.[1]?.trim()||null, fala: raw.replace(/\[ACAO:[^\]]+\]\s*/gi,'').trim() };
+}
+
+// ══════════════════════════════════════════════════════════
+//  CONTEXTO DA CENA
+// ══════════════════════════════════════════════════════════
+function _gerarContextoCena(npcIdx){
+  const nomesPresentes = NPCS
+    .filter(n => n.cenas.includes(cenaAtual))
+    .map(n => n.nome)
+    .join(', ');
+  const local = cenaAtual === 'feira'
+    ? 'Feira de Phanourios, após uma batalha contra espantalhos animados'
+    : 'Salão privado do Castelo de Mhoried';
+  const linhas = logCena.length
+    ? logCena.map(e => e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : `${e.quem}: "${e.texto}"`).join('\n')
+    : '(a cena acaba de começar)';
+  return `LOCAL: ${local}.\nPRESENTES: ${nomesPresentes} e ${playerName} (o aventureiro).\n\nDIÁLOGOS E AÇÕES (cronológico):\n${linhas}`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  ANIMAÇÕES NPC
+// ══════════════════════════════════════════════════════════
+async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
+  const {acao, fala} = parsearFala(raw);
+  const npc = NPCS[npcIdx];
+
+  if(acao) registrarEvento(npc.nome, acao, 'acao');
+  if(fala) registrarEvento(npc.nome, fala, 'fala');
+
+  _ocultarBalao(); await delay(120);
+
+  npcAtivo = npcIdx;
+  document.querySelectorAll('.chip-npc').forEach(c => {
+    c.classList.toggle('ativo', parseInt(c.dataset.npcIdx) === npcIdx);
+  });
+  // Foco apenas nos NPCs da cena
+  NPCS.forEach((n, i) => {
+    if(!n.cenas.includes(cenaAtual)) return;
+    const a = i === npcIdx;
+    npcEls[i].par.classList.toggle('inativo', !a);
+    npcEls[i].par.style.zIndex = a ? String(n.zBase+2) : String(n.zBase);
+  });
+
+  // Entrar NPCs que ainda não entraram (na cena atual)
+  let entrou = false;
+  NPCS.forEach((n, i) => {
+    if(!n.cenas.includes(cenaAtual)) return;
+    if(!npcEls[i].par.classList.contains('dentro')){
+      npcEls[i].par.classList.add('dentro'); entrou = true;
+    }
+  });
+  if(entrou) await delay(500);
+
+  _mostrarBalaoNPC({ nome:npc.nome, acao, texto:fala, comContinuar:pedirContinuar });
+  if(pedirContinuar) await esperarContinuar();
+}
+
+async function mostrarPlayer(texto, player=PLAYER_LOCAL){
+  registrarEvento(player.nome, texto, 'fala');
+  _empilharFalaPlayer({ nome:player.nome, avatar:player.avatar, retrato:player.retrato, texto });
+  await delay(450);
+}
+
+// ══════════════════════════════════════════════════════════
+//  IA (Groq)
+// ══════════════════════════════════════════════════════════
+async function chamarIA(npcIdx, mensagem){
+  const key = localStorage.getItem('oraculo.groqKey');
+  if(!key) throw new Error('sem-chave');
+  const npc = NPCS[npcIdx], hist = historicos[npcIdx];
+  const contextoCena = _gerarContextoCena(npcIdx);
+  const messages = [
+    { role:'system', content:
+`Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. NUNCA quebre o personagem.
+
+QUEM VOCÊ É: ${npc.personalidade}
+O QUE VOCÊ SABE (revele gradualmente): ${npc.conhecimentos}
+SUA FORMA DE FALAR: ${npc.formaDeFalar}
+
+${contextoCena}
+
+REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. [ACAO: desc] antes da fala para ações físicas visíveis. Se um objeto foi dado ou recebido na cena, você sabe e pode referenciá-lo. Reaja ao contexto da cena, não apenas à última fala.` },
+    ...hist,
+    { role:'user', content:mensagem },
+  ];
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 18000);
+  try {
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method:'POST', signal:controller.signal,
+      headers:{'Authorization':`Bearer ${key}`,'content-type':'application/json'},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile', max_tokens:200, messages}),
+    });
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error.message);
+    return data.choices?.[0]?.message?.content?.trim() || '…';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  REAÇÃO ESPONTÂNEA (apenas NPCs da cena atual)
+// ══════════════════════════════════════════════════════════
+async function _verificarReacao(npcQueRespondeuIdx){
+  const outrosIdx = NPCS
+    .map((_,i) => i)
+    .filter(i => i !== npcQueRespondeuIdx && NPCS[i].cenas.includes(cenaAtual));
+  if(!outrosIdx.length) return;
+  const reatorIdx = outrosIdx[Math.floor(Math.random()*outrosIdx.length)];
+  const reator = NPCS[reatorIdx];
+  if(Math.random() > (reator.reatividade ?? 0.20)) return;
+
+  const ultimosEventos = logCena.slice(-4)
+    .map(e => e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : `${e.quem}: "${e.texto}"`).join('\n');
+  const prompt = `Você observou o que acabou de acontecer:\n${ultimosEventos}\n\nDado exatamente quem você é e seu jeito de ser, você diria algo agora? Se sim, reaja em 1 frase brevíssima e no seu estilo. Se não (porque você naturalmente ficaria em silêncio neste momento), responda exatamente "---".`;
+
+  try {
+    iaPensando.style.display='block';
+    const reacao = await chamarIA(reatorIdx, prompt);
+    iaPensando.style.display='none';
+    if(!reacao||reacao.trim().startsWith('---')) return;
+    historicos[reatorIdx].push({role:'user', content:prompt});
+    historicos[reatorIdx].push({role:'assistant', content:reacao});
+    await delay(300);
+    await mostrarNPC(reatorIdx, reacao, {pedirContinuar:false});
+  } catch(_){ iaPensando.style.display='none'; }
+}
+
+// ══════════════════════════════════════════════════════════
+//  IR AO CASTELO
+// ══════════════════════════════════════════════════════════
+window.irAoCastelo = async function(){
+  if(animando) return;
+  animando = true;
+  msgInput.disabled = true;
+  btnEnviar.disabled = true;
+  document.getElementById('btn-ir-castelo').style.display = 'none';
+
+  // 1. Gregoras conduz o grupo
+  await mostrarNPC(0, '[ACAO: Faz um gesto seco com a cabeça, virando-se para caminhar.] Venham. A Duquesa não gosta de esperar.', {pedirContinuar:true});
+  _ocultarBalao();
+
+  // 2. Fade out
+  cenaBgEl.style.transition = 'opacity 0.7s ease';
+  cenaBgEl.style.opacity = '0';
+  NPCS.forEach((_,i) => {
+    if(npcEls[i].par.classList.contains('dentro')){
+      npcEls[i].par.classList.remove('dentro');
+    }
+  });
+  await delay(750);
+
+  // 3. Troca cena
+  cenaAtual = 'castelo';
+  cenaBgEl.style.backgroundImage = "url(catalogo/mhoried/cenarios/conversacao/castelo_mhoried/imagem/castelo_int.png)";
+  cenaTituloEl.textContent = 'Castelo de Mhoried';
+
+  // Esconde Finn
+  npcEls[1].par.style.display = 'none';
+  npcEls[1].par.classList.remove('dentro','inativo');
+
+  // Mostra Catherine (ainda fora da tela)
+  npcEls[2].par.style.display = '';
+
+  // 4. Fade in
+  await delay(200);
+  cenaBgEl.style.opacity = '1';
+  await delay(900);
+
+  // 5. Gregoras anuncia Catherine
+  await mostrarNPC(0, '[ACAO: Bate suavemente na porta do salão privado e a empurra, indicando que entrem.] Milady. Os aventureiros que a senhora queria conhecer.', {pedirContinuar:true});
+  _ocultarBalao();
+
+  // 6. Catherine entra
+  await delay(300);
+  npcEls[2].par.classList.add('dentro');
+  await delay(700);
+
+  // 7. Abertura da Catherine
+  atualizarChips();
+  iaPensando.style.display='block';
+  let ab;
+  try { ab = await chamarIA(2, NPCS[2].abertura); }
+  catch(_){ ab = NPCS[2].aberturaFallback; }
+  iaPensando.style.display='none';
+  await mostrarNPC(2, ab, {pedirContinuar:true});
+
+  // 8. Ativa cena 2
+  document.getElementById('btn-perc').style.display = '';
+  document.getElementById('btn-encerrar').style.display = '';
+  selecionarNpc(2);
+
+  animando = false;
+  msgInput.disabled = false;
+  btnEnviar.disabled = false;
+};
+
+// ══════════════════════════════════════════════════════════
+//  TESTE DE PERCEPÇÃO (DC 12)
+// ══════════════════════════════════════════════════════════
+window.testePercepcao = async function(){
+  if(_percUsado) return;
+  _percUsado = true;
+  document.getElementById('btn-perc').disabled = true;
+
+  const overlay  = document.getElementById('perc-overlay');
+  const dadoEl   = document.getElementById('perc-dado');
+  const resultEl = document.getElementById('perc-resultado');
+  const fechEl   = document.getElementById('perc-fechar');
+
+  overlay.classList.remove('oculto');
+  dadoEl.textContent = '?';
+  dadoEl.style.color = '#f5d878';
+  resultEl.innerHTML = '';
+  fechEl.style.display = 'none';
+
+  // Animação de dado rolando
+  const t0 = Date.now();
+  await new Promise(r => {
+    const iv = setInterval(() => {
+      dadoEl.textContent = Math.floor(Math.random()*20)+1;
+      if(Date.now()-t0 > 1400){ clearInterval(iv); r(); }
+    }, 75);
+  });
+
+  const roll  = Math.floor(Math.random()*20)+1;
+  const mod   = PERC_MOD[classId] || 2;
+  const total = roll + mod;
+  const dc    = 12;
+  const ok    = total >= dc;
+
+  dadoEl.textContent = roll;
+  dadoEl.style.color = ok ? '#7af07a' : '#f07a7a';
+
+  await delay(300);
+
+  let narr;
+  if(total >= 18){
+    narr = 'Você nota que os olhos de Catherine pousam por um breve momento num quadro ao lado da janela ao mencionar o nome de Choir. Há algo atrás daquele quadro que ela não quer que vejam — possivelmente um documento ou correspondência secreta.';
+  } else if(total >= 14){
+    narr = 'Quando Catherine fala em "aliados confiáveis", seus dedos tocam brevemente o colar — o mesmo gesto que ela faz ao pensar em alguém perdido. Esta missão tem um peso muito mais pessoal do que ela admite publicamente.';
+  } else if(total >= 12){
+    narr = 'Você percebe um breve tremor quase imperceptível na voz de Catherine ao pronunciar o nome de Choir. Uma mágoa cuidadosamente escondida por trás de anos de compostura.';
+  } else {
+    narr = 'A compostura da Duquesa é impenetrável. Você parte sem perceber nada além do que ela escolheu mostrar — que por si só já é considerável.';
+  }
+
+  resultEl.innerHTML = `
+    <div id="perc-math">${roll} + ${mod} = <strong>${total}</strong></div>
+    <div id="perc-vs">vs DC ${dc}</div>
+    <div id="perc-status" class="${ok?'sucesso':'falha'}">${ok ? '✓ SUCESSO' : '✗ FALHA'}</div>
+    <div id="perc-narr">${narr}</div>
+  `;
+  fechEl.style.display = 'block';
+
+  if(ok){
+    registrarEvento(playerName, `[Observa Catherine com atenção — ${narr.slice(0,60)}…]`, 'acao');
+  }
+};
+
+// ══════════════════════════════════════════════════════════
+//  ENCERRAR
+// ══════════════════════════════════════════════════════════
+window.encerrarSimulacao = function(){
+  const overlay = document.getElementById('fim-overlay');
+  overlay.classList.remove('oculto');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { overlay.classList.add('ativo'); });
+  });
+};
+
+// ══════════════════════════════════════════════════════════
+//  LOOP DE CONVERSA
+// ══════════════════════════════════════════════════════════
+async function enviar(){
+  const txt = msgInput.value.trim();
+  if(!txt||animando) return;
+  animando=true; msgInput.disabled=true; btnEnviar.disabled=true; msgInput.value='';
+
+  const target = npcAtivo;
+  await mostrarPlayer(txt);
+  historicos[target].push({role:'user', content:txt});
+  await delay(900);
+
+  iaPensando.style.display='block';
+  try {
+    const resp = await chamarIA(target, txt);
+    historicos[target].push({role:'assistant', content:resp});
+    iaPensando.style.display='none';
+    await mostrarNPC(target, resp, {pedirContinuar:true});
+    await _verificarReacao(target);
+    // Restaura foco
+    npcAtivo = target;
+    document.querySelectorAll('.chip-npc').forEach(c => {
+      c.classList.toggle('ativo', parseInt(c.dataset.npcIdx) === target);
+    });
+    msgInput.placeholder = `O que você diz para ${NPCS[target].nome.split(' ')[0]}…`;
+  } catch(e){
+    iaPensando.style.display='none';
+    if(e.message==='sem-chave'){
+      cfgOverlay.classList.remove('oculto');
+    } else {
+      let motivo = 'Tente novamente.';
+      if(e.name==='AbortError') motivo = 'A IA demorou demais. Tente novamente.';
+      else if(e.message) motivo = e.message.slice(0,90);
+      await mostrarNPC(target, `[ACAO: Algo interfere na resposta.] ${motivo}`);
+    }
+  }
+  animando=false; msgInput.disabled=false; btnEnviar.disabled=false;
+}
+
+// ══════════════════════════════════════════════════════════
+//  INIT — só cena 1 (feira)
+// ══════════════════════════════════════════════════════════
+async function iniciarCena(){
+  if(!localStorage.getItem('oraculo.groqKey')){ cfgOverlay.classList.remove('oculto'); return; }
+  msgInput.disabled=true; btnEnviar.disabled=true;
+  atualizarChips();
+  await delay(700);
+
+  // Abre com Gregoras
+  iaPensando.style.display='block';
+  let ab0;
+  try{ ab0 = await chamarIA(0, NPCS[0].abertura); }
+  catch(_){ ab0 = NPCS[0].aberturaFallback; }
+  iaPensando.style.display='none';
+  await mostrarNPC(0, ab0, {pedirContinuar:true});
+
+  // Finn entra logo depois
+  iaPensando.style.display='block';
+  let ab1;
+  try{ ab1 = await chamarIA(1, NPCS[1].abertura); }
+  catch(_){ ab1 = NPCS[1].aberturaFallback; }
+  iaPensando.style.display='none';
+  await mostrarNPC(1, ab1, {pedirContinuar:true});
+
+  // Foco volta para Gregoras, libera interação
+  selecionarNpc(0);
+  document.getElementById('btn-ir-castelo').style.display = '';
+  msgInput.disabled=false; btnEnviar.disabled=false;
+}
+
+// ── EVENT LISTENERS ──
+document.getElementById('cfg-salvar').addEventListener('click', () => {
+  const v = document.getElementById('cfg-input').value.trim();
+  if(!v) return;
+  localStorage.setItem('oraculo.groqKey', v);
+  cfgOverlay.classList.add('oculto');
+  iniciarCena();
+});
+btnEnviar.addEventListener('click', enviar);
+msgInput.addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();enviar();} });
+
+iniciarCena();
+</script>
+</body>
+</html>

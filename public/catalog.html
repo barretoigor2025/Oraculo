@@ -54,6 +54,21 @@
       font-weight: 400;
     }
     .header-top span { font-size: 10px; color: var(--text-dim); margin-left: auto; }
+    .btn-sim {
+      flex-shrink: 0; margin-left: auto;
+      background: rgba(200,160,64,0.13);
+      border: 1px solid rgba(200,160,64,0.38);
+      border-radius: 22px; padding: 6px 16px;
+      color: var(--gold2); font-family: inherit;
+      font-size: 11px; font-weight: 700; letter-spacing: .5px;
+      text-decoration: none; white-space: nowrap;
+      transition: background .2s, border-color .2s;
+    }
+    .btn-sim:hover {
+      background: rgba(200,160,64,0.24);
+      border-color: rgba(200,160,64,0.65);
+    }
+    .header-top span { margin-left: 10px; }
 
     .tabs { display: flex; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .tabs::-webkit-scrollbar { display: none; }
@@ -203,7 +218,6 @@
       position: fixed; inset: 0; z-index: 200;
       background: rgba(0,0,0,0.82);
       backdrop-filter: blur(4px);
-      overflow-y: auto;
       padding: 20px;
     }
     #modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
@@ -215,7 +229,10 @@
       margin: auto;
       overflow: hidden;
       box-shadow: 0 24px 80px rgba(0,0,0,0.9);
+      display: flex; flex-direction: column;
+      max-height: calc(100dvh - 40px);
     }
+    #modal-inner { overflow-y: auto; flex: 1; }
 
     .modal-header {
       display: flex; gap: 0;
@@ -347,9 +364,13 @@
     }
     .section-text span.em { color: var(--gold); font-style: italic; }
 
-    #modal-footer {
+    #modal-topbar {
       display: flex; align-items: center; gap: 6px;
-      padding: 10px 20px 18px;
+      padding: 10px 14px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.45);
+      position: sticky; top: 0; z-index: 5;
     }
     .modal-nav-btn {
       flex-shrink: 0; width: 38px; height: 38px;
@@ -621,6 +642,7 @@
 <header>
   <div class="header-top">
     <h1>⚔️ Oráculo — Catálogo de Personagens</h1>
+    <a class="btn-sim" href="index.html">🎮 Ambiente de Simulação</a>
     <span id="count-label"></span>
   </div>
   <nav class="tabs">
@@ -656,13 +678,13 @@
 <!-- Modal -->
 <div id="modal-overlay">
   <div id="modal">
-    <div id="modal-inner"></div>
-    <div id="modal-footer">
-      <button class="modal-nav-btn" id="modal-prev" onclick="navModal(-1)">‹</button>
+    <div id="modal-topbar">
+      <button id="modal-close" onclick="closeModal()">‹ Voltar</button>
       <span id="modal-nav-label"></span>
+      <button class="modal-nav-btn" id="modal-prev" onclick="navModal(-1)">‹</button>
       <button class="modal-nav-btn" id="modal-next" onclick="navModal(+1)">›</button>
-      <button id="modal-close" onclick="closeModal()">✕ Fechar</button>
     </div>
+    <div id="modal-inner"></div>
   </div>
 </div>
 
@@ -1166,6 +1188,8 @@ window.navModal = function(dir){
 function openModal(){
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+  const inner = document.getElementById('modal-inner');
+  if(inner) inner.scrollTop = 0;
 }
 window.closeModal = function(){
   document.getElementById('modal-overlay').classList.remove('open');
@@ -1615,27 +1639,53 @@ function buildSizeTab(){
     ctx.fillStyle='rgba(10,8,4,0.88)';
     ctx.fillRect(RULER_W, 0, canvasW-RULER_W, baseY+4);
 
-    // Linhas de hex-height + régua
-    for(let n=0; n<=MAX_HEX_LINES; n++){
-      const lineY = baseY - n*hexDisp;
+    // ── Grid métrico: 10cm fino · ênfase 1m e 1.5m ──────────────────
+    const pxPerM  = hexDisp / 1.5;          // pixels por metro (1 hex = 1.5 m)
+    const totalCm = MAX_HEX_LINES * 150;    // cm totais visíveis
+    // Granularidade adaptativa ao zoom
+    const incCm = _zoom >= 1.0 ? 10 : (_zoom >= 0.65 ? 50 : 100);
+    for(let cm = 0; cm <= totalCm; cm += incCm){
+      const lineY = baseY - cm / 100 * pxPerM;
+      if(lineY < TOP_PAD - 4) break;
+      const isBase = cm === 0;
+      const at150  = cm > 0 && cm % 150 === 0;  // 1.5 m, 3 m, 4.5 m…
+      const at100  = cm > 0 && cm % 100 === 0 && !at150; // 1 m, 2 m (não 3 m)
+      const at50   = cm > 0 && cm % 50  === 0 && !at100 && !at150; // 0.5 m, 2.5 m
+      // – linha horizontal –
       ctx.beginPath();
       ctx.moveTo(RULER_W, lineY); ctx.lineTo(canvasW, lineY);
-      ctx.strokeStyle = n===0 ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)';
-      ctx.lineWidth   = n===0 ? 1.5 : 0.8;
+      if(isBase){
+        ctx.strokeStyle = 'rgba(255,255,255,0.90)'; ctx.lineWidth = 1.5;
+      } else if(at150){
+        ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 1.2;
+      } else if(at100){
+        ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.0;
+      } else if(at50){
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 0.7;
+      } else {
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 0.5;
+      }
       ctx.stroke();
-      if(n>0){
-        ctx.font='7px Georgia'; ctx.textAlign='right';
-        ctx.fillStyle='rgba(200,165,80,0.55)';
-        ctx.fillText(n===1?'1 hex':`${n}×`, RULER_W-5, lineY+3);
+      // – rótulo e tick da régua –
+      ctx.font = '7px Georgia'; ctx.textAlign = 'right';
+      if(isBase){
+        ctx.fillStyle = 'rgba(200,165,80,0.50)';
+        ctx.fillText('0m', RULER_W-5, lineY-2);
+      } else if(at150 || at100){
+        const m = cm / 100;
+        const lbl = Number.isInteger(m) ? `${m}m` : `${m.toFixed(1)}m`;
+        ctx.fillStyle = at150 ? 'rgba(230,210,150,0.82)' : 'rgba(200,165,80,0.62)';
+        ctx.fillText(lbl, RULER_W-5, lineY+3);
         ctx.beginPath();
-        ctx.moveTo(RULER_W-5,lineY); ctx.lineTo(RULER_W,lineY);
-        ctx.strokeStyle='rgba(200,165,80,0.4)'; ctx.lineWidth=1; ctx.stroke();
+        ctx.moveTo(RULER_W-5, lineY); ctx.lineTo(RULER_W, lineY);
+        ctx.strokeStyle = at150 ? 'rgba(230,210,150,0.55)' : 'rgba(200,165,80,0.40)';
+        ctx.lineWidth = 1; ctx.stroke();
+      } else if(at50 && _zoom >= 0.8){
+        ctx.beginPath();
+        ctx.moveTo(RULER_W-3, lineY); ctx.lineTo(RULER_W, lineY);
+        ctx.strokeStyle = 'rgba(200,165,80,0.22)'; ctx.lineWidth = 0.8; ctx.stroke();
       }
     }
-    // Label "base"
-    ctx.font='7px Georgia'; ctx.textAlign='right';
-    ctx.fillStyle='rgba(200,165,80,0.4)';
-    ctx.fillText('base', RULER_W-5, baseY+3);
 
     // Linha divisória de régua
     ctx.beginPath();

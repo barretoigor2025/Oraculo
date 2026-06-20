@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Oráculo — Diálogo de Cena</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,serif;color:#e8d5a8;user-select:none;-webkit-user-select:none}
+
+/* ── Largura padrão dos personagens — usada por AMBOS o char e o balão ── */
+:root{ --char-w: clamp(130px, 32vw, 200px); }
+
+/* ── CENA ── */
+#cena-bg{
+  position:fixed;inset:0;
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+}
+#cena-bg::after{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 50% 62%, transparent 28%, rgba(0,0,0,0.52) 100%),
+    linear-gradient(to bottom, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.66) 92%);
+}
+
+/* ── PERSONAGENS — só imagens, sem balões ── */
+#personagens{
+  position:fixed;
+  bottom:94px; left:0; right:0;   /* pés logo acima da barra de chips */
+  height:clamp(180px,32vh,320px);
+  pointer-events:none;
+  overflow:hidden;
+  z-index:5;
+}
+
+/* NPC — canvas já recortado no contorno: cola no canto e no chão,
+   corpo inteiro, sem cortar nada */
+.par-npc{
+  position:absolute;
+  bottom:0; left:0;
+  width:auto;            /* largura = largura natural do canvas recortado */
+  height:100%;
+  transform:translateX(-130%);
+  transition:
+    transform 0.52s cubic-bezier(0.32,0.72,0,1),
+    opacity   0.32s ease,
+    filter    0.32s ease;
+  /* sombra no container, não no canvas — evita layer GPU isolado que
+     impede o canvas transparente de compor com o fundo da cena */
+  filter:drop-shadow(0 10px 28px rgba(0,0,0,0.92)) brightness(1) saturate(1);
+}
+.par-npc.dentro{ transform:translateX(0); }
+.par-npc.inativo{ opacity:0.28; filter:drop-shadow(0 0 0 rgba(0,0,0,0)) brightness(0.45) saturate(0.35); }
+
+/* NPCs espelhados (olhar para dentro) e SEM fade — aparecem por completo */
+.par-npc .char-img{
+  transform:scaleX(-1);
+  -webkit-mask-image:none;
+  mask-image:none;
+}
+
+/* Player — standee removido da cena, representado por card de texto */
+#par-player{ display:none; }
+
+/* Imagens de personagem compartilham o mesmo estilo */
+.char-img{
+  display:block;
+  width:100%; height:100%;
+  object-fit:cover; object-position:top center;
+  -webkit-mask-image:
+    linear-gradient(to bottom, black 52%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, black 9%, black 91%, transparent 100%);
+  -webkit-mask-composite:source-in;
+  mask-image:
+    linear-gradient(to bottom, black 52%, transparent 100%),
+    linear-gradient(to right,  transparent 0%, black 9%, black 91%, transparent 100%);
+  mask-composite:intersect;
+}
+/* canvas (standee) não usa object-fit — dimensões já definidas pelo JS;
+   filter:none garante que o canvas não crie layer GPU próprio */
+canvas.char-img{
+  width:auto; height:100%;
+  object-fit:unset; object-position:unset;
+  filter:none;
+}
+.char-fallback{
+  width:100%; height:100%;
+  display:flex; align-items:flex-start; justify-content:center;
+  padding-top:16px; font-size:clamp(36px,8vw,54px);
+  -webkit-mask-image:linear-gradient(to bottom,black 50%,transparent 100%);
+  mask-image:linear-gradient(to bottom,black 50%,transparent 100%);
+}
+
+/* ══════════════════════════════════════════════════════
+   BALÃO — flutua no TOPO, acima das cabeças
+   ══════════════════════════════════════════════════════ */
+#balao-ativo{
+  position:fixed;
+  top: 72px;
+  left: 12px; right: 12px;
+
+  background:rgba(7,3,1,0.91);
+  border:1px solid rgba(190,140,35,0.44);
+  border-radius:16px;
+  padding:13px 16px 14px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 4px 32px rgba(0,0,0,0.82);
+
+  opacity:0;
+  transform:translateY(-6px) scale(0.98);
+  transition:opacity 0.28s ease, transform 0.28s ease;
+  pointer-events:none;
+  z-index:200;
+}
+#balao-ativo.visivel{
+  opacity:1; transform:translateY(0) scale(1);
+  pointer-events:all;
+}
+/* Player: apenas muda a cor do nome — posição sempre igual */
+#balao-ativo.player-fala #balao-nome{ color:rgba(110,160,230,0.85); }
+
+#balao-nome{
+  font-size:9px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase;
+  color:rgba(190,140,35,0.80); margin-bottom:6px;
+}
+#balao-acao{
+  font-size:11px; color:rgba(185,160,85,0.58);
+  font-style:italic; line-height:1.40; margin-bottom:5px; display:none;
+}
+#balao-texto{
+  font-size:clamp(13px,3.6vw,15.5px);
+  color:rgba(240,218,162,0.96); line-height:1.66; font-style:italic;
+}
+#btn-continuar{
+  display:none; margin-top:11px; margin-left:auto; width:fit-content;
+  background:rgba(190,140,35,0.18); border:1px solid rgba(190,140,35,0.48);
+  border-radius:22px; padding:5px 18px;
+  color:#f5d878; font-family:Georgia,serif; font-size:11px; font-weight:700;
+  cursor:pointer; letter-spacing:.3px; pointer-events:all;
+  animation:pulse-btn 1.8s ease-in-out infinite;
+}
+@keyframes pulse-btn{
+  0%,100%{box-shadow:0 0 0 0 rgba(190,140,35,0.35);}
+  50%     {box-shadow:0 0 0 7px rgba(190,140,35,0);}
+}
+
+/* ── CARD DO PLAYER — pilha de falas (1+ jogadores), some só quando o NPC responde ── */
+#player-card{
+  position:fixed;
+  top:72px; left:12px; right:12px;
+  display:flex; flex-direction:column; gap:8px;
+  opacity:0; pointer-events:none;
+  transform:translateY(-6px) scale(0.98);
+  transition:opacity 0.28s ease, transform 0.28s ease;
+  z-index:200;
+}
+#player-card.visivel{ opacity:1; transform:translateY(0) scale(1); pointer-events:all; }
+
+.pc-fala{
+  background:rgba(4,8,20,0.92);
+  border:1px solid rgba(100,155,220,0.40);
+  border-radius:14px;
+  padding:9px 13px 10px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 4px 32px rgba(0,0,0,0.82);
+  display:flex; align-items:center; gap:12px;
+}
+/* retrato RETANGULAR (não círculo) */
+.pc-retrato-wrap{
+  flex-shrink:0; width:44px; height:56px;
+  border-radius:8px; overflow:hidden;
+  border:1px solid rgba(100,155,220,0.35);
+  background:rgba(10,15,30,0.7);
+  display:flex; align-items:center; justify-content:center;
+}
+.pc-retrato-wrap img{ width:100%; height:100%; object-fit:cover; object-position:top center; }
+.pc-retrato-wrap .pc-emoji{ font-size:24px; }
+
+.pc-nome{
+  font-size:8px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase;
+  color:rgba(110,160,230,0.80); margin-bottom:5px;
+}
+.pc-texto{
+  font-size:clamp(13px,3.6vw,15px);
+  color:rgba(215,230,255,0.94); line-height:1.60; font-style:italic;
+}
+
+/* ── BOTÃO HISTÓRICO ── */
+#btn-historico{
+  position:fixed; top:12px; right:12px; z-index:300;
+  background:rgba(7,3,1,0.75); border:1px solid rgba(190,140,35,0.30);
+  border-radius:50%; width:38px; height:38px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px; cursor:pointer; backdrop-filter:blur(10px);
+  transition:border-color .2s, background .2s;
+}
+#btn-historico:hover{ background:rgba(40,25,5,0.90); border-color:rgba(190,140,35,0.60); }
+
+/* ── DRAWER DE HISTÓRICO ── */
+#historico-drawer{
+  position:fixed; inset:0; z-index:400;
+  background:rgba(4,2,1,0.96);
+  display:flex; flex-direction:column;
+  transition:opacity .22s ease, transform .22s ease;
+}
+#historico-drawer.oculto{ display:none; }
+
+#hd-header{
+  flex-shrink:0; padding:16px 18px 12px;
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid rgba(190,140,35,0.15);
+}
+#hd-titulo{ font-size:13px; font-weight:700; letter-spacing:.6px; color:#f5d878; }
+#hd-fechar{
+  background:none; border:none; color:rgba(190,165,90,0.6);
+  font-size:20px; cursor:pointer; padding:4px 8px;
+}
+
+#hd-corpo{
+  flex:1; overflow-y:auto; padding:14px 18px 24px;
+  display:flex; flex-direction:column; gap:10px;
+  scrollbar-width:thin; scrollbar-color:rgba(190,140,35,0.25) transparent;
+}
+
+.hd-entrada{
+  padding:8px 12px;
+  border-left:2px solid rgba(190,140,35,0.28);
+}
+.hd-entrada.player{ border-left-color:rgba(100,155,220,0.45); }
+.hd-entrada.acao{ border-left-color:rgba(185,160,85,0.25); padding:4px 12px; }
+
+.hd-quem{
+  font-size:8px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+  color:rgba(190,140,35,0.60); margin-bottom:4px;
+}
+.hd-entrada.player .hd-quem{ color:rgba(110,160,230,0.65); }
+.hd-entrada.acao .hd-quem{ display:none; }
+
+.hd-texto{
+  font-size:13px; color:rgba(220,195,140,0.88);
+  line-height:1.58; font-style:italic;
+}
+.hd-entrada.acao .hd-texto{
+  font-size:11px; color:rgba(185,160,85,0.52);
+}
+
+.hd-vazio{ font-size:13px; color:rgba(190,140,35,0.35); font-style:italic; text-align:center; padding:40px; }
+
+
+/* ── IA PENSANDO ── */
+#ia-pensando{
+  position:fixed;
+  bottom:106px;
+  left:50%; transform:translateX(-50%);
+  background:rgba(60,28,100,0.92); border:1px solid rgba(150,80,240,0.5);
+  border-radius:20px; padding:7px 18px; color:rgba(200,140,255,0.92);
+  font-size:12px; letter-spacing:.4px; z-index:300; display:none; white-space:nowrap;
+}
+
+/* ── CHIPS ── */
+#npc-chips{
+  position:fixed; bottom:58px; left:0; right:0; height:36px;
+  padding:0 12px; background:rgba(4,2,1,0.90);
+  border-top:1px solid rgba(190,140,35,0.12);
+  display:flex; align-items:center; gap:8px;
+  z-index:200; overflow-x:auto; scrollbar-width:none;
+}
+#npc-chips::-webkit-scrollbar{display:none;}
+.chip-label{ font-size:9px; letter-spacing:.6px; text-transform:uppercase; color:rgba(190,140,35,0.28); margin-right:4px; flex-shrink:0; }
+.chip-npc{
+  flex-shrink:0; padding:4px 14px;
+  border:1px solid rgba(190,140,35,0.24); border-radius:20px;
+  background:rgba(25,16,5,0.7); color:rgba(200,175,100,0.52);
+  font-size:11px; font-family:Georgia,serif; cursor:pointer; white-space:nowrap;
+  transition:background .2s,color .2s,border-color .2s;
+}
+.chip-npc.ativo{ background:rgba(190,140,35,0.20); border-color:rgba(190,140,35,0.58); color:#f5d878; }
+
+/* ── INPUT BAR ── */
+#input-bar{
+  position:fixed; bottom:0; left:0; right:0; height:58px;
+  padding:9px 12px max(9px,env(safe-area-inset-bottom));
+  background:rgba(4,2,1,0.95); border-top:1px solid rgba(190,140,35,0.18);
+  display:flex; align-items:center; gap:9px; z-index:200;
+}
+#msg-input{
+  flex:1; background:rgba(25,16,5,0.95);
+  border:1px solid rgba(190,140,35,0.28); border-radius:10px;
+  padding:10px 14px; color:#e8d5a8; font-family:Georgia,serif; font-size:14px; outline:none;
+}
+#msg-input::placeholder{ color:rgba(190,165,90,0.32); }
+#msg-input:focus{ border-color:rgba(190,140,35,0.52); }
+#msg-input:disabled{ opacity:0.45; }
+#btn-enviar{
+  flex-shrink:0; background:rgba(190,140,35,0.16);
+  border:1px solid rgba(190,140,35,0.42); border-radius:10px;
+  padding:10px 18px; color:#f5d878; font-family:Georgia,serif;
+  font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;
+}
+#btn-enviar:disabled{ opacity:0.38; cursor:default; }
+
+/* ── CONFIG ── */
+#cfg-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:500; }
+#cfg-overlay.oculto{ display:none; }
+#cfg-box{ background:#1a1208; border:1px solid rgba(190,140,35,0.38); border-radius:18px; padding:28px 24px; max-width:340px; width:90%; display:flex; flex-direction:column; gap:14px; }
+#cfg-titulo{ font-size:16px; font-weight:700; color:#f5d878; }
+#cfg-descr{ font-size:12px; color:rgba(200,175,100,0.65); line-height:1.55; }
+#cfg-input{ background:rgba(0,0,0,0.5); border:1px solid rgba(190,140,35,0.28); border-radius:8px; padding:10px 14px; color:#e8d5a8; font-family:monospace; font-size:13px; outline:none; width:100%; }
+#cfg-salvar{ background:rgba(190,140,35,0.22); border:1px solid rgba(190,140,35,0.48); border-radius:9px; padding:11px; color:#f5d878; font-family:Georgia,serif; font-weight:700; cursor:pointer; width:100%; font-size:14px; }
+</style>
+</head>
+<body>
+
+<div id="cena-bg"></div>
+
+<!-- Personagens: só NPCs -->
+<div id="personagens"></div>
+
+<!-- Balão NPC -->
+<div id="balao-ativo">
+  <div id="balao-nome">—</div>
+  <div id="balao-acao"></div>
+  <div id="balao-texto">…</div>
+  <button id="btn-continuar" onclick="_handleContinuar()">▶ Continuar</button>
+</div>
+
+<!-- Card do player: pilha de falas dos jogadores; permanece até o NPC responder -->
+<div id="player-card"></div>
+
+<!-- Botão de histórico -->
+<button id="btn-historico" onclick="_abrirHistorico()">📜</button>
+
+<!-- Drawer de histórico completo -->
+<div id="historico-drawer" class="oculto">
+  <div id="hd-header">
+    <span id="hd-titulo">📜 Histórico da Cena</span>
+    <button id="hd-fechar" onclick="_fecharHistorico();" >✕</button>
+  </div>
+  <div id="hd-corpo"></div>
+</div>
+
+<div id="ia-pensando">✨ Pensando…</div>
+
+<div id="npc-chips">
+  <span class="chip-label">Falar com:</span>
+</div>
+
+<div id="input-bar">
+  <input id="msg-input" type="text" placeholder="O que você diz…" autocomplete="off" spellcheck="false">
+  <button id="btn-enviar">Enviar →</button>
+</div>
+
+<div id="cfg-overlay" class="oculto">
+  <div id="cfg-box">
+    <div id="cfg-titulo">Chave da API Groq</div>
+    <div id="cfg-descr">Necessária para o NPC responder com IA. Guardada apenas neste dispositivo (localStorage).</div>
+    <input id="cfg-input" type="password" placeholder="gsk_..." autocomplete="off">
+    <button id="cfg-salvar">Salvar e iniciar →</button>
+  </div>
+</div>
+
+<script type="module">
+
+// ══════════════════════════════════════════════════════════
+//  CONFIG DA CENA
+// ══════════════════════════════════════════════════════════
+const CENA_BG = 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_ext.png';
+
+const NPCS = [
+  {
+    id:'gregoras', nome:'Grégoras Pellos', avatar:'⚔️',
+    img:'catalogo/mhoried/npcs/npc_gregoras_pellos/peca_tabuleiro/npc_gregoras_pellos_peca.png',
+    tipo:'standee',
+    personalidade:'Mercenário veterano de meia-idade, ex-soldado do exército de Mhoried. Cicatrizes e postura comunicam mais do que palavras. Leal até a morte com quem confia, perigoso com quem trai. Fala pouco e pesa cada palavra. Respeita força e honestidade acima de tudo. Humor seco difícil de perceber.',
+    conhecimentos:'Sabe que algo está errado em Gloamreach — pessoas desaparecem e voltam "diferentes". Conhece Finn Willowheel desde a infância. Desconfia do Rei Chutter mas não sabe por quê ainda. Está procurando alguém na feira e não quer revelar quem.',
+    formaDeFalar:'Frases curtas e diretas. Nunca desperdiça palavras. Quando suspeita de alguém, fica completamente quieto por um momento antes de responder. Usa termos militares ocasionalmente. Nunca elogia diretamente — demonstra aprovação com ação.',
+    reatividade: 0.10,
+    abertura:'(Você acaba de aparecer após os aventureiros vencerem uma batalha na feira. Diga sua frase de abertura — brevíssimo, impactante, máximo 2 frases.)',
+    aberturaFallback:'[ACAO: Um homem de cicatrizes cruza os braços e observa o grupo em silêncio.] Sobreviveram. Interessante.',
+    zBase:6, offsetPx:0, tipo:'standee',
+  },
+  {
+    id:'finn', nome:'Finn Willowheel', avatar:'🌿',
+    img:'catalogo/mhoried/npcs/npc_finn_willowheel/peca_tabuleiro/npc_finn_willowheel_peca.png',
+    tipo:'standee',
+    personalidade:'Meio-halfling comerciante jovem, animado e curioso. Vende ervas, temperos e itens curiosos. Observador nato — nota detalhes que outros ignoram. Parece inocente mas guarda segredos comerciais com astúcia. Amigo de longa data de Grégoras.',
+    conhecimentos:'Conhece quase todos os comerciantes da feira. Sabe que uma caixa misteriosa passou pela feira há dois dias — alguém pagou muito bem para que ninguém soubesse. Conhece atalhos por Phanourios e sabe onde ficam os Kobolds pacíficos.',
+    formaDeFalar:'Fala rápido e com entusiasmo. Usa muitas analogias com ervas e plantas. Ri fácil. Quando está com medo ou nervoso, começa a falar de tópicos aleatórios. Chama todo mundo de "amigo".',
+    reatividade: 0.42,
+    abertura:'(Os aventureiros acabaram de vencer uma batalha na feira. Você estava observando de perto. Faça uma observação animada e curiosa — brevíssimo, 1-2 frases.)',
+    aberturaFallback:'[ACAO: Finn ri e estende a mão para cumprimentar o grupo.] Que espetáculo, amigos! Nunca vi coisa assim desde que o velho Harmon dançou com três goblins de uma vez!',
+    zBase:5, offsetPx:0,
+  },
+  {
+    id:'mutter', nome:'Mutter Grimmhaar', avatar:'🧙‍♀️',
+    img:'catalogo/mhoried/npcs/npc_mutter_grimmhaar/peca_tabuleiro/npc_mutter_grimmhaar_peca.png',
+    tipo:'standee',
+    personalidade:'Velha feiticeira dos pântanos. Sobreviveu a quatro guerras, dois surtos de praga e um dragão. Tem a paciência de quem já viu tudo dar errado. Sua rudeza é economizadora de tempo, não crueldade. Chama todos de "criança" independente da idade. Quando encontra alguém novo, cheira-o lentamente como se saboreando informação.',
+    conhecimentos:'Sabe de praticamente tudo que acontece nos Blackwoods. Tem Gillshade e Greybane que o druida Mac Rónán precisa. Conhece o Gloamreach dos Thools. Sabe sobre os experimentos de Choir. Filho Wulfram lhe conta tudo. Tem um grimório que a Igreja destruiria. Veio à Feira de Phanourios vender poções e ingredientes raros.',
+    formaDeFalar:'Direta ao ponto, sem eufemismos. Às vezes fala em rimas imperfeitas. Usa metáforas macabras sobre ossos, podridão e sabor. Trata morte e veneno como tópicos domésticos. Ri de coisas que não são engraçadas. Usa "minha criança" ao se referir a qualquer adulto.',
+    reatividade: 0.20,
+    abertura:'(Você está vendendo poções numa banca na Feira. Os aventureiros acabaram de vencer uma batalha perto. Você os cheira de longe e faz sua observação inicial — brevíssima, macabra, máximo 2 frases.)',
+    aberturaFallback:'[ACAO: Mutter fecha os olhos e fareja o ar na direção dos aventureiros com prazer deliberado.] Hmm. Sangue novo e medo velho — cheiram como javali depois da chuva, minha criança.',
+    zBase:4, offsetPx:0,
+  },
+];
+
+const CLASS_AVATAR = {mago:'🔮',guerreiro:'⚔️',ladino:'🗡️',clerigo:'✝️',arqueiro:'🏹',druida:'🌿'};
+
+// ══════════════════════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════════════════════
+const classId     = localStorage.getItem('oraculo.classId')    || 'mago';
+const playerName  = localStorage.getItem('oraculo.playerName') || 'Aventureiro';
+const playerAvatar= CLASS_AVATAR[classId] || '🧙';
+
+let npcAtivo = 0;
+const historicos = NPCS.map(() => []);
+let animando = false;
+let _continuarResolve = null;
+
+// ── LOG COMPARTILHADO DA CENA ──
+const logCena = [];
+const MAX_LOG_CENA = 22;
+
+function registrarEvento(quem, texto, tipo='fala'){
+  if(!texto||texto.trim()==='---') return;
+  logCena.push({quem, texto:texto.trim(), tipo});
+  if(logCena.length>MAX_LOG_CENA) logCena.shift();
+}
+
+function _gerarContextoCena(npcIdx){
+  const nomesPresentes = NPCS.map(n=>n.nome).join(', ');
+  const linhas = logCena.length
+    ? logCena.map(e=>e.tipo==='acao'
+        ? `[${e.quem} ${e.texto}]`
+        : `${e.quem}: "${e.texto}"`
+      ).join('\n')
+    : '(a cena acaba de começar)';
+  return `QUEM ESTÁ PRESENTE NA CENA: ${nomesPresentes} e ${playerName} (o aventureiro).\nVocês estão no mesmo espaço e ouvem tudo que acontece ao redor.\n\nDIÁLOGOS E AÇÕES DA CENA (ordem cronológica):\n${linhas}`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  DOM
+// ══════════════════════════════════════════════════════════
+const cenaBg      = document.getElementById('cena-bg');
+const personagens = document.getElementById('personagens');
+const balaoAtivo  = document.getElementById('balao-ativo');
+const balaoNome   = document.getElementById('balao-nome');
+const balaoAcao   = document.getElementById('balao-acao');
+const balaoTexto  = document.getElementById('balao-texto');
+const btnContinuar= document.getElementById('btn-continuar');
+const playerCard  = document.getElementById('player-card');
+const hdCorpo     = document.getElementById('hd-corpo');
+const npcChipsEl  = document.getElementById('npc-chips');
+const msgInput    = document.getElementById('msg-input');
+const btnEnviar   = document.getElementById('btn-enviar');
+const iaPensando  = document.getElementById('ia-pensando');
+const cfgOverlay  = document.getElementById('cfg-overlay');
+
+const npcEls = []; // {par}
+const parPlayer = document.getElementById('par-player'); // null — player usa card, não standee
+
+// ══════════════════════════════════════════════════════════
+//  SETUP
+// ══════════════════════════════════════════════════════════
+cenaBg.style.backgroundImage = `url(${CENA_BG})`;
+msgInput.placeholder = `O que você diz para ${NPCS[0].nome.split(' ')[0]}…`;
+
+// ── Identidade do jogador local (preparado para múltiplos jogadores) ──
+const PLAYER_LOCAL = {
+  nome: playerName,
+  avatar: playerAvatar,
+  retrato: `catalogo/mhoried/classes/${classId}/retrato/${classId}_retrato.png`,
+};
+
+// ══════════════════════════════════════════════════════════
+//  GERAR NPCs
+// ══════════════════════════════════════════════════════════
+NPCS.forEach((npc, i) => {
+  const par = document.createElement('div');
+  par.className = 'par-npc' + (i > 0 ? ' inativo' : '');
+  par.id = `par-npc-${i}`;
+  par.style.zIndex = String(npc.zBase);
+  par.style.left   = `${npc.offsetPx}px`;
+
+  if (npc.tipo === 'standee') {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'char-img';
+    _loadCanvas(npc.img, canvas);
+    par.appendChild(canvas);
+  } else {
+    const img = document.createElement('img');
+    img.className = 'char-img';
+    img.alt = npc.nome;
+    const fb = document.createElement('div');
+    fb.className = 'char-fallback'; fb.textContent = npc.avatar; fb.style.display='none';
+    img.onerror = () => { img.style.display='none'; fb.style.display='flex'; };
+    img.src = npc.img;
+    par.append(img, fb);
+  }
+
+  personagens.insertBefore(par, parPlayer);
+
+  // chip
+  const chip = document.createElement('button');
+  chip.className = 'chip-npc' + (i===0?' ativo':'');
+  chip.textContent = npc.nome.split(' ')[0];
+  chip.addEventListener('click', () => { if(!animando) selecionarNpc(i); });
+  npcChipsEl.appendChild(chip);
+
+  npcEls.push({ par });
+});
+
+// ══════════════════════════════════════════════════════════
+//  CANVAS + CHROMAKEY
+// ══════════════════════════════════════════════════════════
+function _loadCanvas(src, canvas, onOk, onErr) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    try {
+      const H=900, W=Math.round(H*img.naturalWidth/img.naturalHeight);
+      // Desenha + chromakey num canvas temporário
+      const tmp=document.createElement('canvas');
+      tmp.width=W; tmp.height=H;
+      const tctx=tmp.getContext('2d');
+      tctx.drawImage(img,0,0,W,H);
+      _cromachave(tctx,W,H);
+      // Recorta no contorno exato do personagem (bbox dos pixels opacos),
+      // assim ele cola no canto/chão sem margem transparente e sem cortar nada
+      const bb=_bboxOpaco(tctx,W,H);
+      const cw=bb.r-bb.l+1, ch=bb.b-bb.t+1;
+      canvas.width=cw; canvas.height=ch;
+      canvas.getContext('2d').drawImage(tmp, bb.l,bb.t,cw,ch, 0,0,cw,ch);
+      if(onOk) onOk(canvas);
+    } catch(_){ if(onErr) onErr(); }
+  };
+  img.onerror = () => { if(onErr) onErr(); };
+  img.src = src;
+}
+// Bounding box dos pixels visíveis (alpha > limiar)
+function _bboxOpaco(ctx,w,h){
+  const d=ctx.getImageData(0,0,w,h).data;
+  let l=w,r=-1,t=h,b=-1;
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      if(d[(y*w+x)*4+3] > 24){
+        if(x<l)l=x; if(x>r)r=x; if(y<t)t=y; if(y>b)b=y;
+      }
+    }
+  }
+  if(r<l||b<t) return {l:0,t:0,r:w-1,b:h-1};
+  return {l,t,r,b};
+}
+function _cromachave(ctx,w,h){
+  const id=ctx.getImageData(0,0,w,h),d=id.data;
+  // Pula se a imagem já tem transparência
+  for(let i=3;i<d.length;i+=4){ if(d[i]<230) return; }
+  // Amostrar mais pontos da borda para média mais precisa do fundo
+  const pts=[
+    [0,0],[w-1,0],[0,h-1],[w-1,h-1],
+    [Math.floor(w/2),0],[0,Math.floor(h/2)],
+    [w-1,Math.floor(h/2)],[Math.floor(w/2),h-1],
+  ];
+  let kr=0,kg=0,kb=0;
+  for(const[x,y]of pts){const b=(y*w+x)*4;kr+=d[b];kg+=d[b+1];kb+=d[b+2];}
+  kr=Math.round(kr/pts.length);kg=Math.round(kg/pts.length);kb=Math.round(kb/pts.length);
+  for(let i=0;i<d.length;i+=4){
+    const dist=Math.abs(d[i]-kr)+Math.abs(d[i+1]-kg)+Math.abs(d[i+2]-kb);
+    if(dist<52){
+      d[i+3]=0;                                    // totalmente transparente
+    } else if(dist<95){
+      d[i+3]=Math.round((dist-52)/43*255);          // borda suave gradual
+    }
+  }
+  ctx.putImageData(id,0,0);
+}
+
+// ══════════════════════════════════════════════════════════
+//  SELECIONAR NPC
+// ══════════════════════════════════════════════════════════
+function selecionarNpc(idx){
+  if(idx===npcAtivo) return;
+  npcAtivo=idx;
+  document.querySelectorAll('.chip-npc').forEach((c,i)=>c.classList.toggle('ativo',i===idx));
+  npcEls.forEach((el,i)=>{
+    const a=i===idx;
+    el.par.classList.toggle('inativo',!a);
+    el.par.style.zIndex=a?String(NPCS[i].zBase+2):String(NPCS[i].zBase);
+  });
+  msgInput.placeholder=`O que você diz para ${NPCS[idx].nome.split(' ')[0]}…`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  BALÃO (NPC) e CARD (player)
+// ══════════════════════════════════════════════════════════
+function _mostrarBalaoNPC({ nome, acao, texto, comContinuar=false }){
+  balaoNome.textContent = nome.toUpperCase();
+  if(acao){ balaoAcao.textContent=acao; balaoAcao.style.display='block'; }
+  else     { balaoAcao.style.display='none'; }
+  balaoTexto.textContent = texto;
+  btnContinuar.style.display = comContinuar ? 'block' : 'none';
+  playerCard.classList.remove('visivel');
+  balaoAtivo.classList.add('visivel');
+}
+
+// Acrescenta a fala de um jogador à pilha (suporta 2+ jogadores) e mantém
+// o card visível. A pilha só é limpa quando o NPC responde (_ocultarBalao).
+function _empilharFalaPlayer({ nome, avatar, retrato, texto }){
+  balaoAtivo.classList.remove('visivel');         // esconde balão do NPC, não o card
+  const row = document.createElement('div');
+  row.className = 'pc-fala';
+  const wrap = document.createElement('div');
+  wrap.className = 'pc-retrato-wrap';
+  const emoji = document.createElement('span');
+  emoji.className = 'pc-emoji'; emoji.textContent = avatar || '🧙';
+  wrap.appendChild(emoji);
+  if(retrato){
+    const img = document.createElement('img');
+    img.alt = nome; img.style.display='none';
+    img.onload  = () => { img.style.display='block'; emoji.style.display='none'; };
+    img.onerror = () => { img.remove(); };
+    img.src = retrato;
+    wrap.appendChild(img);
+  }
+  const body = document.createElement('div');
+  const nm = document.createElement('div'); nm.className='pc-nome'; nm.textContent = nome;
+  const tx = document.createElement('div'); tx.className='pc-texto'; tx.textContent = texto;
+  body.append(nm, tx);
+  row.append(wrap, body);
+  playerCard.appendChild(row);
+  playerCard.classList.add('visivel');
+}
+
+function _limparFalasPlayer(){
+  playerCard.classList.remove('visivel');
+  playerCard.innerHTML = '';
+}
+
+function _ocultarBalao(){
+  balaoAtivo.classList.remove('visivel');
+  _limparFalasPlayer();
+}
+
+// ══════════════════════════════════════════════════════════
+//  CONTINUAR
+// ══════════════════════════════════════════════════════════
+window._handleContinuar = function(){
+  btnContinuar.style.display='none';
+  if(_continuarResolve){ _continuarResolve(); _continuarResolve=null; }
+};
+
+// ══════════════════════════════════════════════════════════
+//  HISTÓRICO — exposto globalmente para o onclick funcionar
+// ══════════════════════════════════════════════════════════
+window._abrirHistorico = function(){
+  hdCorpo.innerHTML = logCena.length
+    ? logCena.map(e=>{
+        const cls = e.tipo==='acao' ? 'hd-entrada acao'
+                  : (e.quem===playerName ? 'hd-entrada player' : 'hd-entrada');
+        const txt = e.tipo==='acao' ? `[${e.quem} ${e.texto}]` : e.texto;
+        return `<div class="${cls}"><div class="hd-quem">${e.quem.toUpperCase()}</div><div class="hd-texto">${txt}</div></div>`;
+      }).join('')
+    : '<div class="hd-vazio">Nenhuma fala registrada ainda.</div>';
+  requestAnimationFrame(()=>{ hdCorpo.scrollTop = hdCorpo.scrollHeight; });
+  document.getElementById('historico-drawer').classList.remove('oculto');
+};
+
+window._fecharHistorico = function(){
+  document.getElementById('historico-drawer').classList.add('oculto');
+};
+function esperarContinuar(){
+  return new Promise(r=>{ _continuarResolve=r; });
+}
+
+// ══════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+function parsearFala(raw){
+  const m=raw.match(/\[ACAO:\s*([^\]]+)\]/i);
+  return { acao:m?.[1]?.trim()||null, fala:raw.replace(/\[ACAO:[^\]]+\]\s*/gi,'').trim() };
+}
+
+// ══════════════════════════════════════════════════════════
+//  ANIMAÇÕES
+// ══════════════════════════════════════════════════════════
+async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
+  const {acao,fala}=parsearFala(raw);
+  const npc=NPCS[npcIdx];
+
+  // Registrar no log compartilhado
+  if(acao) registrarEvento(npc.nome, acao, 'acao');
+  if(fala) registrarEvento(npc.nome, fala, 'fala');
+
+  _ocultarBalao(); await delay(120);
+
+  // Atualizar foco (dim/bright dos personagens)
+  npcAtivo=npcIdx;
+  document.querySelectorAll('.chip-npc').forEach((c,i)=>c.classList.toggle('ativo',i===npcIdx));
+  npcEls.forEach((el,i)=>{
+    const a=i===npcIdx;
+    el.par.classList.toggle('inativo',!a);
+    el.par.style.zIndex=a?String(NPCS[i].zBase+2):String(NPCS[i].zBase);
+  });
+
+  // Entrar NPCs que ainda não entraram
+  let entrou=false;
+  for(const el of npcEls){
+    if(!el.par.classList.contains('dentro')){ el.par.classList.add('dentro'); entrou=true; }
+  }
+  if(entrou) await delay(500);
+
+  _mostrarBalaoNPC({ nome:npc.nome, acao, texto:fala, comContinuar:pedirContinuar });
+  if(pedirContinuar) await esperarContinuar();
+}
+
+async function mostrarPlayer(texto, player=PLAYER_LOCAL){
+  registrarEvento(player.nome, texto, 'fala');
+  // Empilha a fala no card; ele permanece (acumulando 2+ jogadores) até o NPC responder
+  _empilharFalaPlayer({ nome:player.nome, avatar:player.avatar, retrato:player.retrato, texto });
+  await delay(450);
+}
+
+// ══════════════════════════════════════════════════════════
+//  IA (Groq)
+// ══════════════════════════════════════════════════════════
+async function chamarIA(npcIdx, mensagem){
+  const key=localStorage.getItem('oraculo.groqKey');
+  if(!key) throw new Error('sem-chave');
+  const npc=NPCS[npcIdx],hist=historicos[npcIdx];
+  const contextoCena = _gerarContextoCena(npcIdx);
+  const messages=[
+    { role:'system', content:
+`Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. NUNCA quebre o personagem.
+
+QUEM VOCÊ É: ${npc.personalidade}
+O QUE VOCÊ SABE (revele gradualmente): ${npc.conhecimentos}
+SUA FORMA DE FALAR: ${npc.formaDeFalar}
+
+${contextoCena}
+
+REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. [ACAO: desc] antes da fala para ações físicas visíveis. Se um objeto foi dado ou recebido na cena, você sabe e pode referenciá-lo. Reaja ao contexto da cena, não apenas à última fala.` },
+    ...hist,
+    { role:'user',content:mensagem },
+  ];
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), 18000);
+  try {
+    const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST', signal:controller.signal,
+      headers:{'Authorization':`Bearer ${key}`,'content-type':'application/json'},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:200,messages}),
+    });
+    const data=await resp.json();
+    if(data.error) throw new Error(data.error.message);
+    return data.choices?.[0]?.message?.content?.trim()||'…';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  REAÇÃO ESPONTÂNEA DE NPC (30% de chance após cada troca)
+// ══════════════════════════════════════════════════════════
+async function _verificarReacao(npcQueRespondeuIdx){
+  const outrosIdx = NPCS.map((_,i)=>i).filter(i=>i!==npcQueRespondeuIdx);
+  if(!outrosIdx.length) return;
+  // Escolher um NPC candidato aleatório entre os outros
+  const reatorIdx = outrosIdx[Math.floor(Math.random()*outrosIdx.length)];
+  const reator = NPCS[reatorIdx];
+  // Chance de reação é determinada pela personalidade do NPC, não por um parâmetro externo
+  if(Math.random() > (reator.reatividade ?? 0.20)) return;
+
+  const ultimosEventos = logCena.slice(-4)
+    .map(e=>e.tipo==='acao'?`[${e.quem} ${e.texto}]`:`${e.quem}: "${e.texto}"`).join('\n');
+  const prompt = `Você observou o que acabou de acontecer:\n${ultimosEventos}\n\nDado exatamente quem você é e seu jeito de ser, você diria algo agora? Se sim, reaja em 1 frase brevíssima e no seu estilo. Se não (porque você naturalmente ficaria em silêncio neste momento), responda exatamente "---".`;
+
+  try {
+    iaPensando.style.display='block';
+    const reacao = await chamarIA(reatorIdx, prompt);
+    iaPensando.style.display='none';
+    if(!reacao||reacao.trim().startsWith('---')) return;
+    historicos[reatorIdx].push({role:'user',content:prompt});
+    historicos[reatorIdx].push({role:'assistant',content:reacao});
+    await delay(300);
+    await mostrarNPC(reatorIdx, reacao, {pedirContinuar:false});
+  } catch(_){ iaPensando.style.display='none'; /* silencioso — reação é opcional */ }
+}
+
+// ══════════════════════════════════════════════════════════
+//  LOOP DE CONVERSA
+// ══════════════════════════════════════════════════════════
+async function enviar(){
+  const txt=msgInput.value.trim();
+  if(!txt||animando) return;
+  animando=true; msgInput.disabled=true; btnEnviar.disabled=true; msgInput.value='';
+
+  const target=npcAtivo;
+  await mostrarPlayer(txt);
+  historicos[target].push({role:'user',content:txt});
+  await delay(900);
+
+  iaPensando.style.display='block';
+  try{
+    const resp=await chamarIA(target,txt);
+    historicos[target].push({role:'assistant',content:resp});
+    iaPensando.style.display='none';
+    await mostrarNPC(target,resp,{pedirContinuar:true});
+    // Verificar se outro NPC quer reagir — só depois do usuário ler
+    await _verificarReacao(target);
+    // Restaurar foco no NPC que o jogador estava conversando
+    npcAtivo=target;
+    document.querySelectorAll('.chip-npc').forEach((c,i)=>c.classList.toggle('ativo',i===target));
+    msgInput.placeholder=`O que você diz para ${NPCS[target].nome.split(' ')[0]}…`;
+  }catch(e){
+    iaPensando.style.display='none';
+    if(e.message==='sem-chave'){
+      cfgOverlay.classList.remove('oculto');
+    } else {
+      let motivo = 'Tente novamente.';
+      if(e.name==='AbortError') motivo = 'A IA demorou demais. Tente novamente.';
+      else if(e.message) motivo = e.message.slice(0,90);
+      await mostrarNPC(target,`[ACAO: Algo interfere na resposta.] ${motivo}`);
+    }
+  }
+  animando=false; msgInput.disabled=false; btnEnviar.disabled=false;
+  // Sem .focus() — teclado só abre quando o usuário tocar no campo
+}
+
+// ══════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════
+async function iniciarCena(){
+  if(!localStorage.getItem('oraculo.groqKey')){ cfgOverlay.classList.remove('oculto'); return; }
+  msgInput.disabled=true; btnEnviar.disabled=true;
+  await delay(700);
+
+  for(let i=0;i<NPCS.length;i++){
+    iaPensando.style.display='block';
+    let ab; try{ ab=await chamarIA(i,NPCS[i].abertura); }catch(_){ ab=NPCS[i].aberturaFallback; }
+    iaPensando.style.display='none';
+    await mostrarNPC(i,ab,{pedirContinuar:true});
+  }
+
+  selecionarNpc(0);
+  msgInput.disabled=false; btnEnviar.disabled=false;
+  // Sem .focus() — teclado só abre quando o usuário tocar no campo
+}
+
+// ── CFG ──
+document.getElementById('cfg-salvar').addEventListener('click',()=>{
+  const v=document.getElementById('cfg-input').value.trim();
+  if(!v) return;
+  localStorage.setItem('oraculo.groqKey',v);
+  cfgOverlay.classList.add('oculto');
+  iniciarCena();
+});
+btnEnviar.addEventListener('click',enviar);
+msgInput.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();enviar();} });
+
+iniciarCena();
+</script>
+</body>
+</html>

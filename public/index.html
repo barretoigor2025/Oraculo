@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Oráculo — Mhoried</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{min-height:100%;background:#050302;font-family:Georgia,serif;color:#e8d5a8;}
+body{
+  min-height:100vh;
+  background:
+    linear-gradient(to bottom, rgba(3,1,0,0.30) 0%, rgba(3,1,0,0.62) 55%, rgba(3,1,0,0.90) 100%),
+    url('catalogo/mhoried/cenarios/conversacao/castelo_mhoried/imagem/castelo_ext.png') center/cover no-repeat fixed;
+  display:flex; flex-direction:column; align-items:center;
+  padding:max(24px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
+  gap:24px;
+}
+
+/* ── HEADER ── */
+#header{
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding-top:8px;
+  text-align:center;
+}
+#header-icon{ font-size:42px; }
+#titulo{
+  font-size:clamp(32px,10vw,52px); font-weight:700;
+  letter-spacing:10px; text-transform:uppercase;
+  color:#f5d878;
+  text-shadow:0 0 40px rgba(245,216,120,0.35), 0 2px 12px rgba(0,0,0,0.9);
+}
+#subtitulo{
+  font-size:clamp(11px,3vw,14px); letter-spacing:2px;
+  color:rgba(200,175,100,0.60); font-style:italic;
+}
+
+/* ── CARD SETUP ── */
+#card-setup{
+  width:100%; max-width:420px;
+  background:rgba(7,4,1,0.82);
+  border:1px solid rgba(190,140,35,0.30);
+  border-radius:20px; padding:22px 20px;
+  display:flex; flex-direction:column; gap:16px;
+  backdrop-filter:blur(12px);
+}
+#setup-titulo{
+  font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  color:rgba(190,140,35,0.55); margin-bottom:2px;
+}
+#nome-input{
+  background:rgba(20,12,4,0.90);
+  border:1px solid rgba(190,140,35,0.28); border-radius:10px;
+  padding:11px 14px; color:#e8d5a8; font-family:Georgia,serif;
+  font-size:15px; outline:none; width:100%;
+  transition:border-color .2s;
+}
+#nome-input::placeholder{ color:rgba(190,165,90,0.32); }
+#nome-input:focus{ border-color:rgba(190,140,35,0.58); }
+
+#classes-titulo{
+  font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+  color:rgba(190,140,35,0.40);
+}
+#classes-grid{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+}
+.btn-classe{
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:10px 6px;
+  background:rgba(20,12,4,0.80);
+  border:1px solid rgba(190,140,35,0.18); border-radius:12px;
+  color:rgba(200,175,100,0.48); font-family:Georgia,serif;
+  font-size:11px; cursor:pointer;
+  transition:background .2s, border-color .2s, color .2s, box-shadow .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-classe .cl-emoji{ font-size:20px; }
+.btn-classe:hover{ background:rgba(50,30,5,0.80); border-color:rgba(190,140,35,0.38); }
+.btn-classe.selecionado{
+  background:rgba(190,140,35,0.16);
+  border-color:rgba(190,140,35,0.70);
+  color:#f5d878;
+  box-shadow:0 0 12px rgba(190,140,35,0.18);
+}
+
+/* ── ROOMS ── */
+#rooms{
+  width:100%; max-width:420px;
+  display:flex; flex-direction:column; gap:12px;
+}
+.room-card{
+  background:rgba(7,4,1,0.80);
+  border:1px solid rgba(190,140,35,0.22); border-radius:18px;
+  padding:18px 18px 16px;
+  display:flex; flex-direction:column; gap:10px;
+  cursor:pointer;
+  transition:border-color .2s, background .2s, box-shadow .2s;
+  -webkit-tap-highlight-color:transparent;
+  text-decoration:none; color:inherit;
+  backdrop-filter:blur(10px);
+}
+.room-card:hover{
+  border-color:rgba(190,140,35,0.50);
+  background:rgba(20,12,4,0.88);
+  box-shadow:0 4px 24px rgba(0,0,0,0.60);
+}
+.room-header{ display:flex; align-items:center; gap:10px; }
+.room-icon{ font-size:22px; }
+.room-nome{
+  font-size:clamp(14px,3.8vw,16px); font-weight:700;
+  color:#f5d878; letter-spacing:.3px;
+}
+.room-desc{
+  font-size:12px; color:rgba(200,175,100,0.52);
+  line-height:1.55; font-style:italic;
+}
+.room-badge{
+  align-self:flex-end;
+  font-size:11px; font-weight:700; letter-spacing:.5px;
+  color:rgba(245,216,120,0.75);
+  border:1px solid rgba(190,140,35,0.32); border-radius:20px;
+  padding:4px 14px;
+  background:rgba(190,140,35,0.10);
+  transition:background .2s, color .2s;
+}
+.room-card:hover .room-badge{
+  background:rgba(190,140,35,0.22);
+  color:#f5d878;
+}
+
+/* ── FOOTER ── */
+#footer{
+  font-size:9px; letter-spacing:1.5px; text-transform:uppercase;
+  color:rgba(190,140,35,0.22); padding-bottom:4px;
+}
+
+/* ── OVERLAY: ENTRANDO NA SALA ── */
+#entrando-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:#050302;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.35s ease;
+}
+#entrando-overlay.visivel{ opacity:1; pointer-events:all; }
+.ent-castle{ font-size:56px; }
+.ent-label{
+  font-size:11px; letter-spacing:3px; text-transform:uppercase;
+  color:rgba(190,140,35,0.50);
+}
+.ent-char{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:4px; }
+.ent-emoji{ font-size:42px; }
+.ent-nome{ font-size:clamp(20px,6vw,26px); font-weight:700; color:#f5d878; letter-spacing:.5px; }
+.ent-classe{ font-size:10px; color:rgba(200,175,100,0.50); letter-spacing:2px; text-transform:uppercase; }
+.ent-dots{ display:flex; gap:8px; margin-top:14px; }
+.ent-dot{
+  width:7px; height:7px; border-radius:50%; background:rgba(190,140,35,0.35);
+  animation:edot 1.2s ease-in-out infinite;
+}
+.ent-dot:nth-child(2){ animation-delay:.22s; }
+.ent-dot:nth-child(3){ animation-delay:.44s; }
+@keyframes edot{
+  0%,100%{ opacity:0.25; transform:scale(0.72); }
+  50%{ opacity:1; transform:scale(1.18); }
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-icon">🔮</div>
+  <div id="titulo">ORÁCULO</div>
+  <div id="subtitulo">O Mundo de Mhoried Aguarda</div>
+</div>
+
+<div id="card-setup">
+  <div id="setup-titulo">Seu Aventureiro</div>
+  <input id="nome-input" type="text" placeholder="Nome do aventureiro…" autocomplete="off" spellcheck="false">
+  <div id="classes-titulo">Escolha sua classe</div>
+  <div id="classes-grid">
+    <button class="btn-classe" data-id="guerreiro"><span class="cl-emoji">⚔️</span>Guerreiro</button>
+    <button class="btn-classe" data-id="mago"><span class="cl-emoji">🔮</span>Mago</button>
+    <button class="btn-classe" data-id="clerigo"><span class="cl-emoji">✝️</span>Clérigo</button>
+    <button class="btn-classe" data-id="ladino"><span class="cl-emoji">🗡️</span>Ladino</button>
+    <button class="btn-classe" data-id="arqueiro"><span class="cl-emoji">🏹</span>Arqueiro</button>
+    <button class="btn-classe" data-id="druida"><span class="cl-emoji">🌿</span>Druida</button>
+  </div>
+</div>
+
+<div id="rooms">
+  <a class="room-card" id="card-dialogo" href="#">
+    <div class="room-header">
+      <span class="room-icon">💬</span>
+      <span class="room-nome">Simulação de Diálogo</span>
+    </div>
+    <div class="room-desc">Feira de Phanourios → Castelo de Mhoried / Grégoras · Finn · Duquesa Catherine</div>
+    <span class="room-badge">Entrar →</span>
+  </a>
+  <a class="room-card" id="card-arena" href="#">
+    <div class="room-header">
+      <span class="room-icon">⚔️</span>
+      <span class="room-nome">Simulação de Batalha</span>
+    </div>
+    <div class="room-desc">Feira de Phanourios / 3 Espantalhos de Choir</div>
+    <span class="room-badge">Entrar →</span>
+  </a>
+</div>
+
+<div id="footer">Oráculo — Mhoried</div>
+
+<!-- Overlay: animação de entrada na sala -->
+<div id="entrando-overlay">
+  <div class="ent-castle">🏰</div>
+  <div class="ent-label">Entrando na sala de simulação</div>
+  <div class="ent-char">
+    <div class="ent-emoji" id="ent-emoji">⚔️</div>
+    <div class="ent-nome" id="ent-nome">—</div>
+    <div class="ent-classe" id="ent-classe">—</div>
+  </div>
+  <div class="ent-dots">
+    <div class="ent-dot"></div>
+    <div class="ent-dot"></div>
+    <div class="ent-dot"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const nomeInput  = document.getElementById('nome-input');
+  const btnClasses = document.querySelectorAll('.btn-classe');
+  let classeSelecionada = '';
+
+  const CLASS_EMOJI  = {guerreiro:'⚔️',mago:'🔮',clerigo:'✝️',ladino:'🗡️',arqueiro:'🏹',druida:'🌿'};
+  const CLASS_LABELS = {guerreiro:'Guerreiro',mago:'Mago',clerigo:'Clérigo',ladino:'Ladino',arqueiro:'Arqueiro',druida:'Druida'};
+
+  // Pré-preencher do localStorage
+  const savedNome   = localStorage.getItem('oraculo.playerName');
+  const savedClasse = localStorage.getItem('oraculo.classId');
+  if(savedNome)  nomeInput.value = savedNome;
+  if(savedClasse){
+    classeSelecionada = savedClasse;
+    btnClasses.forEach(b => b.classList.toggle('selecionado', b.dataset.id === savedClasse));
+  }
+
+  // Seleção de classe
+  btnClasses.forEach(btn => {
+    btn.addEventListener('click', () => {
+      classeSelecionada = btn.dataset.id;
+      btnClasses.forEach(b => b.classList.toggle('selecionado', b === btn));
+    });
+  });
+
+  function mostrarEntrando(nome, classe, destino){
+    document.getElementById('ent-emoji').textContent  = CLASS_EMOJI[classe]  || '⚔️';
+    document.getElementById('ent-nome').textContent   = nome;
+    document.getElementById('ent-classe').textContent = CLASS_LABELS[classe] || classe;
+    requestAnimationFrame(() =>
+      document.getElementById('entrando-overlay').classList.add('visivel')
+    );
+    setTimeout(() => { window.location.href = destino; }, 1700);
+  }
+
+  function salvarEIr(destino){
+    const nome   = nomeInput.value.trim() || 'Aventureiro';
+    const classe = classeSelecionada || 'guerreiro';
+    localStorage.setItem('oraculo.playerName', nome);
+    localStorage.setItem('oraculo.classId',    classe);
+    mostrarEntrando(nome, classe, destino);
+  }
+
+  document.getElementById('card-dialogo').addEventListener('click', e => {
+    e.preventDefault();
+    salvarEIr('lobby.html');
+  });
+
+  document.getElementById('card-arena').addEventListener('click', e => {
+    e.preventDefault();
+    salvarEIr('arena.html');
+  });
+})();
+</script>
+</body>
+</html>
