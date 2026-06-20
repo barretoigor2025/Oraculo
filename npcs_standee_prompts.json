@@ -1,0 +1,187 @@
+{
+  "instrucao_geral": "Gere uma ilustração de personagem no estilo de peça de tabuleiro de RPG de fantasia medieval (dark fantasy). REGRAS OBRIGATÓRIAS para TODAS as imagens: fundo verde chroma key puro (#00B140), personagem em corpo inteiro ou 3/4 corpo, SEM base, SEM sombra no chão, SEM moldura, SEM borda, iluminação dramática de cima levemente frontal, estilo painterly realista sombrio semelhante ao estilo Diablo / Dark Souls. O personagem deve estar centralizado e com espaço nas bordas. USE o retrato fornecido como referência visual para o rosto, expressão, equipamento e cores do personagem.",
+  "npcs": [
+    {
+      "id": "npc_aelar_eisenli",
+      "nome": "Aelar Eisenli",
+      "papel": "Elfa caçadora de recompensas / corretora de informações",
+      "prompt_arte": "Elfa de aparência jovem (muito mais velha do que parece), constituição atlética e elegante. Cabelo preto-azulado preso numa trança firme de combate. Olhos âmbar com expressão avaliadora e fria. Pele bronzeada com tom acinzentado élfico. Armadura de couro reforçado, capa de viagem verde-escura. Arco longo nas costas, espada fina no cinto. Postura de caçadora — alerta, calculista. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_aelar_eisenli/retrato/npc_aelar_eisenli_retrato.png"
+    },
+    {
+      "id": "npc_bishop_methodios",
+      "nome": "Bispo Methodios",
+      "papel": "Alto clérigo — devoto, limitado, genuinamente bom",
+      "prompt_arte": "Homem de ~60 anos, calvo com coroa de cabelo branco, barba branca bem aparada. Robes violeta ricos com bordados dourados, colar com símbolo religioso em âmbar. Rosto redondo e corado, olhos azul-claros bondosos. Postura ereta e autoritária de clérigo. Báculo de madeira nobre com topo esculpido em forma de pomba. Expressão de dignidade sacerdotal. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_bishop_methodios/retrato/npc_bishop_methodios_retrato.png"
+    },
+    {
+      "id": "npc_blunkin_esmaga_cranios",
+      "nome": "Blunkin Esmaga-Crânios",
+      "papel": "Rei goblin pomposo e pragmático",
+      "prompt_arte": "Criatura réptil-anfíbia baixa (~1m), corpo redondo e rechonchudo, pele alaranjada-avermelhada escamosa. Olhos amarelo-esverdeados esbugalhados, expressão pomposa e ridícula. Coroa torta de metal com pedras semipreciosas. Capa real roxa com bordas de pelo branco. Colar de dentes e amuletos. Cetro com crânio decorativo na ponta. Barriga protuberante, postura erguida de realeza absurda. Dark fantasy painterly cômico mas ameaçador. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_blunkin_esmaga_cranios/retrato/npc_blunkin_esmaga_cranios_retrato.png"
+    },
+    {
+      "id": "npc_catherine_laskaris",
+      "nome": "Duquesa Catherine Laskaris",
+      "papel": "Governante nobre — carrega peso invisível com dignidade",
+      "prompt_arte": "Mulher nobre de ~35 anos, traços mediterrâneos finos, pele oliva, olhos castanho-escuros penetrantes. Cabelo castanho-escuro com ondas naturais, solto sobre os ombros. Vestido roxo-escuro com bordados dourados na gola e mangas, capa bege-dourada. Postura ereta e digna, expressão serena mas determinada. Não usa armadura — usa poder. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_catherine_laskaris/retrato/npc_catherine_laskaris_retrato.png"
+    },
+    {
+      "id": "npc_choir_necromante",
+      "nome": "Choir, o Necromante",
+      "papel": "Necromante clínico e calculista — vê a morte como matéria-prima",
+      "prompt_arte": "Homem de meia-idade de aparência cadavérica, pele branco-acinzentada. Olhos encovados com íris amarelas. Cabelo escuro e fino preso para trás, calvície inicial. Robes negros com marcas rituais pintadas em branco no tecido. Mãos longas e pálidas em gesto de condução mágica. Expressão de desprezo intelectual permanente, como professor que considera os alunos muito abaixo dele. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_choir_necromante/retrato/npc_choir_necromante_retrato.png"
+    },
+    {
+      "id": "npc_drizzle",
+      "nome": "Drizzle (Kobold)",
+      "papel": "Kobold errante ansioso — abandonou o bando, busca pertencer",
+      "prompt_arte": "Kobold pequenino, escamas azul-brilhantes com manchas verdes, olhos enormes e inquietos. Extremamente magro. Veste roupas humanas roubadas que não servem bem — manga dobrada, cinto improvisado. Mochila pequena recheada de trecos humanos: bússola, botões, espelho partido, notas rabiscadas. Postura: curvado para frente, cabeça inclinada com curiosidade ansiosa, mão aberta e não-ameaçadora. Carinha de 'eu só queria fazer amigos'. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_drizzle/retrato/npc_drizzle_retrato.png"
+    },
+    {
+      "id": "npc_duque_oswald_thool",
+      "nome": "Duque Oswald (Thool)",
+      "papel": "Duque preso em corpo de ogre — o homem luta contra o monstro",
+      "prompt_arte": "Criatura ogre-like de ~2,5m, postura curvada, pele acinzentada e enrugada, músculos grosseiros. Expressão confusa e animalesca com vislumbre de consciência humana nos olhos — o homem ainda está lá dentro. Armadura de couro pesado mal ajustada para o tamanho. Marca de nascença visível no ombro — traço humano que permanece. Um dedo visivelmente diferente do resto. Tragédia e força em conflito na mesma figura. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_duque_oswald_thool/retrato/npc_duque_oswald_thool_retrato.png"
+    },
+    {
+      "id": "npc_dvalinn_anao",
+      "nome": "Dvalinn, o Anão",
+      "papel": "Anão ferreiro e guerreiro veterano — confiável, cansado, resiliente",
+      "prompt_arte": "Anão de ~1,45m, construção imponente e larga, ~150 anos (aparência de 40 humanos). Barba ruivo-acastanhada em duas tranças. Cabelo da mesma cor preso atrás. Armadura de viajante com amassados e arranhões de batalha recente. Machado pequeno no cinto. Expressão melancólica e cansada mas firme. Cicatrizes frescas de flecha no ombro. Olhos castanhos com peso profundo. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_dvalinn_anao/retrato/npc_dvalinn_anao_retrato.png"
+    },
+    {
+      "id": "npc_fariborz_piromante",
+      "nome": "Fariborz, o Piromante",
+      "papel": "Mago piromante obcecado — usa fogo como arte e não entende por que assusta as pessoas",
+      "prompt_arte": "Homem de ~30 anos com marcas extensas de queimaduras em metade do rosto e pescoço. Sem sobrancelhas, sem cílios. Crânio parcialmente careca em padrões de cicatriz. Olhos castanho-claros com brilho febril e maníaco. Robes cinzas chamuscados com manchas de fuligem. Dedos emitindo faíscas sutis. Expressão paranoica alternando com fascínio. Amuleto de gillshade escura no pescoço. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_fariborz_piromante/retrato/npc_fariborz_piromante_retrato.png"
+    },
+    {
+      "id": "npc_father_halric",
+      "nome": "Father Halric",
+      "papel": "Padre humilde — confidente de segredos, curador prático",
+      "prompt_arte": "Homem de ~55 anos, magro e nervoso, cabelo grisalho ralo em desalinho. Óculos redondos de lentes grossas no nariz. Robes de estudioso manchados de terra e sangue de animal. Cadernos e bolsas de couro. Mãos finas com tremor leve. Expressão permanente de preocupação gentil. Ervas medicinais prendendo os livros. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_father_halric/retrato/npc_father_halric_retrato.png"
+    },
+    {
+      "id": "npc_finn_willowheel",
+      "nome": "Finn Willowheel",
+      "papel": "Mercador de sapatos — sabe mais do que parece, rede de informação disfarçada de comércio",
+      "prompt_arte": "Homem idoso de ~70 anos, cabelo branco muito curto, rosto rosado com sorriso largo e afável. Avental de couro com bolsos cheios de ferramentas de sapateiro, fita métrica no cinto. Grande saca nas costas transbordando de sapatos, botas e sandálias de todas as cores. Olhos espertos e cheios de vida por trás do rosto inofensivo. Passo leve apesar da idade. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_finn_willowheel/retrato/npc_finn_willowheel_retrato.png"
+    },
+    {
+      "id": "npc_gregoras_pellos",
+      "nome": "Gregoras Pellos",
+      "papel": "Emissário da Duquesa — soldado profissional e frio",
+      "prompt_arte": "Homem de ~45 anos, constituição robusta e ombros largos. Cabelo castanho-escuro curto, barba de três dias, expressão séria e fechada. Armadura acolchoada azul-escura com detalhes em bronze, cinto largo com fivela de ferro. Maça de cabeça ferrada à cinta. Postura ereta de soldado que nunca sorri à toa. Olhar direto e avaliador. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_gregoras_pellos/retrato/npc_gregoras_pellos_retrato.png"
+    },
+    {
+      "id": "npc_hobbleboot_sam",
+      "nome": "Hobbleboot Sam",
+      "papel": "Estalajadeiro que viu tudo e guarda tudo na memória",
+      "prompt_arte": "Homem de ~50 anos, barba curta grisalha, cabelo castanho-acinzentado. Casaco de viajante marrom com capa verde desgastada. Bengala de madeira. Grande cesta nas costas com cogumelos, ervas e produtos da floresta. Rosto angular, expressão séria mas não hostil. Homem de poucas palavras acostumado a caminhar sozinho pelas matas. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_hobbleboot_sam/retrato/npc_hobbleboot_sam_retrato.png"
+    },
+    {
+      "id": "npc_jariella",
+      "nome": "Jariella",
+      "papel": "Líder de mercenários — perigosa, pragmática, sempre calculando",
+      "prompt_arte": "Elfa do mar, cabelo loiro-prateado longo e solto, pele com tom levemente azulado. Armadura negra intrincada com gravações de ondas marinhas. Tiara/viseira metálica ornamentada. Arco longo nas costas, espada longa na mão — movimentos fluidos como água. Expressão de quem calcula riscos constantemente. Bela e mortífera. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_jariella/retrato/npc_jariella_retrato.png"
+    },
+    {
+      "id": "npc_krink",
+      "nome": "Krink (Kobold)",
+      "papel": "Kobold estrategista autodenominado — usa palavras erradas com confiança absoluta",
+      "prompt_arte": "Kobold de ~1m, escamas azul-acinzentadas com manchas mais escuras, olhos amarelos sérios e alertas. Capa rota de viajante, bastão de madeira. Diferente dos outros kobolds: postura menos agachada, olhar direto e confiante de quem acha que é o ser mais inteligente da sala. Cicatriz diagonal no focinho. Expressão de estrategista que está sempre três jogadas à frente (ou acredita que está). Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_krink/retrato/npc_krink_retrato.png"
+    },
+    {
+      "id": "npc_mac_ronan",
+      "nome": "Mac Rónán, Alto Druida",
+      "papel": "Guardião dos Blackwoods — séculos de conhecimento, árbitro do equilíbrio",
+      "prompt_arte": "Druida extremamente idoso (~80 anos de aparência, muito mais velho na realidade). Cabelo branco longo e barba comprida com folhas, galhos e musgo entrelaçados naturalmente. Robes verdes em camadas com vegetação viva crescendo sobre o tecido. Pés descalços ou amarrados com cipó. Mãos com veias proeminentes em gesto sereno. Olhos cinza-esverdeados de sabedoria profunda. A floresta faz parte do corpo dele. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_mac_ronan/retrato/npc_mac_ronan_retrato.png"
+    },
+    {
+      "id": "npc_morwenna",
+      "nome": "Morwenna",
+      "papel": "Feiticeira selvagem — vê o que outros não veem, diz quando menos se espera",
+      "prompt_arte": "Jovem mulher de ~22 anos, pele pálida quase transparente, olhos castanho-claros com distância nos olhos — olha além do presente. Cabelo escuro em tranças desfeitas, roupa de aldeã simples rasgada e suja. Postura de quem vive entre o mundo visível e o invisível. Lábios levemente azulados. Expressão assustada e profética ao mesmo tempo. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_morwenna/retrato/npc_morwenna_retrato.png"
+    },
+    {
+      "id": "npc_muirenn",
+      "nome": "Muirenn",
+      "papel": "Curandeira druida — observa mais do que fala, guarda segredos da floresta",
+      "prompt_arte": "Jovem mulher celta de ~22 anos, cabelo castanho comprido ondulado com pequenas tranças rituais nas laterais. Olhos castanho-esverdeados com expressão atenta e cuidadosa. Roupas druidicas simples em tons de verde e terra, manta desgastada com elementos naturais costurados. Flores e ervas medicinais em mãos ou presas ao cinto. Postura reflexiva mas alerta. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_muirenn/retrato/npc_muirenn_retrato.png"
+    },
+    {
+      "id": "npc_murznut",
+      "nome": "Murznut (Kobold)",
+      "papel": "Kobold de poucas palavras — age mais do que fala, gentileza escondida atrás de cara de pedra",
+      "prompt_arte": "Kobold musculoso e compacto, escamas azul-escuras, expressão fechada e direta. Poucas palavras, muito peso no olhar. Veste roupas práticas de viajante. Postura compacta, braços cruzados ou mão no cabo de arma — não ameaçador, só preparado. Diferente de Krink: sem pose, sem teatralidade, apenas presença sólida. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_murznut/retrato/npc_murznut_retrato.png"
+    },
+    {
+      "id": "npc_mutter_grimmhaar",
+      "nome": "Mutter Grimmhaar",
+      "papel": "Velha feiticeira dos pântanos — poder antigo em embrulho de avó sinistral",
+      "prompt_arte": "Mulher alta e esbelta de idade ambígua (~50 anos de aparência, muito mais velha). Chapéu de bruxa enorme de aba larga e retorcida com penduricalhos de ossos e joias sombrias. Robes negros rasgados com elegância sinistra — deteriorados pelo tempo mas nunca vis. Cajado alto com gema púrpura em garras de metal negro. Pele pálida, traços afiados, sorriso que não alcança os olhos. Postura ereta e imponente. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_mutter_grimmhaar/retrato/npc_mutter_grimmhaar_retrato.png"
+    },
+    {
+      "id": "npc_principe_kalos",
+      "nome": "Príncipe Kalos",
+      "papel": "Príncipe élfico sombrio — lidera operação com desprezo olímpico por humanos",
+      "prompt_arte": "Elfo negro alto e esguio (~1,90m), pele cinza-escura, cabelo branco longo em trança lateral. Olhos vermelhos sem pupila, olhar penetrante. Feições angulosas aristocráticas. Armadura de comandante em couro negro com entalhes prateados em padrões de constelações. Postura altiva e porte régio. Leve sorriso que não alcança os olhos — desprezo polido. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_principe_kalos/retrato/npc_principe_kalos_retrato.png"
+    },
+    {
+      "id": "npc_rei_chutter",
+      "nome": "Rei Chutter",
+      "papel": "Ettin-feiticeiro — monstro colossal que se proclama rei legítimo",
+      "prompt_arte": "Criatura monstruosa de ~3m, pele cinza-pedra densa como rocha viva. Musculatura absurda — braços como troncos. Espinhos ósseos emergindo da cabeça e ombros. Tatuagem violeta no peito — símbolo de pacto mágico. Equipamento de couro pesado grosseiro. Expressão combinando inteligência traiçoeira com brutalidade absoluta. Postura de quem nunca precisou se defender. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_rei_chutter/retrato/npc_rei_chutter_retrato.png"
+    },
+    {
+      "id": "npc_ruzalka",
+      "nome": "Ruzalka",
+      "papel": "Espírito d'água — existe entre os mundos, vê passado e futuro igualmente",
+      "prompt_arte": "Espírito aquático feminino etéreo. Cabelo verde-azulado flutuante como se permanentemente debaixo d'água. Pele translúcida com reflexos de água parada — levemente transparente. Olhos brancos com brilho azulado, sem íris visível. Roupas de tecido aquático transparente como tecidas de correntes d'água. Pequenas bolhas aparecem ao redor dela quando fala. Presença etérea entre o mundo dos vivos e o dos espíritos. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_ruzalka/retrato/npc_ruzalka_retrato.png"
+    },
+    {
+      "id": "npc_valmorien",
+      "nome": "Valmorien",
+      "papel": "Comandante de elite dos Elfos Sombrios — elimina alvos, não trava conversas",
+      "prompt_arte": "Elfa negra jovem e ágil, pele cinza-escura com subtom avermelhado, cabelo curto em rabo de cavalo baixo. Traços afiados, olhos vermelhos estreitados em avaliação constante. Armadura de caçador em couro escuro e peles, arco longo às costas, faca curta sempre à mão. Postura compacta e atlética — corpo treinado para matar. Cicatriz sutil no queixo esquerdo. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_valmorien/retrato/npc_valmorien_retrato.png"
+    },
+    {
+      "id": "npc_wulfram_chifrado",
+      "nome": "Wulfram, o Chifrado",
+      "papel": "Guerreiro marcado por pacto sombrio — vive entre o mundo dos vivos e o dos espíritos",
+      "prompt_arte": "Homem robusto e imponente de ~40 anos. Chifres de cervo crescendo organicamente da testa — ramificados, com veludo, definitivamente parte do corpo. Cabelo escuro e desgrenhado, barba densa. Pele bronzeada pela floresta. Capa de peles de animais sobre armadura de couro grosseiro. Machado de batalha de lâmina larga. Olhos castanho-esverdeados que raramente piscam — olhar de quem está sempre em dois lugares ao mesmo tempo. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_wulfram_chifrado/retrato/npc_wulfram_chifrado_retrato.png"
+    },
+    {
+      "id": "npc_ysoria",
+      "nome": "Ysoria",
+      "papel": "Espírito corrompido — séculos de ressentimento destilados em poder e crueldade",
+      "prompt_arte": "Elfo negro de feições angulosas, pele cinza-esverdeada, cabelo escuro e volumoso. Olhos vermelhos com expressão permanentemente calculista. Equipamento de ranger/caçador em couro escuro e peles irregulares, manta rasgada sobre os ombros. Arco com corda de nervo animal e aljava nas costas. Movimentos silenciosos como predador — cada gesto deliberado. Expressão de quem considera todo ser vivo como presa potencial. Dark fantasy painterly. Fundo verde chroma key puro, sem base, sem sombra no chão.",
+      "retrato_url": "https://barretoigor2025.github.io/Oraculo/catalogo/mhoried/npcs/npc_ysoria/retrato/npc_ysoria_retrato.png"
+    }
+  ]
+}

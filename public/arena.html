@@ -98,13 +98,15 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   display:flex; align-items:stretch;
   padding:8px 10px 6px; gap:0;
   border-bottom:1px solid rgba(190,140,35,0.1);
+  overflow:hidden;
 }
 
 /* ── Portrait ── */
 #panel-portrait{
   flex-shrink:0;
+  width:52px;
   align-self:flex-start;
-  margin-right:10px;
+  margin-right:8px;
   border-radius:6px;
   overflow:hidden;
   display:flex; align-items:center; justify-content:center;
@@ -169,12 +171,13 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 
 /* ── Verb buttons (fixed 3) ── */
 #panel-verbs{
-  flex-shrink:0; width:clamp(84px,26vw,108px);
+  flex-shrink:0; width:84px;
   display:flex; flex-direction:column; gap:4px;
-  padding-left:8px; justify-content:center;
+  padding:0 6px; justify-content:center;
 }
 .verb-btn{
-  height:36px !important;
+  height:34px !important;
+  width:72px !important;
   border-radius:8px !important;
 }
 .verb-btn.inativo{ opacity:0.22 !important; }
@@ -2947,7 +2950,8 @@ function renderBottomPanel(){
       const s2active=['planejar_acao','acao_ativa'].includes(faseDoTurno);
       const s3active=faseDoTurno==='acao_pronta';
 
-      const movT=s1done?'✓ '+(planoMovimento?hexLabel(planoMovimento.col,planoMovimento.row):'sem mov'):'① Mover';
+      const _movDest=planoMovimento?.path?.[planoMovimento.path.length-1];
+      const movT=s1done?'✓ '+(_movDest?hexLabel(_movDest.col,_movDest.row):'sem mov'):'① Mover';
       const acT =s2done?'✓ '+(planoAtaque?.hab?.nome||'ação'):'② Ação';
       const tracker=`<span style="${s1done?clD:s1active?clA:clO}">${movT}</span>${sep}`+
                     `<span style="${s2done?clD:s2active?clA:clO}">${acT}</span>${sep}`+
@@ -2974,7 +2978,7 @@ function renderBottomPanel(){
       } else if(faseDoTurno==='planejar_acao'){
         elL.innerHTML=tracker;
         elBody.innerHTML=planoMovimento
-          ? `<span style="color:#a0d8a0">Movendo para ${hexLabel(planoMovimento.col,planoMovimento.row)}</span><br><span style="opacity:.65;font-size:9px">Escolha ATACAR ou AÇÃO</span>`
+          ? `<span style="color:#a0d8a0">Movendo para ${_movDest?hexLabel(_movDest.col,_movDest.row):'?'}</span><br><span style="opacity:.65;font-size:9px">Escolha ATACAR ou AÇÃO</span>`
           : `Escolha ATACAR ou AÇÃO`;
       } else if(faseDoTurno==='acao_ativa'){
         elL.innerHTML=tracker;
@@ -3503,7 +3507,7 @@ function initScale(){
     bp.style.position='fixed'; bp.style.bottom='0';
 
     const pp=document.getElementById('panel-portrait');
-    if(pp){ pp.style.width='44px'; pp.style.height='auto'; }
+    if(pp){ pp.style.width=''; pp.style.height=''; }
     document.getElementById('atk-panel').style.bottom='80px';
 
     const zb=document.getElementById('btn-zoom');
@@ -3535,10 +3539,8 @@ function initScale(){
     bp.style.top=mapScreenH+'px'; bp.style.height=panelH+'px';
     bp.style.position='fixed'; bp.style.bottom='';
 
-    const infoH=80;
-    const pw=Math.max(44,Math.min(68,Math.round(infoH*0.78)));
     const pp=document.getElementById('panel-portrait');
-    if(pp){ pp.style.width=pw+'px'; pp.style.height='auto'; }
+    if(pp){ pp.style.width=''; pp.style.height=''; }
     document.getElementById('atk-panel').style.bottom=(panelH+8)+'px';
 
     const zb=document.getElementById('btn-zoom');
