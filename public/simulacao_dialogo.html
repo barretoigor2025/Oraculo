@@ -802,6 +802,8 @@ function _mostrarBalaoNPC({ nome, acao, texto, comContinuar=false }){
 
 function _empilharFalaPlayer({ nome, avatar, retrato, texto }){
   balaoAtivo.classList.remove('visivel');
+  // In multiplayer show only the latest message (history is in the Histórico panel)
+  if(_modoMultiplayer) playerCard.innerHTML = '';
   const row = document.createElement('div');
   row.className = 'pc-fala';
   const wrap = document.createElement('div');
@@ -1028,8 +1030,10 @@ async function mostrarPlayer(texto, player=PLAYER_LOCAL){
 async function chamarIA(npcIdx, mensagem){
   const key = localStorage.getItem('oraculo.groqKey');
   if(!key) throw new Error('sem-chave');
-  const npc = NPCS[npcIdx], hist = historicos[npcIdx];
+  const hist = historicos[npcIdx];
   const contextoCena = _gerarContextoCena(npcIdx);
+  // Keep last 8 messages max — prevents token overflow on long sessions
+  const histTrimmed = hist.slice(-8);
   const messages = [
     { role:'system', content:
 `Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. NUNCA quebre o personagem.
@@ -1041,7 +1045,7 @@ SUA FORMA DE FALAR: ${npc.formaDeFalar}
 ${contextoCena}
 
 REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. [ACAO: desc] antes da fala para ações físicas visíveis. Se um objeto foi dado ou recebido na cena, você sabe e pode referenciá-lo. Reaja ao contexto da cena, não apenas à última fala.` },
-    ...hist,
+    ...histTrimmed,
     { role:'user', content:mensagem },
   ];
   const controller = new AbortController();
@@ -1238,12 +1242,13 @@ async function _mostrarPendingNpc(entry, comContinuar){
       ctxEl.style.display = 'none';
     }
 
-    // Populate and show NPC balloon (do NOT hide player card — keep context visible)
+    // Show NPC balloon; player card cleared (context shown in balao-contexto strip)
     balaoNome.textContent = npc.nome.toUpperCase();
     balaoAcao.textContent = acao || '';
     balaoAcao.style.display = acao ? 'block' : 'none';
     balaoTexto.textContent = fala;
-    playerCard.classList.remove('visivel'); // clear old player card stacking
+    playerCard.classList.remove('visivel');
+    playerCard.innerHTML = '';
     balaoAtivo.classList.add('visivel');
     btnContinuar.style.display = comContinuar ? 'block' : 'none';
   } finally {
@@ -1650,14 +1655,15 @@ async function enviar(){
         cfgOverlay.classList.remove('oculto');
       } else {
         let motivo = 'Tente novamente.';
-        if(e.name==='AbortError') motivo = 'A IA demorou demais. Tente novamente.';
+        if(e.name==='AbortError') motivo = 'A IA demorou demais. Tente de novo.';
         else if(e.message) motivo = e.message.slice(0,90);
-        await _appendLog({ quem:'sistema', texto:motivo, tipo:'sistema' });
-        await _sessaoRef.update({ iaPensando: false });
+        try { await _appendLog({ quem:'sistema', texto:motivo, tipo:'sistema' }); } catch(_){}
       }
+    } finally {
+      // Guarantee iaPensando is cleared no matter what
+      try { await _sessaoRef.update({ iaPensando: false }); } catch(_){}
+      animando = false;
     }
-
-    animando = false;
     // Note: turn advances via _handleContinuar after all pendingNpc are confirmed
   } else {
     // Solo mode
