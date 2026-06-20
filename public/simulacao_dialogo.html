@@ -117,6 +117,13 @@ canvas.char-img{
 }
 #balao-ativo.player-fala #balao-nome{ color:rgba(110,160,230,0.85); }
 
+#balao-contexto{
+  display:none;
+  font-size:9px; color:rgba(110,160,220,0.5);
+  font-style:italic; padding-bottom:7px; margin-bottom:7px;
+  border-bottom:1px solid rgba(110,160,220,0.12);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
 #balao-nome{
   font-size:9px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase;
   color:rgba(190,140,35,0.80); margin-bottom:6px;
@@ -428,6 +435,7 @@ canvas.char-img{
 
 <!-- Balão NPC -->
 <div id="balao-ativo">
+  <div id="balao-contexto"></div>
   <div id="balao-nome">—</div>
   <div id="balao-acao"></div>
   <div id="balao-texto">…</div>
@@ -600,6 +608,7 @@ let _unsubSnapshot = null;
 let _pingInterval = null;
 let _fbInitTimeout = null;
 let _displayingPending = false; // guard against concurrent pendingNpc renders
+let _lastPlayerFala = null;    // last player message for balloon context strip
 
 // Generate a stable ID for this browser session
 function _getMyId(){
@@ -1098,9 +1107,10 @@ async function entrarSessao(){
   _myNome = playerName;
   _myClassId = classId;
 
-  // Detect fresh start from lobby (prevents stale session reuse)
-  const freshStart = sessionStorage.getItem('oraculo.freshSimStart');
-  if(freshStart) sessionStorage.removeItem('oraculo.freshSimStart');
+  // Only the lobby HOST resets the session — other players always join
+  const isLobbyHost = sessionStorage.getItem('oraculo.isLobbyHost') === '1';
+  sessionStorage.removeItem('oraculo.isLobbyHost');
+  sessionStorage.removeItem('oraculo.freshSimStart'); // cleanup legacy key
 
   const myPlayerData = { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() };
 
@@ -1108,7 +1118,7 @@ async function entrarSessao(){
   let shouldGenerate = false;
   await _db.runTransaction(async tx => {
     const snap = await tx.get(_sessaoRef);
-    if(!snap.exists || freshStart){
+    if(!snap.exists || isLobbyHost){
       // Create/reset session — we are the host
       tx.set(_sessaoRef, {
         cena: 'feira',
@@ -1188,13 +1198,53 @@ async function _gerarAbertura(){
   });
 }
 
-// Show a pending NPC entry and THEN reveal Continuar — avoids the async race
-// where mostrarNPCLocal's internal delay overwrites the button state
+// Show a pending NPC entry with Continuar gate.
+// Unlike mostrarNPCLocal, this does NOT clear the player card so player context stays visible.
 async function _mostrarPendingNpc(entry, comContinuar){
   if(_displayingPending) return;
   _displayingPending = true;
   try {
-    await mostrarNPCLocal(entry.npcIdx, entry.texto);
+    const {acao, fala} = parsearFala(entry.texto);
+    const npc = NPCS[entry.npcIdx];
+
+    await delay(120);
+
+    // Highlight the active NPC
+    npcAtivo = entry.npcIdx;
+    document.querySelectorAll('.chip-npc').forEach(c => {
+      c.classList.toggle('ativo', parseInt(c.dataset.npcIdx) === entry.npcIdx);
+    });
+    NPCS.forEach((n, i) => {
+      if(!n.cenas.includes(cenaAtual)) return;
+      const a = (i === entry.npcIdx);
+      npcEls[i].par.classList.toggle('inativo', !a);
+      npcEls[i].par.style.zIndex = a ? String(n.zBase+2) : String(n.zBase);
+    });
+
+    // Bring NPCs into scene if not already
+    let entrou = false;
+    NPCS.forEach((n, i) => {
+      if(!n.cenas.includes(cenaAtual)) return;
+      if(!npcEls[i].par.classList.contains('dentro')){ npcEls[i].par.classList.add('dentro'); entrou = true; }
+    });
+    if(entrou) await delay(500);
+
+    // Context strip: show last player's message above NPC reply
+    const ctxEl = document.getElementById('balao-contexto');
+    if(_lastPlayerFala && ctxEl){
+      ctxEl.textContent = `${_lastPlayerFala.nome}: "${_lastPlayerFala.texto.slice(0,60)}${_lastPlayerFala.texto.length > 60 ? '…' : ''}"`;
+      ctxEl.style.display = 'block';
+    } else if(ctxEl){
+      ctxEl.style.display = 'none';
+    }
+
+    // Populate and show NPC balloon (do NOT hide player card — keep context visible)
+    balaoNome.textContent = npc.nome.toUpperCase();
+    balaoAcao.textContent = acao || '';
+    balaoAcao.style.display = acao ? 'block' : 'none';
+    balaoTexto.textContent = fala;
+    playerCard.classList.remove('visivel'); // clear old player card stacking
+    balaoAtivo.classList.add('visivel');
     btnContinuar.style.display = comContinuar ? 'block' : 'none';
   } finally {
     _displayingPending = false;
@@ -1271,8 +1321,7 @@ function _processar(data){
 async function _renderEntradas(entries){
   for(const e of entries){
     if(e.tipo === 'npc'){
-      // Multiplayer: NPC balloon is managed by pendingNpc/Continuar flow.
-      // Replaying confirmed entries here races with _mostrarPendingNpc → skip.
+      // Multiplayer: NPC balloon managed by pendingNpc/Continuar — skip replay here.
       if(!_modoMultiplayer){
         await mostrarNPCLocal(e.npcIdx, e.texto);
         await delay(200);
@@ -1280,6 +1329,8 @@ async function _renderEntradas(entries){
     } else if(e.tipo === 'player'){
       const av = CLASS_AVATAR[e.classId] || '⚔️';
       _empilharFalaPlayer({ nome: e.quem, avatar: av, retrato: null, texto: e.texto });
+      // Track for balloon context strip
+      if(_modoMultiplayer) _lastPlayerFala = { nome: e.quem, texto: e.texto };
       if(!_modoMultiplayer) await delay(150);
     }
   }
