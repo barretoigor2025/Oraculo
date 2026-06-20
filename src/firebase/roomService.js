@@ -57,6 +57,13 @@ export async function saveRoom(room) {
   await updateDoc(roomRef(room.id), room);
 }
 
+export async function startSimulation(roomId) {
+  await updateDoc(roomRef(roomId), {
+    status: 'simulation',
+    updatedAt: Date.now(),
+  });
+}
+
 export async function startNarration(roomId, cenaId = 'mhoried_market') {
   await updateDoc(roomRef(roomId), {
     status: 'narration',
