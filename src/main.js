@@ -1,6 +1,6 @@
 import './styles.css';
 import { CLASSES, standeeUrl, retratoUrl } from './data/classes.js';
-import { joinRoom, listenRoom, saveRoom, startNarration } from './firebase/roomService.js';
+import { joinRoom, listenRoom, saveRoom, startNarration, startSimulation } from './firebase/roomService.js';
 import { firebaseApp } from './firebase/config.js';
 import { startGame } from './game/turnSystem.js';
 
@@ -15,6 +15,7 @@ const session = {
   unsubscribe: null,
   isHost: false,
   onlineMode: false,
+  simulationMode: false,
 };
 localStorage.setItem('oraculo.playerId', session.playerId);
 
@@ -44,6 +45,12 @@ function goToNarration() {
   _persistSession();
   introOverlay.classList.add('fadeout');
   setTimeout(() => { window.location.href = 'narration.html'; }, 400);
+}
+
+function goToSimulation() {
+  _persistSession();
+  introOverlay.classList.add('fadeout');
+  setTimeout(() => { window.location.href = 'simulacao_dialogo.html'; }, 400);
 }
 
 // ── Canvas da landing ────────────────────────────────────────────────
@@ -394,6 +401,8 @@ async function enterRoom(roomId, isHost) {
       goToArena();
     } else if (!skipRedirect && room.status === 'narration') {
       goToNarration();
+    } else if (!skipRedirect && room.status === 'simulation') {
+      goToSimulation();
     } else {
       renderRoomPlayers(room);
     }
@@ -423,12 +432,22 @@ async function enterRoom(roomId, isHost) {
     btnNarracao.replaceWith(clone);
     clone.addEventListener('click', handleStartNarration);
   }
+
+  // Botão iniciar simulação de diálogo (só host vê, só em modo simulação)
+  const btnSimulacao = document.getElementById('btn-iniciar-simulacao');
+  if (btnSimulacao) {
+    const clone = btnSimulacao.cloneNode(true);
+    btnSimulacao.replaceWith(clone);
+    clone.addEventListener('click', handleStartSimulation);
+  }
 }
 
 function renderRoomPlayers(room) {
-  const list      = document.getElementById('room-player-list');
-  const waitMsg   = document.getElementById('room-wait-msg');
+  const list = document.getElementById('room-player-list');
+  const waitMsg = document.getElementById('room-wait-msg');
   const btnIniciar = document.getElementById('btn-iniciar');
+  const btnNarr = document.getElementById('btn-iniciar-narracao');
+  const btnSim = document.getElementById('btn-iniciar-simulacao');
   if (!list) return;
 
   const players = Object.values(room.players ?? {});
@@ -455,12 +474,15 @@ function renderRoomPlayers(room) {
       : 'Aguardando jogadores…';
   }
 
-  if (btnIniciar) {
-    btnIniciar.style.display = session.isHost && players.length >= 1 ? '' : 'none';
-  }
-  const btnNarr = document.getElementById('btn-iniciar-narracao');
-  if (btnNarr) {
-    btnNarr.style.display = session.isHost && players.length >= 1 ? '' : 'none';
+  const hostCanStart = session.isHost && players.length >= 1;
+  if (session.simulationMode) {
+    if (btnIniciar) btnIniciar.style.display = 'none';
+    if (btnNarr) btnNarr.style.display = 'none';
+    if (btnSim) btnSim.style.display = hostCanStart ? '' : 'none';
+  } else {
+    if (btnIniciar) btnIniciar.style.display = hostCanStart ? '' : 'none';
+    if (btnNarr) btnNarr.style.display = hostCanStart ? '' : 'none';
+    if (btnSim) btnSim.style.display = 'none';
   }
 }
 
@@ -493,6 +515,14 @@ async function handleStartNarration() {
   }
 }
 
+async function handleStartSimulation() {
+  try {
+    await startSimulation(session.roomId);
+  } catch (err) {
+    alert(`Erro ao iniciar simulação: ${err.message}`);
+  }
+}
+
 // ── Utils ─────────────────────────────────────────────────────────────
 
 function escapeHtml(v) {
@@ -504,5 +534,15 @@ function escapeHtml(v) {
 
 // ── Boot ──────────────────────────────────────────────────────────────
 
-showScreen('isc-landing');
-initLanding();
+const _urlParams = new URLSearchParams(window.location.search);
+if (_urlParams.get('sim') === '1') {
+  session.simulationMode = true;
+  session.onlineMode = true;
+  history.replaceState({}, '', window.location.pathname);
+  initLanding();
+  showScreen('isc-slots');
+  renderSlots();
+} else {
+  showScreen('isc-landing');
+  initLanding();
+}
