@@ -14,7 +14,7 @@ html,body{height:100%;overflow:hidden;background:#050302;font-family:Georgia,ser
 /* ── CENA ── */
 #cena-bg{
   position:fixed;inset:0;
-  background-size:cover;background-position:center;background-repeat:no-repeat;
+  background-size:cover;background-position:top center;background-repeat:no-repeat;
   transition:opacity 0.7s ease;
 }
 #cena-bg::after{
@@ -938,7 +938,7 @@ window.irAoCastelo = async function(){
 
   // 3. Troca cena
   cenaAtual = 'castelo';
-  cenaBgEl.style.backgroundImage = "url(catalogo/mhoried/cenarios/conversacao/castelo_mhoried/imagem/castelo_ext.png)";
+  cenaBgEl.style.backgroundImage = "url(catalogo/mhoried/cenarios/conversacao/castelo_mhoried/imagem/castelo_int.png)";
   cenaTituloEl.textContent = 'Castelo de Mhoried';
 
   // Esconde Finn
