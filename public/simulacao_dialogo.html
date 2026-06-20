@@ -119,9 +119,9 @@ canvas.char-img{
 
 #balao-contexto{
   display:none;
-  font-size:9px; color:rgba(110,160,220,0.5);
+  font-size:9px; color:rgba(255,255,255,0.88);
   font-style:italic; padding-bottom:7px; margin-bottom:7px;
-  border-bottom:1px solid rgba(110,160,220,0.12);
+  border-bottom:1px solid rgba(255,255,255,0.15);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 #balao-nome{
@@ -824,7 +824,7 @@ function _empilharFalaPlayer({ nome, avatar, retrato, texto }){
   const tx = document.createElement('div'); tx.className='pc-texto'; tx.textContent = texto;
   body.append(nm, tx);
   row.append(wrap, body);
-  playerCard.appendChild(row);
+  playerCard.prepend(row); // newest message on top
   playerCard.classList.add('visivel');
 }
 
