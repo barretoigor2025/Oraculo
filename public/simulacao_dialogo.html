@@ -599,6 +599,7 @@ let _renderedCount = 0;
 let _unsubSnapshot = null;
 let _pingInterval = null;
 let _fbInitTimeout = null;
+let _displayingPending = false; // guard against concurrent pendingNpc renders
 
 // Generate a stable ID for this browser session
 function _getMyId(){
@@ -1187,6 +1188,19 @@ async function _gerarAbertura(){
   });
 }
 
+// Show a pending NPC entry and THEN reveal Continuar — avoids the async race
+// where mostrarNPCLocal's internal delay overwrites the button state
+async function _mostrarPendingNpc(entry, comContinuar){
+  if(_displayingPending) return;
+  _displayingPending = true;
+  try {
+    await mostrarNPCLocal(entry.npcIdx, entry.texto);
+    btnContinuar.style.display = comContinuar ? 'block' : 'none';
+  } finally {
+    _displayingPending = false;
+  }
+}
+
 function _processar(data){
   _sessao = data;
 
@@ -1244,14 +1258,10 @@ function _processar(data){
   const pending = data.pendingNpc || [];
   const isMyTurn = data.turnoPlayerId === _myId;
   if(pending.length > 0 && !data.iaPensando && !data.gerandoAbertura && !animando){
-    const next = pending[0];
-    mostrarNPCLocal(next.npcIdx, next.texto);
-    // Show Continuar only for the turn player
-    btnContinuar.style.display = isMyTurn ? 'block' : 'none';
-  } else if(pending.length === 0 && !data.iaPensando && !data.gerandoAbertura){
-    // No pending — hide Continuar if it was showing for NPC gate
-    // (solo Continuar is managed separately via esperarContinuar)
-    if(_modoMultiplayer) btnContinuar.style.display = 'none';
+    // _mostrarPendingNpc awaits the display animation then sets btnContinuar correctly
+    _mostrarPendingNpc(pending[0], isMyTurn);
+  } else if(pending.length === 0 && !data.iaPensando && !data.gerandoAbertura && _modoMultiplayer){
+    btnContinuar.style.display = 'none';
   }
 
   // Turn UI
@@ -1363,8 +1373,7 @@ async function _executarTransicaoCastelLocal(){
     const pending = _sessao.pendingNpc || [];
     const isMyTurn = _sessao.turnoPlayerId === _myId;
     if(pending.length > 0 && !_sessao.iaPensando){
-      mostrarNPCLocal(pending[0].npcIdx, pending[0].texto);
-      btnContinuar.style.display = isMyTurn ? 'block' : 'none';
+      _mostrarPendingNpc(pending[0], isMyTurn);
     }
     _atualizarTurnoUI(_sessao);
   }
