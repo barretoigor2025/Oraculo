@@ -597,7 +597,7 @@ function registrarEvento(quem, texto, tipo='fala'){
 }
 
 // ── Multiplayer state ──
-const SCHEMA_V = 3;            // Death Note campaign — separate schema from Mhoried
+const SCHEMA_V = 4;            // Death Note campaign — separate schema from Mhoried
 const READ_IDX_KEY = 'oraculo.readIdx';   // localStorage key para ponteiro de leitura
 let _modoMultiplayer = false;
 let _db = null;
@@ -1241,14 +1241,36 @@ async function entrarSessao(){
   const prelogLen = presnap.exists ? (presnap.data().log || []).length : 0;
   _restaurarReadIdx(prelogLen);
 
-  // Se já lemos tudo de uma sessão anterior, mostra NPCs visíveis
+  // Se já lemos tudo de uma sessão anterior, a tela não pode ficar "morta"
+  // (NPC presente mas sem nada falando). Duas situações:
+  //   a) Ninguém conversou ainda (log = só a abertura) → rejoga a abertura.
+  //   b) Já houve conversa → reexibe a última fala de NPC como balão estático.
   if(_readIdx >= prelogLen && prelogLen > 0){
+    const logPrev = presnap.data().log || [];
+    const houveConversa = logPrev.some(b => b.tipo === 'player');
+
     NPCS.forEach((n, i) => {
       if(!n.cenas.includes(cenaAtual)) return;
       npcEls[i].par.classList.add('dentro');
       npcEls[i].par.classList.remove('inativo');
     });
-    selecionarNpc(0);
+
+    if(!houveConversa){
+      // Rejoga a abertura desde o começo
+      _readIdx = 0; _salvarReadIdx();
+    } else {
+      // Mostra a última fala de NPC parada na tela
+      let ultimoNpc = null;
+      for(let i = logPrev.length - 1; i >= 0; i--){
+        if(logPrev[i].tipo === 'npc'){ ultimoNpc = logPrev[i]; break; }
+      }
+      if(ultimoNpc){
+        await delay(400);
+        await mostrarNPCLocal(ultimoNpc.npcIdx, ultimoNpc.texto, { comContinuar:false });
+      } else {
+        selecionarNpc(0);
+      }
+    }
   }
 
   // Escuta o doc
