@@ -743,7 +743,8 @@
   </nav>
   <!-- Tabs Death Note -->
   <nav class="tabs" id="tabs-dn" style="display:none">
-    <button class="tab-btn-dn active" data-tab-dn="dn-personagens">Personagens</button>
+    <button class="tab-btn-dn active" data-tab-dn="dn-classes">Classes</button>
+    <button class="tab-btn-dn" data-tab-dn="dn-personagens">NPCs</button>
     <button class="tab-btn-dn" data-tab-dn="dn-regras">Regras</button>
     <button class="tab-btn-dn" data-tab-dn="dn-cenarios">Cenários</button>
   </nav>
@@ -768,6 +769,7 @@
   <div id="checklist-tab" class="tab-content mh-tab"></div>
   <div id="size-tab"      class="tab-content mh-tab"></div>
   <!-- Death Note tabs -->
+  <div id="dn-classes-tab"     class="tab-content dn-tab" style="display:none"></div>
   <div id="dn-personagens-tab" class="tab-content dn-tab" style="display:none"></div>
   <div id="dn-regras-tab"      class="tab-content dn-tab" style="display:none"></div>
   <div id="dn-cenarios-tab"    class="tab-content dn-tab" style="display:none"></div>
@@ -1281,6 +1283,7 @@ window.navModal = function(dir){
   if(_nav.type === 'classe')   openClassModal(id,  ni);
   if(_nav.type === 'npc')      openNpcModal(id,    ni);
   if(_nav.type === 'inimigo')       openEnemyModal(id,        ni);
+  if(_nav.type === 'dn-classe')     openDnClassModal(id,        ni);
   if(_nav.type === 'dn-personagem') openDnPersonagemModal(id, ni);
 };
 
@@ -1965,6 +1968,71 @@ function buildSizeTab(){
 //  DEATH NOTE — DADOS & TABS
 // ══════════════════════════════════════════════════════════════════════
 
+
+// ── DEATH NOTE: CLASSES JOGÁVEIS ──────────────────────────────────────
+const DN_CLASSES_DATA = {
+  detetive: {
+    nome:'Detetive', icon:'🔍', gender:'m',
+    maxHp:8, sp:115, mov:4, atk:2,
+    attrs:{INT:17,SAB:15,CAR:13,DES:12,CON:10,FOR:8},
+    feat:'Mestre da dedução e leitura de pistas. Bônus em testes de Insight contra Kira.',
+    cor:'#1a2a4a',
+    habs:[
+      {icon:'🔍',nome:'Leitura de Pistas',desc:'Analisa a cena — obtém informação oculta',dano:'—',tipo:'investigação',sp:0},
+      {icon:'🧠',nome:'Dedução Crítica',desc:'Ataque mental — expõe contradição do alvo',dano:'1d6+3',tipo:'mental',sp:20},
+      {icon:'👁️',nome:'Pressão Psicológica',desc:'Pressiona suspeito — -2 em defesas do alvo',dano:'—',tipo:'debuff',sp:15},
+    ],
+  },
+  agente: {
+    nome:'Agente de Campo', icon:'🔫', gender:'f',
+    maxHp:12, sp:75, mov:6, atk:4,
+    attrs:{DES:16,FOR:14,CON:13,INT:11,SAB:12,CAR:12},
+    feat:'Combatente tática. Maior movimento e resistência do grupo.',
+    cor:'#0d1e2e',
+    habs:[
+      {icon:'🥊',nome:'Golpe Tático',desc:'Ataque corpo a corpo preciso',dano:'1d8+3',tipo:'melee',sp:0},
+      {icon:'🔒',nome:'Prisão',desc:'Imobiliza o alvo por 1 turno',dano:'—',tipo:'controle',sp:15},
+      {icon:'🛡️',nome:'Cobertura',desc:'Posição defensiva — CA +2 e cobre aliado',dano:'—',tipo:'defesa',sp:10},
+    ],
+  },
+  analista: {
+    nome:'Analista', icon:'💻', gender:'m',
+    maxHp:6, sp:130, mov:3, atk:2,
+    attrs:{INT:18,SAB:13,DES:10,CAR:10,CON:9,FOR:7},
+    feat:'Especialista em informação. Revela dados ocultos e enfraquece inimigos digitalmente.',
+    cor:'#0a1a1a',
+    habs:[
+      {icon:'📡',nome:'Rastreamento Digital',desc:'Localiza e marca alvo — visível no mapa',dano:'—',tipo:'suporte',sp:10},
+      {icon:'💻',nome:'Hack',desc:'Sabota sistemas — área (raio 1), -DEF nos afetados',dano:'1d4+2',tipo:'área',sp:25},
+      {icon:'📊',nome:'Análise de Padrões',desc:'Revela o próximo movimento do inimigo',dano:'—',tipo:'investigação',sp:20},
+    ],
+  },
+  infiltrado: {
+    nome:'Infiltrado', icon:'🎭', gender:'m',
+    maxHp:8, sp:95, mov:6, atk:3,
+    attrs:{CAR:16,DES:15,INT:13,SAB:11,FOR:10,CON:10},
+    feat:'Mestre da enganação. Mobilidade elevada e habilidades sociais letais.',
+    cor:'#1a0d2e',
+    habs:[
+      {icon:'🎭',nome:'Identidade Falsa',desc:'Assume papel — ignora detecção por 2 turnos',dano:'—',tipo:'furtividade',sp:15},
+      {icon:'🗣️',nome:'Persuasão',desc:'Manipula alvo — força ação específica',dano:'—',tipo:'controle',sp:20},
+      {icon:'🗡️',nome:'Faca nas Sombras',desc:'Ataque surpresa — dano duplo furtivo',dano:'2d4+2',tipo:'melee',sp:10},
+    ],
+  },
+  perfiladora: {
+    nome:'Perfiladora', icon:'🧩', gender:'f',
+    maxHp:7, sp:110, mov:4, atk:2,
+    attrs:{SAB:17,INT:15,CAR:14,DES:11,CON:10,FOR:8},
+    feat:'Especialista em psicologia criminal. Detecta mentiras e enfraquece a mente inimiga.',
+    cor:'#2a0d1a',
+    habs:[
+      {icon:'🧩',nome:'Perfil Criminal',desc:'Mapeia fraquezas do alvo — +bônus todos aliados',dano:'—',tipo:'suporte',sp:15},
+      {icon:'🚨',nome:'Revelar Mentira',desc:'Expõe blefe ou disfarce — anula habilidade do alvo',dano:'—',tipo:'controle',sp:20},
+      {icon:'🌀',nome:'Manipulação Mental',desc:'Ataque psíquico — confunde alvo por 1 turno',dano:'1d6+2',tipo:'mental',sp:25},
+    ],
+  },
+};
+
 const DN_PERSONAGENS = [
   {
     id:'l_lawliet', nome:'L Lawliet', categoria:'aliado',
@@ -2085,6 +2153,97 @@ const DN_CENARIOS = [
 ];
 
 let _dnBuilt = false;
+
+
+// ── BUILD DN CLASSES TAB ──────────────────────────────────────────────
+function buildDnClassesTab(){
+  const tab = document.getElementById('dn-classes-tab');
+  const header = `<div class="section-header"><h2>Classes Jogáveis</h2><span class="count-badge">${Object.keys(DN_CLASSES_DATA).length} classes</span></div>`;
+  let cards = '<div class="card-grid">';
+  for(const [id, cls] of Object.entries(DN_CLASSES_DATA)){
+    const retUrl = `catalogo/death-note/classes/${id}/retrato/${id}_${cls.gender}_retrato.png`;
+    cards += `
+      <div class="card" onclick="openDnClassModal('${id}')">
+        <div class="card-portrait" style="background:linear-gradient(180deg,rgba(0,0,0,.4),${cls.cor}66)">
+          <span class="cat-badge cat-classe" style="top:6px;left:6px;right:auto">${cls.icon} Classe</span>
+          <img src="${retUrl}" alt="${cls.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          <span class="no-img" style="display:none">${cls.icon}</span>
+        </div>
+        <div class="card-body">
+          <div class="card-name">${cls.icon} ${cls.nome}</div>
+          <div class="stat-chips">
+            <span class="chip">❤️ ${cls.maxHp} PV</span>
+            <span class="chip">👢 MOV ${cls.mov}</span>
+            <span class="chip">🎲 d${cls.atk+4}</span>
+          </div>
+          <div class="card-sub" style="margin-top:6px">${cls.feat}</div>
+        </div>
+      </div>`;
+  }
+  cards += '</div>';
+  tab.innerHTML = header + cards;
+}
+
+window.openDnClassModal = function(id, _idx){
+  const cls = DN_CLASSES_DATA[id];
+  if(!cls) return;
+  const list = Object.keys(DN_CLASSES_DATA);
+  _setNav('dn-classe', list, _idx ?? list.indexOf(id));
+
+  const attrsHtml = Object.entries(cls.attrs).map(([k,v])=>`
+    <div class="attr-box">
+      <div class="av">${v}</div>
+      <div class="am">${mod(v)}</div>
+      <div class="ak">${k}</div>
+    </div>`).join('');
+
+  const habsHtml = cls.habs.map(h=>`
+    <div class="hab-row">
+      <span class="hab-icon">${h.icon}</span>
+      <div class="hab-info">
+        <div class="hab-nome">${h.nome}</div>
+        <div class="hab-desc">${h.desc}</div>
+        <div class="hab-tags">
+          ${h.dano!=='—'?`<span class="htag dano">⚔️ ${h.dano}</span>`:''}
+          ${h.sp>0?`<span class="htag sp">💠 ${h.sp} SP</span>`:''}
+          <span class="htag type">${h.tipo}</span>
+        </div>
+      </div>
+    </div>`).join('');
+
+  const pecaUrl = `catalogo/death-note/classes/${id}/peca_tabuleiro/${id}_${cls.gender}_peca.png`;
+  const standeeSlot = `<div class="modal-std-col">
+    <div class="modal-std-grid">
+      <img src="${pecaUrl}" alt="Standee" style="max-height:150px" onerror="this.style.opacity='.15'">
+    </div>
+    <div class="modal-std-baseline"></div>
+    <div class="sprite-label">Standee</div>
+  </div>`;
+
+  document.getElementById('modal-inner').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-sprites-cls">${standeeSlot}</div>
+      <div class="modal-title-area">
+        <div class="modal-name">${cls.icon} ${cls.nome}</div>
+        <div class="modal-cat"><span class="cat-badge cat-classe">Classe Jogável</span></div>
+        <div class="modal-feat">${cls.feat}</div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="sv">❤️ ${cls.maxHp}</div><div class="sk">PV Máx</div></div>
+          <div class="stat-box"><div class="sv">💠 ${cls.sp}</div><div class="sk">SP Máx</div></div>
+          <div class="stat-box"><div class="sv">👢 ${cls.mov}</div><div class="sk">Mov/Turno</div></div>
+          <div class="stat-box"><div class="sv">🎲 d${cls.atk+4}</div><div class="sk">Dado Atk</div></div>
+        </div>
+        <div class="attrs-grid">${attrsHtml}</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="section">
+        <div class="section-title">Habilidades</div>
+        <div class="habs-list">${habsHtml}</div>
+      </div>
+    </div>`;
+  openModal();
+};
 
 function buildDnPersonagensTab(){
   const tab = document.getElementById('dn-personagens-tab');
@@ -2217,13 +2376,14 @@ document.querySelectorAll('.tab-btn-dn').forEach(btn=>{
       // Esconder todos os tabs Mhoried via inline (sobrepõe .active)
       mhTabs.forEach(t => { t.style.display = 'none'; });
       // Construir DN na primeira vez
-      if(!_dnBuilt){ buildDnPersonagensTab(); buildDnRegrasTab(); buildDnCenariosTab(); _dnBuilt=true; }
+      if(!_dnBuilt){ buildDnClassesTab();
+buildDnClassesTab(); buildDnPersonagensTab(); buildDnRegrasTab(); buildDnCenariosTab(); _dnBuilt=true; }
       // Mostrar tab DN ativa
       dnTabs.forEach(t => { t.style.display = 'none'; });
       const activeDnBtn = document.querySelector('.tab-btn-dn.active');
-      const activeTab = (activeDnBtn ? activeDnBtn.dataset.tabDn : 'dn-personagens');
+      const activeTab = (activeDnBtn ? activeDnBtn.dataset.tabDn : 'dn-classes');
       document.getElementById(activeTab+'-tab').style.display = 'block';
-      document.getElementById('count-label').textContent = `${DN_PERSONAGENS.length} personagens`;
+      document.getElementById('count-label').textContent = `${Object.keys(DN_CLASSES_DATA).length} classes`;
       document.getElementById('cat-titulo').textContent = '📓 Death Note — Tokyo Defender';
     } else {
       // Esconder tabs DN
