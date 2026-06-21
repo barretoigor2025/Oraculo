@@ -606,6 +606,7 @@ function registrarEvento(quem, texto, tipo='fala'){
 
 // ── Multiplayer state ──
 const SCHEMA_V = 2;            // bump to auto-heal stale Firestore docs
+const READ_IDX_KEY = 'oraculo.readIdx';   // localStorage key para ponteiro de leitura
 let _modoMultiplayer = false;
 let _db = null;
 let _sessaoRef = null;
@@ -615,7 +616,20 @@ let _myNome = playerName;
 let _myClassId = classId;
 let _unsubSnapshot = null;
 let _pingInterval = null;
-let _fbInitTimeout = null;
+
+// Salva / restaura ponteiro de leitura (por device, persiste entre refreshes)
+function _salvarReadIdx(){
+  try { localStorage.setItem(READ_IDX_KEY, String(_readIdx)); } catch(_){}
+}
+function _restaurarReadIdx(logLen){
+  try {
+    const v = parseInt(localStorage.getItem(READ_IDX_KEY) || '0', 10);
+    _readIdx = isNaN(v) ? 0 : Math.max(0, Math.min(v, logLen));
+  } catch(_){ _readIdx = 0; }
+}
+function _limparReadIdx(){
+  try { localStorage.removeItem(READ_IDX_KEY); } catch(_){}
+}
 
 // Generate a stable ID for this browser (localStorage = persists across refreshes)
 function _getMyId(){
@@ -851,9 +865,10 @@ window._handleContinuar = function(){
   if(_modoMultiplayer){
     btnContinuar.style.display = 'none';
     _awaitingContinuar = false;
-    _readIdx++;                       // current beat consumed on THIS device
+    _readIdx++;
+    _salvarReadIdx();                 // persiste entre refreshes
     balaoAtivo.classList.remove('visivel');
-    _tickDisplay();                   // show next unread beat (if any)
+    _tickDisplay();                   // exibe próxima fala não lida
     if(_sessao) _atualizarTurnoUI(_sessao);
   } else {
     btnContinuar.style.display='none';
@@ -1033,7 +1048,7 @@ async function _renderBeat(beat){
   // Beat de transição de cena — executa a animação e segue
   if(beat.tipo === 'transicao'){
     await _animTransicao(beat.para);
-    _readIdx++; _animBeat = false;
+    _readIdx++; _salvarReadIdx(); _animBeat = false;
     _tickDisplay();
     return;
   }
@@ -1048,7 +1063,7 @@ async function _renderBeat(beat){
     _mostrarFalaPlayerUnica({ nome:beat.quem, avatar:av, texto:beat.texto });
     if(beat.authorId === _myId){
       // Minha própria fala — eu acabei de digitar; avança sozinho
-      _readIdx++; _animBeat = false;
+      _readIdx++; _salvarReadIdx(); _animBeat = false;
       await delay(500);
       _tickDisplay();
     } else {
@@ -1060,7 +1075,7 @@ async function _renderBeat(beat){
 
   } else {
     // Tipos auxiliares (sistema/percepção) — não exibe, só avança
-    _readIdx++; _animBeat = false;
+    _readIdx++; _salvarReadIdx(); _animBeat = false;
     _tickDisplay();
     return;
   }
@@ -1198,6 +1213,7 @@ async function entrarSessao(){
 
   if(precisaResetar){
     // Doc inexistente ou de schema antigo (travado) — recria limpo
+    _limparReadIdx();   // ponteiro antigo não se aplica a uma sessão nova
     await _sessaoRef.set(_docFresco());
   } else {
     // Entrar numa sessão existente válida
@@ -1214,6 +1230,11 @@ async function entrarSessao(){
   _pingInterval = setInterval(async () => {
     try { await _sessaoRef.update({ [`jogadores.${_myId}.lastPing`]: Date.now() }); } catch(_){}
   }, 20000);
+
+  // Restaura ponteiro de leitura (de onde parou antes do reload)
+  const presnap = await _sessaoRef.get();
+  const prelogLen = presnap.exists ? (presnap.data().log || []).length : 0;
+  _restaurarReadIdx(prelogLen);
 
   // Escuta o doc
   _unsubSnapshot = _sessaoRef.onSnapshot((doc) => {
@@ -1279,6 +1300,10 @@ function _processar(data){
   const inOrdem   = (data.turnoOrdem || []).includes(_myId);
   const inJogadores = data.jogadores && data.jogadores[_myId];
   if(!inOrdem || !inJogadores){ _ensureJoined(); }
+
+  // Se o log encolheu (sessão foi resetada enquanto estava fora), reinicia o ponteiro
+  const logAtual = data.log || [];
+  if(_readIdx > logAtual.length){ _readIdx = 0; _limparReadIdx(); }
 
   // Indicador "IA pensando"
   iaPensando.style.display = data.iaPensando ? 'block' : 'none';
@@ -1558,6 +1583,7 @@ window.testePercepcao = async function(){
 window.novaSessao = async function(){
   if(!_modoMultiplayer || !_sessaoRef) return;
   if(!confirm('Reiniciar a sessão vai apagar toda a conversa atual. Confirmar?')) return;
+  _limparReadIdx();
   await _sessaoRef.set(_docFresco());
   window.location.reload();
 };
