@@ -1600,7 +1600,6 @@ async function iniciarCena(){
     soloBadge.style.display = 'block';
   }
   if(_modoMultiplayer){
-    if(!localStorage.getItem('oraculo.groqKey')){ cfgOverlay.classList.remove('oculto'); return; }
     atualizarChips();
     await entrarSessao();
   } else {
