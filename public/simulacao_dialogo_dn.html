@@ -1199,7 +1199,10 @@ function _docFresco(){
     jogadores: {
       [_myId]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() }
     },
-    log: [],
+    log: [
+      { tipo:'npc', quem:NPCS[0].nome, texto:NPCS[0].aberturaFallback, npcIdx:0, uid:Date.now().toString(36)+'_0', ts:Date.now() },
+      { tipo:'npc', quem:NPCS[1].nome, texto:NPCS[1].aberturaFallback, npcIdx:1, uid:Date.now().toString(36)+'_1', ts:Date.now() },
+    ],
     iaPensando: false,
     btnCastelo: false,
   };
@@ -1253,14 +1256,7 @@ async function entrarSessao(){
     if(doc.exists) _processar(doc.data());
   });
 
-  // Se sou host e o log está vazio → gero a abertura
-  const freshSnap = await _sessaoRef.get();
-  if(freshSnap.exists){
-    const data = freshSnap.data();
-    if(data.hostId === _myId && (data.log || []).length === 0){
-      await _gerarAbertura();
-    }
-  }
+  // Log sempre começa com fallbacks — _gerarAbertura não é mais necessário aqui
 }
 
 async function _gerarAbertura(){
@@ -1580,26 +1576,16 @@ async function enviar_solo(txt){
 //  INIT — MULTIPLAYER com fallback solo
 // ══════════════════════════════════════════════════════════
 async function iniciarCena_solo(){
-  if(!localStorage.getItem('oraculo.groqKey')){ cfgOverlay.classList.remove('oculto'); return; }
   msgInput.disabled=true; btnEnviar.disabled=true;
-  await delay(700);
+  await delay(600);
 
-  iaPensando.style.display='block';
-  let ab0;
-  try{ ab0 = await chamarIA(0, NPCS[0].abertura); }
-  catch(_){ ab0 = NPCS[0].aberturaFallback; }
-  iaPensando.style.display='none';
-  await mostrarNPC(0, ab0, {pedirContinuar:true});
-
-  iaPensando.style.display='block';
-  let ab1;
-  try{ ab1 = await chamarIA(1, NPCS[1].abertura); }
-  catch(_){ ab1 = NPCS[1].aberturaFallback; }
-  iaPensando.style.display='none';
-  await mostrarNPC(1, ab1, {pedirContinuar:true});
+  // Abertura imediata com fallback — sem depender de IA
+  await mostrarNPC(0, NPCS[0].aberturaFallback, {pedirContinuar:true});
+  await mostrarNPC(1, NPCS[1].aberturaFallback, {pedirContinuar:true});
 
   selecionarNpc(0);
   msgInput.disabled=false; btnEnviar.disabled=false;
+  // A IA só é chamada quando o jogador digitar — se não tiver chave, pede na hora
 }
 
 async function iniciarCena(){
