@@ -501,9 +501,10 @@ canvas.char-img{
   </div>
 </div>
 
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+const FV = () => firebase.firestore.FieldValue;
 
 // ══════════════════════════════════════════════════════════
 //  NPCs
@@ -1087,7 +1088,7 @@ async function _verificarReacao(npcQueRespondeuIdx){
 async function _appendLog(entry){
   if(!_sessaoRef) return;
   const e = { ...entry, uid: Date.now().toString(36) + Math.random().toString(36).slice(2,5), ts: Date.now() };
-  await updateDoc(_sessaoRef, { log: arrayUnion(e) });
+  await _sessaoRef.update({ log: FV().arrayUnion(e) });
 }
 
 async function entrarSessao(){
@@ -1095,10 +1096,10 @@ async function entrarSessao(){
   _myNome = playerName;
   _myClassId = classId;
 
-  const snap = await getDoc(_sessaoRef);
-  if(!snap.exists()){
+  const snap = await _sessaoRef.get();
+  if(!snap.exists){
     // Create session as host
-    await setDoc(_sessaoRef, {
+    await _sessaoRef.set({
       cena: 'feira',
       hostId: _myId,
       turnoPlayerId: _myId,
@@ -1118,26 +1119,26 @@ async function entrarSessao(){
       [`jogadores.${_myId}`]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() }
     };
     if(!jaPresente){
-      updates.turnoOrdem = arrayUnion(_myId);
+      updates.turnoOrdem = FV().arrayUnion(_myId);
     }
-    await updateDoc(_sessaoRef, updates);
+    await _sessaoRef.update(updates);
   }
 
   // Start ping
   _pingInterval = setInterval(async () => {
     try {
-      await updateDoc(_sessaoRef, { [`jogadores.${_myId}.lastPing`]: Date.now() });
+      await _sessaoRef.update({ [`jogadores.${_myId}.lastPing`]: Date.now() });
     } catch(_){}
   }, 20000);
 
   // Start listening
-  _unsubSnapshot = onSnapshot(_sessaoRef, (doc) => {
-    if(doc.exists()) _processar(doc.data());
+  _unsubSnapshot = _sessaoRef.onSnapshot((doc) => {
+    if(doc.exists) _processar(doc.data());
   });
 
   // Check if host and log is empty — generate opening
-  const freshSnap = await getDoc(_sessaoRef);
-  if(freshSnap.exists()){
+  const freshSnap = await _sessaoRef.get();
+  if(freshSnap.exists){
     const data = freshSnap.data();
     if(data.hostId === _myId && (!data.log || data.log.length === 0) && (!data.pendingNpc || data.pendingNpc.length === 0)){
       await _gerarAbertura();
@@ -1152,7 +1153,7 @@ async function _gerarAbertura(){
   }
   atualizarChips();
   await delay(700);
-  await updateDoc(_sessaoRef, { iaPensando: true });
+  await _sessaoRef.update( { iaPensando: true });
 
   // Gregoras
   iaPensando.style.display='block';
@@ -1171,7 +1172,7 @@ async function _gerarAbertura(){
   historicos[1].push({role:'assistant', content:ab1});
 
   // Both opening NPCs go to pendingNpc — each player reads at their own pace
-  await updateDoc(_sessaoRef, {
+  await _sessaoRef.update( {
     iaPensando: false,
     pendingNpc: [
       { quem:NPCS[0].nome, texto:ab0, tipo:'npc', npcIdx:0 },
@@ -1366,8 +1367,8 @@ window.irAoCastelo = async function(){
       transicao: 'castelo',
       btnCastelo: false,
     };
-    if(prevPending.length > 0) updates.log = arrayUnion(...prevPending.map(mk));
-    await updateDoc(_sessaoRef, updates);
+    if(prevPending.length > 0) updates.log = FV().arrayUnion(...prevPending.map(mk));
+    await _sessaoRef.update( updates);
   } else {
     await irAoCastelo_solo();
   }
@@ -1522,8 +1523,8 @@ async function enviar(){
     const mk = e => ({...e, uid: Date.now().toString(36)+Math.random().toString(36).slice(2,5), ts: Date.now()});
     const playerEntry = mk({ quem: _myNome, texto: txt, tipo: 'player', classId: _myClassId });
     const logEntries  = prevPending.length > 0 ? [...prevPending.map(mk), playerEntry] : [playerEntry];
-    await updateDoc(_sessaoRef, {
-      log: arrayUnion(...logEntries),
+    await _sessaoRef.update( {
+      log: FV().arrayUnion(...logEntries),
       pendingNpc: [],
       iaPensando: true,
     });
@@ -1546,7 +1547,7 @@ async function enviar(){
       if(reacao) newPend.push({ quem: NPCS[reacao.idx].nome, texto: reacao.raw, tipo: 'npc', npcIdx: reacao.idx });
 
       // 4. NPC response → pendingNpc (players read at own pace), advance turn
-      await updateDoc(_sessaoRef, {
+      await _sessaoRef.update( {
         iaPensando: false,
         pendingNpc: newPend,
         pendingBatchTs: Date.now(),
@@ -1561,7 +1562,7 @@ async function enviar(){
         else if(e.message) motivo = e.message.slice(0,90);
         await _appendLog({ quem:'sistema', texto:motivo, tipo:'sistema' });
       }
-      await updateDoc(_sessaoRef, { iaPensando: false, turnoPlayerId: ordem[proxIdx] });
+      await _sessaoRef.update( { iaPensando: false, turnoPlayerId: ordem[proxIdx] });
     }
 
     animando = false;
@@ -1638,43 +1639,21 @@ async function iniciarCena_solo(){
 }
 
 async function iniciarCena(){
-  // Try Firebase multiplayer
-  let fbReady = false;
-  const fbTimeout = new Promise(resolve => {
-    _fbInitTimeout = setTimeout(() => resolve(false), 5000);
-  });
-
-  const fbConnect = (async () => {
-    try {
-      const app = initializeApp(FB_CONFIG);
-      _db = getFirestore(app);
-      _sessaoRef = doc(_db, 'sessoes', 'simulacao-dialogo');
-      // Test connection with a quick read
-      await getDoc(_sessaoRef);
-      clearTimeout(_fbInitTimeout);
-      return true;
-    } catch(e){
-      console.warn('Firebase connection failed:', e);
-      return false;
-    }
-  })();
-
-  fbReady = await Promise.race([fbConnect, fbTimeout]);
-
-  if(fbReady){
+  try {
+    if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    _db = firebase.firestore();
+    _sessaoRef = _db.collection('lobbies').doc('sim-dialogo');
+    await _sessaoRef.get();
     _modoMultiplayer = true;
-    console.log('Multiplayer mode active');
-    if(!localStorage.getItem('oraculo.groqKey')){
-      cfgOverlay.classList.remove('oculto');
-      return;
-    }
+  } catch(e){
+    _modoMultiplayer = false;
+    soloBadge.style.display = 'block';
+  }
+  if(_modoMultiplayer){
+    if(!localStorage.getItem('oraculo.groqKey')){ cfgOverlay.classList.remove('oculto'); return; }
     atualizarChips();
     await entrarSessao();
   } else {
-    // Fallback to solo mode
-    _modoMultiplayer = false;
-    soloBadge.style.display = 'block';
-    console.log('Fallback to solo mode');
     await iniciarCena_solo();
   }
 }
