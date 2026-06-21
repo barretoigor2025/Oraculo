@@ -2062,6 +2062,7 @@ const DN_REGRAS = [
 
 const DN_CENARIOS = [
   {
+    id:'hq',
     nome:'QG da Força-Tarefa Kira',
     local:'32º andar, Hotel Imperial, Tóquio',
     desc:'Sala de guerra com bancos de monitores mostrando padrões globais de mortes criminosas. Vista panorâmica para a cidade. L opera daqui sob o nome "Ryuzaki". Todos os membros da força-tarefa têm acesso — incluindo Light, que monitora a investigação de dentro.',
@@ -2161,13 +2162,23 @@ function buildDnRegrasTab(){
 function buildDnCenariosTab(){
   const tab = document.getElementById('dn-cenarios-tab');
   const header = `<div class="section-header"><h2>Cenários</h2><span class="count-badge">${DN_CENARIOS.length} locais</span></div>`;
-  const items = DN_CENARIOS.map(c=>`
-    <div class="dn-cen-card">
-      <div class="dn-cen-nome">📍 ${c.nome}</div>
-      <div style="font-size:9px;color:rgba(200,100,100,.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${c.local}</div>
-      <div class="dn-cen-desc">${c.desc}</div>
-    </div>`).join('');
-  tab.innerHTML = header + `<div style="padding:16px">${items}</div>`;
+  let html = '<div class="cenario-grid" style="padding:16px">';
+  for(const c of DN_CENARIOS){
+    const imgSrc = c.id ? `catalogo/death-note/cenarios/${c.id}/${c.id}_int.png` : '';
+    html += `<div class="cenario-card">
+      ${imgSrc ? `<img class="cenario-img" src="${imgSrc}" alt="${c.nome}" onerror="this.style.display='none'">` : ''}
+      <div class="cenario-body">
+        <div class="cenario-nome">📍 ${c.nome}</div>
+        <div class="cenario-sub" style="color:rgba(200,100,100,.55)">${c.local}</div>
+        <div class="cenario-tags" style="margin-top:5px">
+          ${c.id ? '<span class="cenario-tag ato">✅ Disponível</span>' : '<span class="cenario-tag" style="color:rgba(140,140,140,.5);border-color:rgba(140,140,140,.2)">Em breve</span>'}
+        </div>
+        <div class="dn-cen-desc" style="margin-top:6px">${c.desc}</div>
+      </div>
+    </div>`;
+  }
+  html += '</div>';
+  tab.innerHTML = header + html;
 }
 
 // ── Tabs Death Note ────────────────────────────────────────────────────
