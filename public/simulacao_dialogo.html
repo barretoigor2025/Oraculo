@@ -130,11 +130,15 @@ canvas.char-img{
   color:rgba(240,218,162,0.96); line-height:1.66; font-style:italic;
 }
 #btn-continuar{
-  display:none; margin-top:11px; margin-left:auto; width:fit-content;
-  background:rgba(190,140,35,0.18); border:1px solid rgba(190,140,35,0.48);
-  border-radius:22px; padding:5px 18px;
-  color:#f5d878; font-family:Georgia,serif; font-size:11px; font-weight:700;
+  display:none; position:fixed;
+  left:50%; transform:translateX(-50%);
+  bottom:calc(58px + env(safe-area-inset-bottom) + 10px);
+  z-index:260;
+  background:rgba(22,11,2,0.94); border:1px solid rgba(190,140,35,0.58);
+  border-radius:24px; padding:9px 28px;
+  color:#f5d878; font-family:Georgia,serif; font-size:13px; font-weight:700;
   cursor:pointer; letter-spacing:.3px; pointer-events:all;
+  box-shadow:0 4px 24px rgba(0,0,0,0.7);
   animation:pulse-btn 1.8s ease-in-out infinite;
 }
 @keyframes pulse-btn{
@@ -437,11 +441,13 @@ canvas.char-img{
   <div id="balao-nome">—</div>
   <div id="balao-acao"></div>
   <div id="balao-texto">…</div>
-  <button id="btn-continuar" onclick="_handleContinuar()">▶ Continuar</button>
 </div>
 
 <!-- Card do player -->
 <div id="player-card"></div>
+
+<!-- Botão Continuar (flutuante — funciona sobre balão de NPC ou card de jogador) -->
+<button id="btn-continuar" onclick="_handleContinuar()">▶ Continuar</button>
 
 <!-- Botão de histórico -->
 <button id="btn-historico" onclick="_abrirHistorico()">📜</button>
@@ -575,10 +581,11 @@ let npcAtivo = 0;
 const historicos = NPCS.map(() => []);
 let animando = false;
 let _continuarResolve = null;
-let _localPendingQueue = [];  // local copy of current NPC batch
-let _localPendingIdx   = 0;   // how far through the batch this player has read
-let _showingNpc        = false;
-let _pendingBatchTs    = 0;   // timestamp of the batch currently loaded locally
+// ── Multiplayer: single canonical log + per-device read pointer ──
+let _readIdx          = 0;     // how many beats THIS device has consumed
+let _animBeat         = false; // a beat is mid-animation right now
+let _awaitingContinuar= false; // a beat is shown, waiting for this device's Continuar
+let _joinInFlight     = false; // debounce self-heal joins
 let _percUsado = false;
 
 const PERC_MOD = {guerreiro:1, mago:3, clerigo:3, ladino:5, arqueiro:4, druida:3};
@@ -598,6 +605,7 @@ function registrarEvento(quem, texto, tipo='fala'){
 }
 
 // ── Multiplayer state ──
+const SCHEMA_V = 2;            // bump to auto-heal stale Firestore docs
 let _modoMultiplayer = false;
 let _db = null;
 let _sessaoRef = null;
@@ -605,7 +613,6 @@ let _sessao = null;
 let _myId = null;
 let _myNome = playerName;
 let _myClassId = classId;
-let _renderedCount = 0;
 let _unsubSnapshot = null;
 let _pingInterval = null;
 let _fbInitTimeout = null;
@@ -797,6 +804,7 @@ function _mostrarBalaoNPC({ nome, acao, texto, comContinuar=false }){
   balaoTexto.textContent = texto;
   btnContinuar.style.display = comContinuar ? 'block' : 'none';
   playerCard.classList.remove('visivel');
+  playerCard.innerHTML = '';
   balaoAtivo.classList.add('visivel');
 }
 
@@ -842,16 +850,11 @@ function _ocultarBalao(){
 window._handleContinuar = function(){
   if(_modoMultiplayer){
     btnContinuar.style.display = 'none';
-    const hasMore = _localPendingIdx + 1 < _localPendingQueue.length;
-    if(hasMore){
-      _localPendingIdx++;
-      _showNextPending(); // _showingNpc stays true during transition
-    } else {
-      _showingNpc = false;
-      _localPendingIdx = _localPendingQueue.length; // mark all read; keep queue to prevent re-detection
-      balaoAtivo.classList.remove('visivel');
-      if(_sessao) _atualizarTurnoUI(_sessao);
-    }
+    _awaitingContinuar = false;
+    _readIdx++;                       // current beat consumed on THIS device
+    balaoAtivo.classList.remove('visivel');
+    _tickDisplay();                   // show next unread beat (if any)
+    if(_sessao) _atualizarTurnoUI(_sessao);
   } else {
     btnContinuar.style.display='none';
     if(_continuarResolve){ _continuarResolve(); _continuarResolve=null; }
@@ -868,12 +871,14 @@ function esperarContinuar(){
 window._abrirHistorico = function(){
   // Multiplayer: use sessao log; solo: use logCena
   const entries = _modoMultiplayer && _sessao
-    ? (_sessao.log || []).map(e => ({
-        quem: e.quem,
-        texto: e.texto,
-        tipo: e.tipo === 'player' ? 'fala' : (e.tipo === 'npc' ? 'fala' : e.tipo),
-        isPlayer: e.tipo === 'player',
-      }))
+    ? (_sessao.log || [])
+        .filter(e => e.tipo === 'player' || e.tipo === 'npc')
+        .map(e => ({
+          quem: e.quem,
+          texto: e.texto,
+          tipo: 'fala',
+          isPlayer: e.tipo === 'player',
+        }))
     : logCena.map(e => ({ ...e, isPlayer: e.quem === playerName }));
 
   hdCorpo.innerHTML = entries.length
@@ -1005,11 +1010,80 @@ async function mostrarNPCLocal(npcIdx, raw, { comContinuar = false } = {}){
   _mostrarBalaoNPC({ nome:npc.nome, acao, texto:fala, comContinuar });
 }
 
-// Shows next entry from the local pending queue (multiplayer only)
-async function _showNextPending(){
-  const entry = _localPendingQueue[_localPendingIdx];
-  if(!entry){ _showingNpc = false; return; }
-  await mostrarNPCLocal(entry.npcIdx, entry.texto, { comContinuar: true });
+// Mostra UM card de jogador (substitui o anterior — uma fala por vez)
+function _mostrarFalaPlayerUnica({ nome, avatar, texto }){
+  playerCard.innerHTML = '';
+  balaoAtivo.classList.remove('visivel');
+  _empilharFalaPlayer({ nome, avatar, retrato:null, texto });
+}
+
+// ── MOTOR DE EXIBIÇÃO (multiplayer) ──
+// O log do Firestore é a única fonte da verdade. Cada dispositivo avança
+// pelo log no seu próprio ritmo via _readIdx. Mostra UMA fala por vez.
+function _tickDisplay(){
+  if(_animBeat || _awaitingContinuar) return;
+  const log = (_sessao && _sessao.log) || [];
+  if(_readIdx >= log.length) return;          // já leu tudo — nada a mostrar
+  const beat = log[_readIdx];
+  _animBeat = true;
+  _renderBeat(beat);
+}
+
+async function _renderBeat(beat){
+  // Beat de transição de cena — executa a animação e segue
+  if(beat.tipo === 'transicao'){
+    await _animTransicao(beat.para);
+    _readIdx++; _animBeat = false;
+    _tickDisplay();
+    return;
+  }
+
+  if(beat.tipo === 'npc'){
+    await mostrarNPCLocal(beat.npcIdx, beat.texto, { comContinuar:true });
+    _animBeat = false;
+    _awaitingContinuar = true;                 // espera o Continuar deste dispositivo
+
+  } else if(beat.tipo === 'player'){
+    const av = CLASS_AVATAR[beat.classId] || '⚔️';
+    _mostrarFalaPlayerUnica({ nome:beat.quem, avatar:av, texto:beat.texto });
+    if(beat.authorId === _myId){
+      // Minha própria fala — eu acabei de digitar; avança sozinho
+      _readIdx++; _animBeat = false;
+      await delay(500);
+      _tickDisplay();
+    } else {
+      // Fala de outro jogador — mostra Continuar pra eu acompanhar
+      btnContinuar.style.display = 'block';
+      _animBeat = false;
+      _awaitingContinuar = true;
+    }
+
+  } else {
+    // Tipos auxiliares (sistema/percepção) — não exibe, só avança
+    _readIdx++; _animBeat = false;
+    _tickDisplay();
+    return;
+  }
+
+  if(_sessao) _atualizarTurnoUI(_sessao);
+}
+
+// Cria um beat com identificador único
+function _mkBeat(b){
+  return { ...b, uid: Date.now().toString(36)+Math.random().toString(36).slice(2,6), ts: Date.now() };
+}
+
+// Garante que estou na sessão (auto-heal após reset/race) — debounced
+async function _ensureJoined(){
+  if(_joinInFlight || !_sessaoRef) return;
+  _joinInFlight = true;
+  try {
+    await _sessaoRef.update({
+      [`jogadores.${_myId}`]: { nome:_myNome, classId:_myClassId, joinedAt:Date.now(), lastPing:Date.now() },
+      turnoOrdem: FV().arrayUnion(_myId),
+    });
+  } catch(_){}
+  _joinInFlight = false;
 }
 
 async function mostrarPlayer(texto, player=PLAYER_LOCAL){
@@ -1098,61 +1172,59 @@ async function _appendLog(entry){
   await _sessaoRef.update({ log: FV().arrayUnion(e) });
 }
 
+function _docFresco(){
+  return {
+    schemaV: SCHEMA_V,
+    cena: 'feira',
+    hostId: _myId,
+    turnoPlayerId: _myId,
+    turnoOrdem: [_myId],
+    jogadores: {
+      [_myId]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() }
+    },
+    log: [],
+    iaPensando: false,
+    btnCastelo: false,
+  };
+}
+
 async function entrarSessao(){
   _myId = _getMyId();
   _myNome = playerName;
   _myClassId = classId;
 
   const snap = await _sessaoRef.get();
-  if(!snap.exists){
-    // Create session as host
-    await _sessaoRef.set({
-      cena: 'feira',
-      hostId: _myId,
-      turnoPlayerId: _myId,
-      turnoOrdem: [_myId],
-      jogadores: {
-        [_myId]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() }
-      },
-      log: [], pendingNpc: [], pendingBatchTs: 0,
-      iaPensando: false,
-      transicao: null, btnCastelo: false,
-    });
+  const precisaResetar = !snap.exists || snap.data().schemaV !== SCHEMA_V;
+
+  if(precisaResetar){
+    // Doc inexistente ou de schema antigo (travado) — recria limpo
+    await _sessaoRef.set(_docFresco());
   } else {
-    // Join existing session
+    // Entrar numa sessão existente válida
     const data = snap.data();
     const jaPresente = data.turnoOrdem && data.turnoOrdem.includes(_myId);
     const updates = {
       [`jogadores.${_myId}`]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() }
     };
-    if(!jaPresente){
-      updates.turnoOrdem = FV().arrayUnion(_myId);
-    }
+    if(!jaPresente) updates.turnoOrdem = FV().arrayUnion(_myId);
     await _sessaoRef.update(updates);
   }
 
-  // Start ping
+  // Ping de presença
   _pingInterval = setInterval(async () => {
-    try {
-      await _sessaoRef.update({ [`jogadores.${_myId}.lastPing`]: Date.now() });
-    } catch(_){}
+    try { await _sessaoRef.update({ [`jogadores.${_myId}.lastPing`]: Date.now() }); } catch(_){}
   }, 20000);
 
-  // Start listening
+  // Escuta o doc
   _unsubSnapshot = _sessaoRef.onSnapshot((doc) => {
     if(doc.exists) _processar(doc.data());
   });
 
-  // Generate opening if session has no content yet — whoever arrives first claims host
+  // Se sou host e o log está vazio → gero a abertura
   const freshSnap = await _sessaoRef.get();
   if(freshSnap.exists){
     const data = freshSnap.data();
-    const isEmpty = (!data.log || data.log.length === 0)
-                 && (!data.pendingNpc || data.pendingNpc.length === 0)
-                 && !data.iaPensando;
-    if(isEmpty){
-      // Claim host + reset stale turnoOrdem — prevents duplicate chips from old IDs
-      await _sessaoRef.update({ hostId: _myId, turnoPlayerId: _myId, turnoOrdem: [_myId] });
+    if(data.hostId === _myId && (data.log || []).length === 0 && !data.iaPensando){
       await _gerarAbertura();
     }
   }
@@ -1163,17 +1235,17 @@ async function _gerarAbertura(){
     cfgOverlay.classList.remove('oculto');
     return;
   }
-  // Race guard: check again that session is still empty before generating
+  // Guarda contra corrida: só gera se o log ainda estiver vazio
   const guard = await _sessaoRef.get();
   if(guard.exists){
     const gd = guard.data();
-    if(gd.iaPensando || (gd.pendingNpc && gd.pendingNpc.length > 0) || (gd.log && gd.log.length > 0)) return;
+    if(gd.iaPensando || (gd.log && gd.log.length > 0)) return;
   }
   atualizarChips();
   await delay(700);
-  await _sessaoRef.update( { iaPensando: true });
+  await _sessaoRef.update({ iaPensando: true });
 
-  // Gregoras
+  // Grégoras
   iaPensando.style.display='block';
   let ab0;
   try{ ab0 = await chamarIA(0, NPCS[0].abertura); }
@@ -1189,86 +1261,60 @@ async function _gerarAbertura(){
   historicos[1].push({role:'user', content:NPCS[1].abertura});
   historicos[1].push({role:'assistant', content:ab1});
 
-  // Both opening NPCs go to pendingNpc — each player reads at their own pace
-  await _sessaoRef.update( {
+  // As duas falas de abertura vão direto pro log — cada um lê no seu ritmo
+  await _sessaoRef.update({
     iaPensando: false,
-    pendingNpc: [
-      { quem:NPCS[0].nome, texto:ab0, tipo:'npc', npcIdx:0 },
-      { quem:NPCS[1].nome, texto:ab1, tipo:'npc', npcIdx:1 },
-    ],
-    pendingBatchTs: Date.now(),
     btnCastelo: true,
+    log: FV().arrayUnion(
+      _mkBeat({ tipo:'npc', quem:NPCS[0].nome, texto:ab0, npcIdx:0 }),
+      _mkBeat({ tipo:'npc', quem:NPCS[1].nome, texto:ab1, npcIdx:1 }),
+    ),
   });
 }
 
 function _processar(data){
   _sessao = data;
 
-  // Scene transition
-  if(data.transicao === 'castelo' && cenaAtual !== 'castelo'){
-    _executarTransicaoCastelLocal();
-  }
+  // Auto-heal: se um reset me removeu da sessão, me re-adiciono
+  const inOrdem   = (data.turnoOrdem || []).includes(_myId);
+  const inJogadores = data.jogadores && data.jogadores[_myId];
+  if(!inOrdem || !inJogadores){ _ensureJoined(); }
 
-  // iaPensando indicator
+  // Indicador "IA pensando"
   iaPensando.style.display = data.iaPensando ? 'block' : 'none';
 
-  // Show castelo button if set
-  if(data.btnCastelo && cenaAtual === 'feira'){
-    document.getElementById('btn-ir-castelo').style.display = '';
+  // Botão "Ir ao Castelo": só pra quem está na feira, é a vez dele, e já leu tudo
+  const btnCast = document.getElementById('btn-ir-castelo');
+  const leuTudo = _readIdx >= (data.log || []).length;
+  if(data.cena === 'feira' && data.btnCastelo && data.turnoPlayerId === _myId
+     && leuTudo && !data.iaPensando && !_awaitingContinuar && !_animBeat){
+    btnCast.style.display = '';
+  } else {
+    btnCast.style.display = 'none';
   }
 
-  // Process new log entries
-  const log = data.log || [];
-  const novos = log.slice(_renderedCount);
-  if(novos.length > 0){
-    _renderedCount = log.length;
-    _renderEntradas(novos);
-  }
+  // Avança a exibição local pelo log (uma fala por vez, no ritmo deste device)
+  _tickDisplay();
 
-  // Detect new NPC batch — each device loads independently and reads at its own pace
-  const pending  = data.pendingNpc || [];
-  const batchTs  = data.pendingBatchTs || 0;
-  if(pending.length > 0 && batchTs !== _pendingBatchTs && !data.iaPensando && !animando){
-    _pendingBatchTs    = batchTs;
-    _localPendingQueue = [...pending];
-    _localPendingIdx   = 0;
-    if(!_showingNpc){
-      _showingNpc = true;
-      _showNextPending();
-    }
-  }
-
-  // Turn UI
+  // UI de turno
   _atualizarTurnoUI(data);
-}
-
-async function _renderEntradas(entries){
-  for(const e of entries){
-    if(e.tipo === 'npc'){
-      if(!_modoMultiplayer){
-        await mostrarNPCLocal(e.npcIdx, e.texto);
-        await delay(300);
-      }
-      // Multiplayer: NPC shown via local pendingNpc queue — skip here
-    } else if(e.tipo === 'player'){
-      const av = CLASS_AVATAR[e.classId] || '⚔️';
-      _empilharFalaPlayer({ nome: e.quem, avatar: av, retrato: null, texto: e.texto });
-      if(!_modoMultiplayer) await delay(200);
-    }
-  }
 }
 
 function _atualizarTurnoUI(data){
   const jogadores = data.jogadores || {};
-  const ordem = data.turnoOrdem || [];
-  if(ordem.length <= 1 && !Object.keys(jogadores).length){
+  // Dedupe da ordem (defensivo contra IDs repetidos legados)
+  const vistos = new Set();
+  const ordem = (data.turnoOrdem || []).filter(id => {
+    if(vistos.has(id)) return false; vistos.add(id); return true;
+  });
+  if(ordem.length === 0 && !Object.keys(jogadores).length){
     turnoBbar.style.display = 'none';
     return;
   }
 
   turnoBbar.style.display = 'flex';
 
-  // Player chips
+  // Chips dos jogadores
   turnoPlayers.innerHTML = '';
   for(const id of ordem){
     const j = jogadores[id];
@@ -1279,26 +1325,26 @@ function _atualizarTurnoUI(data){
     turnoPlayers.appendChild(chip);
   }
 
-  // Vez indicator
-  const isMyTurn = data.turnoPlayerId === _myId;
-  // "still reading" is local — each player tracks their own position in the batch
-  const stillReading = _showingNpc || _localPendingIdx < _localPendingQueue.length;
-  const npcFalando   = stillReading || data.iaPensando || animando;
-  if(npcFalando){
-    // NPC speaking or generating — all players wait; Continuar is the action
-    turnoVez.textContent = data.iaPensando ? 'Aguardando NPC…' : 'Leia e continue…';
-    msgInput.disabled = true;
-    btnEnviar.disabled = true;
+  // Estado local de leitura
+  const leuTudo    = _readIdx >= (data.log || []).length;
+  const lendo      = !leuTudo || _awaitingContinuar || _animBeat;
+  const isMyTurn   = data.turnoPlayerId === _myId;
+
+  if(data.iaPensando){
+    turnoVez.textContent = 'Aguardando NPC…';
+    msgInput.disabled = true; btnEnviar.disabled = true;
+  } else if(lendo){
+    // Ainda há falas pra ler neste dispositivo — Continuar é a ação
+    turnoVez.textContent = 'Leia e continue…';
+    msgInput.disabled = true; btnEnviar.disabled = true;
   } else if(isMyTurn){
     turnoVez.textContent = 'Sua vez';
-    msgInput.disabled = false;
-    btnEnviar.disabled = false;
+    msgInput.disabled = false; btnEnviar.disabled = false;
     msgInput.placeholder = `O que você diz para ${NPCS[npcAtivo]?.nome?.split(' ')[0] || 'o NPC'}…`;
   } else {
     const vezDe = jogadores[data.turnoPlayerId];
     turnoVez.textContent = vezDe ? `Vez de ${vezDe.nome}…` : 'Aguardando…';
-    msgInput.disabled = true;
-    btnEnviar.disabled = true;
+    msgInput.disabled = true; btnEnviar.disabled = true;
     msgInput.placeholder = vezDe ? `Vez de ${vezDe.nome}…` : 'Aguardando…';
   }
 }
@@ -1306,14 +1352,19 @@ function _atualizarTurnoUI(data){
 // ══════════════════════════════════════════════════════════
 //  IR AO CASTELO — MULTIPLAYER
 // ══════════════════════════════════════════════════════════
-async function _executarTransicaoCastelLocal(){
-  if(animando) return;
-  animando = true;
-  cenaAtual = 'castelo'; // set early to prevent re-trigger
+// Animação visual da transição de cena — disparada por um beat 'transicao'
+// quando o ponteiro de leitura local chega nele. Roda uma vez por device.
+async function _animTransicao(para){
+  if(para !== 'castelo') return;
+  cenaAtual = 'castelo';
 
   msgInput.disabled = true;
   btnEnviar.disabled = true;
   document.getElementById('btn-ir-castelo').style.display = 'none';
+  btnContinuar.style.display = 'none';
+  balaoAtivo.classList.remove('visivel');
+  playerCard.classList.remove('visivel');
+  playerCard.innerHTML = '';
 
   // Fade out
   cenaBgEl.style.transition = 'opacity 0.7s ease';
@@ -1341,27 +1392,17 @@ async function _executarTransicaoCastelLocal(){
   document.getElementById('btn-perc').style.display = '';
   document.getElementById('btn-encerrar').style.display = '';
   selecionarNpc(2);
-
-  animando = false;
-
-  // Load castle NPCs from pendingNpc into local queue now that animation is done
-  if(_sessao && (_sessao.pendingNpc||[]).length > 0 && !_showingNpc){
-    _pendingBatchTs    = _sessao.pendingBatchTs || 0;
-    _localPendingQueue = [..._sessao.pendingNpc];
-    _localPendingIdx   = 0;
-    _showingNpc = true;
-    _showNextPending();
-  }
-  if(_sessao) _atualizarTurnoUI(_sessao);
 }
 
 window.irAoCastelo = async function(){
   if(animando) return;
   if(_modoMultiplayer){
     if(_sessao?.turnoPlayerId !== _myId) return;
+    document.getElementById('btn-ir-castelo').style.display = 'none';
 
-    // Generate Catherine's opening before transition (so UI doesn't stutter)
+    // Gera a abertura de Catherine antes da transição
     iaPensando.style.display='block';
+    await _sessaoRef.update({ iaPensando: true });
     let ab;
     try{ ab = await chamarIA(2, NPCS[2].abertura); }
     catch(_){ ab = NPCS[2].aberturaFallback; }
@@ -1372,21 +1413,18 @@ window.irAoCastelo = async function(){
     const gregRaw = '[ACAO: Faz um gesto seco com a cabeça, virando-se para caminhar.] Venham. A Duquesa não gosta de esperar.';
     const annRaw  = '[ACAO: Bate suavemente na porta do salão privado e a empurra, indicando que entrem.] Milady. Os aventureiros que a senhora queria conhecer.';
 
-    // Commit any outstanding pendingNpc to log, then write castle NPCs + signal transition
-    const prevPending = _sessao?.pendingNpc || [];
-    const mk = e => ({...e, uid: Date.now().toString(36)+Math.random().toString(36).slice(2,5), ts: Date.now()});
-    const updates = {
-      pendingNpc: [
-        { quem:NPCS[0].nome, texto:gregRaw, tipo:'npc', npcIdx:0 },
-        { quem:NPCS[0].nome, texto:annRaw,  tipo:'npc', npcIdx:0 },
-        { quem:NPCS[2].nome, texto:ab,       tipo:'npc', npcIdx:2 },
-      ],
-      pendingBatchTs: Date.now(),
-      transicao: 'castelo',
+    // Anexa ao log: beat de transição + falas do castelo. Cada device toca no seu ritmo.
+    await _sessaoRef.update({
+      cena: 'castelo',
+      iaPensando: false,
       btnCastelo: false,
-    };
-    if(prevPending.length > 0) updates.log = FV().arrayUnion(...prevPending.map(mk));
-    await _sessaoRef.update( updates);
+      log: FV().arrayUnion(
+        _mkBeat({ tipo:'transicao', para:'castelo' }),
+        _mkBeat({ tipo:'npc', quem:NPCS[0].nome, texto:gregRaw, npcIdx:0 }),
+        _mkBeat({ tipo:'npc', quem:NPCS[0].nome, texto:annRaw,  npcIdx:0 }),
+        _mkBeat({ tipo:'npc', quem:NPCS[2].nome, texto:ab,      npcIdx:2 }),
+      ),
+    });
   } else {
     await irAoCastelo_solo();
   }
@@ -1520,13 +1558,7 @@ window.testePercepcao = async function(){
 window.novaSessao = async function(){
   if(!_modoMultiplayer || !_sessaoRef) return;
   if(!confirm('Reiniciar a sessão vai apagar toda a conversa atual. Confirmar?')) return;
-  await _sessaoRef.set({
-    cena: 'feira', hostId: _myId, turnoPlayerId: _myId,
-    turnoOrdem: [_myId],
-    jogadores: { [_myId]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() } },
-    log: [], pendingNpc: [], pendingBatchTs: 0,
-    iaPensando: false, transicao: null, btnCastelo: false,
-  });
+  await _sessaoRef.set(_docFresco());
   window.location.reload();
 };
 
@@ -1550,23 +1582,19 @@ async function enviar(){
 
   if(_modoMultiplayer){
     if(_sessao?.turnoPlayerId !== _myId) return;
+    // Só posso falar depois de ter lido tudo (minha vez já liberou o input)
+    if(_readIdx < (_sessao?.log || []).length) return;
     animando = true; msgInput.disabled = true; btnEnviar.disabled = true; msgInput.value = '';
+    document.getElementById('btn-ir-castelo').style.display = 'none';
 
-    // 1. Commit current pendingNpc to log + write player message (one update)
-    const prevPending = _sessao?.pendingNpc || [];
-    const mk = e => ({...e, uid: Date.now().toString(36)+Math.random().toString(36).slice(2,5), ts: Date.now()});
-    const playerEntry = mk({ quem: _myNome, texto: txt, tipo: 'player', classId: _myClassId });
-    const logEntries  = prevPending.length > 0 ? [...prevPending.map(mk), playerEntry] : [playerEntry];
-    await _sessaoRef.update( {
-      log: FV().arrayUnion(...logEntries),
-      pendingNpc: [],
+    // 1. Minha fala vai direto pro log (a minha própria avança sozinha aqui)
+    const playerBeat = _mkBeat({ tipo:'player', quem:_myNome, texto:txt, classId:_myClassId, authorId:_myId });
+    await _sessaoRef.update({
+      log: FV().arrayUnion(playerBeat),
       iaPensando: true,
     });
 
-    // Reset local reading state — we just committed what was pending
-    _localPendingQueue = []; _localPendingIdx = 0; _showingNpc = false; _pendingBatchTs = 0;
-
-    // 2. Call Groq (only the turn player calls Groq)
+    // 2. Chama a IA (só o jogador da vez chama o Groq)
     const target = npcAtivo;
     historicos[target].push({ role: 'user', content: txt });
     const ordem   = _sessao?.turnoOrdem || [_myId];
@@ -1575,16 +1603,15 @@ async function enviar(){
       const resp = await chamarIA(target, txt);
       historicos[target].push({ role: 'assistant', content: resp });
 
-      // 3. Check spontaneous reaction
-      const reacao  = await _verificarReacao(target);
-      const newPend = [{ quem: NPCS[target].nome, texto: resp, tipo: 'npc', npcIdx: target }];
-      if(reacao) newPend.push({ quem: NPCS[reacao.idx].nome, texto: reacao.raw, tipo: 'npc', npcIdx: reacao.idx });
+      // 3. Reação espontânea de outro NPC
+      const reacao   = await _verificarReacao(target);
+      const novosBeats = [ _mkBeat({ tipo:'npc', quem:NPCS[target].nome, texto:resp, npcIdx:target }) ];
+      if(reacao) novosBeats.push(_mkBeat({ tipo:'npc', quem:NPCS[reacao.idx].nome, texto:reacao.raw, npcIdx:reacao.idx }));
 
-      // 4. NPC response → pendingNpc (players read at own pace), advance turn
-      await _sessaoRef.update( {
+      // 4. Resposta do NPC → log; passa a vez
+      await _sessaoRef.update({
         iaPensando: false,
-        pendingNpc: newPend,
-        pendingBatchTs: Date.now(),
+        log: FV().arrayUnion(...novosBeats),
         turnoPlayerId: ordem[proxIdx],
       });
     } catch(e){
@@ -1596,7 +1623,7 @@ async function enviar(){
         else if(e.message) motivo = e.message.slice(0,90);
         await _appendLog({ quem:'sistema', texto:motivo, tipo:'sistema' });
       }
-      await _sessaoRef.update( { iaPensando: false, turnoPlayerId: ordem[proxIdx] });
+      await _sessaoRef.update({ iaPensando: false, turnoPlayerId: ordem[proxIdx] });
     }
 
     animando = false;
