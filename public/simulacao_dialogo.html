@@ -117,13 +117,6 @@ canvas.char-img{
 }
 #balao-ativo.player-fala #balao-nome{ color:rgba(110,160,230,0.85); }
 
-#balao-contexto{
-  display:none;
-  font-size:9px; color:rgba(255,255,255,0.88);
-  font-style:italic; padding-bottom:7px; margin-bottom:7px;
-  border-bottom:1px solid rgba(255,255,255,0.15);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
 #balao-nome{
   font-size:9px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase;
   color:rgba(190,140,35,0.80); margin-bottom:6px;
@@ -435,7 +428,6 @@ canvas.char-img{
 
 <!-- Balão NPC -->
 <div id="balao-ativo">
-  <div id="balao-contexto"></div>
   <div id="balao-nome">—</div>
   <div id="balao-acao"></div>
   <div id="balao-texto">…</div>
@@ -509,11 +501,9 @@ canvas.char-img{
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script>
-// Helper — usa FieldValue estático do compat SDK
-const FV = () => firebase.firestore.FieldValue;
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // ══════════════════════════════════════════════════════════
 //  NPCs
@@ -577,6 +567,10 @@ let npcAtivo = 0;
 const historicos = NPCS.map(() => []);
 let animando = false;
 let _continuarResolve = null;
+let _localPendingQueue = [];  // local copy of current NPC batch
+let _localPendingIdx   = 0;   // how far through the batch this player has read
+let _showingNpc        = false;
+let _pendingBatchTs    = 0;   // timestamp of the batch currently loaded locally
 let _percUsado = false;
 
 const PERC_MOD = {guerreiro:1, mago:3, clerigo:3, ladino:5, arqueiro:4, druida:3};
@@ -607,8 +601,6 @@ let _renderedCount = 0;
 let _unsubSnapshot = null;
 let _pingInterval = null;
 let _fbInitTimeout = null;
-let _displayingPending = false; // guard against concurrent pendingNpc renders
-let _lastPlayerFala = null;    // last player message for balloon context strip
 
 // Generate a stable ID for this browser session
 function _getMyId(){
@@ -802,8 +794,6 @@ function _mostrarBalaoNPC({ nome, acao, texto, comContinuar=false }){
 
 function _empilharFalaPlayer({ nome, avatar, retrato, texto }){
   balaoAtivo.classList.remove('visivel');
-  // In multiplayer show only the latest message (history is in the Histórico panel)
-  if(_modoMultiplayer) playerCard.innerHTML = '';
   const row = document.createElement('div');
   row.className = 'pc-fala';
   const wrap = document.createElement('div');
@@ -824,7 +814,7 @@ function _empilharFalaPlayer({ nome, avatar, retrato, texto }){
   const tx = document.createElement('div'); tx.className='pc-texto'; tx.textContent = texto;
   body.append(nm, tx);
   row.append(wrap, body);
-  playerCard.prepend(row); // newest message on top
+  playerCard.appendChild(row);
   playerCard.classList.add('visivel');
 }
 
@@ -841,30 +831,19 @@ function _ocultarBalao(){
 // ══════════════════════════════════════════════════════════
 //  CONTINUAR
 // ══════════════════════════════════════════════════════════
-window._handleContinuar = async function(){
+window._handleContinuar = function(){
   if(_modoMultiplayer){
-    const pending = _sessao?.pendingNpc || [];
-    if(pending.length === 0) return;
     btnContinuar.style.display = 'none';
-    const [done, ...rest] = pending;
-    const ordem = _sessao?.turnoOrdem || [_myId];
-    const meuIdx = ordem.indexOf(_sessao?.turnoPlayerId);
-    const proxIdx = (meuIdx + 1) % ordem.length;
-    // Move confirmed entry to log; if queue empty, show castelo btn + advance turn
-    const updates = {
-      log: FV().arrayUnion({ ...done, uid: Date.now().toString(36)+Math.random().toString(36).slice(2,5), ts: Date.now() }),
-      pendingNpc: rest,
-    };
-    if(rest.length === 0){
-      // All NPC entries shown — advance turn and maybe reveal castelo btn
-      updates.turnoPlayerId = ordem[proxIdx];
-      if(!_sessao?.btnCastelo && cenaAtual === 'feira'){
-        // Only show castelo btn after opening is fully done
-        const logLen = (_sessao?.log || []).length + 1;
-        if(logLen >= 2) updates.btnCastelo = true;
-      }
+    const hasMore = _localPendingIdx + 1 < _localPendingQueue.length;
+    if(hasMore){
+      _localPendingIdx++;
+      _showNextPending(); // _showingNpc stays true during transition
+    } else {
+      _showingNpc = false;
+      _localPendingIdx = _localPendingQueue.length; // mark all read; keep queue to prevent re-detection
+      balaoAtivo.classList.remove('visivel');
+      if(_sessao) _atualizarTurnoUI(_sessao);
     }
-    await _sessaoRef.update(updates);
   } else {
     btnContinuar.style.display='none';
     if(_continuarResolve){ _continuarResolve(); _continuarResolve=null; }
@@ -989,7 +968,7 @@ async function mostrarNPC(npcIdx, raw, { pedirContinuar=false }={}){
 }
 
 // Versão local (multiplayer) — apenas exibe sem registrar no logCena
-async function mostrarNPCLocal(npcIdx, raw){
+async function mostrarNPCLocal(npcIdx, raw, { comContinuar = false } = {}){
   const {acao, fala} = parsearFala(raw);
   const npc = NPCS[npcIdx];
 
@@ -1015,7 +994,14 @@ async function mostrarNPCLocal(npcIdx, raw){
   });
   if(entrou) await delay(500);
 
-  _mostrarBalaoNPC({ nome:npc.nome, acao, texto:fala, comContinuar:false });
+  _mostrarBalaoNPC({ nome:npc.nome, acao, texto:fala, comContinuar });
+}
+
+// Shows next entry from the local pending queue (multiplayer only)
+async function _showNextPending(){
+  const entry = _localPendingQueue[_localPendingIdx];
+  if(!entry){ _showingNpc = false; return; }
+  await mostrarNPCLocal(entry.npcIdx, entry.texto, { comContinuar: true });
 }
 
 async function mostrarPlayer(texto, player=PLAYER_LOCAL){
@@ -1030,10 +1016,8 @@ async function mostrarPlayer(texto, player=PLAYER_LOCAL){
 async function chamarIA(npcIdx, mensagem){
   const key = localStorage.getItem('oraculo.groqKey');
   if(!key) throw new Error('sem-chave');
-  const hist = historicos[npcIdx];
+  const npc = NPCS[npcIdx], hist = historicos[npcIdx];
   const contextoCena = _gerarContextoCena(npcIdx);
-  // Keep last 8 messages max — prevents token overflow on long sessions
-  const histTrimmed = hist.slice(-8);
   const messages = [
     { role:'system', content:
 `Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. NUNCA quebre o personagem.
@@ -1045,7 +1029,7 @@ SUA FORMA DE FALAR: ${npc.formaDeFalar}
 ${contextoCena}
 
 REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. [ACAO: desc] antes da fala para ações físicas visíveis. Se um objeto foi dado ou recebido na cena, você sabe e pode referenciá-lo. Reaja ao contexto da cena, não apenas à última fala.` },
-    ...histTrimmed,
+    ...hist,
     { role:'user', content:mensagem },
   ];
   const controller = new AbortController();
@@ -1103,7 +1087,7 @@ async function _verificarReacao(npcQueRespondeuIdx){
 async function _appendLog(entry){
   if(!_sessaoRef) return;
   const e = { ...entry, uid: Date.now().toString(36) + Math.random().toString(36).slice(2,5), ts: Date.now() };
-  await _sessaoRef.update({ log: FV().arrayUnion(e) });
+  await updateDoc(_sessaoRef, { log: arrayUnion(e) });
 }
 
 async function entrarSessao(){
@@ -1111,73 +1095,67 @@ async function entrarSessao(){
   _myNome = playerName;
   _myClassId = classId;
 
-  // Only the lobby HOST resets the session — other players always join
-  const isLobbyHost = sessionStorage.getItem('oraculo.isLobbyHost') === '1';
-  sessionStorage.removeItem('oraculo.isLobbyHost');
-  sessionStorage.removeItem('oraculo.freshSimStart'); // cleanup legacy key
-
-  const myPlayerData = { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() };
-
-  // Use transaction to atomically create-or-join (prevents double-generation race)
-  let shouldGenerate = false;
-  await _db.runTransaction(async tx => {
-    const snap = await tx.get(_sessaoRef);
-    if(!snap.exists || isLobbyHost){
-      // Create/reset session — we are the host
-      tx.set(_sessaoRef, {
-        cena: 'feira',
-        hostId: _myId,
-        turnoPlayerId: _myId,
-        turnoOrdem: [_myId],
-        jogadores: { [_myId]: myPlayerData },
-        log: [],
-        pendingNpc: [],
-        iaPensando: false,
-        gerandoAbertura: true,
-        transicao: null,
-        transicao_iniciada: false,
-        votos_castelo: [],
-        btnCastelo: false,
-      });
-      shouldGenerate = true;
-    } else {
-      // Join existing session
-      const data = snap.data();
-      const jaPresente = data.turnoOrdem && data.turnoOrdem.includes(_myId);
-      const updates = { [`jogadores.${_myId}`]: myPlayerData };
-      if(!jaPresente){
-        updates.turnoOrdem = [...(data.turnoOrdem || []), _myId];
-      }
-      tx.update(_sessaoRef, updates);
-      shouldGenerate = false;
+  const snap = await getDoc(_sessaoRef);
+  if(!snap.exists()){
+    // Create session as host
+    await setDoc(_sessaoRef, {
+      cena: 'feira',
+      hostId: _myId,
+      turnoPlayerId: _myId,
+      turnoOrdem: [_myId],
+      jogadores: {
+        [_myId]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() }
+      },
+      log: [], pendingNpc: [], pendingBatchTs: 0,
+      iaPensando: false,
+      transicao: null, btnCastelo: false,
+    });
+  } else {
+    // Join existing session
+    const data = snap.data();
+    const jaPresente = data.turnoOrdem && data.turnoOrdem.includes(_myId);
+    const updates = {
+      [`jogadores.${_myId}`]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() }
+    };
+    if(!jaPresente){
+      updates.turnoOrdem = arrayUnion(_myId);
     }
-  });
+    await updateDoc(_sessaoRef, updates);
+  }
 
   // Start ping
   _pingInterval = setInterval(async () => {
-    try { await _sessaoRef.update({ [`jogadores.${_myId}.lastPing`]: Date.now() }); } catch(_){}
+    try {
+      await updateDoc(_sessaoRef, { [`jogadores.${_myId}.lastPing`]: Date.now() });
+    } catch(_){}
   }, 20000);
 
   // Start listening
-  _unsubSnapshot = _sessaoRef.onSnapshot((doc) => {
-    if(doc.exists) _processar(doc.data());
+  _unsubSnapshot = onSnapshot(_sessaoRef, (doc) => {
+    if(doc.exists()) _processar(doc.data());
   });
 
-  // Only the transaction winner generates the opening
-  if(shouldGenerate) await _gerarAbertura();
+  // Check if host and log is empty — generate opening
+  const freshSnap = await getDoc(_sessaoRef);
+  if(freshSnap.exists()){
+    const data = freshSnap.data();
+    if(data.hostId === _myId && (!data.log || data.log.length === 0) && (!data.pendingNpc || data.pendingNpc.length === 0)){
+      await _gerarAbertura();
+    }
+  }
 }
 
 async function _gerarAbertura(){
   if(!localStorage.getItem('oraculo.groqKey')){
     cfgOverlay.classList.remove('oculto');
-    await _sessaoRef.update({ gerandoAbertura: false });
     return;
   }
   atualizarChips();
-  await _sessaoRef.update({ iaPensando: true });
   await delay(700);
+  await updateDoc(_sessaoRef, { iaPensando: true });
 
   // Gregoras
+  iaPensando.style.display='block';
   let ab0;
   try{ ab0 = await chamarIA(0, NPCS[0].abertura); }
   catch(_){ ab0 = NPCS[0].aberturaFallback; }
@@ -1188,72 +1166,20 @@ async function _gerarAbertura(){
   let ab1;
   try{ ab1 = await chamarIA(1, NPCS[1].abertura); }
   catch(_){ ab1 = NPCS[1].aberturaFallback; }
+  iaPensando.style.display='none';
   historicos[1].push({role:'user', content:NPCS[1].abertura});
   historicos[1].push({role:'assistant', content:ab1});
 
-  // Queue both NPCs in pendingNpc — shown one at a time with Continuar
-  await _sessaoRef.update({
+  // Both opening NPCs go to pendingNpc — each player reads at their own pace
+  await updateDoc(_sessaoRef, {
     iaPensando: false,
-    gerandoAbertura: false,
     pendingNpc: [
       { quem:NPCS[0].nome, texto:ab0, tipo:'npc', npcIdx:0 },
       { quem:NPCS[1].nome, texto:ab1, tipo:'npc', npcIdx:1 },
     ],
+    pendingBatchTs: Date.now(),
+    btnCastelo: true,
   });
-}
-
-// Show a pending NPC entry with Continuar gate.
-// Unlike mostrarNPCLocal, this does NOT clear the player card so player context stays visible.
-async function _mostrarPendingNpc(entry, comContinuar){
-  if(_displayingPending) return;
-  _displayingPending = true;
-  try {
-    const {acao, fala} = parsearFala(entry.texto);
-    const npc = NPCS[entry.npcIdx];
-
-    await delay(120);
-
-    // Highlight the active NPC
-    npcAtivo = entry.npcIdx;
-    document.querySelectorAll('.chip-npc').forEach(c => {
-      c.classList.toggle('ativo', parseInt(c.dataset.npcIdx) === entry.npcIdx);
-    });
-    NPCS.forEach((n, i) => {
-      if(!n.cenas.includes(cenaAtual)) return;
-      const a = (i === entry.npcIdx);
-      npcEls[i].par.classList.toggle('inativo', !a);
-      npcEls[i].par.style.zIndex = a ? String(n.zBase+2) : String(n.zBase);
-    });
-
-    // Bring NPCs into scene if not already
-    let entrou = false;
-    NPCS.forEach((n, i) => {
-      if(!n.cenas.includes(cenaAtual)) return;
-      if(!npcEls[i].par.classList.contains('dentro')){ npcEls[i].par.classList.add('dentro'); entrou = true; }
-    });
-    if(entrou) await delay(500);
-
-    // Context strip: show last player's message above NPC reply
-    const ctxEl = document.getElementById('balao-contexto');
-    if(_lastPlayerFala && ctxEl){
-      ctxEl.textContent = `${_lastPlayerFala.nome}: "${_lastPlayerFala.texto.slice(0,60)}${_lastPlayerFala.texto.length > 60 ? '…' : ''}"`;
-      ctxEl.style.display = 'block';
-    } else if(ctxEl){
-      ctxEl.style.display = 'none';
-    }
-
-    // Show NPC balloon; player card cleared (context shown in balao-contexto strip)
-    balaoNome.textContent = npc.nome.toUpperCase();
-    balaoAcao.textContent = acao || '';
-    balaoAcao.style.display = acao ? 'block' : 'none';
-    balaoTexto.textContent = fala;
-    playerCard.classList.remove('visivel');
-    playerCard.innerHTML = '';
-    balaoAtivo.classList.add('visivel');
-    btnContinuar.style.display = comContinuar ? 'block' : 'none';
-  } finally {
-    _displayingPending = false;
-  }
 }
 
 function _processar(data){
@@ -1265,43 +1191,14 @@ function _processar(data){
   }
 
   // iaPensando indicator
-  iaPensando.style.display = (data.iaPensando || data.gerandoAbertura) ? 'block' : 'none';
+  iaPensando.style.display = data.iaPensando ? 'block' : 'none';
 
-  // Botão "Ir ao Castelo" — visível a qualquer jogador, controla votos
-  const btnCastel = document.getElementById('btn-ir-castelo');
-  if(btnCastel){
-    if(data.btnCastelo && cenaAtual === 'feira'){
-      btnCastel.style.display = '';
-    }
-    if(data.btnCastelo && cenaAtual === 'feira'){
-      const votos  = data.votos_castelo || [];
-      const total  = (data.turnoOrdem || []).length || 1;
-      const jáVotei = votos.includes(_myId);
-      if(jáVotei){
-        btnCastel.textContent = `✓ Aguardando (${votos.length}/${total})…`;
-        btnCastel.disabled = true;
-        btnCastel.style.opacity = '0.55';
-      } else {
-        btnCastel.textContent = votos.length > 0
-          ? `⚔️ Ir ao Castelo (${votos.length}/${total} prontos)`
-          : '⚔️ Ir ao Castelo →';
-        btnCastel.disabled = false;
-        btnCastel.style.opacity = '';
-      }
-    }
+  // Show castelo button if set
+  if(data.btnCastelo && cenaAtual === 'feira'){
+    document.getElementById('btn-ir-castelo').style.display = '';
   }
 
-  // Voto unânime: quando todos votaram, host executa a transição
-  const votCast  = data.votos_castelo || [];
-  const totJog   = (data.turnoOrdem || []).length;
-  const allVoted = totJog > 0 && votCast.length >= totJog;
-  if(allVoted && !data.transicao_iniciada && data.transicao !== 'castelo' && cenaAtual !== 'castelo'){
-    if(data.hostId === _myId){
-      _executarTransicaoParaCastelo();
-    }
-  }
-
-  // Process confirmed log entries (player falas + NPCs already confirmed by Continuar)
+  // Process new log entries
   const log = data.log || [];
   const novos = log.slice(_renderedCount);
   if(novos.length > 0){
@@ -1309,14 +1206,17 @@ function _processar(data){
     _renderEntradas(novos);
   }
 
-  // Handle pending NPC — shown in balloon, gated by Continuar (turn player only)
-  const pending = data.pendingNpc || [];
-  const isMyTurn = data.turnoPlayerId === _myId;
-  if(pending.length > 0 && !data.iaPensando && !data.gerandoAbertura && !animando){
-    // _mostrarPendingNpc awaits the display animation then sets btnContinuar correctly
-    _mostrarPendingNpc(pending[0], isMyTurn);
-  } else if(pending.length === 0 && !data.iaPensando && !data.gerandoAbertura && _modoMultiplayer){
-    btnContinuar.style.display = 'none';
+  // Detect new NPC batch — each device loads independently and reads at its own pace
+  const pending  = data.pendingNpc || [];
+  const batchTs  = data.pendingBatchTs || 0;
+  if(pending.length > 0 && batchTs !== _pendingBatchTs && !data.iaPensando && !animando){
+    _pendingBatchTs    = batchTs;
+    _localPendingQueue = [...pending];
+    _localPendingIdx   = 0;
+    if(!_showingNpc){
+      _showingNpc = true;
+      _showNextPending();
+    }
   }
 
   // Turn UI
@@ -1326,17 +1226,15 @@ function _processar(data){
 async function _renderEntradas(entries){
   for(const e of entries){
     if(e.tipo === 'npc'){
-      // Multiplayer: NPC balloon managed by pendingNpc/Continuar — skip replay here.
       if(!_modoMultiplayer){
         await mostrarNPCLocal(e.npcIdx, e.texto);
-        await delay(200);
+        await delay(300);
       }
+      // Multiplayer: NPC shown via local pendingNpc queue — skip here
     } else if(e.tipo === 'player'){
       const av = CLASS_AVATAR[e.classId] || '⚔️';
       _empilharFalaPlayer({ nome: e.quem, avatar: av, retrato: null, texto: e.texto });
-      // Track for balloon context strip
-      if(_modoMultiplayer) _lastPlayerFala = { nome: e.quem, texto: e.texto };
-      if(!_modoMultiplayer) await delay(150);
+      if(!_modoMultiplayer) await delay(200);
     }
   }
 }
@@ -1364,23 +1262,22 @@ function _atualizarTurnoUI(data){
 
   // Vez indicator
   const isMyTurn = data.turnoPlayerId === _myId;
-  const npcFalando = (data.pendingNpc || []).length > 0 || data.iaPensando || data.gerandoAbertura;
-  if(isMyTurn && !npcFalando){
+  // "still reading" is local — each player tracks their own position in the batch
+  const stillReading = _showingNpc || _localPendingIdx < _localPendingQueue.length;
+  const npcFalando   = stillReading || data.iaPensando || animando;
+  if(npcFalando){
+    // NPC speaking or generating — all players wait; Continuar is the action
+    turnoVez.textContent = data.iaPensando ? 'Aguardando NPC…' : 'Leia e continue…';
+    msgInput.disabled = true;
+    btnEnviar.disabled = true;
+  } else if(isMyTurn){
     turnoVez.textContent = 'Sua vez';
     msgInput.disabled = false;
     btnEnviar.disabled = false;
     msgInput.placeholder = `O que você diz para ${NPCS[npcAtivo]?.nome?.split(' ')[0] || 'o NPC'}…`;
-  } else if(isMyTurn && npcFalando){
-    turnoVez.textContent = 'Leia e continue…';
-    msgInput.disabled = true;
-    btnEnviar.disabled = true;
   } else {
     const vezDe = jogadores[data.turnoPlayerId];
-    if(npcFalando){
-      turnoVez.textContent = vezDe ? `${vezDe.nome} está lendo…` : 'Aguardando…';
-    } else {
-      turnoVez.textContent = vezDe ? `Vez de ${vezDe.nome}…` : 'Aguardando…';
-    }
+    turnoVez.textContent = vezDe ? `Vez de ${vezDe.nome}…` : 'Aguardando…';
     msgInput.disabled = true;
     btnEnviar.disabled = true;
     msgInput.placeholder = vezDe ? `Vez de ${vezDe.nome}…` : 'Aguardando…';
@@ -1428,61 +1325,53 @@ async function _executarTransicaoCastelLocal(){
 
   animando = false;
 
-  // Show pending castle NPCs now that animation is done
-  if(_sessao){
-    const pending = _sessao.pendingNpc || [];
-    const isMyTurn = _sessao.turnoPlayerId === _myId;
-    if(pending.length > 0 && !_sessao.iaPensando){
-      _mostrarPendingNpc(pending[0], isMyTurn);
-    }
-    _atualizarTurnoUI(_sessao);
+  // Load castle NPCs from pendingNpc into local queue now that animation is done
+  if(_sessao && (_sessao.pendingNpc||[]).length > 0 && !_showingNpc){
+    _pendingBatchTs    = _sessao.pendingBatchTs || 0;
+    _localPendingQueue = [..._sessao.pendingNpc];
+    _localPendingIdx   = 0;
+    _showingNpc = true;
+    _showNextPending();
   }
+  if(_sessao) _atualizarTurnoUI(_sessao);
 }
 
-// Qualquer jogador pode votar a qualquer momento — a cena só avança quando TODOS votarem
 window.irAoCastelo = async function(){
-  if(cenaAtual !== 'feira') return;
-  if(!_modoMultiplayer){ await irAoCastelo_solo(); return; }
+  if(animando) return;
+  if(_modoMultiplayer){
+    if(_sessao?.turnoPlayerId !== _myId) return;
 
-  const votos = _sessao?.votos_castelo || [];
-  if(votos.includes(_myId)) return; // já votou
+    // Generate Catherine's opening before transition (so UI doesn't stutter)
+    iaPensando.style.display='block';
+    let ab;
+    try{ ab = await chamarIA(2, NPCS[2].abertura); }
+    catch(_){ ab = NPCS[2].aberturaFallback; }
+    iaPensando.style.display='none';
+    historicos[2].push({role:'user', content:NPCS[2].abertura});
+    historicos[2].push({role:'assistant', content:ab});
 
-  await _sessaoRef.update({ votos_castelo: FV().arrayUnion(_myId) });
-  // UI update happens via onSnapshot → _processar
+    const gregRaw = '[ACAO: Faz um gesto seco com a cabeça, virando-se para caminhar.] Venham. A Duquesa não gosta de esperar.';
+    const annRaw  = '[ACAO: Bate suavemente na porta do salão privado e a empurra, indicando que entrem.] Milady. Os aventureiros que a senhora queria conhecer.';
+
+    // Commit any outstanding pendingNpc to log, then write castle NPCs + signal transition
+    const prevPending = _sessao?.pendingNpc || [];
+    const mk = e => ({...e, uid: Date.now().toString(36)+Math.random().toString(36).slice(2,5), ts: Date.now()});
+    const updates = {
+      pendingNpc: [
+        { quem:NPCS[0].nome, texto:gregRaw, tipo:'npc', npcIdx:0 },
+        { quem:NPCS[0].nome, texto:annRaw,  tipo:'npc', npcIdx:0 },
+        { quem:NPCS[2].nome, texto:ab,       tipo:'npc', npcIdx:2 },
+      ],
+      pendingBatchTs: Date.now(),
+      transicao: 'castelo',
+      btnCastelo: false,
+    };
+    if(prevPending.length > 0) updates.log = arrayUnion(...prevPending.map(mk));
+    await updateDoc(_sessaoRef, updates);
+  } else {
+    await irAoCastelo_solo();
+  }
 };
-
-// Chamado pelo host quando todos os votos chegaram
-async function _executarTransicaoParaCastelo(){
-  // Marcar como iniciada para evitar double-trigger
-  await _sessaoRef.update({ transicao_iniciada: true });
-
-  // Grégoras conduz o grupo
-  const gregRaw = '[ACAO: Faz um gesto seco com a cabeça, virando-se para caminhar.] Venham. A Duquesa não gosta de esperar.';
-  await _appendLog({ quem: NPCS[0].nome, texto: gregRaw, tipo: 'npc', npcIdx: 0 });
-  await delay(800);
-
-  // Catherine via Groq
-  await _sessaoRef.update({ iaPensando: true });
-  let ab;
-  try{ ab = await chamarIA(2, NPCS[2].abertura); }
-  catch(_){ ab = NPCS[2].aberturaFallback; }
-  historicos[2].push({ role:'user', content: NPCS[2].abertura });
-  historicos[2].push({ role:'assistant', content: ab });
-  await _sessaoRef.update({ iaPensando: false });
-
-  // Grégoras anuncia + Catherine fala → gated by Continuar (turn player)
-  const annRaw = '[ACAO: Bate suavemente na porta do salão privado e a empurra, indicando que entrem.] Milady. Os aventureiros que a senhora queria conhecer.';
-
-  // Sinaliza transição para todos + queue castle NPCs
-  await _sessaoRef.update({
-    transicao: 'castelo',
-    btnCastelo: false,
-    pendingNpc: [
-      { quem: NPCS[0].nome, texto: annRaw, tipo: 'npc', npcIdx: 0 },
-      { quem: NPCS[2].nome, texto: ab, tipo: 'npc', npcIdx: 2 },
-    ],
-  });
-}
 
 async function irAoCastelo_solo(){
   if(animando) return;
@@ -1626,45 +1515,56 @@ async function enviar(){
 
   if(_modoMultiplayer){
     if(_sessao?.turnoPlayerId !== _myId) return;
-    if((_sessao?.pendingNpc || []).length > 0) return; // NPC still speaking
     animando = true; msgInput.disabled = true; btnEnviar.disabled = true; msgInput.value = '';
 
-    // 1. Write player message to log immediately (all see it)
-    await _appendLog({ quem: _myNome, texto: txt, tipo: 'player', classId: _myClassId });
+    // 1. Commit current pendingNpc to log + write player message (one update)
+    const prevPending = _sessao?.pendingNpc || [];
+    const mk = e => ({...e, uid: Date.now().toString(36)+Math.random().toString(36).slice(2,5), ts: Date.now()});
+    const playerEntry = mk({ quem: _myNome, texto: txt, tipo: 'player', classId: _myClassId });
+    const logEntries  = prevPending.length > 0 ? [...prevPending.map(mk), playerEntry] : [playerEntry];
+    await updateDoc(_sessaoRef, {
+      log: arrayUnion(...logEntries),
+      pendingNpc: [],
+      iaPensando: true,
+    });
 
-    // 2. Set iaPensando while calling Groq
-    await _sessaoRef.update({ iaPensando: true });
+    // Reset local reading state — we just committed what was pending
+    _localPendingQueue = []; _localPendingIdx = 0; _showingNpc = false; _pendingBatchTs = 0;
 
-    // 3. Call Groq (only turn player does this)
+    // 2. Call Groq (only the turn player calls Groq)
     const target = npcAtivo;
     historicos[target].push({ role: 'user', content: txt });
+    const ordem   = _sessao?.turnoOrdem || [_myId];
+    const proxIdx = (ordem.indexOf(_myId) + 1) % ordem.length;
     try {
       const resp = await chamarIA(target, txt);
       historicos[target].push({ role: 'assistant', content: resp });
 
-      // 4. Check spontaneous reaction
-      const reacao = await _verificarReacao(target);
+      // 3. Check spontaneous reaction
+      const reacao  = await _verificarReacao(target);
+      const newPend = [{ quem: NPCS[target].nome, texto: resp, tipo: 'npc', npcIdx: target }];
+      if(reacao) newPend.push({ quem: NPCS[reacao.idx].nome, texto: reacao.raw, tipo: 'npc', npcIdx: reacao.idx });
 
-      // 5. Queue NPC responses in pendingNpc — gated by Continuar (turn stays with current player)
-      const pending = [{ quem: NPCS[target].nome, texto: resp, tipo: 'npc', npcIdx: target }];
-      if(reacao) pending.push({ quem: NPCS[reacao.idx].nome, texto: reacao.raw, tipo: 'npc', npcIdx: reacao.idx });
-
-      await _sessaoRef.update({ iaPensando: false, pendingNpc: pending });
+      // 4. NPC response → pendingNpc (players read at own pace), advance turn
+      await updateDoc(_sessaoRef, {
+        iaPensando: false,
+        pendingNpc: newPend,
+        pendingBatchTs: Date.now(),
+        turnoPlayerId: ordem[proxIdx],
+      });
     } catch(e){
       if(e.message === 'sem-chave'){
         cfgOverlay.classList.remove('oculto');
       } else {
         let motivo = 'Tente novamente.';
-        if(e.name==='AbortError') motivo = 'A IA demorou demais. Tente de novo.';
+        if(e.name==='AbortError') motivo = 'A IA demorou demais. Tente novamente.';
         else if(e.message) motivo = e.message.slice(0,90);
-        try { await _appendLog({ quem:'sistema', texto:motivo, tipo:'sistema' }); } catch(_){}
+        await _appendLog({ quem:'sistema', texto:motivo, tipo:'sistema' });
       }
-    } finally {
-      // Guarantee iaPensando is cleared no matter what
-      try { await _sessaoRef.update({ iaPensando: false }); } catch(_){}
-      animando = false;
+      await updateDoc(_sessaoRef, { iaPensando: false, turnoPlayerId: ordem[proxIdx] });
     }
-    // Note: turn advances via _handleContinuar after all pendingNpc are confirmed
+
+    animando = false;
   } else {
     // Solo mode
     await enviar_solo(txt);
@@ -1738,23 +1638,43 @@ async function iniciarCena_solo(){
 }
 
 async function iniciarCena(){
-  try {
-    if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
-    _db = firebase.firestore();
-    _sessaoRef = _db.collection('lobbies').doc('sim-dialogo');
-    await _sessaoRef.get();
-    _modoMultiplayer = true;
-  } catch(e){
-    console.warn('Firebase connection failed:', e);
-    _modoMultiplayer = false;
-    soloBadge.style.display = 'block';
-  }
+  // Try Firebase multiplayer
+  let fbReady = false;
+  const fbTimeout = new Promise(resolve => {
+    _fbInitTimeout = setTimeout(() => resolve(false), 5000);
+  });
 
-  if(_modoMultiplayer){
-    if(!localStorage.getItem('oraculo.groqKey')){ cfgOverlay.classList.remove('oculto'); return; }
+  const fbConnect = (async () => {
+    try {
+      const app = initializeApp(FB_CONFIG);
+      _db = getFirestore(app);
+      _sessaoRef = doc(_db, 'sessoes', 'simulacao-dialogo');
+      // Test connection with a quick read
+      await getDoc(_sessaoRef);
+      clearTimeout(_fbInitTimeout);
+      return true;
+    } catch(e){
+      console.warn('Firebase connection failed:', e);
+      return false;
+    }
+  })();
+
+  fbReady = await Promise.race([fbConnect, fbTimeout]);
+
+  if(fbReady){
+    _modoMultiplayer = true;
+    console.log('Multiplayer mode active');
+    if(!localStorage.getItem('oraculo.groqKey')){
+      cfgOverlay.classList.remove('oculto');
+      return;
+    }
     atualizarChips();
     await entrarSessao();
   } else {
+    // Fallback to solo mode
+    _modoMultiplayer = false;
+    soloBadge.style.display = 'block';
+    console.log('Fallback to solo mode');
     await iniciarCena_solo();
   }
 }
