@@ -1176,6 +1176,16 @@ function _processar(data){
     _renderEntradas(novos);
   }
 
+  // Handle pending NPC — shown in balloon, any player can advance with Continuar
+  const pending = data.pendingNpc || [];
+  const isMyTurn = data.turnoPlayerId === _myId;
+  if(pending.length > 0 && !data.iaPensando && !data.gerandoAbertura && !animando){
+    // _mostrarPendingNpc awaits the display animation then sets btnContinuar correctly
+    _mostrarPendingNpc(pending[0], true);
+  } else if(pending.length === 0 && !data.iaPensando && !data.gerandoAbertura && _modoMultiplayer){
+    btnContinuar.style.display = 'none';
+  }
+
   // Turn UI
   _atualizarTurnoUI(data);
 }
@@ -1216,7 +1226,13 @@ function _atualizarTurnoUI(data){
 
   // Vez indicator
   const isMyTurn = data.turnoPlayerId === _myId;
-  if(isMyTurn){
+  const npcFalando = (data.pendingNpc || []).length > 0 || data.iaPensando || data.gerandoAbertura;
+  if(npcFalando){
+    // NPC is speaking — everyone reads and can click Continuar; input locked for all
+    turnoVez.textContent = 'Leia e continue…';
+    msgInput.disabled = true;
+    btnEnviar.disabled = true;
+  } else if(isMyTurn){
     turnoVez.textContent = 'Sua vez';
     msgInput.disabled = false;
     btnEnviar.disabled = false;
@@ -1270,7 +1286,15 @@ async function _executarTransicaoCastelLocal(){
   selecionarNpc(2);
 
   animando = false;
-  // input state will be managed by turno UI
+
+  // Show pending castle NPCs now that animation is done
+  if(_sessao){
+    const pending = _sessao.pendingNpc || [];
+    if(pending.length > 0 && !_sessao.iaPensando){
+      _mostrarPendingNpc(pending[0], true);
+    }
+    _atualizarTurnoUI(_sessao);
+  }
 }
 
 window.irAoCastelo = async function(){
