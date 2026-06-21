@@ -685,7 +685,6 @@ NPCS.forEach((npc, i) => {
   par.style.zIndex = String(npc.zBase);
   par.style.left = `${npc.offsetPx}px`;
 
-  // NPCs fora da cena inicial ficam escondidos
   if(!npc.cenas.includes(cenaAtual)){
     par.style.display = 'none';
   } else if(i > 0){
@@ -700,6 +699,14 @@ NPCS.forEach((npc, i) => {
   personagens.appendChild(par);
   npcEls.push({ par });
 });
+
+// Entra em cena imediatamente (slide-in visual antes de qualquer fala)
+setTimeout(() => {
+  NPCS.forEach((npc, i) => {
+    if(npc.cenas.includes(cenaAtual)) npcEls[i].par.classList.add('dentro');
+  });
+  atualizarChips();
+}, 450);
 
 // ══════════════════════════════════════════════════════════
 //  CANVAS + CHROMAKEY
@@ -1231,6 +1238,16 @@ async function entrarSessao(){
   const prelogLen = presnap.exists ? (presnap.data().log || []).length : 0;
   _restaurarReadIdx(prelogLen);
 
+  // Se já lemos tudo de uma sessão anterior, mostra NPCs visíveis
+  if(_readIdx >= prelogLen && prelogLen > 0){
+    NPCS.forEach((n, i) => {
+      if(!n.cenas.includes(cenaAtual)) return;
+      npcEls[i].par.classList.add('dentro');
+      npcEls[i].par.classList.remove('inativo');
+    });
+    selecionarNpc(0);
+  }
+
   // Escuta o doc
   _unsubSnapshot = _sessaoRef.onSnapshot((doc) => {
     if(doc.exists) _processar(doc.data());
@@ -1240,7 +1257,7 @@ async function entrarSessao(){
   const freshSnap = await _sessaoRef.get();
   if(freshSnap.exists){
     const data = freshSnap.data();
-    if(data.hostId === _myId && (data.log || []).length === 0 && !data.iaPensando){
+    if(data.hostId === _myId && (data.log || []).length === 0){
       await _gerarAbertura();
     }
   }
@@ -1255,13 +1272,15 @@ async function _gerarAbertura(){
   const guard = await _sessaoRef.get();
   if(guard.exists){
     const gd = guard.data();
-    if(gd.iaPensando || (gd.log && gd.log.length > 0)) return;
+    const logVazio = !gd.log || gd.log.length === 0;
+    // Auto-reset iaPensando travado (sessão anterior morreu sem limpar)
+    if(gd.iaPensando && logVazio) await _sessaoRef.update({ iaPensando: false });
+    if(!logVazio) return;
   }
-  atualizarChips();
-  await delay(700);
+  await delay(300);
   await _sessaoRef.update({ iaPensando: true });
 
-  // Grégoras
+  // L
   iaPensando.style.display='block';
   let ab0;
   try{ ab0 = await chamarIA(0, NPCS[0].abertura); }
@@ -1269,7 +1288,7 @@ async function _gerarAbertura(){
   historicos[0].push({role:'user', content:NPCS[0].abertura});
   historicos[0].push({role:'assistant', content:ab0});
 
-  // Finn
+  // Light
   let ab1;
   try{ ab1 = await chamarIA(1, NPCS[1].abertura); }
   catch(_){ ab1 = NPCS[1].aberturaFallback; }
@@ -1563,7 +1582,6 @@ async function enviar_solo(txt){
 async function iniciarCena_solo(){
   if(!localStorage.getItem('oraculo.groqKey')){ cfgOverlay.classList.remove('oculto'); return; }
   msgInput.disabled=true; btnEnviar.disabled=true;
-  atualizarChips();
   await delay(700);
 
   iaPensando.style.display='block';
