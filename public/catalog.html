@@ -72,6 +72,18 @@
 
     .tabs { display: flex; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .tabs::-webkit-scrollbar { display: none; }
+    .tab-btn-dn {
+      padding: 8px 14px 10px;
+      white-space: nowrap; flex-shrink: 0;
+      background: none; border: none;
+      border-bottom: 2px solid transparent;
+      color: rgba(200,100,100,0.45);
+      font-size: 12px; font-family: inherit; cursor: pointer;
+      transition: color .15s, border-color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tab-btn-dn.active { color: #e06060; border-bottom-color: #e06060; }
+    .tab-btn-dn:hover  { color: rgba(220,130,130,0.8); }
     .tab-btn {
       padding: 8px 14px 10px;
       white-space: nowrap; flex-shrink: 0;
@@ -635,17 +647,92 @@
       .tab-btn { padding:8px 11px 10px; font-size:10px; }
       .card-grid { grid-template-columns: repeat(2, 1fr) !important; gap:10px; }
     }
+
+    /* ── Seletor de campanha ── */
+    .cat-camp-bar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 20px 0;
+    }
+    .cat-camp-btn {
+      padding: 5px 16px; border-radius: 20px; font-size: 11px;
+      font-family: inherit; font-weight: 700; cursor: pointer;
+      border: 1px solid transparent; letter-spacing: .3px;
+      transition: background .18s, border-color .18s, color .18s;
+      -webkit-tap-highlight-color: transparent;
+      background: none; color: rgba(200,180,128,0.35);
+      border-color: rgba(200,160,64,0.15);
+    }
+    .cat-camp-btn.cat-camp-mhoried.active {
+      background: rgba(200,160,48,.15); border-color: rgba(200,160,48,.6);
+      color: #c8a030;
+    }
+    .cat-camp-btn.cat-camp-dn.active {
+      background: rgba(180,30,30,.16); border-color: rgba(200,50,50,.6);
+      color: #e06060;
+    }
+    .cat-camp-btn:not(.active):hover { border-color: rgba(200,160,64,0.35); color: rgba(200,180,128,0.6); }
+
+    /* ── Cards Death Note ── */
+    .dn-card {
+      background: rgba(18,5,5,.75); border: 1px solid rgba(160,30,30,.25);
+      border-radius: var(--radius); padding: 14px; cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .dn-card:hover { border-color: rgba(200,50,50,.55); background: rgba(30,6,6,.85); }
+    .dn-card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .dn-card-avatar { font-size: 32px; flex-shrink: 0; width: 48px; text-align: center; }
+    .dn-card-img {
+      width: 48px; height: 60px; object-fit: cover; object-position: top;
+      border-radius: 6px; border: 1px solid rgba(160,30,30,.3);
+      flex-shrink: 0;
+    }
+    .dn-card-nome { font-size: 15px; font-weight: 700; color: #e0c0c0; }
+    .dn-card-papel { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+    .dn-card-papel.aliado  { color: var(--aliado-t); }
+    .dn-card-papel.neutro  { color: var(--neutro-t); }
+    .dn-card-papel.vilao   { color: var(--vilao-t); }
+    .dn-card-papel.hostil  { color: var(--hostil-t); }
+    .dn-card-desc { font-size: 11px; color: rgba(200,175,155,.6); line-height: 1.5; }
+    .dn-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+    .dn-tag {
+      font-size: 9px; padding: 2px 8px; border-radius: 10px;
+      background: rgba(160,30,30,.18); border: 1px solid rgba(160,30,30,.3);
+      color: rgba(210,150,150,.7);
+    }
+
+    /* Regras DN */
+    .dn-regra {
+      padding: 10px 14px; margin-bottom: 6px;
+      border-left: 3px solid rgba(160,30,30,.5);
+      background: rgba(15,4,4,.6); border-radius: 0 8px 8px 0;
+    }
+    .dn-regra-num { font-size: 9px; color: rgba(200,80,80,.6); letter-spacing: 1px; margin-bottom: 3px; }
+    .dn-regra-txt { font-size: 12px; color: rgba(220,195,175,.8); line-height: 1.55; }
+
+    /* Cenários DN */
+    .dn-cen-card {
+      background: rgba(15,4,4,.7); border: 1px solid rgba(140,25,25,.25);
+      border-radius: var(--radius); padding: 14px; margin-bottom: 10px;
+    }
+    .dn-cen-nome { font-size: 14px; font-weight: 700; color: #d08080; margin-bottom: 4px; }
+    .dn-cen-desc { font-size: 11px; color: rgba(200,170,150,.6); line-height: 1.5; }
   </style>
 </head>
 <body>
 
 <header>
   <div class="header-top">
-    <h1>⚔️ Oráculo — Catálogo de Personagens</h1>
-    <a class="btn-sim" href="simulacao_entrada.html">🎮 Ambiente de Simulação</a>
+    <h1 id="cat-titulo">⚔️ Oráculo — Catálogo de Personagens</h1>
+    <a class="btn-sim" href="simulacao_entrada.html">🎮 Simulação</a>
     <span id="count-label"></span>
   </div>
-  <nav class="tabs">
+  <!-- Seletor de campanha -->
+  <div class="cat-camp-bar">
+    <button class="cat-camp-btn cat-camp-mhoried active" data-camp="mhoried">⚔️ Mhoried</button>
+    <button class="cat-camp-btn cat-camp-dn" data-camp="death-note">📓 Death Note</button>
+  </div>
+  <!-- Tabs Mhoried -->
+  <nav class="tabs" id="tabs-mhoried">
     <button class="tab-btn active" data-tab="classes">Classes</button>
     <button class="tab-btn" data-tab="npcs">NPCs</button>
     <button class="tab-btn" data-tab="inimigos">Inimigos</button>
@@ -653,6 +740,12 @@
     <button class="tab-btn" data-tab="roteiro">Roteiro</button>
     <button class="tab-btn" data-tab="checklist">✓ Check</button>
     <button class="tab-btn" data-tab="size">📐 Size</button>
+  </nav>
+  <!-- Tabs Death Note -->
+  <nav class="tabs" id="tabs-dn" style="display:none">
+    <button class="tab-btn-dn active" data-tab-dn="dn-personagens">Personagens</button>
+    <button class="tab-btn-dn" data-tab-dn="dn-regras">Regras</button>
+    <button class="tab-btn-dn" data-tab-dn="dn-cenarios">Cenários</button>
   </nav>
 </header>
 
@@ -666,13 +759,18 @@
 </div>
 
 <main>
-  <div id="classes-tab"   class="tab-content active"></div>
-  <div id="npcs-tab"      class="tab-content"></div>
-  <div id="inimigos-tab"  class="tab-content"></div>
-  <div id="cenarios-tab"  class="tab-content"></div>
-  <div id="roteiro-tab"   class="tab-content"></div>
-  <div id="checklist-tab" class="tab-content"></div>
-  <div id="size-tab"      class="tab-content"></div>
+  <!-- Mhoried tabs -->
+  <div id="classes-tab"   class="tab-content mh-tab active"></div>
+  <div id="npcs-tab"      class="tab-content mh-tab"></div>
+  <div id="inimigos-tab"  class="tab-content mh-tab"></div>
+  <div id="cenarios-tab"  class="tab-content mh-tab"></div>
+  <div id="roteiro-tab"   class="tab-content mh-tab"></div>
+  <div id="checklist-tab" class="tab-content mh-tab"></div>
+  <div id="size-tab"      class="tab-content mh-tab"></div>
+  <!-- Death Note tabs -->
+  <div id="dn-personagens-tab" class="tab-content dn-tab" style="display:none"></div>
+  <div id="dn-regras-tab"      class="tab-content dn-tab" style="display:none"></div>
+  <div id="dn-cenarios-tab"    class="tab-content dn-tab" style="display:none"></div>
 </main>
 
 <!-- Modal -->
@@ -1861,6 +1959,202 @@ function buildSizeTab(){
   renderChips();
   renderArena();
 }
+
+// ══════════════════════════════════════════════════════════════════════
+//  DEATH NOTE — DADOS & TABS
+// ══════════════════════════════════════════════════════════════════════
+
+const DN_PERSONAGENS = [
+  {
+    id:'l_lawliet', nome:'L Lawliet', avatar:'🍰', papel:'aliado',
+    img:'catalogo/death-note/npcs/l/peca_tabuleiro/l_peca.png',
+    desc:'O maior detetive do mundo. Opera sob pseudônimos (L, Ryuzaki). Excêntrico ao extremo: de cócoras nas cadeiras, come doces constantemente. Analítico, frio, incorruptível — e o único homem capaz de desafiar Kira de igual para igual.',
+    tags:['Detetive','Gênio','QI 215','Enigmático','Comer Doces'],
+  },
+  {
+    id:'light_yagami', nome:'Light Yagami', avatar:'📓', papel:'vilao',
+    img:'catalogo/death-note/npcs/light_yagami/peca_tabuleiro/light_peca.png',
+    desc:'Estudante nº1 do Japão, filho do Chefe Yagami. Por fora: encantador e brilhante. Por dentro: Kira — portador do Death Note, convencido de que tem o direito de julgar o mundo. Joga xadrez com a própria investigação que deveria encerrá-lo.',
+    tags:['Kira','Death Note','Portador','Gênio','Dupla Identidade'],
+  },
+  {
+    id:'ryuk', nome:'Ryuk', avatar:'🍎', papel:'neutro',
+    img:'catalogo/death-note/npcs/ryuk/peca_tabuleiro/ryuk_peca.png',
+    desc:'Shinigami que largou intencionalmente seu Death Note no mundo humano por tédio. Não ajuda Light, não o atrapalha — apenas observa, diverte-se, e come maçãs. Completamente honesto sobre o que é e o que quer.',
+    tags:['Shinigami','Observador','Neutro','Maçãs','Morte Natural'],
+  },
+  {
+    id:'misa_amane', nome:'Misa Amane', avatar:'🖤', papel:'vilao',
+    img:'catalogo/death-note/npcs/misa_amane/peca_tabuleiro/misa_peca.png',
+    desc:'Segunda Kira. Modelo e atriz fanática por Kira que agia como justiceira antes de encontrar Light. Possui os Olhos Shinigami — vê o nome e tempo de vida de qualquer pessoa que olha. Entregaria tudo por Light, inclusive a própria vida.',
+    tags:['Segunda Kira','Olhos Shinigami','Rem','Ídolo','Devotada'],
+  },
+  {
+    id:'near', nome:'Near (N)', avatar:'🎲', papel:'aliado',
+    img:'catalogo/death-note/npcs/near/peca_tabuleiro/near_peca.png',
+    desc:'Sucessor de L, líder do SPK (Special Provision for Kira). Brinca com bonecos e blocos enquanto pensa. Metódico e calculista — onde L age por intuição, Near age por dedução pura. O único que conseguiu onde L falhou.',
+    tags:['SPK','Sucessor de L','Dedução','Brinquedos','Estrategista'],
+  },
+  {
+    id:'soichiro_yagami', nome:'Soichiro Yagami', avatar:'🚔', papel:'aliado',
+    img:'catalogo/death-note/npcs/soichiro/peca_tabuleiro/soichiro_peca.png',
+    desc:'Chefe da Polícia e pai de Light. Homem de integridade inabalável que lidera a Força-Tarefa Kira sem saber que seu próprio filho é o criminoso que persegue. Morreu acreditando na inocência de Light.',
+    tags:['Chefe de Polícia','Força-Tarefa','Pai de Light','Íntegro'],
+  },
+  {
+    id:'matsuda', nome:'Matsuda Touta', avatar:'👮', papel:'aliado',
+    img:'catalogo/death-note/npcs/matsuda/peca_tabuleiro/matsuda_peca.png',
+    desc:'Membro mais jovem e impulsivo da Força-Tarefa Kira. Admira Light como herói e só no final descobre a verdade — disparando os tiros que encerram a história. A voz da humanidade comum no meio de gênios.',
+    tags:['Força-Tarefa','Impulsivo','Leal','Policial','Reviravolta'],
+  },
+];
+
+const DN_REGRAS = [
+  { num:'1', txt:'O ser humano cujo nome for escrito neste caderno morrerá.' },
+  { num:'2', txt:'Este caderno não terá efeito a menos que o escritor tenha em mente a face da pessoa ao escrever seu nome. Portanto, pessoas com o mesmo nome não serão afetadas.' },
+  { num:'3', txt:'Se a causa da morte for escrita nos 40 segundos após o nome, ela acontecerá.' },
+  { num:'4', txt:'Se a causa da morte não for especificada, a pessoa simplesmente morrerá de ataque cardíaco.' },
+  { num:'5', txt:'Após escrever a causa da morte, detalhes da morte devem ser escritos nos 6 minutos e 40 segundos seguintes.' },
+  { num:'6', txt:'O dono do Death Note pode reconhecer o rosto e o nome real do Shinigami dono do caderno.' },
+  { num:'7', txt:'O dono do Death Note pode matar o alvo tocando a face da pessoa.' },
+  { num:'13', txt:'Um ser humano que usar o Death Note não pode ir para o Céu nem para o Inferno.' },
+  { num:'14', txt:'Se o dono do Death Note perder a posse do caderno por mais de 490 dias, ele perderá todas as memórias relacionadas ao Death Note.' },
+  { num:'22', txt:'Olhos Shinigami: a troca de metade do tempo de vida restante permite ao portador ver o nome e o tempo de vida de qualquer pessoa ao olhar para seu rosto.' },
+  { num:'34', txt:'O Shinigami que abandona ou perde intencionalmente seu Death Note no mundo humano deverá supervisioná-lo até sua morte.' },
+  { num:'38', txt:'Somente o Shinigami que trouxe o Death Note ao mundo humano pode apanhar o caderno de volta se o dono morrer.' },
+];
+
+const DN_CENARIOS = [
+  {
+    nome:'QG da Força-Tarefa Kira',
+    local:'32º andar, Hotel Imperial, Tóquio',
+    desc:'Sala de guerra com bancos de monitores mostrando padrões globais de mortes criminosas. Vista panorâmica para a cidade. L opera daqui sob o nome "Ryuzaki". Todos os membros da força-tarefa têm acesso — incluindo Light, que monitora a investigação de dentro.',
+  },
+  {
+    nome:'Quarto de Light Yagami',
+    local:'Residência da família Yagami, Kantō',
+    desc:'Onde tudo começou. Light esconde o Death Note numa gaveta com armadilha. É aqui que ele estuda, planeja execuções e desenvolve a identidade de Kira. A normalidade do quarto contrasta com o que acontece dentro dele.',
+  },
+  {
+    nome:'Prisão / Confinamento de L',
+    local:'Instalação secreta, Japão',
+    desc:'L prendeu Light e Misa para testar se perderiam as memórias do Death Note ao abrir mão da posse. Light permaneceu 50 dias confinado, perdeu as memórias, e passou a agir genuinamente como aliado de L — até recuperá-las.',
+  },
+  {
+    nome:'Armazém Final',
+    local:'Localização não divulgada, Japão',
+    desc:'O confronto final entre Light e Near. Near revela que trocou o Death Note real por uma cópia. Mikami escreve os nomes — mas só os da Força-Tarefa morrem. Light é exposto na frente de todos. Matsuda dispara.',
+  },
+];
+
+let _dnBuilt = false;
+
+function buildDnPersonagensTab(){
+  const tab = document.getElementById('dn-personagens-tab');
+  const header = `<div class="section-header"><h2>Personagens de Death Note</h2><span class="count-badge">${DN_PERSONAGENS.length} personagens</span></div>`;
+  const cards = DN_PERSONAGENS.map(p => {
+    const imgEl = `<img class="dn-card-img" src="${p.img}" alt="" onerror="this.style.display='none'">`;
+    const tags = p.tags.map(t=>`<span class="dn-tag">${t}</span>`).join('');
+    return `<div class="dn-card">
+      <div class="dn-card-top">
+        ${imgEl}
+        <div>
+          <div class="dn-card-nome">${p.avatar} ${p.nome}</div>
+          <div class="dn-card-papel ${p.papel}">${p.papel.charAt(0).toUpperCase()+p.papel.slice(1)}</div>
+        </div>
+      </div>
+      <div class="dn-card-desc">${p.desc}</div>
+      <div class="dn-card-tags">${tags}</div>
+    </div>`;
+  }).join('');
+  tab.innerHTML = header + `<div class="card-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:16px">${cards}</div>`;
+}
+
+function buildDnRegrasTab(){
+  const tab = document.getElementById('dn-regras-tab');
+  const header = `<div class="section-header"><h2>Regras do Death Note</h2><span class="count-badge">${DN_REGRAS.length} regras essenciais</span></div>`;
+  const items = DN_REGRAS.map(r=>`
+    <div class="dn-regra">
+      <div class="dn-regra-num">REGRA ${r.num}</div>
+      <div class="dn-regra-txt">${r.txt}</div>
+    </div>`).join('');
+  tab.innerHTML = header + `<div style="padding:16px">${items}</div>`;
+}
+
+function buildDnCenariosTab(){
+  const tab = document.getElementById('dn-cenarios-tab');
+  const header = `<div class="section-header"><h2>Cenários</h2><span class="count-badge">${DN_CENARIOS.length} locais</span></div>`;
+  const items = DN_CENARIOS.map(c=>`
+    <div class="dn-cen-card">
+      <div class="dn-cen-nome">📍 ${c.nome}</div>
+      <div style="font-size:9px;color:rgba(200,100,100,.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${c.local}</div>
+      <div class="dn-cen-desc">${c.desc}</div>
+    </div>`).join('');
+  tab.innerHTML = header + `<div style="padding:16px">${items}</div>`;
+}
+
+// ── Tabs Death Note ────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn-dn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const tab = btn.dataset.tabDn;
+    document.querySelectorAll('.tab-btn-dn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.dn-tab').forEach(t=>t.style.display='none');
+    btn.classList.add('active');
+    document.getElementById(`${tab}-tab`).style.display='block';
+  });
+});
+
+// ── Seletor de campanha ────────────────────────────────────────────────
+(function(){
+  let campAtual = localStorage.getItem('oraculo.campaign') || 'mhoried';
+
+  const campBtns = document.querySelectorAll('.cat-camp-btn');
+  const tabsMh   = document.getElementById('tabs-mhoried');
+  const tabsDn   = document.getElementById('tabs-dn');
+  const filterBar= document.getElementById('filter-bar');
+  const mhTabs   = document.querySelectorAll('.mh-tab');
+  const dnTabs   = document.querySelectorAll('.dn-tab');
+
+  function aplicarCampanha(camp){
+    campAtual = camp;
+    localStorage.setItem('oraculo.campaign', camp);
+    campBtns.forEach(b => b.classList.toggle('active', b.dataset.camp === camp));
+
+    const isDn = camp === 'death-note';
+    tabsMh.style.display    = isDn ? 'none' : '';
+    tabsDn.style.display    = isDn ? '' : 'none';
+    filterBar.style.display = 'none';
+
+    if(isDn){
+      // Esconder todos os tabs Mhoried via inline (sobrepõe .active)
+      mhTabs.forEach(t => { t.style.display = 'none'; });
+      // Construir DN na primeira vez
+      if(!_dnBuilt){ buildDnPersonagensTab(); buildDnRegrasTab(); buildDnCenariosTab(); _dnBuilt=true; }
+      // Mostrar tab DN ativa
+      dnTabs.forEach(t => { t.style.display = 'none'; });
+      const activeDnBtn = document.querySelector('.tab-btn-dn.active');
+      const activeTab = (activeDnBtn ? activeDnBtn.dataset.tabDn : 'dn-personagens');
+      document.getElementById(activeTab+'-tab').style.display = 'block';
+      document.getElementById('count-label').textContent = `${DN_PERSONAGENS.length} personagens`;
+      document.getElementById('cat-titulo').textContent = '📓 Death Note — Tokyo Defender';
+    } else {
+      // Esconder tabs DN
+      dnTabs.forEach(t => { t.style.display = 'none'; });
+      // Remover inline style dos tabs Mhoried — deixar CSS .active controlar
+      mhTabs.forEach(t => { t.style.display = ''; });
+      document.getElementById('cat-titulo').textContent = '⚔️ Oráculo — Catálogo de Personagens';
+      const activeMhBtn = document.querySelector('#tabs-mhoried .tab-btn.active');
+      updateCount(activeMhBtn ? activeMhBtn.dataset.tab : 'classes');
+    }
+  }
+
+  campBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=> aplicarCampanha(btn.dataset.camp));
+  });
+
+  // Aplicar estado salvo no load
+  if(campAtual === 'death-note') aplicarCampanha('death-note');
+})();
 
 // ── NPC FILTER ────────────────────────────────────────────────────────
 
