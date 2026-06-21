@@ -121,6 +121,52 @@ body {
 .isc-btn-continue:hover { background: rgba(60,120,200,.4); }
 .isc-btn-continue-sub { font-size: 10px; font-weight: 400; color: #5080b0; }
 
+/* ── Seleção de campanha (landing) ── */
+.camp-sel-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  position: relative; z-index: 1; width: 100%; max-width: 280px;
+}
+.camp-sel-label {
+  font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+  color: rgba(200,160,48,0.35);
+}
+.camp-sel-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;
+}
+.camp-card {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 11px 8px 10px;
+  border-radius: 12px; cursor: pointer;
+  font-family: inherit;
+  transition: box-shadow .18s, border-color .18s, background .18s;
+  -webkit-tap-highlight-color: transparent;
+  border: 1px solid transparent;
+  background: rgba(10,6,2,0.7);
+}
+.camp-icon { font-size: 22px; }
+.camp-name { font-size: 12px; font-weight: 700; }
+.camp-sub  { font-size: 8px; opacity: 0.6; }
+
+/* Mhoried — ouro */
+.camp-mhoried { border-color: rgba(200,160,48,0.20); color: rgba(200,160,48,0.55); }
+.camp-mhoried:hover { border-color: rgba(200,160,48,0.45); background: rgba(40,25,5,0.8); }
+.camp-mhoried.selecionado {
+  border-color: rgba(200,160,48,0.70);
+  background: rgba(200,160,48,0.12);
+  color: #c8a030;
+  box-shadow: 0 0 14px rgba(200,160,48,0.18);
+}
+
+/* Death Note — vermelho */
+.camp-dn { border-color: rgba(180,30,30,0.22); color: rgba(210,90,90,0.55); }
+.camp-dn:hover { border-color: rgba(200,50,50,0.45); background: rgba(30,5,5,0.85); }
+.camp-dn.selecionado {
+  border-color: rgba(200,50,50,0.70);
+  background: rgba(200,30,30,0.13);
+  color: #e06060;
+  box-shadow: 0 0 14px rgba(200,30,30,0.18);
+}
+
 /* Topbar compartilhada */
 .isc-topbar {
   display: flex; align-items: center; gap: 8px;

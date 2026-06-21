@@ -111,13 +111,33 @@ function initLanding() {
     });
   }
 
+  // Seleção de campanha
+  const campCards = document.querySelectorAll('.camp-card');
+  let campSelecionada = localStorage.getItem('oraculo.campaign') || 'mhoried';
+  campCards.forEach(c => c.classList.toggle('selecionado', c.dataset.camp === campSelecionada));
+  campCards.forEach(card => {
+    card.addEventListener('click', () => {
+      campSelecionada = card.dataset.camp;
+      localStorage.setItem('oraculo.campaign', campSelecionada);
+      campCards.forEach(c => c.classList.toggle('selecionado', c === card));
+    });
+  });
+
   document.getElementById('btn-solo')?.addEventListener('click', () => {
+    if (campSelecionada === 'death-note') {
+      window.location.href = 'simulacao_dialogo_dn.html';
+      return;
+    }
     session.onlineMode = false;
     showScreen('isc-slots');
     renderSlots();
   });
 
   document.getElementById('btn-online')?.addEventListener('click', () => {
+    if (campSelecionada === 'death-note') {
+      window.location.href = 'simulacao_dialogo_dn.html';
+      return;
+    }
     session.onlineMode = true;
     showScreen('isc-slots');
     renderSlots();
