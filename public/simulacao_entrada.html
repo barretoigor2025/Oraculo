@@ -22,9 +22,9 @@ body{
   color:rgba(245,216,120,0.35);text-align:center;
 }
 
-/* ── Card compartilhado (nome/classe) ── */
+/* ── Card de perfil ── */
 #card-perfil{
-  width:100%;max-width:400px;
+  width:100%;max-width:420px;
   background:rgba(7,4,1,0.92);
   border:1px solid rgba(190,140,35,0.22);
   border-radius:18px;padding:18px 18px 14px;
@@ -52,36 +52,94 @@ body{
 #nome-input::placeholder{color:rgba(190,165,90,0.30);}
 #nome-input:focus{border-color:rgba(190,140,35,0.58);}
 
+/* ── Tabs de campanha ── */
+#classe-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;
+}
+#camp-tabs{
+  display:flex;gap:5px;
+}
+.camp-tab{
+  font-size:10px;font-family:Georgia,serif;
+  padding:4px 10px;border-radius:20px;cursor:pointer;
+  border:1px solid transparent;
+  transition:background .18s,border-color .18s,color .18s;
+  -webkit-tap-highlight-color:transparent;
+  color:rgba(200,175,100,0.40);
+  background:rgba(20,12,4,0.60);
+}
+.camp-tab.ativo-mhoried{
+  background:rgba(190,140,35,0.14);
+  border-color:rgba(190,140,35,0.50);
+  color:#f5d878;
+}
+.camp-tab.ativo-dn{
+  background:rgba(160,20,20,0.18);
+  border-color:rgba(200,40,40,0.55);
+  color:#e85555;
+}
+
+/* ── Grid de classes ── */
 #classes-grid{
   display:grid;grid-template-columns:repeat(3,1fr);gap:7px;
 }
 .btn-classe{
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:9px 5px;
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  padding:0;
   background:rgba(20,12,4,0.80);
   border:1px solid rgba(190,140,35,0.16);border-radius:10px;
   color:rgba(200,175,100,0.46);font-family:Georgia,serif;
-  font-size:10px;cursor:pointer;
+  font-size:10px;cursor:pointer;overflow:hidden;
   transition:background .2s,border-color .2s,color .2s;
   -webkit-tap-highlight-color:transparent;
 }
-.btn-classe .cl-emoji{font-size:18px;}
-.btn-classe:hover{background:rgba(50,30,5,0.80);border-color:rgba(190,140,35,0.36);}
+.cl-portrait-wrap{
+  width:100%;height:72px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.30);
+  flex-shrink:0;
+}
+.cl-portrait{
+  width:100%;height:100%;
+  object-fit:cover;object-position:top center;
+  display:block;
+}
+.cl-portrait-fallback{
+  font-size:24px;display:flex;align-items:center;justify-content:center;
+  width:100%;height:100%;
+}
+.cl-nome{
+  padding:5px 4px 7px;text-align:center;
+  font-size:10px;line-height:1.2;
+  width:100%;
+}
+.btn-classe:hover{
+  background:rgba(50,30,5,0.80);
+  border-color:rgba(190,140,35,0.36);
+  color:rgba(220,190,110,0.70);
+}
 .btn-classe.selecionado{
   background:rgba(190,140,35,0.15);
   border-color:rgba(190,140,35,0.60);
   color:#f5d878;
   box-shadow:0 0 10px rgba(190,140,35,0.14);
 }
+.btn-classe.selecionado-dn{
+  background:rgba(160,20,20,0.18);
+  border-color:rgba(200,40,40,0.60);
+  color:#e85555;
+  box-shadow:0 0 10px rgba(200,20,20,0.14);
+}
 
 /* ── Grid de campanhas ── */
 #campaigns-label{
   font-size:9px;letter-spacing:3px;text-transform:uppercase;
   color:rgba(190,140,35,0.38);text-align:center;
-  width:100%;max-width:400px;
+  width:100%;max-width:420px;
 }
 #campaigns-grid{
-  width:100%;max-width:400px;
+  width:100%;max-width:420px;
   display:grid;grid-template-columns:1fr 1fr;gap:12px;
 }
 
@@ -100,6 +158,10 @@ body{
 #camp-mhoried{
   background:rgba(40,22,3,0.88);
   border-color:rgba(190,140,35,0.30);
+}
+#camp-mhoried.camp-ativa{
+  border-color:rgba(220,170,50,0.70);
+  box-shadow:0 0 24px rgba(190,140,35,0.22);
 }
 #camp-mhoried:hover{
   box-shadow:0 0 24px rgba(190,140,35,0.18);
@@ -127,6 +189,10 @@ body{
 #camp-deathnote{
   background:rgba(18,3,3,0.92);
   border-color:rgba(160,20,20,0.35);
+}
+#camp-deathnote.camp-ativa{
+  border-color:rgba(200,40,40,0.75);
+  box-shadow:0 0 24px rgba(200,20,20,0.22);
 }
 #camp-deathnote:hover{
   box-shadow:0 0 24px rgba(200,20,20,0.18);
@@ -199,19 +265,18 @@ body{
   </div>
 
   <div>
-    <div class="lbl">Sua classe</div>
-    <div id="classes-grid">
-      <button class="btn-classe" data-id="guerreiro"><span class="cl-emoji">⚔️</span>Guerreiro</button>
-      <button class="btn-classe" data-id="mago"><span class="cl-emoji">🔮</span>Mago</button>
-      <button class="btn-classe" data-id="clerigo"><span class="cl-emoji">✝️</span>Clérigo</button>
-      <button class="btn-classe" data-id="ladino"><span class="cl-emoji">🗡️</span>Ladino</button>
-      <button class="btn-classe" data-id="arqueiro"><span class="cl-emoji">🏹</span>Arqueiro</button>
-      <button class="btn-classe" data-id="druida"><span class="cl-emoji">🌿</span>Druida</button>
+    <div id="classe-header">
+      <span class="lbl" style="margin-bottom:0">Sua classe</span>
+      <div id="camp-tabs">
+        <button class="camp-tab" id="tab-mhoried" data-camp="mhoried">⚔️ Mhoried</button>
+        <button class="camp-tab" id="tab-dn" data-camp="death-note">📓 Death Note</button>
+      </div>
     </div>
+    <div id="classes-grid"></div>
   </div>
 </div>
 
-<div id="campaigns-label">Escolha a Campanha</div>
+<div id="campaigns-label">Entrar na Campanha</div>
 
 <div id="campaigns-grid">
 
@@ -249,32 +314,111 @@ body{
 
 <script>
 (function(){
-  const CLASS_EMOJI = {guerreiro:'⚔️',mago:'🔮',clerigo:'✝️',ladino:'🗡️',arqueiro:'🏹',druida:'🌿'};
+  const MHORIED_CLASSES = [
+    {id:'guerreiro', icon:'⚔️', nome:'Guerreiro',  gender:'m'},
+    {id:'mago',      icon:'🔮', nome:'Mago',        gender:'m'},
+    {id:'clerigo',   icon:'✝️', nome:'Clérigo',     gender:'m'},
+    {id:'ladino',    icon:'🗡️', nome:'Ladino',      gender:'m'},
+    {id:'arqueiro',  icon:'🏹', nome:'Arqueiro',    gender:'m'},
+    {id:'barbaro',   icon:'🪓', nome:'Bárbaro',     gender:'m'},
+  ];
 
-  const nomeInput = document.getElementById('nome-input');
-  const btns = document.querySelectorAll('.btn-classe');
-  let classeSelecionada = localStorage.getItem('oraculo.classId') || 'guerreiro';
+  const DN_CLASSES = [
+    {id:'detetive',   icon:'🔍', nome:'Detetive',        gender:'m'},
+    {id:'agente',     icon:'🔫', nome:'Agente de Campo', gender:'f'},
+    {id:'analista',   icon:'💻', nome:'Analista',        gender:'m'},
+    {id:'infiltrado', icon:'🎭', nome:'Infiltrado',      gender:'m'},
+    {id:'perfiladora',icon:'🧩', nome:'Perfiladora',     gender:'f'},
+  ];
+
+  const nomeInput  = document.getElementById('nome-input');
+  const grid       = document.getElementById('classes-grid');
+  const tabMhoried = document.getElementById('tab-mhoried');
+  const tabDn      = document.getElementById('tab-dn');
+  const cardMhoried = document.getElementById('camp-mhoried');
+  const cardDn      = document.getElementById('camp-deathnote');
+
+  let activeCamp  = localStorage.getItem('oraculo.campaign') || 'mhoried';
+  let selMhoried  = localStorage.getItem('oraculo.classId.mhoried') || 'guerreiro';
+  let selDn       = localStorage.getItem('oraculo.classId.dn')      || 'detetive';
 
   const savedNome = localStorage.getItem('oraculo.playerName');
   if(savedNome) nomeInput.value = savedNome;
-  btns.forEach(b => b.classList.toggle('selecionado', b.dataset.id === classeSelecionada));
 
-  btns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      classeSelecionada = btn.dataset.id;
-      btns.forEach(b => b.classList.toggle('selecionado', b === btn));
+  function retratoMhoried(id, gender){ return `catalogo/mhoried/classes/${id}/retrato/${id}_${gender}_retrato.png`; }
+  function retratoDn(id, gender)     { return `catalogo/death-note/classes/${id}/retrato/${id}_${gender}_retrato.png`; }
+
+  function buildGrid(classes, baseId, selectedId, isDn){
+    grid.innerHTML = '';
+    classes.forEach(cls => {
+      const btn = document.createElement('button');
+      btn.className = 'btn-classe';
+      btn.dataset.id = cls.id;
+
+      const imgSrc = isDn ? retratoDn(cls.id, cls.gender) : retratoMhoried(cls.id, cls.gender);
+
+      btn.innerHTML = `
+        <div class="cl-portrait-wrap">
+          <img class="cl-portrait" src="${imgSrc}" alt="${cls.nome}"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="cl-portrait-fallback" style="display:none">${cls.icon}</div>
+        </div>
+        <div class="cl-nome">${cls.nome}</div>
+      `;
+
+      const selClass = isDn ? 'selecionado-dn' : 'selecionado';
+      if(cls.id === selectedId) btn.classList.add(selClass);
+
+      btn.addEventListener('click', () => {
+        grid.querySelectorAll('.btn-classe').forEach(b => b.classList.remove('selecionado','selecionado-dn'));
+        btn.classList.add(selClass);
+        if(isDn) selDn = cls.id; else selMhoried = cls.id;
+      });
+
+      grid.appendChild(btn);
     });
-  });
+  }
 
-  function salvarPerfil(){
+  function setCamp(camp){
+    activeCamp = camp;
+    const isDn = (camp === 'death-note');
+
+    tabMhoried.className = 'camp-tab' + (!isDn ? ' ativo-mhoried' : '');
+    tabDn.className      = 'camp-tab' + ( isDn ? ' ativo-dn'      : '');
+    cardMhoried.classList.toggle('camp-ativa', !isDn);
+    cardDn.classList.toggle('camp-ativa', isDn);
+
+    if(isDn) buildGrid(DN_CLASSES, 'death-note', selDn, true);
+    else     buildGrid(MHORIED_CLASSES, 'mhoried', selMhoried, false);
+  }
+
+  tabMhoried.addEventListener('click', () => setCamp('mhoried'));
+  tabDn.addEventListener('click', () => setCamp('death-note'));
+  cardMhoried.addEventListener('click', (e) => { if(e.target.tagName!=='BUTTON') setCamp('mhoried'); });
+  cardDn.addEventListener('click', (e)      => { if(e.target.tagName!=='BUTTON') setCamp('death-note'); });
+
+  function salvarPerfil(camp){
     const nome = nomeInput.value.trim() || 'Aventureiro';
     localStorage.setItem('oraculo.playerName', nome);
-    localStorage.setItem('oraculo.classId', classeSelecionada);
+    localStorage.setItem('oraculo.campaign', camp);
+
+    const isDn = (camp === 'death-note');
+    const classId = isDn ? selDn : selMhoried;
+    localStorage.setItem('oraculo.classId', classId);
+    if(isDn) localStorage.setItem('oraculo.classId.dn', classId);
+    else     localStorage.setItem('oraculo.classId.mhoried', classId);
     return nome;
   }
 
+  function getIcon(){
+    const isDn = (activeCamp === 'death-note');
+    const list  = isDn ? DN_CLASSES : MHORIED_CLASSES;
+    const sel   = isDn ? selDn : selMhoried;
+    return (list.find(c => c.id === sel) || list[0]).icon;
+  }
+
   function mostrarOverlay(nome, campLabel, destino){
-    document.getElementById('ent-icon').textContent = CLASS_EMOJI[classeSelecionada] || '⚔️';
+    document.getElementById('ent-icon').textContent = getIcon();
     document.getElementById('ent-nome').textContent = nome;
     document.getElementById('ent-camp').textContent = campLabel;
     requestAnimationFrame(() =>
@@ -285,15 +429,20 @@ body{
 
   document.getElementById('btn-mhoried').addEventListener('click', (e) => {
     e.stopPropagation();
-    const nome = salvarPerfil();
+    setCamp('mhoried');
+    const nome = salvarPerfil('mhoried');
     mostrarOverlay(nome, 'Castelo de Mhoried', 'lobby.html');
   });
 
   document.getElementById('btn-deathnote').addEventListener('click', (e) => {
     e.stopPropagation();
-    const nome = salvarPerfil();
+    setCamp('death-note');
+    const nome = salvarPerfil('death-note');
     mostrarOverlay(nome, 'Death Note · Tokyo Defender', 'simulacao_dialogo_dn.html');
   });
+
+  // Init
+  setCamp(activeCamp);
 })();
 </script>
 </body>
