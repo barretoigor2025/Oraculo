@@ -406,6 +406,12 @@ canvas.char-img{
   font-size:10px; color:rgba(190,140,35,0.45); letter-spacing:.5px;
   white-space:nowrap; flex-shrink:0;
 }
+#btn-nova-sessao {
+  background:none; border:none; color:rgba(190,140,35,0.30);
+  font-size:14px; cursor:pointer; padding:2px 4px; line-height:1;
+  flex-shrink:0; margin-left:6px;
+}
+#btn-nova-sessao:hover { color:rgba(190,140,35,0.70); }
 
 /* ── MODO SOLO BADGE ── */
 #solo-badge {
@@ -463,6 +469,7 @@ canvas.char-img{
 <div id="turno-bar" style="display:none">
   <div id="turno-players"></div>
   <div id="turno-vez"></div>
+  <button id="btn-nova-sessao" onclick="novaSessao()" title="Reiniciar sessão">↺</button>
 </div>
 
 <div id="input-bar">
@@ -603,12 +610,12 @@ let _unsubSnapshot = null;
 let _pingInterval = null;
 let _fbInitTimeout = null;
 
-// Generate a stable ID for this browser session
+// Generate a stable ID for this browser (localStorage = persists across refreshes)
 function _getMyId(){
-  let id = sessionStorage.getItem('oraculo.sessionId');
+  let id = localStorage.getItem('oraculo.playerId');
   if(!id){
     id = 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
-    sessionStorage.setItem('oraculo.sessionId', id);
+    localStorage.setItem('oraculo.playerId', id);
   }
   return id;
 }
@@ -1136,11 +1143,16 @@ async function entrarSessao(){
     if(doc.exists) _processar(doc.data());
   });
 
-  // Check if host and log is empty — generate opening
+  // Generate opening if session has no content yet — whoever arrives first claims host
   const freshSnap = await _sessaoRef.get();
   if(freshSnap.exists){
     const data = freshSnap.data();
-    if(data.hostId === _myId && (!data.log || data.log.length === 0) && (!data.pendingNpc || data.pendingNpc.length === 0)){
+    const isEmpty = (!data.log || data.log.length === 0)
+                 && (!data.pendingNpc || data.pendingNpc.length === 0)
+                 && !data.iaPensando;
+    if(isEmpty){
+      // Claim host + reset stale turnoOrdem — prevents duplicate chips from old IDs
+      await _sessaoRef.update({ hostId: _myId, turnoPlayerId: _myId, turnoOrdem: [_myId] });
       await _gerarAbertura();
     }
   }
@@ -1150,6 +1162,12 @@ async function _gerarAbertura(){
   if(!localStorage.getItem('oraculo.groqKey')){
     cfgOverlay.classList.remove('oculto');
     return;
+  }
+  // Race guard: check again that session is still empty before generating
+  const guard = await _sessaoRef.get();
+  if(guard.exists){
+    const gd = guard.data();
+    if(gd.iaPensando || (gd.pendingNpc && gd.pendingNpc.length > 0) || (gd.log && gd.log.length > 0)) return;
   }
   atualizarChips();
   await delay(700);
@@ -1494,6 +1512,22 @@ window.testePercepcao = async function(){
       registrarEvento(playerName, percNarr, 'acao');
     }
   }
+};
+
+// ══════════════════════════════════════════════════════════
+//  NOVA SESSÃO (reset)
+// ══════════════════════════════════════════════════════════
+window.novaSessao = async function(){
+  if(!_modoMultiplayer || !_sessaoRef) return;
+  if(!confirm('Reiniciar a sessão vai apagar toda a conversa atual. Confirmar?')) return;
+  await _sessaoRef.set({
+    cena: 'feira', hostId: _myId, turnoPlayerId: _myId,
+    turnoOrdem: [_myId],
+    jogadores: { [_myId]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() } },
+    log: [], pendingNpc: [], pendingBatchTs: 0,
+    iaPensando: false, transicao: null, btnCastelo: false,
+  });
+  window.location.reload();
 };
 
 // ══════════════════════════════════════════════════════════
