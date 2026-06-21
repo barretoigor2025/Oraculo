@@ -1280,7 +1280,8 @@ window.navModal = function(dir){
   const id = _nav.list[ni];
   if(_nav.type === 'classe')   openClassModal(id,  ni);
   if(_nav.type === 'npc')      openNpcModal(id,    ni);
-  if(_nav.type === 'inimigo')  openEnemyModal(id,  ni);
+  if(_nav.type === 'inimigo')       openEnemyModal(id,        ni);
+  if(_nav.type === 'dn-personagem') openDnPersonagemModal(id, ni);
 };
 
 function openModal(){
@@ -1966,46 +1967,74 @@ function buildSizeTab(){
 
 const DN_PERSONAGENS = [
   {
-    id:'l_lawliet', nome:'L Lawliet', avatar:'🍰', papel:'aliado',
-    img:'catalogo/death-note/npcs/l/retrato/l_retrato.png',
-    desc:'O maior detetive do mundo. Opera sob pseudônimos (L, Ryuzaki). Excêntrico ao extremo: de cócoras nas cadeiras, come doces constantemente. Analítico, frio, incorruptível — e o único homem capaz de desafiar Kira de igual para igual.',
-    tags:['Detetive','Gênio','QI 215','Enigmático','Comer Doces'],
+    id:'l_lawliet', nome:'L Lawliet', categoria:'aliado',
+    retrato:'catalogo/death-note/npcs/l/retrato/l_retrato.png',
+    historia:'Identidade real desconhecida pelo mundo. Opera exclusivamente sob pseudônimos — L, Ryuzaki, Eraldo Coil, Deneuve. Reconhecido como "o maior detetive do mundo", responsável por resolver todos os casos que aceitou. Criado pelo orfanato Wammy\'s House, onde também formou seus sucessores Near e Mello.',
+    descFisica:'Jovem de aparência indeterminada, pele muito pálida, olhos negros grandes com olheiras permanentes profundas. Cabelo preto despenteado. Sempre usa camiseta branca de manga comprida e calça jeans — nunca sapatos. Postura característica: de cócoras na cadeira, joelhos contra o peito. Segura objetos apenas pelas pontas dos dedos.',
+    interacao:'Frio e analítico em público, mas capaz de laços genuínos — afirma que Light é seu primeiro amigo. Comunica-se oficialmente via assistente Watari. Testa interlocutores com perguntas cujas respostas já conhece. Nunca revela emoções exceto através de micro-expressões quase imperceptíveis.',
+    personalidade:'Incorruptível e absolutamente comprometido com a verdade. Não mente — omite, manipula e enquadra perguntas para obter respostas verdadeiras. Obsessivo: dorme pouco, come exclusivamente doces. Respeita inteligência genuína. Código de honra inabalável mesmo quando inconveniente.',
+    conhecimentos:'Sabe que Kira mata por ataque cardíaco usando nome e rosto. Rastreou Kira geograficamente ao Japão via padrão de mortes. Probabilidade atribuída a Light Yagami: superior a 70%. Tem acesso a bancos de dados mundiais via Watari. Conhece a existência de múltiplos portadores do Death Note.',
+    formaDeFalar:'Monocórdico, quase sem entonação. Cita probabilidades em percentual ("há 73% de chances de que…"). Usa "interessante" e "curioso" como avaliação neutra. Come doces no meio de qualquer conversa sem se desculpar. Nunca levanta a voz. Olha nos olhos por tempo desconfortável quando quer intimidar.',
   },
   {
-    id:'light_yagami', nome:'Light Yagami', avatar:'📓', papel:'vilao',
-    img:'catalogo/death-note/npcs/light_yagami/retrato/light_yagami_retrato.png',
-    desc:'Estudante nº1 do Japão, filho do Chefe Yagami. Por fora: encantador e brilhante. Por dentro: Kira — portador do Death Note, convencido de que tem o direito de julgar o mundo. Joga xadrez com a própria investigação que deveria encerrá-lo.',
-    tags:['Kira','Death Note','Portador','Gênio','Dupla Identidade'],
+    id:'light_yagami', nome:'Light Yagami', categoria:'vilao',
+    retrato:'catalogo/death-note/npcs/light_yagami/retrato/light_yagami_retrato.png',
+    historia:'Estudante número 1 do Japão, filho do Chefe Yagami da NPA. Encontrou o Death Note largado por Ryuk e decidiu usá-lo para "purificar o mundo". Tornou-se Kira e infiltrou-se na força-tarefa que o persegue para controlar a investigação de dentro. Cada movimento calculado anos à frente.',
+    descFisica:'Jovem de 17-18 anos, feições atraentes e simétricas, cabelo castanho bem cuidado, olhos castanhos afiados. Postura impecável. Veste-se com esmero — uniforme escolar ou blazer casual. Sorriso natural e caloroso que não reflete o que ocorre internamente. Nada em sua aparência denuncia Kira.',
+    interacao:'Encantador, cooperativo, brilhante — o jovem exemplar que todos admiram. Cada palavra pesada como peça de xadrez antes de ser dita. Redireciona perguntas incômodas com pontos que reforçam sua inocência. Avalia cada interação como ameaça ou ferramenta.',
+    personalidade:'Ego de deus disfarçado de idealismo. Convencido de que tem o direito e a obrigação moral de julgar e executar criminosos. Inteligência fria e calculadora. Nunca revela o que realmente pensa. Quando pressionado de verdade, por um milésimo de segundo algo frio passa pelo olhar antes do sorriso voltar.',
+    conhecimentos:'É Kira — portador original do Death Note. Conhece as 42 regras do caderno de memória. Sabe que L o suspeita com alta probabilidade. Tem Ryuk como shinigami aliado e usa Misa Amane (segunda Kira) como peça. Planeja cada interação para reforçar sua aparência de inocência.',
+    formaDeFalar:'Tom suave e amigável, sorriso frequente. Quando pressionado, demonstra preocupação ativa em "pegar Kira" — porque sabe exatamente onde está a linha segura. Nunca contradiz diretamente: redireciona, pergunta de volta, concorda parcialmente e vira o argumento.',
   },
   {
-    id:'ryuk', nome:'Ryuk', avatar:'🍎', papel:'neutro',
-    img:'catalogo/death-note/npcs/ryuk/retrato/ryuk_retrato.png',
-    desc:'Shinigami que largou intencionalmente seu Death Note no mundo humano por tédio. Não ajuda Light, não o atrapalha — apenas observa, diverte-se, e come maçãs. Completamente honesto sobre o que é e o que quer.',
-    tags:['Shinigami','Observador','Neutro','Maçãs','Morte Natural'],
+    id:'ryuk', nome:'Ryuk', categoria:'neutro',
+    retrato:'catalogo/death-note/npcs/ryuk/retrato/ryuk_retrato.png',
+    historia:'Shinigami que vivia entediado no Mundo dos Shinigami. Deliberadamente deixou cair seu Death Note extra no mundo humano para ver o que aconteceria. Escolheu acompanhar Light — não por lealdade, mas por entretenimento. Quando o jogo terminar, escreverá o nome de Light.',
+    descFisica:'Figura imponente e sobrenatural. Pele branca cadavérica com marcações pretas ao redor dos olhos amarelos de íris enorme. Cabelo branco-acinzentado selvagem e espinhoso. Boca larga com sorriso permanente e perturbador. Casaco preto comprido com correntes. Asas negras de penas espalhadas. Garras longas e pontiagudas.',
+    interacao:'Interage apenas com quem possuir o caderno. Completamente honesto — ao contrário de outros Shinigami, não mente sobre as regras do Death Note. Observa com diversão genuína, sem tomar partido. Visível apenas para quem tocou o caderno.',
+    personalidade:'Movido exclusivamente por curiosidade e tédio. Não tem moralidade — humanos matando humanos é apenas entretenimento. Completamente neutro: não ajuda Light, não o prejudica. Come maçãs compulsivamente. Será o último ato do jogo: matará Light no final.',
+    conhecimentos:'Conhece todas as regras do Death Note — incluindo as que não estão escritas no caderno. Vê o nome e tempo de vida de qualquer humano (Olhos Shinigami naturais). Sabe que Light morrerá por suas mãos eventualmente. Conhece o Mundo Shinigami e seus habitantes.',
+    formaDeFalar:'Direto e informal, às vezes brutalmente honesto. Tom levemente divertido, como alguém assistindo a um jogo interessante. Faz observações sobre humanos com a distância de quem nunca foi um. Ri quando algo o surpreende genuinamente. Pede maçãs com frequência perturbadora.',
   },
   {
-    id:'misa_amane', nome:'Misa Amane', avatar:'🖤', papel:'vilao',
-    img:'catalogo/death-note/npcs/misa_amane/retrato/misa_amane_retrato.png',
-    desc:'Segunda Kira. Modelo e atriz fanática por Kira que agia como justiceira antes de encontrar Light. Possui os Olhos Shinigami — vê o nome e tempo de vida de qualquer pessoa que olha. Entregaria tudo por Light, inclusive a própria vida.',
-    tags:['Segunda Kira','Olhos Shinigami','Rem','Ídolo','Devotada'],
+    id:'misa_amane', nome:'Misa Amane', categoria:'vilao',
+    retrato:'catalogo/death-note/npcs/misa_amane/retrato/misa_amane_retrato.png',
+    historia:'Modelo e atriz que perdeu os pais para um assassino. Quando Kira executou o assassino, tornou-se sua fã fanática. Encontrou um segundo Death Note e fez o Pacto dos Olhos com o Shinigami Rem — trocou metade de sua vida pelos Olhos Shinigami. Buscou Kira e encontrou Light, entregando tudo por ele incondicionalmente.',
+    descFisica:'Jovem mulher pequena e delicada, cabelo loiro geralmente em twin tails com fitas pretas. Fashion gótica-lolita: vestidos pretos de renda, espartilhos, luvas de renda, acessórios de cruz. Com o Pacto dos Olhos: irises avermelhadas com pupila vertical de fenda. Sorriso brilhante que contrasta com o tema sombrio do visual.',
+    interacao:'Energética, expressiva, publicamente adorável. Com Light: devotada ao extremo, faria qualquer coisa sem questionar. Com desconhecidos: calorosa e performática, o sorriso de ídolo perfeito. Com ameaças a Light: perigosa — possui os Olhos Shinigami e o Death Note.',
+    personalidade:'Amor absoluto e cego por Light é sua única motivação. Não se importa com a própria vida — já trocou metade dela. Inteligência subestimada pelos outros: é impulsiva mas não estúpida. A devoção a Light é genuína, não manipulação. Rem, seu Shinigami, a ama e morreria por ela.',
+    conhecimentos:'Segunda portadora do Death Note. Possui os Olhos Shinigami — vê o nome completo e tempo de vida restante de qualquer pessoa ao olhar para seu rosto. Sabe que Light é Kira e apoia ativamente. Conhece as regras do caderno. Tem acesso ao mundo da mídia como cobertura.',
+    formaDeFalar:'Animada, rápida, usa diminutivos e linguagem informal. Fala de si mesma na terceira pessoa às vezes ("Misa acha que…"). Tom de ídolo pop em público. Quando fala sobre Light, a máscara some e aparece devoção pura. Sem filtros emocionais.',
   },
   {
-    id:'near', nome:'Near (N)', avatar:'🎲', papel:'aliado',
-    img:'catalogo/death-note/npcs/near/retrato/near_retrato.png',
-    desc:'Sucessor de L, líder do SPK (Special Provision for Kira). Brinca com bonecos e blocos enquanto pensa. Metódico e calculista — onde L age por intuição, Near age por dedução pura. O único que conseguiu onde L falhou.',
-    tags:['SPK','Sucessor de L','Dedução','Brinquedos','Estrategista'],
+    id:'near', nome:'Near (N)', categoria:'aliado',
+    retrato:'catalogo/death-note/npcs/near/retrato/near_retrato.png',
+    historia:'Segundo candidato a sucessor de L no orfanato Wammy\'s House. Após a morte de L, assumiu o caso Kira como N, liderando o SPK dos EUA. Onde L falhou, Near triunfou — mas reconhece que só venceu usando os resultados do trabalho de L e Mello.',
+    descFisica:'Menino pequeno de aparência jovem, cabelo branco curto e despenteado. Enrola uma mecha do próprio cabelo no dedo como tique. Veste roupas brancas largas semelhantes a pijamas. Senta sempre no chão com as pernas cruzadas, rodeado de brinquedos, puzzles, peças de xadrez e bonecos. Raramente se levanta.',
+    interacao:'Frio e distante, comunicação principalmente via monitores e intermediários. Não demonstra emoções. Trata o caso Kira como um puzzle a ser resolvido. Reconhece mérito alheio sem sentimentalismo.',
+    personalidade:'Racionalidade pura. Onde L misturava intuição com lógica, Near é só lógica. Não se envolve emocionalmente. Paciente além do razoável — esperará o momento exato para fechar a armadilha. Brincar com objetos é como organiza o pensamento.',
+    conhecimentos:'Identidade real: Nate River. Lidera o SPK com recursos do governo americano. Sabe que L foi morto por Kira. Conhece a existência do Death Note e suas regras. Descobriu que Mikami é o "substituto de Kira" e trocou o Death Note real por uma réplica.',
+    formaDeFalar:'Pausado, clínico, sem inflexão emocional. Frases curtas e conclusivas. Nunca especula sem base. "Isso seria…" antes de tirar uma conclusão devastadora. Não pergunta sem já saber a resposta. Tom igual se está discutindo o tempo ou acusando alguém de assassinato em massa.',
   },
   {
-    id:'soichiro_yagami', nome:'Soichiro Yagami', avatar:'🚔', papel:'aliado',
-    img:'catalogo/death-note/npcs/soichiro/retrato/soichiro_retrato.png',
-    desc:'Chefe da Polícia e pai de Light. Homem de integridade inabalável que lidera a Força-Tarefa Kira sem saber que seu próprio filho é o criminoso que persegue. Morreu acreditando na inocência de Light.',
-    tags:['Chefe de Polícia','Força-Tarefa','Pai de Light','Íntegro'],
+    id:'soichiro_yagami', nome:'Soichiro Yagami', categoria:'aliado',
+    retrato:'catalogo/death-note/npcs/soichiro/retrato/soichiro_retrato.png',
+    historia:'Chefe da Divisão de Investigação Criminal da NPA. Pai de Light Yagami. Fundou e liderou a Força-Tarefa Kira, dedicando saúde e reputação à investigação. Sofreu um ataque cardíaco pelo stress do caso. Morreu em campo acreditando até o fim na inocência de seu filho.',
+    descFisica:'Homem de meia-idade, 45-50 anos. Porte imponente e postura militar mesmo fora de serviço. Cabelo escuro com grisalhos nas têmporas. Sobrancelhas grossas, maxilar forte, bigode pequeno e bem cuidado. Olhos sérios e cansados. Uniforme da NPA com distintivo, ou terno escuro.',
+    interacao:'Formal e respeitoso com todos. Pai presente e orgulhoso — talvez orgulhoso demais de Light para questionar o óbvio. Com L: respeito mútuo apesar das fricções sobre métodos. Com suspeitos: íntegro ao ponto de recusar métodos que violem direitos mesmo sob pressão.',
+    personalidade:'Integridade como valor absoluto. Incapaz de conceber que seu filho brilhante seja um assassino em massa. O amor paterno é ao mesmo tempo sua força moral e seu ponto cego fatal. Morreria — e morreu — pela certeza de estar do lado certo.',
+    conhecimentos:'Chefe da Força-Tarefa Kira. Conhece todos os dados oficiais da investigação. Não sabe que Light é Kira. Fez o Pacto dos Olhos Shinigami brevemente antes de morrer — provou que o Death Note era real. Morreu sem saber a verdade sobre o filho.',
+    formaDeFalar:'Formal e direto. Sentenças completas, sem gírias. Tom de autoridade natural que não precisa se impor. Quando fala de Light, o orgulho paternal vaza involuntariamente. Em momentos de angústia: voz mais baixa, frases mais curtas, mais pausas.',
   },
   {
-    id:'matsuda', nome:'Matsuda Touta', avatar:'👮', papel:'aliado',
-    img:'catalogo/death-note/npcs/matsuda/retrato/matsuda_retrato.png',
-    desc:'Membro mais jovem e impulsivo da Força-Tarefa Kira. Admira Light como herói e só no final descobre a verdade — disparando os tiros que encerram a história. A voz da humanidade comum no meio de gênios.',
-    tags:['Força-Tarefa','Impulsivo','Leal','Policial','Reviravolta'],
+    id:'matsuda', nome:'Matsuda Touta', categoria:'aliado',
+    retrato:'catalogo/death-note/npcs/matsuda/retrato/matsuda_retrato.png',
+    historia:'Membro mais jovem da Força-Tarefa Kira. Impulsivo e às vezes atrapalhado, criou situações de crise que forçaram decisões importantes. Admirava Light como herói pessoal. A revelação final destruiu essa imagem — e foram os tiros de Matsuda que encerraram o caso Kira.',
+    descFisica:'Jovem adulto no início dos vinte anos. Estatura média, cabelo preto curto levemente bagunçado. Feições abertas e expressivas — o rosto denuncia cada emoção antes de ele falar. Veste terno ou jaqueta casual sobre camisa aberta. Parece sempre prestes a dizer algo impulsivo.',
+    interacao:'Caloroso, direto, sem filtros sociais elaborados. Com Light: admiração genuína que cegava análise crítica. Com suspeitos: menos hábil em disfarçar reações do que os outros membros da equipe.',
+    personalidade:'A voz da humanidade comum no meio de gênios. Onde L e Near calculam, Matsuda sente. Age por impulso quando o raciocínio falha. O choro e a raiva na cena final são reais: é alguém descobrindo que seu herói era um monstro.',
+    conhecimentos:'Membro da Força-Tarefa desde o início. Conhece todos os dados operacionais. Descobriu a verdade sobre Light na cena final do armazém. Atirou em Light múltiplas vezes por raiva e choque, sendo indiretamente responsável pelo fim do caso.',
+    formaDeFalar:'Informal, rápido, às vezes gagueja de pressa antes de pensar. "Espera, mas…" antes de contradizer alguém mais experiente. Entusiasmo visível na voz quando empolgado. Na cena final: voz quebrada entre lágrimas e raiva pura.',
   },
 ];
 
@@ -2052,23 +2081,63 @@ let _dnBuilt = false;
 function buildDnPersonagensTab(){
   const tab = document.getElementById('dn-personagens-tab');
   const header = `<div class="section-header"><h2>Personagens de Death Note</h2><span class="count-badge">${DN_PERSONAGENS.length} personagens</span></div>`;
-  const cards = DN_PERSONAGENS.map(p => {
-    const imgEl = `<img class="dn-card-img" src="${p.img}" alt="" onerror="this.style.display='none'">`;
-    const tags = p.tags.map(t=>`<span class="dn-tag">${t}</span>`).join('');
-    return `<div class="dn-card">
-      <div class="dn-card-top">
-        ${imgEl}
-        <div>
-          <div class="dn-card-nome">${p.avatar} ${p.nome}</div>
-          <div class="dn-card-papel ${p.papel}">${p.papel.charAt(0).toUpperCase()+p.papel.slice(1)}</div>
+  let cards = '<div class="card-grid" id="dn-npc-grid">';
+  for(const p of DN_PERSONAGENS){
+    const snippet = (p.descFisica||'').slice(0,80) + '…';
+    cards += `
+      <div class="card" data-cat="${p.categoria}" onclick="openDnPersonagemModal('${p.id}')">
+        <div class="card-portrait" style="background:rgba(20,4,4,.5)">
+          <span class="cat-badge cat-${p.categoria}" style="top:6px;left:6px;right:auto">${catLabel(p.categoria)}</span>
+          <img src="${p.retrato}" alt="${p.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          <span class="no-img" style="display:none">🖤</span>
         </div>
-      </div>
-      <div class="dn-card-desc">${p.desc}</div>
-      <div class="dn-card-tags">${tags}</div>
-    </div>`;
-  }).join('');
-  tab.innerHTML = header + `<div class="card-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:16px">${cards}</div>`;
+        <div class="card-body">
+          <div class="card-name">${p.nome}</div>
+          <div class="card-sub">${snippet}</div>
+        </div>
+      </div>`;
+  }
+  cards += '</div>';
+  tab.innerHTML = header + cards;
 }
+
+window.openDnPersonagemModal = function(id, _idx){
+  const list = DN_PERSONAGENS.map(p=>p.id);
+  const idx = _idx ?? list.indexOf(id);
+  _setNav('dn-personagem', list, idx);
+  const p = DN_PERSONAGENS.find(x=>x.id===id);
+  if(!p) return;
+
+  const retratoSlot = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;background:rgba(0,0,0,0.3)">
+    <img src="${p.retrato}" alt="${p.nome}" style="max-height:180px;max-width:100%;object-fit:contain;object-position:bottom;padding:4px 6px" onerror="this.style.opacity='.15'">
+    <div class="sprite-label">Retrato</div>
+  </div>`;
+
+  const sections = [
+    p.historia      && ['História',         p.historia],
+    p.descFisica    && ['Aparência Física',  p.descFisica],
+    p.interacao     && ['Perfil Social',     p.interacao],
+    p.personalidade && ['Personalidade',     p.personalidade],
+    p.conhecimentos && ['O que Sabe',        p.conhecimentos],
+    p.formaDeFalar  && ['Forma de Falar',    p.formaDeFalar],
+  ].filter(Boolean).map(([t,c])=>`
+    <div class="section">
+      <div class="section-title">${t}</div>
+      <div class="section-text">${c}</div>
+    </div>`).join('');
+
+  document.getElementById('modal-inner').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-sprites" style="min-width:90px;max-width:120px">${retratoSlot}</div>
+      <div class="modal-title-area">
+        <div class="modal-name">${p.nome}</div>
+        <div class="modal-cat"><span class="cat-badge cat-${p.categoria}">${catLabel(p.categoria)}</span></div>
+        <div class="modal-feat" style="margin-top:8px">${p.personalidade ? p.personalidade.slice(0,120)+'…' : ''}</div>
+      </div>
+    </div>
+    <div class="modal-body">${sections}</div>`;
+  openModal();
+};
 
 function buildDnRegrasTab(){
   const tab = document.getElementById('dn-regras-tab');
