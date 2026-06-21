@@ -567,9 +567,10 @@ let npcAtivo = 0;
 const historicos = NPCS.map(() => []);
 let animando = false;
 let _continuarResolve = null;
-let _localPendingQueue = [];  // local NPC queue read with Continuar (never synced)
-let _localPendingIdx   = 0;
+let _localPendingQueue = [];  // local copy of current NPC batch
+let _localPendingIdx   = 0;   // how far through the batch this player has read
 let _showingNpc        = false;
+let _pendingBatchTs    = 0;   // timestamp of the batch currently loaded locally
 let _percUsado = false;
 
 const PERC_MOD = {guerreiro:1, mago:3, clerigo:3, ladino:5, arqueiro:4, druida:3};
@@ -839,8 +840,7 @@ window._handleContinuar = function(){
       _showNextPending(); // _showingNpc stays true during transition
     } else {
       _showingNpc = false;
-      _localPendingQueue = [];
-      _localPendingIdx = 0;
+      _localPendingIdx = _localPendingQueue.length; // mark all read; keep queue to prevent re-detection
       balaoAtivo.classList.remove('visivel');
       if(_sessao) _atualizarTurnoUI(_sessao);
     }
@@ -1106,7 +1106,7 @@ async function entrarSessao(){
       jogadores: {
         [_myId]: { nome: _myNome, classId: _myClassId, joinedAt: Date.now(), lastPing: Date.now() }
       },
-      log: [], pendingNpc: [],
+      log: [], pendingNpc: [], pendingBatchTs: 0,
       iaPensando: false,
       transicao: null, btnCastelo: false,
     });
@@ -1177,6 +1177,7 @@ async function _gerarAbertura(){
       { quem:NPCS[0].nome, texto:ab0, tipo:'npc', npcIdx:0 },
       { quem:NPCS[1].nome, texto:ab1, tipo:'npc', npcIdx:1 },
     ],
+    pendingBatchTs: Date.now(),
     btnCastelo: true,
   });
 }
@@ -1205,13 +1206,13 @@ function _processar(data){
     _renderEntradas(novos);
   }
 
-  // Detect new NPC batch in Firestore → load into local queue for per-player reading
-  const pending = data.pendingNpc || [];
-  const pendingKey = pending.map(e => (e.texto||'').slice(0,12)).join('|');
-  const localKey   = _localPendingQueue.map(e => (e.texto||'').slice(0,12)).join('|');
-  if(pending.length > 0 && pendingKey !== localKey && !data.iaPensando && !animando){
+  // Detect new NPC batch — each device loads independently and reads at its own pace
+  const pending  = data.pendingNpc || [];
+  const batchTs  = data.pendingBatchTs || 0;
+  if(pending.length > 0 && batchTs !== _pendingBatchTs && !data.iaPensando && !animando){
+    _pendingBatchTs    = batchTs;
     _localPendingQueue = [...pending];
-    _localPendingIdx = 0;
+    _localPendingIdx   = 0;
     if(!_showingNpc){
       _showingNpc = true;
       _showNextPending();
@@ -1261,8 +1262,9 @@ function _atualizarTurnoUI(data){
 
   // Vez indicator
   const isMyTurn = data.turnoPlayerId === _myId;
-  // npcFalando from THIS player's perspective: are they still reading?
-  const npcFalando = _showingNpc || _localPendingQueue.length > 0 || data.iaPensando || animando;
+  // "still reading" is local — each player tracks their own position in the batch
+  const stillReading = _showingNpc || _localPendingIdx < _localPendingQueue.length;
+  const npcFalando   = stillReading || data.iaPensando || animando;
   if(npcFalando){
     // NPC speaking or generating — all players wait; Continuar is the action
     turnoVez.textContent = data.iaPensando ? 'Aguardando NPC…' : 'Leia e continue…';
@@ -1325,8 +1327,9 @@ async function _executarTransicaoCastelLocal(){
 
   // Load castle NPCs from pendingNpc into local queue now that animation is done
   if(_sessao && (_sessao.pendingNpc||[]).length > 0 && !_showingNpc){
+    _pendingBatchTs    = _sessao.pendingBatchTs || 0;
     _localPendingQueue = [..._sessao.pendingNpc];
-    _localPendingIdx = 0;
+    _localPendingIdx   = 0;
     _showingNpc = true;
     _showNextPending();
   }
@@ -1359,6 +1362,7 @@ window.irAoCastelo = async function(){
         { quem:NPCS[0].nome, texto:annRaw,  tipo:'npc', npcIdx:0 },
         { quem:NPCS[2].nome, texto:ab,       tipo:'npc', npcIdx:2 },
       ],
+      pendingBatchTs: Date.now(),
       transicao: 'castelo',
       btnCastelo: false,
     };
@@ -1525,7 +1529,7 @@ async function enviar(){
     });
 
     // Reset local reading state — we just committed what was pending
-    _localPendingQueue = []; _localPendingIdx = 0; _showingNpc = false;
+    _localPendingQueue = []; _localPendingIdx = 0; _showingNpc = false; _pendingBatchTs = 0;
 
     // 2. Call Groq (only the turn player calls Groq)
     const target = npcAtivo;
@@ -1545,6 +1549,7 @@ async function enviar(){
       await updateDoc(_sessaoRef, {
         iaPensando: false,
         pendingNpc: newPend,
+        pendingBatchTs: Date.now(),
         turnoPlayerId: ordem[proxIdx],
       });
     } catch(e){
