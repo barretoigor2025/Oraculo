@@ -925,6 +925,22 @@ function onRoomUpdate(room) {
   // Sincroniza cenas visitadas
   _cenasVisitadas = new Set(room.cenasVisitadas ?? []);
 
+  // Sincroniza slides do intro (guests seguem o host)
+  const novoIntroIdx = narr.introIdx ?? 0;
+  if (!_isHost && novoIntroIdx !== _introIdx && _introSlides.length > 0) {
+    _introIdx = novoIntroIdx;
+    const bg      = document.getElementById('intro-bg');
+    const textoEl = document.getElementById('intro-texto-pag');
+    const btnEl   = document.getElementById('intro-btn-continuar');
+    const dotsEl  = document.getElementById('intro-dots');
+    const overlay = document.getElementById('intro-cinematico');
+    if (_introIdx >= _introSlides.length) {
+      overlay?.classList.add('oculto');
+    } else if (bg && textoEl && btnEl && dotsEl) {
+      _aplicarSlide(bg, textoEl, btnEl, dotsEl);
+    }
+  }
+
   let mudouCena = novaCena !== _cenaAtual;
   let mudouModo = novoModo !== _modoImagem;
 
@@ -1131,17 +1147,18 @@ function _preencherDotsBtn(dotsEl, btnEl, slide) {
 }
 
 function avancarIntro() {
+  if (!_isHost) return; // guests seguem o host via Firebase
   _introIdx++;
+  // Sincroniza índice para todos os guests
+  if (window._fbUpdateNarration) window._fbUpdateNarration({ introIdx: _introIdx });
+
   const overlay = document.getElementById('intro-cinematico');
   if (_introIdx >= _introSlides.length) {
     overlay.classList.add('oculto');
-    // Disparar gatilho de entrada após fechar o intro (host only)
-    if (_isHost) {
-      const cena = CENAS[_cenaAtual];
-      const gatilhosEntrada = cena?.gatilhos_entrada || [];
-      if (gatilhosEntrada.length > 0 && !_percepcaoEmAndamento) {
-        setTimeout(() => triggerTestePercepcao(gatilhosEntrada[0], 'entrada', null), 900);
-      }
+    const cena = CENAS[_cenaAtual];
+    const gatilhosEntrada = cena?.gatilhos_entrada || [];
+    if (gatilhosEntrada.length > 0 && !_percepcaoEmAndamento) {
+      setTimeout(() => triggerTestePercepcao(gatilhosEntrada[0], 'entrada', null), 900);
     }
     return;
   }
@@ -1170,21 +1187,9 @@ async function confirmarPronto() {
   btnEl.textContent = '⌛ Aguardando…';
 
   if (window._fbAddIntroConfirm) {
+    // Escreve confirmação e aguarda — onRoomUpdate detecta quando todos confirmaram
+    // e dispara status='battle' para TODOS (sem race condition de cache local)
     await window._fbAddIntroConfirm(_pid);
-
-    // Host verifica imediatamente se todos confirmaram e inicia a batalha
-    if (_isHost) {
-      const jogadores   = Object.keys(_lastRoom?.players || {});
-      const jaConfirm   = _lastRoom?.narration?.introConfirmados || {};
-      const todosConf   = { ...jaConfirm, [_pid]: true };
-      const efetivos    = jogadores.length > 0 ? jogadores : [_pid];
-      if (efetivos.every(p => todosConf[p])) {
-        btnEl.textContent = '⚔ Iniciando…';
-        await window._fbSetStatus?.('battle');
-        window.location.href = 'arena.html';
-      }
-    }
-    // Não-host: aguarda onRoomUpdate detectar status='battle'
   } else {
     // Sem Firebase: vai direto
     window.location.href = 'arena.html';
@@ -1576,7 +1581,7 @@ function _executarNavegacao(novaCena) {
     if (window._fbMarcarVisitada) window._fbMarcarVisitada(_cenaAtual);
   }
   if (window._fbUpdateNarration) {
-    window._fbUpdateNarration({ cenaId: novaCena, modoImagem: 'exterior', introConfirmados: {}, percepcao: { ativo: false } });
+    window._fbUpdateNarration({ cenaId: novaCena, modoImagem: 'exterior', introConfirmados: {}, introIdx: 0, percepcao: { ativo: false } });
   } else {
     _cenaAtual = novaCena; _modoImagem = 'exterior';
     atualizarCena(); atualizarBotoesModo(); atualizarBotoesCena();

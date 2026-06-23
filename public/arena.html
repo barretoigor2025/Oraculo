@@ -92,6 +92,7 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   display:flex; flex-direction:column;
   z-index:200;
   box-shadow:0 -6px 24px rgba(0,0,0,0.85);
+  padding-bottom:env(safe-area-inset-bottom);
 }
 
 /* ── Faixa 1: Herói ── */
@@ -2865,7 +2866,7 @@ function clicarAtacar(){
     return basicos.some(h=>hexDist(_pos.col,_pos.row,u.col,u.row)<=h.alcance);
   });
 
-  if(!inimigosAlvo.length) return; // no targets in range — do nothing visible
+  if(!inimigosAlvo.length){ abrirSkillPanel(); return; } // no melee targets — open skills
 
   habAtual=basicos[0];
   modoAtaque=true;
