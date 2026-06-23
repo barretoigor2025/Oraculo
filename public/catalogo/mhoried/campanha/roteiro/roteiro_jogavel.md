@@ -639,37 +639,43 @@ Revelar isso à Cabeça A pode criar um silêncio perturbador antes da resposta.
 
 ### Cenários (imagem principal + mapa de batalha se `temBatalha: true`)
 
-**Ato 1:**
-- [ ] `prologo` — imagem
-- [ ] `mhoried_market` — imagem + mapa
-- [ ] `castelo_mhoried` — imagem
+> `conversacao/` = cena de diálogo/exploração · `batalha_hex/` = mapa isométrico para arena
 
-**Ato 2 (em ordem narrativa):**
-- [ ] `blackwoods_entrada` — imagem
-- [ ] `carroça_tombada` — imagem
-- [ ] `encruzilhada` — imagem + mapa
-- [ ] `dominio_wulfram` — imagem
-- [ ] `ruinas_piromante` — imagem
-- [ ] `choupana_mutter` — imagem (exterior + INTERIOR com jaula de Morwenna)
-- [ ] `drowned_grove` — imagem + mapa
-- [ ] `cnoc_na_rithe` — imagem
-- [ ] `kobolds_dissidentes` — imagem ⭐ NOVA CENA
-- [ ] `kobold_town` — imagem + mapa
-- [ ] `acampamento_elfico` — imagem + mapa
-- [ ] `manticore_grounds` — imagem + mapa
-- [ ] `weepers_well` — imagem
-- [ ] `sepultura_jariella` — imagem ⭐ NOVA CENA
-- [ ] `great_grub_carcass` — imagem + mapa
-- [ ] `ruins_simithari` — imagem + mapa
-- [ ] `bosque_afogado` — imagem
-- [ ] `twinfold_hollow` — imagem + mapa
-- [ ] `ysoria_revelacao` — imagem + mapa ⭐ NOVA CENA
+**Ato 1:**
+- [ ] `prologo` — conversacao (usa castelo_ext como placeholder)
+- [x] `mhoried_market` — conversacao ✅ (market_ext, market_ext2, market_int) · batalha_hex ✅ (feira-limpa.png)
+- [x] `castelo_mhoried` — conversacao ✅ (castelo_ext + castelo_int)
+
+**Ato 2 (exploração livre):**
+- [x] `blackwoods_entrada` — conversacao ✅
+- [ ] `carroça_tombada` — conversacao (sem batalha)
+- [ ] `encruzilhada` — conversacao · batalha_hex
+- [x] `dominio_wulfram` — conversacao ✅ · batalha_hex (sem batalha)
+- [x] `ruinas_piromante` — conversacao ✅ · batalha_hex (sem batalha)
+- [x] `choupana_mutter` — conversacao ✅ · batalha_hex (sem batalha) · ⚠️ falta interior com jaula de Morwenna
+- [x] `drowned_grove` — conversacao ✅ (usa bosque_afogado.png) · batalha_hex
+- [x] `cnoc_na_rithe` — conversacao ✅ · batalha_hex (sem batalha)
+- [ ] `kobolds_dissidentes` — conversacao (sem batalha)
+- [x] `kobold_town` — conversacao ✅ · batalha_hex
+- [x] `acampamento_elfico` — conversacao ✅ · batalha_hex
+- [ ] `manticore_grounds` — conversacao · batalha_hex
+- [ ] `weepers_well` — conversacao (sem batalha)
+- [ ] `sepultura_jariella` — conversacao (sem batalha)
+- [ ] `great_grub_carcass` — conversacao · batalha_hex
+- [ ] `ruins_simithari` — conversacao · batalha_hex
+- [ ] `twinfold_hollow` — conversacao · batalha_hex
+- [ ] `ysoria_revelacao` — conversacao · batalha_hex
 
 **Ato 3:**
-- [ ] `gloamreach` — imagem + mapa
+- [x] `gloamreach` — conversacao ✅ · batalha_hex
 
 **Ato 4:**
-- [ ] `torre_limm` — imagem + mapa
+- [x] `torre_limm` — conversacao ✅ (torre_limm.png + torre_limm_int.png) · batalha_hex
+
+---
+
+**Resumo conversacao:** 11 de 22 instaladas ✅ · 11 faltando
+**Resumo batalha_hex:** 1 de 14 instaladas ✅ · 13 faltando
 
 ---
 
