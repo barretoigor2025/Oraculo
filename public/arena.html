@@ -568,6 +568,24 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   border:1px solid rgba(220,80,80,.3);
   box-shadow:0 0 12px rgba(160,30,30,.4), inset 0 1px 0 rgba(255,255,255,.08);
 }
+#btn-confirmar{
+  background:linear-gradient(155deg,#1a6e22,#0e4413);
+  color:#a0ffb0;
+  border:1px solid rgba(60,200,80,.35);
+  box-shadow:0 0 16px rgba(20,160,40,.45), inset 0 1px 0 rgba(255,255,255,.1);
+  animation:pulso-verde 1.2s ease-in-out infinite;
+}
+#btn-lançar:not(:disabled){
+  background:linear-gradient(155deg,#8a2000,#5a1400);
+  color:#ffcc88;
+  border:1px solid rgba(255,100,20,.4);
+  box-shadow:0 0 18px rgba(220,80,0,.55), inset 0 1px 0 rgba(255,255,255,.1);
+}
+#btn-lançar:disabled{
+  background:linear-gradient(155deg,#3a1a0a,#281008);
+  color:rgba(200,130,60,0.4);
+  border:1px solid rgba(150,70,20,.2);
+}
 @keyframes pulso-verde{
   0%,100%{box-shadow:0 0 20px rgba(30,220,60,.5), inset 0 1px 0 rgba(255,255,255,.12);}
   50%{box-shadow:0 0 36px rgba(30,220,60,.85), inset 0 1px 0 rgba(255,255,255,.18);}
@@ -1975,7 +1993,7 @@ function _updateVerbBtns(){
     'planejar_mover':  {mover:true,  atacar:false, skill:false, acaolivre:true},
     'mover_ativo':     {mover:true,  atacar:false, skill:false, acaolivre:false},
     'planejar_acao':   {mover:false, atacar:true,  skill:true,  acaolivre:true},
-    'acao_ativa':      {mover:false, atacar:true,  skill:true,  acaolivre:false},
+    'acao_ativa':      {mover:false, atacar:false, skill:false, acaolivre:false},
     'acao_pronta':     {mover:false, atacar:false, skill:false, acaolivre:false},
     'resolvendo':      {mover:false, atacar:false, skill:false, acaolivre:false},
     'turno_inimigo':   {mover:false, atacar:false, skill:false, acaolivre:false},
@@ -2008,6 +2026,22 @@ function cancelarAcaoPlano(){
 }
 window.cancelarAcaoPlano = cancelarAcaoPlano;
 
+function confirmarAlvoUnico(){
+  if(!habAtual||!selUnit) return;
+  // Usa primeiro atkTarget ou procura o único inimigo em alcance
+  const t = atkTargets[0];
+  const alvo = t
+    ? unidades.find(u=>u.col===t.col&&u.row===t.row&&u.tipo==='inimigo'&&u.hp>0)
+    : unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0)[0];
+  if(!alvo){ cancelarAtaqueAtual(); return; }
+  planoAtaque={hab:habAtual, atacante:selUnit, alvo};
+  modoAtaque=false; habAtual=null; atkTargets=[];
+  faseDoTurno='acao_pronta';
+  _broadcastIntent();
+  renderActionRow(); renderSel(); renderBottomPanel();
+}
+window.confirmarAlvoUnico = confirmarAlvoUnico;
+
 function renderActionRow(){
   const row = document.getElementById('action-row');
   if(!row) return;
@@ -2026,10 +2060,16 @@ function renderActionRow(){
       {id:'btn-finalizar',icon:'⏭', label:'PULAR ATAQUE', fn:'finalizarTurno()', ativo:true},
     ],
     'acao_ativa': [
-      {id:'btn-cancelar', icon:'✕', label:'CANCELAR',   fn:'cancelarAtaqueAtual()', ativo:true},
-      ...(habAtual?.areaRaio>0 && areaPreview
-        ? [{id:'btn-lançar', icon:'💥', label:'LANÇAR', fn:'confirmarAoeAlvo()', ativo:true}]
-        : []),
+      {id:'btn-cancelar', icon:'✕', label:'CANCELAR', fn:'cancelarAtaqueAtual()', ativo:true},
+      ...(habAtual?.areaRaio>0
+        // AoE: LANÇAR aparece imediatamente (desabilitado até clicar no hex)
+        ? [{id:'btn-lançar', icon:'💥', label:areaPreview?'LANÇAR!':'LANÇAR', fn:'confirmarAoeAlvo()', ativo:!!areaPreview}]
+        // Alvo único: botão de confirmar direto (sem precisar clicar no mapa)
+        : atkTargets.length===1
+          ? [{id:'btn-confirmar', icon:'✓', label:'CONFIRMAR', fn:'confirmarAlvoUnico()', ativo:true}]
+          // Múltiplos alvos: instrução, aguarda clique no mapa
+          : []
+      ),
     ],
     'acao_pronta': [
       {id:'btn-cancelar', icon:'✕', label:'CANCELAR',      fn:'cancelarAcaoPlano()', ativo:true},
@@ -2044,7 +2084,9 @@ function renderActionRow(){
   // Ajusta grid para número de botões
   row.style.gridTemplateColumns = btns.length <= 1 ? '1fr' : btns.length === 2 ? '1fr 2fr' : `repeat(${btns.length},1fr)`;
   row.innerHTML = btns.map(b=>`
-    <button class="act-btn${b.ativo?' ativo':''}${b.extra?' '+b.extra:''}" id="${b.id}" onclick="${b.fn}">
+    <button class="act-btn${b.ativo?' ativo':''}${b.extra?' '+b.extra:''}" id="${b.id}"
+      ${b.ativo?`onclick="${b.fn}"`:'disabled'}
+      style="${b.ativo?'':'cursor:not-allowed;'}" >
       <span class="btn-icon">${b.icon}</span>
       <span class="btn-label">${b.label}</span>
     </button>`).join('');
@@ -2946,7 +2988,10 @@ function clicarAtacar(){
   fecharAtkPanel();
 
   const basicos=(HABILIDADES[selUnit.nome]||[]).filter(h=>h.categoria==='basico');
-  if(!basicos.length){ abrirSkillPanel(); return; } // fallback: unit has no basic attack
+  if(!basicos.length){
+    mostrarLetreiro('SEM ATAQUE BÁSICO','Use 🪄 SKILL para magias','',1500);
+    return;
+  }
 
   const _pos=posEfetiva(selUnit);
   const inimigosAlvo=unidades.filter(u=>{
@@ -2954,13 +2999,16 @@ function clicarAtacar(){
     return basicos.some(h=>hexDist(_pos.col,_pos.row,u.col,u.row)<=h.alcance);
   });
 
-  if(!inimigosAlvo.length){ abrirSkillPanel(); return; } // no melee targets — open skills
+  if(!inimigosAlvo.length){
+    mostrarLetreiro('FORA DE ALCANCE','Mova-se para mais perto do inimigo','',1500);
+    return;
+  }
 
   habAtual=basicos[0];
   modoAtaque=true;
   atkTargets=inimigosAlvo.map(u=>({col:u.col,row:u.row}));
   faseDoTurno='acao_ativa';
-  renderActionRow(); renderSel();
+  renderActionRow(); renderSel(); renderBottomPanel();
 }
 
 function fecharAtkPanel(){
@@ -3174,7 +3222,19 @@ function renderBottomPanel(){
           : `Escolha ATACAR ou AÇÃO`;
       } else if(faseDoTurno==='acao_ativa'){
         elL.innerHTML=tracker;
-        elBody.innerHTML=`<span style="color:#cc8844">${habAtual?.nome||'?'}</span> — Alcance ${habAtual?.alcance||'?'}`;
+        const habNm=`<span style="color:#cc8844">${habAtual?.nome||'?'}</span>`;
+        if(habAtual?.areaRaio>0){
+          const dica=areaPreview
+            ? `${habNm} → ${hexLabel(areaPreview.col,areaPreview.row)} — toque LANÇAR!`
+            : `${habNm} — Toque no mapa para mirar`;
+          elBody.innerHTML=dica;
+        } else if(atkTargets.length===1){
+          const t=atkTargets[0];
+          const en=unidades.find(u=>u.col===t.col&&u.row===t.row&&u.tipo==='inimigo');
+          elBody.innerHTML=`${habNm} → <span style="color:#f88">${en?.nome||'alvo'}</span> — toque CONFIRMAR`;
+        } else {
+          elBody.innerHTML=`${habNm} — Toque no inimigo para mirar`;
+        }
       } else if(faseDoTurno==='acao_pronta'){
         elL.innerHTML=tracker;
         const isSelf=planoAtaque?.alvo===planoAtaque?.atacante;
