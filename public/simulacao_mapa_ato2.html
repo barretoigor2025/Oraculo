@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1">
+<title>Simulação — Mapa de Exploração (narration.html)</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  height:100%;overflow:hidden;
+  background:#0a0806;
+  color:#e8d5a8;
+  font-family:'Georgia',serif;
+  user-select:none;
+}
+
+/* ── TELA DE JOGO SIMULADA ── */
+#game-wrap{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+}
+
+/* Imagem de cena */
+#cena-bg{
+  flex:1;min-height:0;
+  position:relative;
+  background:#0d0b07;
+  overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+#cena-img-placeholder{
+  text-align:center;
+  color:rgba(155,130,65,.25);
+}
+#cena-img-placeholder .icon{font-size:64px;margin-bottom:10px;}
+#cena-img-placeholder .txt{font-size:12px;letter-spacing:2px;text-transform:uppercase;}
+
+/* Título da cena (topo) */
+#cena-header{
+  position:absolute;top:0;left:0;right:0;
+  padding:14px 16px 0;
+  background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%);
+  pointer-events:none;
+}
+#cena-titulo{
+  font-size:15px;font-weight:700;letter-spacing:.5px;
+  color:rgba(220,185,80,1);
+}
+#cena-subtitulo{
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(155,130,65,.55);margin-top:2px;
+}
+
+/* Log de diálogo */
+#dialogo-log{
+  position:absolute;bottom:0;left:0;right:0;
+  max-height:38%;
+  background:linear-gradient(to top,rgba(0,0,0,.85) 60%,transparent 100%);
+  padding:20px 14px 10px;
+  overflow-y:auto;
+  display:flex;flex-direction:column;gap:4px;
+}
+.d-line{
+  font-size:11px;line-height:1.5;
+  color:rgba(200,175,100,.8);
+}
+.d-npc-nome{
+  font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  color:rgba(155,130,65,.6);margin-bottom:1px;
+}
+.d-narrador{
+  color:rgba(190,160,80,.65);
+  font-style:italic;
+}
+
+/* ── PAINEL DE CONTROLES (host) ── */
+#painel-controles{
+  flex-shrink:0;
+  background:rgba(10,8,4,.95);
+  border-top:1px solid rgba(190,135,35,.18);
+  padding:8px 12px 10px;
+}
+.ctrl-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
+.ctrl-row:last-child{margin-bottom:0;}
+
+.btn-cena{
+  padding:6px 10px;
+  background:rgba(40,28,8,.8);
+  border:1px solid rgba(190,135,35,.3);
+  color:rgba(220,185,80,.8);
+  border-radius:7px;cursor:pointer;
+  font-family:'Georgia',serif;
+  font-size:10px;letter-spacing:.5px;
+  transition:background .15s,border-color .15s;
+  white-space:nowrap;
+}
+.btn-cena:hover{
+  background:rgba(60,42,10,.9);
+  border-color:rgba(220,185,80,.6);
+}
+#btn-mapa-sim{
+  background:rgba(30,20,50,.7);
+  border-color:rgba(130,80,220,.4);
+  color:rgba(180,140,255,.85);
+}
+#btn-mapa-sim:hover{
+  background:rgba(50,30,80,.85);
+  border-color:rgba(180,130,255,.7);
+}
+#btn-batalha-sim{
+  background:rgba(60,10,10,.8);
+  border:1px solid rgba(180,50,40,.4);
+  color:rgba(220,100,80,.85);
+  padding:8px 14px;
+  border-radius:8px;cursor:pointer;
+  font-family:'Georgia',serif;font-size:11px;
+  transition:background .15s;
+}
+#btn-batalha-sim:hover{background:rgba(90,15,10,.9);}
+
+.cena-info-bar{
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;color:rgba(155,130,65,.5);
+  margin-bottom:6px;padding-bottom:6px;
+  border-bottom:1px solid rgba(190,135,35,.1);
+}
+.cena-info-bar .badge{
+  padding:2px 8px;border-radius:4px;
+  background:rgba(40,28,8,.9);
+  border:1px solid rgba(190,135,35,.2);
+  color:rgba(190,155,70,.7);font-size:9px;
+}
+.cena-info-bar .badge.batalha{
+  background:rgba(50,12,8,.9);
+  border-color:rgba(160,50,30,.3);
+  color:rgba(210,90,70,.8);
+}
+
+/* ── OVERLAY DO MAPA ── */
+#mapa-overlay{
+  position:fixed;inset:0;z-index:800;
+  background:rgba(0,0,0,.90);
+  backdrop-filter:blur(8px);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+#mapa-overlay.oculto{display:none;}
+
+#mapa-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 16px 12px;
+  border-bottom:1px solid rgba(190,135,35,.15);
+  flex-shrink:0;
+}
+#mapa-titulo-h{
+  font-size:14px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(220,185,80,1);
+}
+#mapa-legenda{
+  display:flex;gap:12px;align-items:center;
+  font-size:9px;color:rgba(155,130,65,.55);letter-spacing:.5px;
+}
+.leg{display:flex;align-items:center;gap:4px;}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ld-atual{background:rgba(220,185,80,1);}
+.ld-visit{background:rgba(80,160,80,.8);}
+.ld-disp{background:rgba(190,135,35,.7);}
+.ld-lock{background:rgba(60,40,10,.7);border:1px solid rgba(100,80,30,.4);}
+
+#mapa-fechar{
+  background:none;border:1px solid rgba(190,135,35,.3);
+  color:rgba(220,185,80,.7);
+  padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;
+  transition:border-color .15s;
+}
+#mapa-fechar:hover{border-color:rgba(220,185,80,.7);color:rgba(220,185,80,1);}
+
+#mapa-scroll{
+  flex:1;min-height:0;
+  overflow-y:auto;
+  padding:14px 14px 20px;
+}
+
+.ato-label{
+  font-size:9px;letter-spacing:2.5px;text-transform:uppercase;
+  color:rgba(155,130,65,.45);
+  margin-bottom:8px;margin-top:14px;
+  padding-bottom:5px;
+  border-bottom:1px solid rgba(190,135,35,.1);
+}
+.ato-label:first-child{margin-top:0;}
+
+.cenas-row{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(155px,1fr));
+  gap:7px;
+  margin-bottom:4px;
+}
+
+/* cards do mapa */
+.mc{
+  padding:9px 11px;border-radius:10px;
+  border:1px solid rgba(190,135,35,.2);
+  background:rgba(16,11,5,.7);
+  position:relative;
+  transition:border-color .15s,background .15s,opacity .15s;
+}
+.mc.disponivel{
+  border-color:rgba(190,135,35,.45);
+  background:rgba(30,20,6,.8);
+  cursor:pointer;
+}
+.mc.disponivel:hover{
+  border-color:rgba(220,185,80,.75);
+  background:rgba(50,34,10,.9);
+}
+.mc.visitada{
+  border-color:rgba(80,160,80,.4);
+  background:rgba(15,40,12,.6);
+  cursor:pointer;
+}
+.mc.visitada:hover{
+  border-color:rgba(100,200,100,.6);
+}
+.mc.atual{
+  border-color:rgba(220,185,80,1) !important;
+  background:rgba(55,38,10,.95) !important;
+  cursor:default;
+}
+.mc.bloqueada{
+  opacity:.38;cursor:default;
+}
+
+.mc-lock{
+  position:absolute;top:6px;right:8px;
+  font-size:12px;opacity:.6;
+}
+.mc-titulo{
+  font-size:11px;font-weight:700;
+  color:rgba(220,185,80,.95);
+  margin-bottom:2px;padding-right:16px;
+  line-height:1.3;
+}
+.mc.bloqueada .mc-titulo{color:rgba(130,105,50,.5);}
+.mc-sub{
+  font-size:9px;color:rgba(130,108,50,.5);
+  margin-bottom:6px;line-height:1.3;
+}
+.mc-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px;}
+.mc-tag{
+  font-size:8px;padding:1px 5px;border-radius:3px;
+  background:rgba(40,28,8,.9);color:rgba(175,145,65,.65);
+  border:1px solid rgba(190,135,35,.18);
+}
+.mc-tag.t-atual{background:rgba(55,38,10,.9);color:rgba(220,185,80,1);border-color:rgba(190,135,35,.5);}
+.mc-tag.t-visit{background:rgba(12,40,10,.9);color:rgba(90,190,90,.85);border-color:rgba(60,150,60,.3);}
+.mc-tag.t-bat{background:rgba(50,10,8,.9);color:rgba(210,90,70,.8);border-color:rgba(150,45,30,.3);}
+.mc-tag.t-ing{background:rgba(8,40,25,.9);color:rgba(70,190,120,.8);border-color:rgba(40,130,75,.3);}
+.mc-gancho{
+  font-size:9px;color:rgba(175,145,65,.55);
+  font-style:italic;line-height:1.4;
+}
+.mc-req{
+  font-size:8px;color:rgba(190,80,60,.7);
+  margin-top:3px;
+}
+.mc-req span{color:rgba(220,110,90,.9);font-weight:700;}
+
+/* Botão navegar */
+.mc-btn{
+  display:none;
+  margin-top:6px;
+  width:100%;
+  padding:5px 0;
+  background:rgba(60,42,10,.9);
+  border:1px solid rgba(190,135,35,.5);
+  color:rgba(220,185,80,.9);
+  border-radius:6px;cursor:pointer;
+  font-size:9px;letter-spacing:.5px;
+  transition:background .12s;
+}
+.mc-btn:hover{background:rgba(80,56,14,1);}
+.mc.disponivel:hover .mc-btn,
+.mc.visitada:hover .mc-btn{display:block;}
+.mc.atual .mc-btn{display:none!important;}
+
+/* Instrução */
+#mapa-instrucao{
+  text-align:center;
+  font-size:9px;letter-spacing:.5px;
+  color:rgba(130,105,50,.4);
+  padding-top:10px;
+}
+</style>
+</head>
+<body>
+
+<!-- ── TELA DE JOGO SIMULADA ── -->
+<div id="game-wrap">
+  <div id="cena-bg">
+    <div id="cena-img-placeholder">
+      <div class="icon" id="cena-icon">🌲</div>
+      <div class="txt" id="cena-txt">Entrada dos Blackwoods</div>
+    </div>
+
+    <div id="cena-header">
+      <div id="cena-titulo">Entrada do Grimhollow</div>
+      <div id="cena-subtitulo">Os Blackwoods — Margem Norte da Floresta</div>
+    </div>
+
+    <div id="dialogo-log">
+      <div class="d-line d-narrador">A estrada de terra termina aqui. Diante de vocês, os Grimhollow Blackwoods se erguem como uma parede viva.</div>
+      <div class="d-line">
+        <div class="d-npc-nome">Aelar Eisenli</div>
+        "Mais humanos." [pausa] "Ou são muito corajosos ou muito desinformados. Os Blackwoods estão perigosos — mesmo para nós."
+      </div>
+    </div>
+  </div>
+
+  <!-- Painel de controles do host -->
+  <div id="painel-controles">
+    <div class="cena-info-bar">
+      <span>blackwoods_entrada</span>
+      <span class="badge">💬 Diálogo</span>
+      <span class="badge">Ato 2</span>
+      <span style="margin-left:auto;font-size:9px;color:rgba(100,190,100,.6)">● host</span>
+    </div>
+    <div class="ctrl-row">
+      <button class="btn-cena" onclick="simularNavLinear(-1)">← Cena Ant.</button>
+      <button class="btn-cena" onclick="alert('⚙ Configurar IA (simulação)')">⚙ IA</button>
+      <button class="btn-cena" onclick="simularNavLinear(1)">Próx. Cena →</button>
+      <button class="btn-cena" id="btn-mapa-sim" onclick="abrirMapa()">🗺 Mapa</button>
+      <button id="btn-batalha-sim" onclick="alert('⚔ Batalha iniciaria aqui (simulação)')">⚔ Batalha!</button>
+    </div>
+    <div class="ctrl-row">
+      <select style="flex:1;background:rgba(20,14,6,.9);color:#e8d5a8;border:1px solid rgba(190,135,35,.3);padding:6px;border-radius:7px;font-family:Georgia,serif;font-size:11px">
+        <option>Aelar Eisenli</option>
+        <option>Catherine Laskaris</option>
+        <option>Wulfram, o Chifrado</option>
+      </select>
+      <button class="btn-cena" onclick="alert('✨ Gerando fala com IA…')">✨ Gerar com IA</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── OVERLAY DO MAPA ── -->
+<div id="mapa-overlay" class="oculto">
+  <div id="mapa-header">
+    <div>
+      <div id="mapa-titulo-h">🗺 Mapa — Blackwoods</div>
+      <div id="mapa-legenda">
+        <div class="leg"><div class="leg-dot ld-atual"></div>Aqui agora</div>
+        <div class="leg"><div class="leg-dot ld-visit"></div>Visitada</div>
+        <div class="leg"><div class="leg-dot ld-disp"></div>Disponível</div>
+        <div class="leg"><div class="leg-dot ld-lock"></div>Bloqueada</div>
+      </div>
+    </div>
+    <button id="mapa-fechar" onclick="fecharMapa()">✕ Fechar</button>
+  </div>
+  <div id="mapa-scroll">
+    <!-- renderizado por JS -->
+  </div>
+  <div id="mapa-instrucao">Passe o mouse sobre uma cena disponível para navegar · Clique para ir</div>
+</div>
+
+<script>
+// ── DADOS DAS CENAS (subset da campanha) ──────────────────────────
+const CENAS = {
+  prologo:           { titulo:'Prólogo',               subtitulo:'O Mundo de Ygdis',               tipo:'transicao',   exigeAntes:[], ato:1, icon:'🌍' },
+  mhoried_market:    { titulo:'Feira de St. Phanourios',subtitulo:'Batalha dos Espantalhos',         tipo:'emboscada',   exigeAntes:['prologo'], ato:1, icon:'🏪', temBatalha:true },
+  castelo_mhoried:   { titulo:'Castelo de Mhoried',    subtitulo:'A Duquesa Catherine',             tipo:'dialogo',     exigeAntes:['mhoried_market'], ato:1, icon:'🏰', npc:'Catherine Laskaris' },
+  blackwoods_entrada:{ titulo:'Entrada do Grimhollow', subtitulo:'Os Blackwoods — Margem Norte',    tipo:'dialogo',     exigeAntes:['castelo_mhoried'], ato:2, icon:'🌲', npc:'Aelar Eisenli',
+                       ganchoChegada:'Catherine enviou o grupo — a última pista sobre Oswald e os espantalhos de Choir.' },
+  // Act 2 — livres
+  carroça_tombada:   { titulo:'A Carroça Tombada',     subtitulo:'Blackwoods — Estrada Principal',  tipo:'descoberta',  exigeAntes:['blackwoods_entrada'], ato:2, icon:'🪵',
+                       ganchoChegada:'A estrada está bloqueada — flechas não-humanas nos corpos dos comerciantes.' },
+  encruzilhada:      { titulo:'A Encruzilhada',        subtitulo:'Blackwoods — Cruzamento Central', tipo:'emboscada',   exigeAntes:['blackwoods_entrada'], ato:2, icon:'🐗', temBatalha:true,
+                       ganchoChegada:'Um javali ensandecido com prótese de mão rasga a vegetação em direção ao grupo.' },
+  campo_aranhas:     { titulo:'O Campo das Aranhas',   subtitulo:'Blackwoods — Zona Central',       tipo:'emboscada',   exigeAntes:['blackwoods_entrada'], ato:2, icon:'🕷', temBatalha:true,
+                       ganchoChegada:'Teias enormes, casulos humanos — silêncio de emboscada.' },
+  dominio_wulfram:   { titulo:'O Domínio do Chifrado', subtitulo:'Blackwoods — Coração da Floresta',tipo:'dialogo',     exigeAntes:['blackwoods_entrada'], ato:2, icon:'🦌', npc:'Wulfram, o Chifrado',
+                       ganchoChegada:'Chifres e ossos pendurados marcam o território de alguém que recusou servir a Choir.' },
+  ruinas_piromante:  { titulo:'As Ruínas Chamuscadas', subtitulo:'Blackwoods — Setor Sudoeste',     tipo:'descoberta',  exigeAntes:['blackwoods_entrada'], ato:2, icon:'🔥', npc:'Fariborz, o Piromante',
+                       ganchoChegada:'Cheiro de enxofre e marcas de queimaduras recentes nas árvores.' },
+  choupana_mutter:   { titulo:'A Choupana de Mutter',  subtitulo:'Blackwoods — Profundezas do Sul', tipo:'dialogo',     exigeAntes:['blackwoods_entrada'], ato:2, icon:'🧙', npc:'Mutter Grimmhaar',
+                       ganchoChegada:'Menções a uma curandeira — alguém com ingredientes raros e segredos que nenhum civilizado tem.' },
+  cnoc_na_rithe:     { titulo:'Cnoc na Ríthe',         subtitulo:'A Aldeia Druídica',               tipo:'dialogo',     exigeAntes:['blackwoods_entrada'], ato:2, icon:'🌿', npc:'Muirenn + Mac Rónán',
+                       ganchoChegada:'Rumores de aldeia druídica em paz com a floresta — Mac Rónán foi visto aqui.' },
+  acampamento_elfico:{ titulo:'Acampamento dos Vhuureth',subtitulo:'Blackwoods — Setor Norte',      tipo:'negociacao',  exigeAntes:['blackwoods_entrada'], ato:2, icon:'🧝', npc:'Príncipe Kalos · Valmorien', temBatalha:true,
+                       ganchoChegada:'Rastros Vhuureth e o mapa do batedor levam ao acampamento do Príncipe Kalos.' },
+  kobolds_dissidentes:{ titulo:'Os Três Kobolds',      subtitulo:'Perímetro da Cidade Kobold',      tipo:'dialogo',     exigeAntes:['blackwoods_entrada'], ato:2, icon:'🦎', npc:'Krink · Drizzle · Murznut',
+                       ganchoChegada:'Na periferia do território kobold, três figuras que não agem como os outros.' },
+  kobold_town:       { titulo:'A Cidade Kobold',       subtitulo:'Blackwoods — Território Kobold',  tipo:'negociacao',  exigeAntes:['blackwoods_entrada'], ato:2, icon:'💀', npc:'Blunkin + Mac Rónán', temBatalha:true,
+                       ganchoChegada:'Krink revelou onde Mac Rónán está preso — e Blunkin não vai entregar fácil.' },
+  drowned_grove:     { titulo:'O Bosque Afogado',      subtitulo:'Blackwoods — Castellet Malvoisin',tipo:'aparicao',    exigeAntes:['blackwoods_entrada'], ato:2, icon:'💧', npc:'Ruzalka', temBatalha:true, ingrediente:'Gillshade',
+                       ganchoChegada:'As águas dos Blackwoods descem para este ponto — Ruzalka já sabe que vocês vinham.' },
+  manticore_grounds: { titulo:'Território da Manticore',subtitulo:'Blackwoods — Zona de Caça',      tipo:'negociacao',  exigeAntes:['blackwoods_entrada'], ato:2, icon:'🦁', npc:'Valmorien', temBatalha:true, ingrediente:'Greybane',
+                       ganchoChegada:'Marcas de garras enormes — e ao longe, Valmorien pedindo ajuda.' },
+  ruins_simithari:   { titulo:'As Ruínas de Simithari',subtitulo:'Blackwoods — Colina dos Corvos',  tipo:'descoberta',  exigeAntes:['blackwoods_entrada'], ato:2, icon:'🪦', temBatalha:true,
+                       ganchoChegada:'Corvos em círculo sobre a colina — sinal de algo que deveria ter morrido e não morreu.' },
+  twinfold_hollow:   { titulo:'O Vale Dual',           subtitulo:'Blackwoods — Coração Vivo',       tipo:'emboscada',   exigeAntes:['blackwoods_entrada'], ato:2, icon:'🌸', temBatalha:true, ingrediente:'Starshade Blooms',
+                       ganchoChegada:'Starshade Blooms florescem aqui — raras, poderosas, e algo as protege.' },
+  // Dependentes
+  great_grub_carcass:{ titulo:'A Carcaça do Grande Verme',subtitulo:'Blackwoods — Muralha Antiga',  tipo:'dialogo',     exigeAntes:['choupana_mutter'], ato:2, icon:'🐛', npc:'Mutter Grimmhaar', temBatalha:true, ingrediente:'Cogumelos Log-Wife',
+                       ganchoChegada:'Mutter Grimmhaar guia até aqui — "É aqui. Os cogumelos que precisam."' },
+  weepers_well:      { titulo:'O Poço que Chora',      subtitulo:'Blackwoods — Ruína Élfica',       tipo:'aparicao',    exigeAntes:['drowned_grove'], ato:2, icon:'🪣', npc:'Jariella (espírito)',
+                       ganchoChegada:'Ruzalka indicou a direção — "um poço que chora nas ruínas da floresta antiga".' },
+  ysoria_revelacao:  { titulo:'O Nome que a Floresta Guarda',subtitulo:'Clareira da Memória',       tipo:'aparicao',    exigeAntes:['cnoc_na_rithe'], ato:2, icon:'👁', npc:'Ysoria (espírito)', temBatalha:true,
+                       ganchoChegada:'Mac Rónán hesitou ao ouvir o nome. Há uma clareira que a floresta evita.' },
+  sepultura_jariella:{ titulo:'A Sepultura de Jariella',subtitulo:'Blackwoods — Margem do Rio',     tipo:'descoberta',  exigeAntes:['weepers_well'], ato:2, icon:'⚔',
+                       ganchoChegada:'As visões do Poço mostraram a margem do rio antigo onde Jariella caiu.' },
+  // Ato 3-4
+  gloamreach:        { titulo:'O Gloamreach',          subtitulo:'Covil dos Thools',                tipo:'negociacao',  exigeAntes:['kobold_town'], ato:3, icon:'🕳', npc:'Duque Oswald (Thool)', temBatalha:true,
+                       ganchoChegada:'Mac Rónán revelou — o Duque Oswald está no Gloamreach, transformado.' },
+  torre_limm:        { titulo:'A Torre das Estrelas',  subtitulo:'Pico das Montanhas de Granito',   tipo:'negociacao',  exigeAntes:['gloamreach'], ato:4, icon:'🗼', npc:'Rei Chutter', temBatalha:true,
+                       ganchoChegada:'O portal do Gloamreach leva ao único lugar de onde Chutter controla tudo.' },
+};
+
+const GRUPOS = [
+  { label: 'Ato 1 — Mhoried (linear)', ids: ['prologo','mhoried_market','castelo_mhoried'] },
+  { label: 'Ato 2 — Entrada dos Blackwoods', ids: ['blackwoods_entrada'] },
+  { label: 'Ato 2 — Exploração livre', ids: [
+    'carroça_tombada','encruzilhada','campo_aranhas','dominio_wulfram',
+    'ruinas_piromante','choupana_mutter','cnoc_na_rithe','acampamento_elfico',
+    'kobolds_dissidentes','kobold_town','drowned_grove','manticore_grounds',
+    'ruins_simithari','twinfold_hollow',
+    'great_grub_carcass','weepers_well','ysoria_revelacao','sepultura_jariella',
+  ]},
+  { label: 'Ato 3 — O Gloamreach', ids: ['gloamreach'] },
+  { label: 'Ato 4 — Torre de Limm', ids: ['torre_limm'] },
+];
+
+// ── ESTADO DA SIMULAÇÃO ──────────────────────────────────────────
+let _cenaAtual = 'blackwoods_entrada';
+let _cenasVisitadas = new Set(['prologo','mhoried_market','castelo_mhoried']);
+
+const TIPO_LABEL = {
+  emboscada:'⚡ Emboscada', dialogo:'💬 Diálogo', negociacao:'🤝 Negociação',
+  descoberta:'🔍 Descoberta', aparicao:'👻 Aparição', transicao:'➡ Transição',
+};
+
+// ── LÓGICA DE DISPONIBILIDADE ───────────────────────────────────
+function cenaDisponivel(cena) {
+  if (!cena.exigeAntes || cena.exigeAntes.length === 0) return true;
+  return cena.exigeAntes.every(r => _cenasVisitadas.has(r));
+}
+
+// ── RENDERIZAR MAPA ──────────────────────────────────────────────
+function renderMapa() {
+  const scroll = document.getElementById('mapa-scroll');
+  scroll.innerHTML = '';
+
+  for (const grupo of GRUPOS) {
+    const lbl = document.createElement('div');
+    lbl.className = 'ato-label';
+    lbl.textContent = grupo.label;
+    scroll.appendChild(lbl);
+
+    const row = document.createElement('div');
+    row.className = 'cenas-row';
+
+    for (const id of grupo.ids) {
+      const cena = CENAS[id];
+      if (!cena) continue;
+
+      const visitada   = _cenasVisitadas.has(id);
+      const eAtual     = id === _cenaAtual;
+      const disponivel = cenaDisponivel(cena);
+      const bloqueada  = !disponivel && !visitada && !eAtual;
+
+      const card = document.createElement('div');
+      card.className = 'mc';
+      if (eAtual) card.classList.add('atual');
+      else if (bloqueada) card.classList.add('bloqueada');
+      else if (visitada) card.classList.add('visitada');
+      else card.classList.add('disponivel');
+
+      // Lock
+      if (bloqueada) {
+        const lk = document.createElement('span');
+        lk.className = 'mc-lock'; lk.textContent = '🔒';
+        card.appendChild(lk);
+      }
+
+      // Título
+      const tt = document.createElement('div');
+      tt.className = 'mc-titulo';
+      tt.textContent = (cena.icon ? cena.icon + ' ' : '') + cena.titulo;
+      card.appendChild(tt);
+
+      const st = document.createElement('div');
+      st.className = 'mc-sub';
+      st.textContent = cena.subtitulo;
+      card.appendChild(st);
+
+      // Tags
+      const tags = document.createElement('div');
+      tags.className = 'mc-tags';
+      if (eAtual) { const t = document.createElement('span'); t.className='mc-tag t-atual'; t.textContent='📍 Aqui'; tags.appendChild(t); }
+      else if (visitada) { const t = document.createElement('span'); t.className='mc-tag t-visit'; t.textContent='✓ Visitada'; tags.appendChild(t); }
+      if (cena.temBatalha) { const t = document.createElement('span'); t.className='mc-tag t-bat'; t.textContent='⚔ Batalha'; tags.appendChild(t); }
+      if (cena.ingrediente) { const t = document.createElement('span'); t.className='mc-tag t-ing'; t.textContent='🌿 '+cena.ingrediente; tags.appendChild(t); }
+      if (cena.tipo) { const t = document.createElement('span'); t.className='mc-tag'; t.textContent=TIPO_LABEL[cena.tipo]||cena.tipo; tags.appendChild(t); }
+      card.appendChild(tags);
+
+      // Gancho ou requisito
+      if (!bloqueada && cena.ganchoChegada) {
+        const g = document.createElement('div');
+        g.className = 'mc-gancho';
+        g.textContent = cena.ganchoChegada;
+        card.appendChild(g);
+      } else if (bloqueada && cena.exigeAntes?.length) {
+        const g = document.createElement('div');
+        g.className = 'mc-req';
+        const faltam = cena.exigeAntes.filter(r => !_cenasVisitadas.has(r))
+          .map(r => CENAS[r]?.titulo || r).join(', ');
+        g.innerHTML = `Requer: <span>${faltam}</span>`;
+        card.appendChild(g);
+      }
+
+      // Botão navegar
+      if (!eAtual && !bloqueada) {
+        const btn = document.createElement('button');
+        btn.className = 'mc-btn';
+        btn.textContent = visitada ? '↩ Revisitar' : '→ Ir para esta cena';
+        btn.onclick = (e) => { e.stopPropagation(); irParaCena(id); };
+        card.appendChild(btn);
+        card.onclick = () => irParaCena(id);
+      }
+
+      row.appendChild(card);
+    }
+    scroll.appendChild(row);
+  }
+}
+
+// ── NAVEGAÇÃO ───────────────────────────────────────────────────
+function irParaCena(id) {
+  // Marca atual como visitada
+  _cenasVisitadas.add(_cenaAtual);
+  _cenaAtual = id;
+  fecharMapa();
+  atualizarTelaCena(id);
+}
+
+function simularNavLinear(delta) {
+  const ids = Object.keys(CENAS);
+  const idx = ids.indexOf(_cenaAtual);
+  const novo = ids[idx + delta];
+  if (novo && CENAS[novo]) irParaCena(novo);
+}
+
+function atualizarTelaCena(id) {
+  const cena = CENAS[id];
+  if (!cena) return;
+  document.getElementById('cena-titulo').textContent = cena.titulo;
+  document.getElementById('cena-subtitulo').textContent = cena.subtitulo;
+  document.getElementById('cena-icon').textContent = cena.icon || '🏕';
+  document.getElementById('cena-txt').textContent = cena.titulo;
+
+  const log = document.getElementById('dialogo-log');
+  log.innerHTML = '';
+
+  const narr = document.createElement('div');
+  narr.className = 'd-line d-narrador';
+  narr.textContent = cena.ganchoChegada || 'A cena se revela diante do grupo…';
+  log.appendChild(narr);
+
+  if (cena.npc) {
+    const npcLine = document.createElement('div');
+    npcLine.className = 'd-line';
+    npcLine.innerHTML = `<div class="d-npc-nome">${cena.npc}</div>[NPC de entrada — fala automática disparada 1,4s após a cena carregar]`;
+    log.appendChild(npcLine);
+  }
+
+  // Atualiza info bar
+  const info = document.querySelector('.cena-info-bar');
+  info.innerHTML = `
+    <span>${id}</span>
+    <span class="badge">${TIPO_LABEL[cena.tipo]||cena.tipo}</span>
+    <span class="badge">Ato ${cena.ato}</span>
+    ${cena.temBatalha ? '<span class="badge batalha">⚔ Tem batalha</span>' : ''}
+    <span style="margin-left:auto;font-size:9px;color:rgba(100,190,100,.6)">● host</span>
+  `;
+}
+
+// ── ABRIR / FECHAR MAPA ─────────────────────────────────────────
+function abrirMapa() {
+  renderMapa();
+  document.getElementById('mapa-overlay').classList.remove('oculto');
+}
+function fecharMapa() {
+  document.getElementById('mapa-overlay').classList.add('oculto');
+}
+</script>
+</body>
+</html>
