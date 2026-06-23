@@ -4,120 +4,141 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Oráculo — Instalador de Campanha</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100%;background:#050302;font-family:Georgia,serif;color:#e8d5a8;}
 body{padding-bottom:60px;}
 
 #header{padding:22px 20px 14px;text-align:center;border-bottom:1px solid rgba(190,140,35,0.15);}
-#header h1{font-size:10px;letter-spacing:5px;text-transform:uppercase;color:rgba(245,216,120,0.30);}
+#header h1{font-size:10px;letter-spacing:5px;text-transform:uppercase;color:rgba(245,216,120,0.28);}
 #header h2{font-size:20px;font-weight:700;color:#f5d878;margin-top:4px;}
-#header p{font-size:11px;color:rgba(200,175,100,0.42);margin-top:5px;font-style:italic;}
+#header p{font-size:11px;color:rgba(200,175,100,0.40);margin-top:5px;font-style:italic;}
 
 /* ── Input ── */
-#input-section{max-width:720px;margin:24px auto;padding:0 16px;}
-.card{background:rgba(7,4,1,0.90);border:1px solid rgba(190,140,35,0.18);border-radius:14px;padding:18px;margin-bottom:14px;}
-.card-tit{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(190,140,35,0.38);margin-bottom:11px;}
-.lbl{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.36);margin-bottom:4px;}
-input,textarea,select{width:100%;background:rgba(20,12,4,0.90);border:1px solid rgba(190,140,35,0.22);border-radius:8px;padding:9px 12px;color:#e8d5a8;font-family:Georgia,serif;font-size:13px;outline:none;transition:border-color .2s;-webkit-appearance:none;}
-textarea{resize:vertical;line-height:1.6;}
-input:focus,textarea:focus{border-color:rgba(190,140,35,0.52);}
+#input-section{max-width:640px;margin:28px auto;padding:0 16px;}
+.card{background:rgba(7,4,1,0.90);border:1px solid rgba(190,140,35,0.18);border-radius:14px;padding:18px;margin-bottom:13px;}
+.card-tit{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(190,140,35,0.36);margin-bottom:12px;}
+.lbl{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.34);margin-bottom:4px;}
+input[type=password]{width:100%;background:rgba(20,12,4,0.90);border:1px solid rgba(190,140,35,0.20);border-radius:8px;padding:9px 12px;color:#e8d5a8;font-family:Georgia,serif;font-size:13px;outline:none;transition:border-color .2s;}
+input[type=password]:focus{border-color:rgba(190,140,35,0.50);}
 .campo{margin-bottom:11px;}
 
-/* ── Botão ── */
-.btn-gerar{width:100%;margin-top:6px;padding:14px;background:rgba(190,140,35,0.16);border:1px solid rgba(220,170,50,0.42);border-radius:10px;color:#f5d878;font-family:Georgia,serif;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
-.btn-gerar:hover{background:rgba(190,140,35,0.28);border-color:rgba(245,216,120,0.60);}
-.btn-gerar:disabled{opacity:0.35;cursor:default;}
+/* ── Upload area ── */
+#drop-area{
+  border:2px dashed rgba(190,140,35,0.28);border-radius:14px;
+  padding:36px 20px;text-align:center;cursor:pointer;
+  transition:border-color .2s,background .2s;
+  background:rgba(0,0,0,0.25);
+  margin-bottom:13px;
+}
+#drop-area:hover,#drop-area.drag-over{border-color:rgba(190,140,35,0.60);background:rgba(190,140,35,0.06);}
+#drop-icon{font-size:38px;margin-bottom:10px;}
+#drop-txt{font-size:13px;color:rgba(200,175,100,0.60);}
+#drop-sub{font-size:10px;color:rgba(190,140,35,0.30);margin-top:5px;}
+#pdf-input{display:none;}
+
+/* ── File info ── */
+#file-info{display:none;background:rgba(30,80,30,0.18);border:1px solid rgba(80,160,80,0.25);border-radius:10px;padding:12px 16px;margin-bottom:13px;}
+#fi-nome{font-size:13px;color:#80c880;font-weight:700;}
+#fi-meta{font-size:10px;color:rgba(100,160,100,0.60);margin-top:3px;}
+#fi-aviso{font-size:10px;color:rgba(190,140,35,0.45);margin-top:5px;font-style:italic;}
+
+.btn-gerar{width:100%;padding:14px;background:rgba(190,140,35,0.16);border:1px solid rgba(220,170,50,0.40);border-radius:10px;color:#f5d878;font-family:Georgia,serif;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.btn-gerar:hover:not(:disabled){background:rgba(190,140,35,0.28);}
+.btn-gerar:disabled{opacity:0.30;cursor:default;}
+.btn-sm-link{background:none;border:none;color:rgba(190,140,35,0.40);font-size:11px;cursor:pointer;text-decoration:underline;display:block;text-align:center;margin-top:10px;}
 
 /* ── Loading ── */
-#loading{display:none;text-align:center;padding:40px;color:rgba(200,175,100,0.55);}
-.ld-icon{font-size:36px;animation:spin 1.8s linear infinite;display:inline-block;margin-bottom:12px;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.ld-txt{font-size:11px;letter-spacing:3px;text-transform:uppercase;}
-.ld-sub{font-size:10px;margin-top:6px;color:rgba(190,140,35,0.35);font-style:italic;}
+#loading{display:none;text-align:center;padding:48px 16px;max-width:640px;margin:0 auto;}
+.ld-icon{font-size:34px;animation:pulse 1.6s ease-in-out infinite;display:inline-block;margin-bottom:14px;}
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(.9)}50%{opacity:1;transform:scale(1.05)}}
+.ld-fase{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(190,140,35,0.36);margin-bottom:6px;}
+.ld-txt{font-size:14px;color:rgba(220,195,120,0.75);}
+.ld-prog{width:100%;height:3px;background:rgba(190,140,35,0.12);border-radius:2px;margin-top:16px;overflow:hidden;}
+.ld-bar{height:100%;background:rgba(190,140,35,0.55);border-radius:2px;width:0%;transition:width .6s ease;}
 
 /* ── Erro ── */
-#erro{display:none;background:rgba(80,10,10,0.40);border:1px solid rgba(160,30,30,0.40);border-radius:10px;padding:14px 16px;color:#c87070;font-size:12px;margin:16px auto;max-width:720px;}
+#erro{display:none;background:rgba(80,10,10,0.40);border:1px solid rgba(160,30,30,0.38);border-radius:10px;padding:14px 16px;color:#c87070;font-size:12px;line-height:1.65;max-width:640px;margin:16px auto;}
 
 /* ── Output ── */
 #output{display:none;max-width:720px;margin:0 auto;padding:0 16px;}
-#camp-header{text-align:center;padding:20px 0 14px;border-bottom:1px solid rgba(190,140,35,0.12);margin-bottom:16px;}
-#camp-icon{font-size:36px;}
-#camp-nome{font-size:18px;font-weight:700;color:#f5d878;margin-top:4px;}
-#camp-sub{font-size:10px;color:rgba(200,175,100,0.42);margin-top:3px;letter-spacing:1px;}
-#camp-gancho{font-size:12px;color:rgba(200,175,100,0.62);margin-top:10px;font-style:italic;line-height:1.65;}
+#camp-header{text-align:center;padding:22px 0 16px;border-bottom:1px solid rgba(190,140,35,0.12);margin-bottom:16px;}
+#camp-icon{font-size:38px;}
+#camp-nome{font-size:19px;font-weight:700;color:#f5d878;margin-top:5px;}
+#camp-sub{font-size:10px;color:rgba(200,175,100,0.40);margin-top:3px;letter-spacing:1px;}
+#camp-gancho{font-size:12px;color:rgba(200,175,100,0.60);margin-top:12px;font-style:italic;line-height:1.70;max-width:560px;margin-left:auto;margin-right:auto;}
+.nova-btn{margin-top:14px;display:inline-block;font-size:10px;color:rgba(190,140,35,0.35);cursor:pointer;text-decoration:underline;}
 
-#tab-nav{display:flex;border-bottom:1px solid rgba(190,140,35,0.13);background:rgba(0,0,0,0.45);position:sticky;top:0;z-index:100;overflow-x:auto;margin:0 -16px;padding:0 16px;}
-.tab-btn{flex:0 0 auto;padding:10px 12px;background:none;border:none;font-family:Georgia,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.34);cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap;}
+#tab-nav{display:flex;border-bottom:1px solid rgba(190,140,35,0.12);background:rgba(0,0,0,0.45);position:sticky;top:0;z-index:100;overflow-x:auto;margin:0 -16px;padding:0 16px;}
+.tab-btn{flex:0 0 auto;padding:10px 11px;background:none;border:none;font-family:Georgia,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.32);cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap;}
 .tab-btn.ativo{color:#f5d878;border-bottom-color:#f5d878;}
 .tab-section{display:none;padding:18px 0;}
 .tab-section.ativo{display:block;}
 
 /* ── Roteiro ── */
-.rot-premissa{font-size:13px;color:rgba(220,195,120,0.85);line-height:1.75;padding:14px;background:rgba(190,140,35,0.06);border-left:3px solid rgba(190,140,35,0.30);border-radius:0 8px 8px 0;margin-bottom:16px;}
-.rot-section{margin-bottom:20px;}
-.rot-tit{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(190,140,35,0.38);margin-bottom:10px;}
-.ato{background:rgba(0,0,0,0.30);border:1px solid rgba(190,140,35,0.12);border-radius:9px;padding:12px;margin-bottom:8px;}
-.ato-num{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.35);margin-bottom:3px;}
+.rot-premissa{font-size:13px;color:rgba(220,195,120,0.82);line-height:1.78;padding:14px;background:rgba(190,140,35,0.05);border-left:3px solid rgba(190,140,35,0.28);border-radius:0 8px 8px 0;margin-bottom:16px;}
+.rot-tit{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(190,140,35,0.36);margin-bottom:10px;margin-top:20px;}
+.ato{background:rgba(0,0,0,0.28);border:1px solid rgba(190,140,35,0.11);border-radius:9px;padding:12px;margin-bottom:8px;}
+.ato-num{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.33);margin-bottom:2px;}
 .ato-titulo{font-size:13px;font-weight:700;color:#f5d878;margin-bottom:5px;}
-.ato-desc{font-size:12px;color:rgba(200,175,100,0.65);line-height:1.6;}
-.gancho{border-left:2px solid rgba(190,140,35,0.25);padding:8px 12px;margin-bottom:8px;}
-.gancho-tit{font-size:12px;font-weight:700;color:rgba(220,195,120,0.80);}
-.gancho-desc{font-size:11px;color:rgba(200,175,100,0.60);margin-top:3px;line-height:1.55;}
-.gancho-gate{font-size:10px;color:rgba(190,140,35,0.35);margin-top:3px;font-style:italic;}
-.encontro{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(190,140,35,0.06);}
-.enc-tipo{flex-shrink:0;font-size:16px;}
-.enc-desc{font-size:12px;color:rgba(200,175,100,0.65);line-height:1.5;}
-.enc-meta{font-size:10px;color:rgba(190,140,35,0.34);margin-top:2px;}
-.rev{background:rgba(80,10,10,0.18);border:1px solid rgba(160,30,30,0.18);border-radius:8px;padding:10px;margin-bottom:7px;}
-.rev-quando{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:rgba(190,100,100,0.50);margin-bottom:3px;}
-.rev-desc{font-size:12px;color:rgba(210,160,160,0.70);line-height:1.5;}
+.ato-desc{font-size:12px;color:rgba(200,175,100,0.62);line-height:1.62;}
+.gancho{border-left:2px solid rgba(190,140,35,0.22);padding:8px 12px;margin-bottom:8px;}
+.gancho-tit{font-size:12px;font-weight:700;color:rgba(220,195,120,0.78);}
+.gancho-desc{font-size:11px;color:rgba(200,175,100,0.58);margin-top:2px;line-height:1.55;}
+.gancho-gate{font-size:10px;color:rgba(190,140,35,0.32);margin-top:2px;font-style:italic;}
+.enc{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(190,140,35,0.05);}
+.enc-desc{font-size:12px;color:rgba(200,175,100,0.62);line-height:1.5;}
+.enc-meta{font-size:10px;color:rgba(190,140,35,0.32);margin-top:2px;}
+.rev{background:rgba(80,10,10,0.16);border:1px solid rgba(160,30,30,0.16);border-radius:8px;padding:10px;margin-bottom:7px;}
+.rev-q{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:rgba(180,80,80,0.48);margin-bottom:2px;}
+.rev-desc{font-size:12px;color:rgba(210,160,160,0.68);line-height:1.5;}
 
-/* ── Cards de personagem/classe/inimigo ── */
-.grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px;}
-.pers-card{background:rgba(0,0,0,0.35);border:1px solid rgba(190,140,35,0.15);border-radius:10px;padding:12px;cursor:pointer;transition:border-color .2s;}
-.pers-card:hover{border-color:rgba(190,140,35,0.40);}
-.pc-icon{font-size:24px;margin-bottom:6px;}
+/* ── Cards ── */
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;}
+.pcard{background:rgba(0,0,0,0.32);border:1px solid rgba(190,140,35,0.14);border-radius:10px;padding:12px;cursor:pointer;transition:border-color .2s;}
+.pcard:hover{border-color:rgba(190,140,35,0.38);}
+.pc-icon{font-size:22px;margin-bottom:5px;}
 .pc-nome{font-size:12px;font-weight:700;color:#f5d878;}
-.pc-papel{font-size:10px;color:rgba(200,175,100,0.45);margin-top:2px;line-height:1.4;}
-.pc-stats{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-.pc-stat{font-size:9px;background:rgba(190,140,35,0.10);border:1px solid rgba(190,140,35,0.18);border-radius:4px;padding:2px 5px;color:rgba(200,175,100,0.60);}
+.pc-sub{font-size:10px;color:rgba(200,175,100,0.42);margin-top:2px;line-height:1.4;}
+.pc-stats{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;}
+.pc-s{font-size:9px;background:rgba(190,140,35,0.09);border:1px solid rgba(190,140,35,0.16);border-radius:4px;padding:2px 5px;color:rgba(200,175,100,0.58);}
 
-/* ── Modal de detalhe ── */
-#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:500;align-items:flex-end;justify-content:center;}
-#modal-overlay.vis{display:flex;}
-#modal{background:#0a0602;border:1px solid rgba(190,140,35,0.22);border-radius:18px 18px 0 0;padding:22px 20px 32px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;}
-.modal-fechar{float:right;background:none;border:none;color:rgba(190,140,35,0.40);font-size:18px;cursor:pointer;line-height:1;}
-.modal-icon{font-size:30px;margin-bottom:6px;}
-.modal-nome{font-size:17px;font-weight:700;color:#f5d878;}
-.modal-papel{font-size:10px;color:rgba(200,175,100,0.42);margin-bottom:12px;}
-.modal-sec{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.36);margin:12px 0 5px;}
-.modal-texto{font-size:12px;color:rgba(200,175,100,0.68);line-height:1.65;}
-.modal-fala{font-size:12px;color:rgba(220,195,120,0.78);font-style:italic;line-height:1.65;background:rgba(190,140,35,0.06);border-left:2px solid rgba(190,140,35,0.22);padding:8px 12px;border-radius:0 6px 6px 0;}
-.hab-row{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(190,140,35,0.06);}
-.hab-ic{font-size:16px;flex-shrink:0;}
-.hab-nome{font-size:12px;color:#f5d878;}
-.hab-desc{font-size:11px;color:rgba(200,175,100,0.55);margin-top:1px;}
-.hab-meta{font-size:10px;color:rgba(190,140,35,0.40);margin-top:2px;}
+/* ── Modal ── */
+#mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:500;align-items:flex-end;justify-content:center;}
+#mo.v{display:flex;}
+#mo-box{background:#0a0602;border:1px solid rgba(190,140,35,0.20);border-radius:18px 18px 0 0;padding:22px 20px 34px;max-width:480px;width:100%;max-height:78vh;overflow-y:auto;}
+.mo-x{float:right;background:none;border:none;color:rgba(190,140,35,0.36);font-size:18px;cursor:pointer;}
+.mo-icon{font-size:28px;margin-bottom:5px;}
+.mo-nome{font-size:16px;font-weight:700;color:#f5d878;}
+.mo-sub{font-size:10px;color:rgba(200,175,100,0.40);margin-bottom:12px;}
+.mo-sec{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.34);margin:12px 0 4px;}
+.mo-txt{font-size:12px;color:rgba(200,175,100,0.65);line-height:1.68;}
+.mo-fala{font-size:12px;color:rgba(220,195,120,0.76);font-style:italic;line-height:1.68;background:rgba(190,140,35,0.05);border-left:2px solid rgba(190,140,35,0.20);padding:8px 12px;border-radius:0 6px 6px 0;}
+.hab{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(190,140,35,0.06);}
+.hab-i{font-size:15px;flex-shrink:0;}
+.hab-n{font-size:12px;color:#f5d878;}
+.hab-d{font-size:11px;color:rgba(200,175,100,0.52);margin-top:1px;}
+.hab-m{font-size:10px;color:rgba(190,140,35,0.38);margin-top:1px;}
 
 /* ── Código / Arte ── */
-.ob{background:rgba(0,0,0,0.55);border:1px solid rgba(190,140,35,0.13);border-radius:9px;margin-bottom:13px;overflow:hidden;}
-.ob-head{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:rgba(190,140,35,0.05);border-bottom:1px solid rgba(190,140,35,0.08);}
-.ob-tit{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#f5d878;}
-.ob-body{padding:12px;font-family:monospace;font-size:11px;color:rgba(200,185,130,0.76);line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:240px;overflow-y:auto;}
+.ob{background:rgba(0,0,0,0.52);border:1px solid rgba(190,140,35,0.12);border-radius:9px;margin-bottom:12px;overflow:hidden;}
+.ob-h{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:rgba(190,140,35,0.04);border-bottom:1px solid rgba(190,140,35,0.07);}
+.ob-t{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#f5d878;}
+.ob-body{padding:12px;font-family:monospace;font-size:11px;color:rgba(200,185,130,0.74);line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:230px;overflow-y:auto;}
 .ob-body.exp{max-height:none;}
-.btn-sm{padding:4px 9px;background:rgba(190,140,35,0.12);border:1px solid rgba(190,140,35,0.28);border-radius:5px;color:#f5d878;font-family:Georgia,serif;font-size:9px;cursor:pointer;transition:background .15s;}
-.btn-sm:hover{background:rgba(190,140,35,0.24);}
+.bs{padding:4px 9px;background:rgba(190,140,35,0.10);border:1px solid rgba(190,140,35,0.24);border-radius:5px;color:#f5d878;font-family:Georgia,serif;font-size:9px;cursor:pointer;transition:background .15s;}
+.bs:hover{background:rgba(190,140,35,0.22);}
 
 /* ── Checklist ── */
-.chk-cat{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.32);padding:12px 0 3px;}
-.chk-row{display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:1px solid rgba(190,140,35,0.05);}
-.chk-box{flex-shrink:0;width:17px;height:17px;background:rgba(20,12,4,0.80);border:1px solid rgba(190,140,35,0.26);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;margin-top:1px;transition:background .15s;}
-.chk-box.ok{background:rgba(40,90,40,0.38);border-color:rgba(80,160,80,0.45);}
-.chk-txt{flex:1;font-size:12px;color:rgba(200,175,100,0.66);line-height:1.5;}
-.chk-txt.ok{color:rgba(100,140,80,0.50);text-decoration:line-through;}
-.badge-auto{font-size:9px;background:rgba(30,80,30,0.35);border:1px solid rgba(80,160,80,0.28);border-radius:10px;padding:1px 6px;color:#80c880;margin-left:6px;white-space:nowrap;}
-.badge-manual{font-size:9px;background:rgba(100,60,10,0.35);border:1px solid rgba(190,120,30,0.28);border-radius:10px;padding:1px 6px;color:#d4a060;margin-left:6px;white-space:nowrap;}
+.cc{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.30);padding:12px 0 3px;}
+.cr{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid rgba(190,140,35,0.04);}
+.cb{flex-shrink:0;width:17px;height:17px;background:rgba(20,12,4,0.80);border:1px solid rgba(190,140,35,0.24);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;margin-top:1px;}
+.cb.ok{background:rgba(40,90,40,0.36);border-color:rgba(80,160,80,0.42);}
+.ct{flex:1;font-size:12px;color:rgba(200,175,100,0.64);line-height:1.5;}
+.ct.ok{color:rgba(100,140,80,0.48);text-decoration:line-through;}
+.ba{font-size:9px;background:rgba(30,80,30,0.30);border:1px solid rgba(80,160,80,0.24);border-radius:10px;padding:1px 6px;color:#80c880;margin-left:5px;}
+.bm{font-size:9px;background:rgba(100,60,10,0.28);border:1px solid rgba(190,120,30,0.24);border-radius:10px;padding:1px 6px;color:#d4a060;margin-left:5px;}
 </style>
 </head>
 <body>
@@ -125,41 +146,66 @@ input:focus,textarea:focus{border-color:rgba(190,140,35,0.52);}
 <div id="header">
   <h1>🔮 Oráculo RPG</h1>
   <h2>Instalador de Campanha</h2>
-  <p>Cole o conteúdo da campanha → o sistema gera tudo no formato Oráculo</p>
+  <p>Envie o PDF da campanha — o sistema lê, identifica tudo e gera o cartucho no formato Oráculo</p>
 </div>
 
+<!-- INPUT -->
 <div id="input-section">
-  <div class="card">
-    <div class="card-tit">Campanha a Instalar</div>
-    <div class="campo">
-      <label class="lbl">Descreva ou cole o conteúdo da campanha</label>
-      <textarea id="camp-input" rows="10" placeholder="Cole aqui o resumo da campanha, sinopse do PDF, descrição do universo, personagens, lugares, história...
+  <div id="drop-area"
+       onclick="document.getElementById('pdf-input').click()"
+       ondragover="ev.preventDefault();this.classList.add('drag-over')"
+       ondragleave="this.classList.remove('drag-over')"
+       ondrop="onDrop(event)">
+    <div id="drop-icon">📄</div>
+    <div id="drop-txt">Clique ou arraste o PDF da campanha</div>
+    <div id="drop-sub">O texto será extraído localmente e enviado para análise</div>
+    <input type="file" id="pdf-input" accept=".pdf" onchange="onFile(this.files[0])">
+  </div>
 
-Exemplo: &quot;Naruto Shippuden — A guerra ninja está chegando. As cinco nações estão se unindo contra Madara Uchiha e a Aliança Ninja Shinobi está sendo formada. Os jogadores são ninjas recém-promovidos a chunin da Vila da Folha encarregados de missões de reconhecimento enquanto a guerra se aproxima. NPCs principais: Kakashi Hatake (sensei), Tsunade (Quinta Hokage), Guy Maito (sensei rival). Inimigos: agentes da Akatsuki, Zetsus Brancos, soldados de Madara. Cenários: Vila da Folha, campo de batalha das planícies, floresta da morte...&quot;"></textarea>
-    </div>
+  <div id="file-info">
+    <div id="fi-nome"></div>
+    <div id="fi-meta"></div>
+    <div id="fi-aviso"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-tit">Chave Groq (IA de Análise)</div>
     <div class="campo">
-      <label class="lbl">Chave Groq (gsk_…)</label>
-      <input id="groq-key" type="password" placeholder="gsk_..." autocomplete="off">
-      <div style="font-size:10px;color:rgba(190,140,35,0.30);margin-top:3px">Guardada localmente. Necessária para a IA gerar o conteúdo estruturado.</div>
+      <label class="lbl">gsk_…</label>
+      <input type="password" id="groq-key" placeholder="gsk_..." autocomplete="off">
     </div>
-    <button class="btn-gerar" id="btn-gerar" onclick="instalar()">⚡ ANALISAR E INSTALAR CAMPANHA →</button>
+    <div style="font-size:10px;color:rgba(190,140,35,0.28);margin-top:-4px">Salva localmente. A mesma usada nos diálogos de NPC.</div>
+  </div>
+
+  <button class="btn-gerar" id="btn-inst" onclick="instalar()" disabled>📄 Envie um PDF para começar</button>
+  <button class="btn-sm-link" onclick="mostrarTxt()">ou cole texto / resumo da campanha →</button>
+
+  <div id="txt-fallback" style="display:none;margin-top:10px">
+    <div class="card">
+      <div class="card-tit">Texto / Resumo da Campanha</div>
+      <textarea id="txt-input" rows="8" style="width:100%;background:rgba(20,12,4,0.90);border:1px solid rgba(190,140,35,0.20);border-radius:8px;padding:9px 12px;color:#e8d5a8;font-family:Georgia,serif;font-size:13px;outline:none;resize:vertical;line-height:1.6" placeholder="Cole aqui o texto da campanha, resumo de capítulos, lista de personagens..."></textarea>
+    </div>
   </div>
 </div>
 
-<div id="loading" style="max-width:720px;margin:0 auto;padding:0 16px;">
-  <div class="ld-icon">⚙️</div>
-  <div class="ld-txt">Analisando campanha</div>
-  <div class="ld-sub" id="ld-sub">Lendo universo e personagens…</div>
+<!-- LOADING -->
+<div id="loading">
+  <div class="ld-icon">🔮</div>
+  <div class="ld-fase" id="ld-fase">Extraindo PDF</div>
+  <div class="ld-txt" id="ld-txt">Lendo páginas…</div>
+  <div class="ld-prog"><div class="ld-bar" id="ld-bar"></div></div>
 </div>
 
-<div id="erro" style="padding:0 16px;"></div>
+<div id="erro"></div>
 
+<!-- OUTPUT -->
 <div id="output">
   <div id="camp-header">
     <div id="camp-icon">🎮</div>
     <div id="camp-nome">—</div>
     <div id="camp-sub">—</div>
     <div id="camp-gancho">—</div>
+    <div class="nova-btn" onclick="reiniciar()">← Instalar outra campanha</div>
   </div>
 
   <div id="tab-nav">
@@ -172,7 +218,6 @@ Exemplo: &quot;Naruto Shippuden — A guerra ninja está chegando. As cinco naç
     <button class="tab-btn" onclick="tab('arte',this)">🎨 Arte</button>
     <button class="tab-btn" onclick="tab('checklist',this)">✅ Checklist</button>
   </div>
-
   <div id="tab-roteiro"  class="tab-section ativo"></div>
   <div id="tab-npcs"     class="tab-section"></div>
   <div id="tab-classes"  class="tab-section"></div>
@@ -183,456 +228,384 @@ Exemplo: &quot;Naruto Shippuden — A guerra ninja está chegando. As cinco naç
   <div id="tab-checklist"class="tab-section"></div>
 </div>
 
-<!-- Modal detalhe -->
-<div id="modal-overlay" onclick="fecharModal(event)">
-  <div id="modal"></div>
+<div id="mo" onclick="if(event.target===this)fecharMo()">
+  <div id="mo-box"></div>
 </div>
 
 <script>
-// ── Prompt do sistema ──
-const SYSTEM_PROMPT = `Você é um adaptador de campanhas para o sistema de RPG "Oráculo".
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-SISTEMA ORÁCULO — REGRAS FIXAS (NÃO ALTERE ESTAS ESTRUTURAS):
+let campanha = null;
+let pdfText  = '';
+let usandoTxt = false;
 
-CLASSES JOGÁVEIS:
-- maxHp: 6 (conjurador frágil) a 14 (tanque)
-- sp (energia para habilidades): 60 a 130
-- mov (movimento em hexes por turno): 3 a 7
-- atk (bônus de ataque): 2 a 6
-- attrs: STR, DEX, CON, INT, WIS, CHA — primário 15-18, secundário 10-13, fraco 8-9
-- habs: 2 a 4 habilidades, cada uma com dano "XdY+Z", tipo melee/projétil/magia/buff, custo sp (0 = gratuito)
-- Adapte as classes ao universo mas mantenha os tipos de stat do Oráculo
-
-INIMIGOS:
-- hp: 10 a 50 | ac: 10 a 18 | atk: 2 a 8 | mov: 2 a 6
-- dano: "XdY+Z" | 1 habilidade especial em texto livre
-
-NPCs (Personagens Não-Jogáveis — serão interpretados por IA):
-- personalidade: descrição longa e rica de como a IA deve se comportar como este personagem
-- conhecimentos: o que o NPC sabe que pode revelar durante a conversa (segredos, história, objetivos)
-- formaDeFalar: estilo de comunicação específico (tom, vocabulário, maneirismos, frases típicas)
-- aberturaFallback: texto EXATO que o NPC diz ao primeiro encontro com o jogador, incluindo [ACAO: descrição de ação física antes do texto] se houver ação
-
-ROTEIRO:
-- Deve ter 3 atos mínimo com narrativa progressiva
-- Ganchos são eventos que disparam histórias secundárias
-- Encontros definem quando aparecem diálogos com NPCs e batalhas com inimigos
-- Revelações são plot twists ou informações que mudam o jogo
-
-Retorne APENAS JSON válido, sem nenhum texto fora do JSON, com esta estrutura exata:
-{
-  "meta": {
-    "id": "slug-unico-minusculas-hifens",
-    "nome": "Nome Curto",
-    "nomeLongo": "Nome Longo: Subtítulo",
-    "sub": "Local · Descrição curta do contexto",
-    "icon": "emoji único representativo",
-    "cor": "#hexcolor que representa o tema",
-    "estiloArte": "descrição detalhada do estilo visual para geração de imagem",
-    "gancho": "Premissa da campanha em 2-3 frases cativantes",
-    "schemaV": 5
-  },
-  "roteiro": {
-    "premissa": "Descrição completa da história e contexto da campanha",
-    "atos": [
-      {"num": 1, "titulo": "Título do Ato", "descricao": "O que acontece neste ato", "cenario": "id-do-cenario-principal"}
-    ],
-    "ganchos": [
-      {"titulo": "Nome do Gancho", "descricao": "O que acontece", "gatilho": "Quando/o que dispara este evento"}
-    ],
-    "encontros": [
-      {"tipo": "dialogo", "personagem": "id-do-npc", "cenario": "id-do-cenario", "descricao": "Contexto do encontro"},
-      {"tipo": "batalha", "personagem": "id-do-inimigo", "cenario": "id-do-cenario", "descricao": "Contexto da batalha"}
-    ],
-    "revelacoes": [
-      {"quando": "Ato 2, após encontro com X", "descricao": "A revelação"}
-    ]
-  },
-  "classes": [
-    {
-      "id": "id-unico",
-      "nome": "Nome da Classe",
-      "icon": "emoji",
-      "gender": "ambos",
-      "maxHp": 10,
-      "sp": 80,
-      "mov": 5,
-      "atk": 3,
-      "cor": "#hexcolor",
-      "feat": "Característica única desta classe em 1-2 frases.",
-      "aparenciaM": "Descrição visual detalhada da versão masculina para geração de imagem",
-      "aparenciaF": "Descrição visual detalhada da versão feminina para geração de imagem",
-      "attrs": {"STR": 12, "DEX": 14, "CON": 12, "INT": 10, "WIS": 11, "CHA": 10},
-      "habs": [
-        {"icon": "emoji", "nome": "Nome", "desc": "Descrição do efeito", "dano": "1d6+2", "tipo": "melee", "sp": 0}
-      ]
-    }
-  ],
-  "npcs": [
-    {
-      "id": "id-unico",
-      "nome": "Nome Completo",
-      "papel": "Papel na história",
-      "personalidade": "Descrição rica e detalhada para a IA interpretar este personagem...",
-      "conhecimentos": "O que este NPC sabe, seus segredos, suas motivações ocultas...",
-      "formaDeFalar": "Estilo de fala específico, tom, maneirismos, vocabulário característico...",
-      "aberturaFallback": "[ACAO: Descrição da ação física ao ver o jogador.] Texto exato da primeira fala.",
-      "aparencia": "Descrição visual detalhada para geração de imagem",
-      "cenas": ["id-cenario-onde-aparece"]
-    }
-  ],
-  "inimigos": [
-    {
-      "id": "id-unico",
-      "nome": "Nome do Inimigo",
-      "hp": 20,
-      "ac": 13,
-      "atk": 4,
-      "mov": 4,
-      "dano": "1d8+2",
-      "especial": "Nome da habilidade — descrição do efeito especial",
-      "aparencia": "Descrição visual detalhada para geração de imagem com fundo verde"
-    }
-  ],
-  "cenarios": [
-    {
-      "id": "id-unico",
-      "nome": "Nome do Cenário",
-      "descricao": "Descrição detalhada do ambiente e sua atmosfera",
-      "tipo": "ambas",
-      "atmosfera": "Descrição de iluminação, clima emocional, elementos visuais marcantes"
-    }
-  ]
-}`;
-
-// ── Tabs ──
-function tab(id, btn){
-  document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('ativo'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('ativo'));
-  document.getElementById('tab-'+id).classList.add('ativo');
-  btn.classList.add('ativo');
+// ── PDF ──
+function onDrop(ev){
+  ev.preventDefault();
+  document.getElementById('drop-area').classList.remove('drag-over');
+  const f = ev.dataTransfer.files[0];
+  if(f && f.type==='application/pdf') onFile(f);
 }
 
-// ── Instalar ──
-let campanha = null;
+async function onFile(file){
+  if(!file) return;
+  setFase('Extraindo PDF','Lendo páginas…', 5);
+  document.getElementById('drop-icon').textContent='⏳';
+  document.getElementById('drop-txt').textContent=file.name;
+  document.getElementById('drop-sub').textContent='Extraindo texto…';
+
+  try {
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:ab}).promise;
+    const total = pdf.numPages;
+    let txt = '';
+    for(let i=1;i<=total;i++){
+      const pg = await pdf.getPage(i);
+      const ct = await pg.getTextContent();
+      txt += ct.items.map(it=>it.str).join(' ') + '\n';
+      setBar(Math.round((i/total)*40));
+    }
+    pdfText = txt;
+
+    const chars = txt.length;
+    const aviso = chars > 120000
+      ? `⚠️ Documento longo (${(chars/1000).toFixed(0)}K caracteres). Serão usados os primeiros 120K para análise.`
+      : '';
+
+    document.getElementById('drop-icon').textContent='✅';
+    document.getElementById('drop-txt').textContent=file.name;
+    document.getElementById('drop-sub').textContent=`${total} páginas · ${(chars/1000).toFixed(1)}K caracteres`;
+
+    document.getElementById('file-info').style.display='block';
+    document.getElementById('fi-nome').textContent='📄 '+file.name;
+    document.getElementById('fi-meta').textContent=`${total} páginas · ${(chars/1000).toFixed(1)}K caracteres extraídos`;
+    document.getElementById('fi-aviso').textContent=aviso;
+
+    const btn=document.getElementById('btn-inst');
+    btn.disabled=false;
+    btn.textContent='⚡ INSTALAR CAMPANHA →';
+    resetBar();
+  } catch(e){
+    document.getElementById('drop-icon').textContent='❌';
+    document.getElementById('drop-txt').textContent='Erro ao ler PDF: '+e.message;
+    resetBar();
+  }
+}
+
+function mostrarTxt(){
+  document.getElementById('txt-fallback').style.display='block';
+  usandoTxt=true;
+  const btn=document.getElementById('btn-inst');
+  btn.disabled=false;
+  btn.textContent='⚡ INSTALAR CAMPANHA →';
+}
+
+// ── Groq ──
+const PROMPT_SISTEMA = `Você é um especialista em adaptar campanhas de RPG para o sistema "Oráculo".
+
+SISTEMA ORÁCULO — REGRAS FIXAS (não altere estas estruturas):
+
+CLASSES JOGÁVEIS:
+- maxHp: 6 (frágil) a 14 (tanque) | sp: 60 a 130 | mov: 3 a 7 hexes | atk: 2 a 6
+- attrs: STR, DEX, CON, INT, WIS, CHA — primário 15-18, secundário 10-13, fraco 8-9
+- habs: 2-4 habilidades com dano "XdY+Z", tipo melee/projétil/magia/buff, custo sp
+
+INIMIGOS: hp 10-50 | ac 10-18 | atk 2-8 | mov 2-6 | dano "XdY+Z" | 1 especial
+
+NPCs (interpretados por IA em diálogo):
+- personalidade: como a IA deve se comportar como este personagem (longa e rica)
+- conhecimentos: o que sabe, segredos, objetivos ocultos
+- formaDeFalar: tom, maneirismos, vocabulário, frases típicas
+- aberturaFallback: EXATAMENTE o que diz ao conhecer o jogador — comece com [ACAO: ...] se houver ação física
+
+TAREFA: Leia o documento de campanha abaixo e IDENTIFIQUE (não invente) o que já existe no documento:
+- Personagens que podem ser jogados (classes)
+- Personagens que interagem com os jogadores mas não são controlados por eles (NPCs)
+- Inimigos, criaturas ou antagonistas (inimigos)
+- Locais onde acontecem as cenas (cenários)
+- A estrutura narrativa da campanha (atos, missões, ganchos, revelações)
+
+Adapte TUDO ao formato do sistema Oráculo, mantendo a fidelidade ao material original.
+Cor tema e estilo visual devem refletir a estética do universo descrito.
+
+Retorne APENAS JSON válido, sem texto antes ou depois:
+{
+  "meta": {"id":"slug-unico","nome":"Nome Curto","nomeLongo":"Nome Completo","sub":"Local · Contexto","icon":"emoji","cor":"#hex","estiloArte":"descrição detalhada do estilo visual","gancho":"Premissa em 2-3 frases","schemaV":5},
+  "roteiro": {
+    "premissa":"...",
+    "atos":[{"num":1,"titulo":"...","descricao":"...","cenario":"id-do-cenario"}],
+    "ganchos":[{"titulo":"...","descricao":"...","gatilho":"quando acontece"}],
+    "encontros":[{"tipo":"dialogo|batalha","personagem":"id","cenario":"id","descricao":"..."}],
+    "revelacoes":[{"quando":"...","descricao":"..."}]
+  },
+  "classes":[{"id":"...","nome":"...","icon":"emoji","gender":"ambos|m|f","maxHp":10,"sp":80,"mov":5,"atk":3,"cor":"#hex","feat":"...","aparenciaM":"...","aparenciaF":"...","attrs":{"STR":12,"DEX":12,"CON":12,"INT":12,"WIS":12,"CHA":12},"habs":[{"icon":"emoji","nome":"...","desc":"...","dano":"1d6+2","tipo":"melee","sp":0}]}],
+  "npcs":[{"id":"...","nome":"...","papel":"...","personalidade":"...","conhecimentos":"...","formaDeFalar":"...","aberturaFallback":"[ACAO: ...] Texto.","aparencia":"...","cenas":["id-cenario"]}],
+  "inimigos":[{"id":"...","nome":"...","hp":20,"ac":13,"atk":4,"mov":4,"dano":"1d8+2","especial":"...","aparencia":"..."}],
+  "cenarios":[{"id":"...","nome":"...","descricao":"...","tipo":"ambas|int|ext","atmosfera":"..."}]
+}`;
 
 async function instalar(){
-  const txt = document.getElementById('camp-input').value.trim();
-  if(!txt){ alert('Cole o conteúdo da campanha antes.'); return; }
-
   const key = document.getElementById('groq-key').value.trim();
-  if(!key){ alert('Insira sua chave Groq (gsk_...).'); return; }
+  if(!key){ alert('Insira a chave Groq (gsk_...).'); return; }
   localStorage.setItem('oraculo.groqKey', key);
+
+  const conteudo = usandoTxt
+    ? document.getElementById('txt-input').value.trim()
+    : pdfText;
+
+  if(!conteudo){ alert('Nenhum conteúdo para analisar.'); return; }
+
+  const texto = conteudo.slice(0, 120000);
 
   document.getElementById('input-section').style.display='none';
   document.getElementById('loading').style.display='block';
   document.getElementById('erro').style.display='none';
   document.getElementById('output').style.display='none';
 
-  const msgs = [
-    'Lendo universo e personagens…',
-    'Construindo classes jogáveis…',
-    'Definindo NPCs e personalidades…',
-    'Gerando roteiro com ganchos…',
-    'Configurando inimigos e batalhas…',
-    'Montando cenários…',
-    'Formatando para o sistema Oráculo…',
+  const fases=[
+    [55, 'Analisando o documento','Identificando personagens, lugares e história…'],
+    [70, 'Construindo o sistema','Adaptando classes e habilidades ao Oráculo…'],
+    [82, 'Definindo NPCs','Criando personalidades para interpretação por IA…'],
+    [91, 'Gerando roteiro','Estruturando atos, ganchos e encontros…'],
+    [97, 'Finalizando','Montando código e prompts de arte…'],
   ];
-  let mi=0;
-  const int=setInterval(()=>{ document.getElementById('ld-sub').textContent=msgs[mi=(mi+1)%msgs.length]; },2200);
+  let fi=0;
+  const intv=setInterval(()=>{
+    if(fi<fases.length){ const[p,f,t]=fases[fi++]; setFase(f,t,p); }
+  },4000);
 
-  try {
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+  try{
+    const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
       headers:{'Authorization':`Bearer ${key}`,'content-type':'application/json'},
       body:JSON.stringify({
         model:'llama-3.3-70b-versatile',
         max_tokens:4096,
-        temperature:0.7,
+        temperature:0.4,
         messages:[
-          {role:'system', content:SYSTEM_PROMPT},
-          {role:'user',   content:`Analise e adapte para o sistema Oráculo:\n\n${txt}`},
+          {role:'system', content:PROMPT_SISTEMA},
+          {role:'user',   content:`CAMPANHA:\n\n${texto}`},
         ]
       })
     });
-    clearInterval(int);
+    clearInterval(intv);
     if(!resp.ok) throw new Error(`Groq ${resp.status}: ${await resp.text()}`);
-    const data = await resp.json();
-    const raw = data.choices?.[0]?.message?.content || '';
-    // Extrai JSON mesmo se vier com texto ao redor
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if(!jsonMatch) throw new Error('Resposta não contém JSON válido.\n\nResposta recebida:\n'+raw.slice(0,400));
-    campanha = JSON.parse(jsonMatch[0]);
+    const data=await resp.json();
+    const raw=data.choices?.[0]?.message?.content||'';
+    const m=raw.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('A IA não retornou JSON válido.\n\n'+raw.slice(0,500));
+    campanha=JSON.parse(m[0]);
     renderOutput(campanha);
-  } catch(e){
-    clearInterval(int);
+  }catch(e){
+    clearInterval(intv);
     document.getElementById('loading').style.display='none';
     document.getElementById('input-section').style.display='block';
-    const erEl=document.getElementById('erro');
-    erEl.style.display='block';
-    erEl.textContent='Erro: '+e.message;
+    const er=document.getElementById('erro');
+    er.style.display='block';
+    er.textContent='Erro: '+e.message;
   }
 }
 
 // ── Render ──
 function renderOutput(c){
   document.getElementById('loading').style.display='none';
-
   const m=c.meta||{};
   document.getElementById('camp-icon').textContent=m.icon||'🎮';
   document.getElementById('camp-nome').textContent=m.nomeLongo||m.nome||'Campanha';
   document.getElementById('camp-sub').textContent=m.sub||'';
   document.getElementById('camp-gancho').textContent=m.gancho||'';
   document.getElementById('output').style.display='block';
-
-  renderRoteiro(c);
-  renderNPCs(c);
-  renderClasses(c);
-  renderInimigos(c);
-  renderCenarios(c);
-  renderCodigo(c);
-  renderArte(c);
-  renderChecklist(c);
+  rRoteiro(c); rNPCs(c); rClasses(c); rInimigos(c); rCenarios(c);
+  rCodigo(c); rArte(c); rChecklist(c);
 }
 
-function renderRoteiro(c){
+function rRoteiro(c){
   const r=c.roteiro||{};
-  const id='tab-roteiro';
   let h=`<div class="rot-premissa">${r.premissa||'—'}</div>`;
-
   if((r.atos||[]).length){
-    h+=`<div class="rot-section"><div class="rot-tit">Estrutura de Atos</div>`;
-    r.atos.forEach(a=>{h+=`<div class="ato"><div class="ato-num">Ato ${a.num}</div><div class="ato-titulo">${a.titulo||''}</div><div class="ato-desc">${a.descricao||''}</div></div>`;});
-    h+=`</div>`;
+    h+=`<div class="rot-tit">Estrutura Narrativa</div>`;
+    r.atos.forEach(a=>{ h+=`<div class="ato"><div class="ato-num">Ato ${a.num}</div><div class="ato-titulo">${a.titulo}</div><div class="ato-desc">${a.descricao}</div></div>`; });
   }
   if((r.ganchos||[]).length){
-    h+=`<div class="rot-section"><div class="rot-tit">Ganchos Narrativos</div>`;
-    r.ganchos.forEach(g=>{h+=`<div class="gancho"><div class="gancho-tit">${g.titulo||''}</div><div class="gancho-desc">${g.descricao||''}</div><div class="gancho-gate">⏱ ${g.gatilho||''}</div></div>`;});
-    h+=`</div>`;
+    h+=`<div class="rot-tit">Ganchos da Campanha</div>`;
+    r.ganchos.forEach(g=>{ h+=`<div class="gancho"><div class="gancho-tit">${g.titulo}</div><div class="gancho-desc">${g.descricao}</div><div class="gancho-gate">⏱ ${g.gatilho}</div></div>`; });
   }
   if((r.encontros||[]).length){
-    h+=`<div class="rot-section"><div class="rot-tit">Encontros</div>`;
-    r.encontros.forEach(e=>{
-      const ic=e.tipo==='dialogo'?'💬':'⚔️';
-      h+=`<div class="encontro"><div class="enc-tipo">${ic}</div><div><div class="enc-desc">${e.descricao||''}</div><div class="enc-meta">${e.tipo==='dialogo'?'Diálogo':'Batalha'} · ${e.personagem||''} · ${e.cenario||''}</div></div></div>`;
-    });
-    h+=`</div>`;
+    h+=`<div class="rot-tit">Encontros</div>`;
+    r.encontros.forEach(e=>{ h+=`<div class="enc"><div style="font-size:18px;flex-shrink:0">${e.tipo==='dialogo'?'💬':'⚔️'}</div><div><div class="enc-desc">${e.descricao}</div><div class="enc-meta">${e.tipo==='dialogo'?'Diálogo':'Batalha'} · ${e.personagem||''} · ${e.cenario||''}</div></div></div>`; });
   }
   if((r.revelacoes||[]).length){
-    h+=`<div class="rot-section"><div class="rot-tit">Revelações / Plot Twists</div>`;
-    r.revelacoes.forEach(rv=>{h+=`<div class="rev"><div class="rev-quando">${rv.quando||''}</div><div class="rev-desc">${rv.descricao||''}</div></div>`;});
-    h+=`</div>`;
+    h+=`<div class="rot-tit">Revelações</div>`;
+    r.revelacoes.forEach(rv=>{ h+=`<div class="rev"><div class="rev-q">${rv.quando}</div><div class="rev-desc">${rv.descricao}</div></div>`; });
   }
-  document.getElementById(id).innerHTML=h;
+  document.getElementById('tab-roteiro').innerHTML=h;
 }
 
-function renderNPCs(c){
-  const npcs=c.npcs||[];
-  let h='<div class="grid-cards">';
-  npcs.forEach((n,i)=>{
-    h+=`<div class="pers-card" onclick="abrirNPC(${i})"><div class="pc-icon">${c.meta?.icon||'👤'}</div><div class="pc-nome">${n.nome}</div><div class="pc-papel">${n.papel||''}</div></div>`;
+function rNPCs(c){
+  const list=c.npcs||[];
+  let h=list.length?'<div class="grid-cards">':
+    '<p style="color:rgba(200,175,100,0.40);font-size:12px">Nenhum NPC identificado.</p>';
+  list.forEach((_,i)=>{
+    const n=list[i];
+    h+=`<div class="pcard" onclick="moNPC(${i})"><div class="pc-icon">${c.meta?.icon||'👤'}</div><div class="pc-nome">${n.nome}</div><div class="pc-sub">${n.papel||''}</div></div>`;
   });
-  h+='</div>';
-  if(!npcs.length) h='<p style="color:rgba(200,175,100,0.42);font-size:12px">Nenhum NPC gerado.</p>';
+  if(list.length) h+='</div>';
   document.getElementById('tab-npcs').innerHTML=h;
 }
 
-function renderClasses(c){
-  const cls=c.classes||[];
-  let h='<div class="grid-cards">';
-  cls.forEach((cl,i)=>{
-    h+=`<div class="pers-card" onclick="abrirClasse(${i})">
-      <div class="pc-icon">${cl.icon||'⚔️'}</div>
-      <div class="pc-nome">${cl.nome}</div>
-      <div class="pc-papel">${cl.feat||''}</div>
-      <div class="pc-stats">
-        <span class="pc-stat">HP ${cl.maxHp}</span>
-        <span class="pc-stat">SP ${cl.sp}</span>
-        <span class="pc-stat">MOV ${cl.mov}</span>
-      </div>
-    </div>`;
+function rClasses(c){
+  const list=c.classes||[];
+  let h=list.length?'<div class="grid-cards">':
+    '<p style="color:rgba(200,175,100,0.40);font-size:12px">Nenhuma classe identificada.</p>';
+  list.forEach((_,i)=>{
+    const cl=list[i];
+    h+=`<div class="pcard" onclick="moCls(${i})"><div class="pc-icon">${cl.icon||'⚔️'}</div><div class="pc-nome">${cl.nome}</div><div class="pc-sub">${cl.feat||''}</div><div class="pc-stats"><span class="pc-s">HP ${cl.maxHp}</span><span class="pc-s">SP ${cl.sp}</span><span class="pc-s">MOV ${cl.mov}</span></div></div>`;
   });
-  h+='</div>';
-  if(!cls.length) h='<p style="color:rgba(200,175,100,0.42);font-size:12px">Nenhuma classe gerada.</p>';
+  if(list.length) h+='</div>';
   document.getElementById('tab-classes').innerHTML=h;
 }
 
-function renderInimigos(c){
-  const ini=c.inimigos||[];
-  let h='<div class="grid-cards">';
-  ini.forEach((n,i)=>{
-    h+=`<div class="pers-card" onclick="abrirInimigo(${i})">
-      <div class="pc-icon">💀</div>
-      <div class="pc-nome">${n.nome}</div>
-      <div class="pc-papel">${n.especial||''}</div>
-      <div class="pc-stats">
-        <span class="pc-stat">HP ${n.hp}</span>
-        <span class="pc-stat">AC ${n.ac}</span>
-        <span class="pc-stat">MOV ${n.mov}</span>
-      </div>
-    </div>`;
+function rInimigos(c){
+  const list=c.inimigos||[];
+  let h=list.length?'<div class="grid-cards">':
+    '<p style="color:rgba(200,175,100,0.40);font-size:12px">Nenhum inimigo identificado.</p>';
+  list.forEach((_,i)=>{
+    const n=list[i];
+    h+=`<div class="pcard" onclick="moIni(${i})"><div class="pc-icon">💀</div><div class="pc-nome">${n.nome}</div><div class="pc-sub">${n.especial||''}</div><div class="pc-stats"><span class="pc-s">HP ${n.hp}</span><span class="pc-s">AC ${n.ac}</span><span class="pc-s">ATK +${n.atk}</span></div></div>`;
   });
-  h+='</div>';
-  if(!ini.length) h='<p style="color:rgba(200,175,100,0.42);font-size:12px">Nenhum inimigo gerado.</p>';
+  if(list.length) h+='</div>';
   document.getElementById('tab-inimigos').innerHTML=h;
 }
 
-function renderCenarios(c){
-  const cen=c.cenarios||[];
+function rCenarios(c){
+  const list=c.cenarios||[];
   let h='';
-  cen.forEach(n=>{
-    h+=`<div class="card" style="margin-bottom:10px">
-      <div class="card-tit">${n.nome}</div>
-      <div style="font-size:12px;color:rgba(200,175,100,0.68);line-height:1.65;margin-bottom:8px">${n.descricao||''}</div>
-      <div style="font-size:11px;color:rgba(190,140,35,0.45);font-style:italic">${n.atmosfera||''}</div>
-      <div style="font-size:9px;letter-spacing:1px;margin-top:8px;color:rgba(190,140,35,0.32)">ID: ${n.id} · ${n.tipo==='ambas'?'interior + exterior':n.tipo}</div>
-    </div>`;
+  list.forEach(n=>{
+    h+=`<div style="background:rgba(0,0,0,0.28);border:1px solid rgba(190,140,35,0.11);border-radius:9px;padding:12px;margin-bottom:8px"><div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.32);margin-bottom:3px">${n.id} · ${n.tipo}</div><div style="font-size:13px;font-weight:700;color:#f5d878;margin-bottom:5px">${n.nome}</div><div style="font-size:12px;color:rgba(200,175,100,0.60);line-height:1.62;margin-bottom:5px">${n.descricao}</div><div style="font-size:11px;color:rgba(190,140,35,0.38);font-style:italic">${n.atmosfera}</div></div>`;
   });
-  if(!cen.length) h='<p style="color:rgba(200,175,100,0.42);font-size:12px">Nenhum cenário gerado.</p>';
+  if(!list.length) h='<p style="color:rgba(200,175,100,0.40);font-size:12px">Nenhum cenário identificado.</p>';
   document.getElementById('tab-cenarios').innerHTML=h;
 }
 
-function renderCodigo(c){
+function rCodigo(c){
   const id=(c.meta?.id||'campanha');
   const KEY=id.replace(/-/g,'_').toUpperCase();
-  const estilo=c.meta?.estiloArte||'estilo RPG';
+  const cena0=(c.cenarios||[])[0]?.id||'cena-1';
 
-  // CLASSES_DATA
-  let clsCode=`const ${KEY}_CLASSES_DATA = {\n`;
+  let cls=`const ${KEY}_CLASSES_DATA = {\n`;
   (c.classes||[]).forEach(cl=>{
     const g=cl.gender==='ambos'?'m':cl.gender||'m';
-    clsCode+=`  ${cl.id}: {\n    nome:'${cl.nome}', icon:'${cl.icon}', gender:'${g}',\n    maxHp:${cl.maxHp}, sp:${cl.sp}, mov:${cl.mov}, atk:${cl.atk},\n    cor:'${cl.cor||'#444'}',\n    feat:'${esc(cl.feat||'')}',\n    attrs:${JSON.stringify(cl.attrs||{})},\n    habs:[\n${(cl.habs||[]).map(h=>`      {icon:'${h.icon}',nome:'${h.nome}',desc:'${esc(h.desc)}',dano:'${h.dano}',tipo:'${h.tipo}',sp:${h.sp}}`).join(',\n')},\n    ],\n  },\n`;
+    cls+=`  ${cl.id}: {\n    nome:'${cl.nome}', icon:'${cl.icon}', gender:'${g}',\n    maxHp:${cl.maxHp}, sp:${cl.sp}, mov:${cl.mov}, atk:${cl.atk},\n    cor:'${cl.cor||'#444'}', feat:'${e2(cl.feat)}',\n    attrs:${JSON.stringify(cl.attrs||{})},\n    habs:[\n${(cl.habs||[]).map(h=>`      {icon:'${h.icon}',nome:'${h.nome}',desc:'${e2(h.desc)}',dano:'${h.dano}',tipo:'${h.tipo}',sp:${h.sp}}`).join(',\n')},\n    ],\n  },\n`;
   });
-  clsCode+=`};\n\nfunction retrato${KEY}(id,gender){\n  return \`catalogo/${id}/classes/\${id}/retrato/\${id}_\${gender}_retrato.png\`;\n}`;
+  cls+=`};\n\nfunction retrato${KEY}(id,gender){\n  return \`catalogo/${id}/classes/\${id}/retrato/\${id}_\${gender}_retrato.png\`;\n}`;
 
-  // NPCS
-  const cena0=(c.cenarios||[])[0]?.id||'cena-principal';
-  let npcCode=`// SCHEMA_V: ${c.meta?.schemaV||5} — use valor único por campanha!\nconst NPCS = [\n`;
+  let npc=`// SCHEMA_V: ${c.meta?.schemaV||5} — único por campanha!\nconst NPCS = [\n`;
   (c.npcs||[]).forEach((n,i)=>{
-    npcCode+=`  {\n    nome:'${n.nome}',\n    img:'catalogo/${id}/npcs/${n.id}/peca_tabuleiro/${n.id}_peca.png',\n    cenas:${JSON.stringify(n.cenas||[cena0])},\n    zBase:${i+1},\n    personalidade:'${esc(n.personalidade||'')}',\n    conhecimentos:'${esc(n.conhecimentos||'')}',\n    formaDeFalar:'${esc(n.formaDeFalar||'')}',\n    abertura:'${n.nome} reage ao jogador que acabou de entrar na cena.',\n    aberturaFallback:'${esc(n.aberturaFallback||'[ACAO: Olha para você.] Bem-vindo.')}',\n  },\n`;
+    npc+=`  {\n    nome:'${n.nome}',\n    img:'catalogo/${id}/npcs/${n.id}/peca_tabuleiro/${n.id}_peca.png',\n    cenas:${JSON.stringify(n.cenas||[cena0])},\n    zBase:${i+1},\n    personalidade:'${e2(n.personalidade)}',\n    conhecimentos:'${e2(n.conhecimentos)}',\n    formaDeFalar:'${e2(n.formaDeFalar)}',\n    abertura:'Como ${n.nome} reage ao ver o jogador pela primeira vez?',\n    aberturaFallback:'${e2(n.aberturaFallback||'[ACAO: Olha para você.] Bem-vindo.')}',\n  },\n`;
   });
-  npcCode+=`];\n\nconst CONFIG_CENA = {\n  id:'${id}', schemaV:${c.meta?.schemaV||5},\n  bgImg:'catalogo/${id}/cenarios/${cena0}/${cena0}_ext.png',\n  titulo:'${esc(c.meta?.sub||c.meta?.nome||'')}',\n  corTema:'${c.meta?.cor||'#444'}',\n};`;
+  npc+=`];\n\nconst CONFIG_CENA = {\n  id:'${id}', schemaV:${c.meta?.schemaV||5},\n  bgImg:'catalogo/${id}/cenarios/${cena0}/${cena0}_ext.png',\n  titulo:'${e2(c.meta?.sub||c.meta?.nome||'')}',\n  corTema:'${c.meta?.cor||'#444'}',\n};`;
 
-  // INIMIGOS
-  let iniCode=`const INIMIGOS_${KEY} = [\n`;
+  let ini=`const INIMIGOS_${KEY} = [\n`;
   (c.inimigos||[]).forEach(n=>{
-    iniCode+=`  {\n    id:'${n.id}', nome:'${n.nome}',\n    maxHp:${n.hp}, hp:${n.hp}, ac:${n.ac}, atk:${n.atk}, mov:${n.mov},\n    dano:'${n.dano}', especial:'${esc(n.especial||'')}',\n    img:'catalogo/${id}/inimigos/${n.id}/peca_tabuleiro/${n.id}_peca.png',\n  },\n`;
+    ini+=`  {\n    id:'${n.id}', nome:'${n.nome}',\n    maxHp:${n.hp}, hp:${n.hp}, ac:${n.ac}, atk:${n.atk}, mov:${n.mov},\n    dano:'${n.dano}', especial:'${e2(n.especial)}',\n    img:'catalogo/${id}/inimigos/${n.id}/peca_tabuleiro/${n.id}_peca.png',\n  },\n`;
   });
-  iniCode+=`];\n`;
+  ini+=`];\n`;
 
-  // Catalog
-  let catCode=`// Em catalog.html — card da campanha:\n<div class="campaign-card" style="border-color:${c.meta?.cor||'#888'}88"\n     onclick="openCampaignModal('${id}')">\n  <div class="cc-icon">${c.meta?.icon||'🎮'}</div>\n  <div class="cc-name">${c.meta?.nomeLongo||c.meta?.nome}</div>\n  <div class="cc-sub">${c.meta?.sub||''}</div>\n</div>\n\n// Dados:\n'${id}':{\n  id:'${id}', nome:'${c.meta?.nomeLongo||c.meta?.nome}',\n  icon:'${c.meta?.icon}', cor:'${c.meta?.cor}',\n  sub:'${c.meta?.sub}',\n  classes:${JSON.stringify((c.classes||[]).map(cl=>cl.id))},\n  npcs:${JSON.stringify((c.npcs||[]).map(n=>n.id))},\n  inimigos:${JSON.stringify((c.inimigos||[]).map(n=>n.id))},\n  cenarios:${JSON.stringify((c.cenarios||[]).map(n=>n.id))},\n}`;
+  let cat=`// catalog.html — card:\n<div class="campaign-card" style="border-color:${c.meta?.cor||'#888'}88"\n     onclick="openCampaignModal('${id}')">\n  ${c.meta?.icon} ${c.meta?.nomeLongo||c.meta?.nome}\n</div>\n\n// Dados:\n'${id}':{\n  id:'${id}', nome:'${c.meta?.nomeLongo||c.meta?.nome}',\n  icon:'${c.meta?.icon}', cor:'${c.meta?.cor}', sub:'${c.meta?.sub}',\n  classes:${JSON.stringify((c.classes||[]).map(x=>x.id))},\n  npcs:${JSON.stringify((c.npcs||[]).map(x=>x.id))},\n  inimigos:${JSON.stringify((c.inimigos||[]).map(x=>x.id))},\n  cenarios:${JSON.stringify((c.cenarios||[]).map(x=>x.id))},\n}`;
 
-  document.getElementById('tab-codigo').innerHTML=[
-    bloco('⚙️ CLASSES_DATA (catalog.html + entrada)',clsCode,'cls'),
-    bloco('💬 NPCS + CONFIG_CENA (simulacao_dialogo_'+id+'.html)',npcCode,'npc'),
-    bloco('⚔️ INIMIGOS (arena.html)',iniCode,'ini'),
-    bloco('📖 Snippet catalog.html',catCode,'cat'),
-  ].join('');
+  document.getElementById('tab-codigo').innerHTML=
+    bloco('⚙️ CLASSES_DATA',cls,'cls')+
+    bloco('💬 NPCS + CONFIG_CENA',npc,'npc')+
+    bloco('⚔️ INIMIGOS',ini,'ini')+
+    bloco('📖 catalog.html snippet',cat,'cat');
 }
 
-function renderArte(c){
-  const id=c.meta?.id||'campanha';
-  const estilo=c.meta?.estiloArte||'estilo RPG detalhado';
+function rArte(c){
+  const estilo=c.meta?.estiloArte||'estilo RPG de alta qualidade';
   let pr='';
-
   (c.classes||[]).forEach(cl=>{
-    if(cl.gender!=='f'){ pr+=`=== RETRATO · ${cl.nome.toUpperCase()} (MASCULINO) ===\n${cl.aparenciaM||cl.nome}, ${estilo}. Retrato de corpo inteiro ou busto. Fundo neutro escuro. Iluminação dramática. Proporção 2:3 (portrait). Alta qualidade.\n\n`; }
-    if(cl.gender!=='m'){ pr+=`=== RETRATO · ${cl.nome.toUpperCase()} (FEMININO) ===\n${cl.aparenciaF||cl.aparenciaM||cl.nome} — versão feminina, ${estilo}. Retrato de corpo inteiro ou busto. Fundo neutro escuro. Proporção 2:3.\n\n`; }
-    if(cl.gender!=='f'){ pr+=`=== PEÇA TABULEIRO · ${cl.nome.toUpperCase()} (MASCULINO) ===\n${cl.aparenciaM||cl.nome}, ${estilo}. Corpo INTEIRO em pé, pose heroica. FUNDO VERDE PURO #00ff00 (chromakey). Sem sombras no chão. Proporção 1:2.\n\n`; }
-    if(cl.gender!=='m'){ pr+=`=== PEÇA TABULEIRO · ${cl.nome.toUpperCase()} (FEMININO) ===\n${cl.aparenciaF||cl.aparenciaM||cl.nome} — versão feminina, ${estilo}. Corpo INTEIRO em pé. FUNDO VERDE PURO #00ff00. Proporção 1:2.\n\n`; }
+    if(cl.gender!=='f') pr+=`=== RETRATO · ${cl.nome.toUpperCase()} (M) ===\n${cl.aparenciaM||cl.nome}, ${estilo}. Retrato corpo inteiro ou busto. Fundo neutro escuro. Iluminação dramática. Proporção 2:3.\n\n`;
+    if(cl.gender!=='m') pr+=`=== RETRATO · ${cl.nome.toUpperCase()} (F) ===\nVersão feminina: ${cl.aparenciaF||cl.aparenciaM||cl.nome}, ${estilo}. Retrato corpo inteiro ou busto. Fundo neutro escuro. Proporção 2:3.\n\n`;
+    if(cl.gender!=='f') pr+=`=== PEÇA TABULEIRO · ${cl.nome.toUpperCase()} (M) ===\n${cl.aparenciaM||cl.nome}, ${estilo}. Corpo INTEIRO em pé. FUNDO VERDE PURO #00ff00. Sem sombras no chão. Proporção 1:2.\n\n`;
+    if(cl.gender!=='m') pr+=`=== PEÇA TABULEIRO · ${cl.nome.toUpperCase()} (F) ===\nVersão feminina: ${cl.aparenciaF||cl.aparenciaM||cl.nome}, ${estilo}. Corpo INTEIRO em pé. FUNDO VERDE PURO #00ff00. Proporção 1:2.\n\n`;
   });
   (c.npcs||[]).forEach(n=>{
-    pr+=`=== RETRATO · NPC ${n.nome.toUpperCase()} ===\n${n.aparencia||n.nome}, ${estilo}. Retrato expressivo, busto ou 3/4. Iluminação dramática. Alta qualidade.\n\n`;
-    pr+=`=== PEÇA TABULEIRO · NPC ${n.nome.toUpperCase()} ===\n${n.aparencia||n.nome}, ${estilo}. Corpo INTEIRO em pé, pose característica. FUNDO VERDE PURO #00ff00. Sem sombras.\n\n`;
+    pr+=`=== RETRATO · NPC ${n.nome.toUpperCase()} ===\n${n.aparencia||n.nome}, ${estilo}. Retrato expressivo busto/3/4. Iluminação dramática.\n\n`;
+    pr+=`=== PEÇA TABULEIRO · NPC ${n.nome.toUpperCase()} ===\n${n.aparencia||n.nome}, ${estilo}. Corpo INTEIRO, pose característica. FUNDO VERDE PURO #00ff00.\n\n`;
   });
   (c.inimigos||[]).forEach(n=>{
-    pr+=`=== PEÇA TABULEIRO · INIMIGO ${n.nome.toUpperCase()} ===\n${n.aparencia||n.nome}, ${estilo}. Corpo inteiro, pose ameaçadora. FUNDO VERDE PURO #00ff00. Sem sombras. Proporção 1:2.\n\n`;
+    pr+=`=== PEÇA TABULEIRO · INIMIGO ${n.nome.toUpperCase()} ===\n${n.aparencia||n.nome}, ${estilo}. Corpo inteiro, pose ameaçadora. FUNDO VERDE PURO #00ff00. Proporção 1:2.\n\n`;
   });
   (c.cenarios||[]).forEach(n=>{
-    if(n.tipo!=='ext') pr+=`=== CENÁRIO INTERIOR (BATALHA) · ${n.nome.toUpperCase()} ===\n${n.descricao}. ${n.atmosfera}. Vista diagonal levemente aérea. ${estilo}. Espaço para peças de personagem. 1920×1080. Sem HUD.\n\n`;
-    if(n.tipo!=='int') pr+=`=== CENÁRIO EXTERIOR (DIÁLOGO) · ${n.nome.toUpperCase()} ===\n${n.descricao}. ${n.atmosfera}. Vista panorâmica, establishing shot. ${estilo}. 1920×1080. Sem personagens em primeiro plano.\n\n`;
+    if(n.tipo!=='ext') pr+=`=== CENÁRIO INTERIOR (BATALHA) · ${n.nome.toUpperCase()} ===\n${n.descricao}. ${n.atmosfera}. Vista diagonal aérea. ${estilo}. 1920×1080. Sem HUD.\n\n`;
+    if(n.tipo!=='int') pr+=`=== CENÁRIO EXTERIOR (DIÁLOGO) · ${n.nome.toUpperCase()} ===\n${n.descricao}. ${n.atmosfera}. Establishing shot panorâmico. ${estilo}. 1920×1080.\n\n`;
   });
-
-  const total = (c.classes||[]).reduce((s,cl)=>s+(cl.gender==='ambos'?4:2),0)
-              + (c.npcs||[]).length*2
-              + (c.inimigos||[]).length
-              + (c.cenarios||[]).reduce((s,n)=>s+(n.tipo==='ambas'?2:1),0);
-
-  document.getElementById('tab-arte').innerHTML=`
-    <div style="font-size:11px;color:rgba(190,140,35,0.40);margin-bottom:14px">Total: <b style="color:#f5d878">${total} imagens</b> a gerar. Copie cada bloco e envie para a IA de imagem de sua preferência (Midjourney, DALL-E, Stable Diffusion, etc.)</div>
-    ${bloco(`🎨 Todos os Prompts (${total} imagens)`, pr, 'arte-all')}
-  `;
+  const tot=(c.classes||[]).reduce((s,cl)=>s+(cl.gender==='ambos'?4:2),0)+(c.npcs||[]).length*2+(c.inimigos||[]).length+(c.cenarios||[]).reduce((s,n)=>s+(n.tipo==='ambas'?2:1),0);
+  document.getElementById('tab-arte').innerHTML=
+    `<div style="font-size:11px;color:rgba(190,140,35,0.38);margin-bottom:12px">Total: <b style="color:#f5d878">${tot} imagens</b> a gerar.</div>`+
+    bloco(`🎨 Todos os Prompts (${tot} imagens)`,pr,'arte');
 }
 
-function renderChecklist(c){
+function rChecklist(c){
   const id=c.meta?.id||'campanha';
-  const cls=c.classes||[], npcs=c.npcs||[], ini=c.inimigos||[], cen=c.cenarios||[];
-
+  const cls=c.classes||[], npc=c.npcs||[], ini=c.inimigos||[], cen=c.cenarios||[];
   const grupos=[
-    {cat:'✅ JÁ GERADO AUTOMATICAMENTE', items:[
-      {t:`Roteiro completo com ${(c.roteiro?.atos||[]).length} atos, ${(c.roteiro?.ganchos||[]).length} ganchos e ${(c.roteiro?.encontros||[]).length} encontros`, auto:true},
-      {t:`${cls.length} classes jogáveis com stats, habilidades e textos de feat`, auto:true},
-      {t:`${npcs.length} NPCs com personalidade, conhecimentos e fala de abertura para IA`, auto:true},
-      {t:`${ini.length} inimigos com stats de batalha`, auto:true},
-      {t:`${cen.length} cenários descritos`, auto:true},
-      {t:`Código JS pronto (CLASSES_DATA, NPCS, INIMIGOS, snippet catalog)`, auto:true},
-      {t:`Prompts de arte para todas as imagens`, auto:true},
+    {cat:'✅ JÁ GERADO AUTOMATICAMENTE', itens:[
+      {t:`Roteiro: ${(c.roteiro?.atos||[]).length} atos · ${(c.roteiro?.ganchos||[]).length} ganchos · ${(c.roteiro?.encontros||[]).length} encontros`,auto:true},
+      {t:`${cls.length} classes com stats, habilidades e textos`,auto:true},
+      {t:`${npc.length} NPCs com personalidade completa para a IA`,auto:true},
+      {t:`${ini.length} inimigos com stats de batalha`,auto:true},
+      {t:`${cen.length} cenários descritos`,auto:true},
+      {t:'Código JS pronto (CLASSES, NPCS, INIMIGOS, catalog)',auto:true},
+      {t:'Prompts de arte para todas as imagens',auto:true},
     ]},
-    {cat:'📁 PASTAS E ESTRUTURA', items:[
-      {t:`Criar public/catalogo/${id}/ com subpastas classes/, npcs/, inimigos/, cenarios/`},
-    ]},
-    {cat:'🎨 ARTE — CLASSES ('+cls.length+' classes)', items:
-      cls.flatMap(cl=>{
-        const r=[];
-        if(cl.gender!=='f') r.push({t:`Retrato masculino de ${cl.nome}`},{t:`Peça tabuleiro masculina de ${cl.nome} (fundo verde)`});
-        if(cl.gender!=='m') r.push({t:`Retrato feminino de ${cl.nome}`},{t:`Peça tabuleiro feminina de ${cl.nome} (fundo verde)`});
+    {cat:'📁 ESTRUTURA', itens:[{t:`Criar public/catalogo/${id}/ (classes/, npcs/, inimigos/, cenarios/)`}]},
+    {cat:`🎨 ARTE — CLASSES (${cls.length})`, itens:
+      cls.flatMap(cl=>{const r=[];
+        if(cl.gender!=='f'){r.push({t:`Retrato m · ${cl.nome}`},{t:`Peça tabuleiro m · ${cl.nome} (fundo verde)`});}
+        if(cl.gender!=='m'){r.push({t:`Retrato f · ${cl.nome}`},{t:`Peça tabuleiro f · ${cl.nome} (fundo verde)`});}
         return r;
       }).concat([{t:'Rodar chromakey.py nas peças de classes'}])
     },
-    {cat:'🧑 ARTE — NPCs ('+npcs.length+' NPCs)', items:
-      npcs.flatMap(n=>[{t:`Retrato de ${n.nome}`},{t:`Peça tabuleiro de ${n.nome} (fundo verde)`}])
-          .concat([{t:'Rodar chromakey.py nas peças de NPCs'}])
+    {cat:`🧑 ARTE — NPCs (${npc.length})`, itens:
+      npc.flatMap(n=>[{t:`Retrato · ${n.nome}`},{t:`Peça tabuleiro · ${n.nome} (fundo verde)`}])
+         .concat([{t:'Rodar chromakey.py nas peças de NPCs'}])
     },
-    {cat:'💀 ARTE — INIMIGOS ('+ini.length+' inimigos)', items:
-      ini.map(n=>({t:`Peça tabuleiro de ${n.nome} (fundo verde)`}))
-         .concat([{t:'Rodar chromakey.py nas peças de inimigos'}])
+    {cat:`💀 ARTE — INIMIGOS (${ini.length})`, itens:
+      ini.map(n=>({t:`Peça tabuleiro · ${n.nome} (fundo verde)`}))
+         .concat(ini.length?[{t:'Rodar chromakey.py nas peças de inimigos'}]:[])
     },
-    {cat:'🗺️ ARTE — CENÁRIOS ('+cen.length+' cenários)', items:
-      cen.flatMap(n=>{
-        const r=[];
-        if(n.tipo!=='ext') r.push({t:`Interior (batalha): ${n.nome}`});
-        if(n.tipo!=='int') r.push({t:`Exterior (diálogo): ${n.nome}`});
+    {cat:`🗺️ ARTE — CENÁRIOS (${cen.length})`, itens:
+      cen.flatMap(n=>{const r=[];
+        if(n.tipo!=='ext') r.push({t:`Interior (batalha) · ${n.nome}`});
+        if(n.tipo!=='int') r.push({t:`Exterior (diálogo) · ${n.nome}`});
         return r;
       })
     },
-    {cat:'💻 CÓDIGO', items:[
-      {t:`Colar CLASSES_DATA em catalog.html e criar aba de classes`},
-      {t:`Criar aba NPCs + inimigos + cenários no catalog.html`},
+    {cat:'💻 CÓDIGO', itens:[
+      {t:`Colar CLASSES_DATA em catalog.html`},
+      {t:`Criar abas NPCs · Inimigos · Cenários em catalog.html`},
       {t:`Clonar simulacao_dialogo_dn.html → simulacao_dialogo_${id}.html`},
-      {t:`Colar array NPCS e CONFIG_CENA no arquivo de diálogo`},
+      {t:`Colar NPCS + CONFIG_CENA no arquivo de diálogo`},
       {t:`Testar abertura fallback (sem chave Groq)`},
-      {t:`Configurar inimigos em arena.html`},
-      {t:`Verificar classes em simulacao_entrada.html`},
+      {t:`Adicionar inimigos em arena.html`},
     ]},
-    {cat:'🚀 FINALIZAÇÃO', items:[
+    {cat:'🚀 FINALIZAÇÃO', itens:[
       {t:'Testar fluxo completo: catálogo → entrada → diálogo → batalha'},
-      {t:'Verificar imagens no mobile'},
-      {t:'Commit e push de todos os assets'},
-      {t:'Verificar deploy no GitHub Pages'},
+      {t:'Commit e push'},
     ]},
   ];
-
   let h='';
   grupos.forEach(g=>{
-    h+=`<div class="chk-cat">${g.cat}</div>`;
-    g.items.forEach((item,ii)=>{
+    h+=`<div class="cc">${g.cat}</div>`;
+    g.itens.forEach((it,ii)=>{
       const k=`chk.${id}.${g.cat}.${ii}`;
-      const ok=item.auto||localStorage.getItem(k)==='1';
-      if(item.auto){
-        h+=`<div class="chk-row"><div class="chk-box ok">✓</div><div class="chk-txt ok">${item.t}<span class="badge-auto">auto</span></div></div>`;
+      const ok=it.auto||localStorage.getItem(k)==='1';
+      if(it.auto){
+        h+=`<div class="cr"><div class="cb ok">✓</div><div class="ct ok">${it.t}<span class="ba">auto</span></div></div>`;
       } else {
-        h+=`<div class="chk-row"><div class="chk-box${ok?' ok':''}" onclick="tgl('${k}',this)">${ok?'✓':''}</div><div class="chk-txt${ok?' ok':''}">${item.t}<span class="badge-manual">manual</span></div></div>`;
+        h+=`<div class="cr"><div class="cb${ok?' ok':''}" onclick="tgl('${k}',this)">${ok?'✓':''}</div><div class="ct${ok?' ok':''}">${it.t}<span class="bm">manual</span></div></div>`;
       }
     });
   });
@@ -640,76 +613,66 @@ function renderChecklist(c){
 }
 
 // ── Modais ──
-function abrirNPC(i){
+function moNPC(i){
   const n=(campanha?.npcs||[])[i]; if(!n) return;
-  document.getElementById('modal').innerHTML=`
-    <button class="modal-fechar" onclick="fecharModal()">✕</button>
-    <div class="modal-icon">${campanha?.meta?.icon||'👤'}</div>
-    <div class="modal-nome">${n.nome}</div>
-    <div class="modal-papel">${n.papel||''}</div>
-    <div class="modal-sec">Personalidade</div><div class="modal-texto">${n.personalidade||''}</div>
-    <div class="modal-sec">Conhecimentos / Segredos</div><div class="modal-texto">${n.conhecimentos||''}</div>
-    <div class="modal-sec">Forma de Falar</div><div class="modal-texto">${n.formaDeFalar||''}</div>
-    <div class="modal-sec">Abertura (fala ao conhecer o jogador)</div><div class="modal-fala">${n.aberturaFallback||''}</div>
-    <div class="modal-sec">Aparência (para arte)</div><div class="modal-texto">${n.aparencia||''}</div>
-    <div class="modal-sec">Cenários</div><div class="modal-texto">${(n.cenas||[]).join(', ')}</div>
-  `;
-  document.getElementById('modal-overlay').classList.add('vis');
+  document.getElementById('mo-box').innerHTML=`
+    <button class="mo-x" onclick="fecharMo()">✕</button>
+    <div class="mo-icon">${campanha?.meta?.icon||'👤'}</div>
+    <div class="mo-nome">${n.nome}</div><div class="mo-sub">${n.papel||''}</div>
+    <div class="mo-sec">Personalidade</div><div class="mo-txt">${n.personalidade||''}</div>
+    <div class="mo-sec">Conhecimentos / Segredos</div><div class="mo-txt">${n.conhecimentos||''}</div>
+    <div class="mo-sec">Forma de Falar</div><div class="mo-txt">${n.formaDeFalar||''}</div>
+    <div class="mo-sec">Abertura ao Jogador</div><div class="mo-fala">${n.aberturaFallback||''}</div>
+    <div class="mo-sec">Aparência</div><div class="mo-txt">${n.aparencia||''}</div>
+    <div class="mo-sec">Cenários</div><div class="mo-txt">${(n.cenas||[]).join(', ')}</div>`;
+  document.getElementById('mo').classList.add('v');
 }
-
-function abrirClasse(i){
+function moCls(i){
   const cl=(campanha?.classes||[])[i]; if(!cl) return;
-  const attrs=cl.attrs||{};
-  const attrStr=Object.entries(attrs).map(([k,v])=>`<span class="pc-stat">${k} ${v}</span>`).join(' ');
-  document.getElementById('modal').innerHTML=`
-    <button class="modal-fechar" onclick="fecharModal()">✕</button>
-    <div class="modal-icon">${cl.icon||'⚔️'}</div>
-    <div class="modal-nome">${cl.nome}</div>
-    <div class="modal-papel">${cl.feat||''}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">
-      <span class="pc-stat">HP ${cl.maxHp}</span><span class="pc-stat">SP ${cl.sp}</span><span class="pc-stat">MOV ${cl.mov}</span><span class="pc-stat">ATK +${cl.atk}</span>
+  const at=cl.attrs||{};
+  document.getElementById('mo-box').innerHTML=`
+    <button class="mo-x" onclick="fecharMo()">✕</button>
+    <div class="mo-icon">${cl.icon||'⚔️'}</div>
+    <div class="mo-nome">${cl.nome}</div><div class="mo-sub">${cl.feat||''}</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin:10px 0">
+      <span class="pc-s">HP ${cl.maxHp}</span><span class="pc-s">SP ${cl.sp}</span><span class="pc-s">MOV ${cl.mov}</span><span class="pc-s">ATK +${cl.atk}</span>
     </div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">${attrStr}</div>
-    <div class="modal-sec">Habilidades</div>
-    ${(cl.habs||[]).map(h=>`<div class="hab-row"><div class="hab-ic">${h.icon}</div><div><div class="hab-nome">${h.nome}</div><div class="hab-desc">${h.desc}</div><div class="hab-meta">${h.dano} · ${h.tipo} · SP ${h.sp}</div></div></div>`).join('')}
-    <div class="modal-sec">Aparência Masculina</div><div class="modal-texto">${cl.aparenciaM||'—'}</div>
-    <div class="modal-sec">Aparência Feminina</div><div class="modal-texto">${cl.aparenciaF||'—'}</div>
-  `;
-  document.getElementById('modal-overlay').classList.add('vis');
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">
+      ${Object.entries(at).map(([k,v])=>`<span class="pc-s">${k} ${v}</span>`).join('')}
+    </div>
+    <div class="mo-sec">Habilidades</div>
+    ${(cl.habs||[]).map(h=>`<div class="hab"><div class="hab-i">${h.icon}</div><div><div class="hab-n">${h.nome}</div><div class="hab-d">${h.desc}</div><div class="hab-m">${h.dano} · ${h.tipo} · SP ${h.sp}</div></div></div>`).join('')}
+    <div class="mo-sec">Aparência (m)</div><div class="mo-txt">${cl.aparenciaM||'—'}</div>
+    <div class="mo-sec">Aparência (f)</div><div class="mo-txt">${cl.aparenciaF||'—'}</div>`;
+  document.getElementById('mo').classList.add('v');
 }
-
-function abrirInimigo(i){
+function moIni(i){
   const n=(campanha?.inimigos||[])[i]; if(!n) return;
-  document.getElementById('modal').innerHTML=`
-    <button class="modal-fechar" onclick="fecharModal()">✕</button>
-    <div class="modal-icon">💀</div>
-    <div class="modal-nome">${n.nome}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">
-      <span class="pc-stat">HP ${n.hp}</span><span class="pc-stat">AC ${n.ac}</span><span class="pc-stat">ATK +${n.atk}</span><span class="pc-stat">MOV ${n.mov}</span><span class="pc-stat">${n.dano}</span>
+  document.getElementById('mo-box').innerHTML=`
+    <button class="mo-x" onclick="fecharMo()">✕</button>
+    <div class="mo-icon">💀</div>
+    <div class="mo-nome">${n.nome}</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin:10px 0">
+      <span class="pc-s">HP ${n.hp}</span><span class="pc-s">AC ${n.ac}</span><span class="pc-s">ATK +${n.atk}</span><span class="pc-s">MOV ${n.mov}</span><span class="pc-s">${n.dano}</span>
     </div>
-    <div class="modal-sec">Habilidade Especial</div><div class="modal-texto">${n.especial||'—'}</div>
-    <div class="modal-sec">Aparência</div><div class="modal-texto">${n.aparencia||'—'}</div>
-  `;
-  document.getElementById('modal-overlay').classList.add('vis');
+    <div class="mo-sec">Especial</div><div class="mo-txt">${n.especial||'—'}</div>
+    <div class="mo-sec">Aparência</div><div class="mo-txt">${n.aparencia||'—'}</div>`;
+  document.getElementById('mo').classList.add('v');
 }
-
-function fecharModal(e){
-  if(!e||e.target===document.getElementById('modal-overlay'))
-    document.getElementById('modal-overlay').classList.remove('vis');
-}
+function fecharMo(){ document.getElementById('mo').classList.remove('v'); }
 
 // ── Helpers ──
 function tab(id,btn){
   document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('ativo'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('ativo'));
-  document.getElementById('tab-'+id).classList.add('ativo');
-  btn.classList.add('ativo');
+  document.getElementById('tab-'+id).classList.add('ativo'); btn.classList.add('ativo');
 }
-function esc(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' '); }
+function reiniciar(){ location.reload(); }
+function e2(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' '); }
 function bloco(tit,body,k){
-  return `<div class="ob"><div class="ob-head"><span class="ob-tit">${tit}</span><div style="display:flex;gap:5px"><button class="btn-sm" onclick="document.getElementById('ob-${k}').classList.toggle('exp')">⤢</button><button class="btn-sm" onclick="cop(this,'ob-${k}')">Copiar</button></div></div><div class="ob-body" id="ob-${k}">${escHtml(body)}</div></div>`;
+  return `<div class="ob"><div class="ob-h"><span class="ob-t">${tit}</span><div style="display:flex;gap:4px"><button class="bs" onclick="document.getElementById('ob-${k}').classList.toggle('exp')">⤢</button><button class="bs" onclick="cop(this,'ob-${k}')">Copiar</button></div></div><div class="ob-body" id="ob-${k}">${eH(body)}</div></div>`;
 }
-function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function eH(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function cop(btn,id){
   navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>{
     const o=btn.textContent; btn.textContent='✓'; setTimeout(()=>btn.textContent=o,1600);
@@ -721,10 +684,12 @@ function tgl(k,box){
   box.classList.toggle('ok',ok); box.textContent=ok?'✓':'';
   box.nextElementSibling.classList.toggle('ok',ok);
 }
+function setFase(fase,txt,pct){ document.getElementById('ld-fase').textContent=fase; document.getElementById('ld-txt').textContent=txt; setBar(pct); }
+function setBar(pct){ document.getElementById('ld-bar').style.width=pct+'%'; }
+function resetBar(){ document.getElementById('ld-bar').style.width='0%'; }
 
-// Pre-fill groq key
-const saved=localStorage.getItem('oraculo.groqKey');
-if(saved) document.getElementById('groq-key').value=saved;
+const sk=localStorage.getItem('oraculo.groqKey');
+if(sk) document.getElementById('groq-key').value=sk;
 </script>
 </body>
 </html>
