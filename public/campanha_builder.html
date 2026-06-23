@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Oráculo — Matriz de Campanhas</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:#050302;font-family:Georgia,serif;color:#e8d5a8;}
+body{padding-bottom:60px;}
+#header{padding:22px 20px 14px;text-align:center;border-bottom:1px solid rgba(190,140,35,0.15);}
+#header h1{font-size:11px;letter-spacing:5px;text-transform:uppercase;color:rgba(245,216,120,0.32);}
+#header h2{font-size:20px;font-weight:700;color:#f5d878;margin-top:4px;}
+#header p{font-size:11px;color:rgba(200,175,100,0.42);margin-top:5px;font-style:italic;}
+#tab-nav{display:flex;border-bottom:1px solid rgba(190,140,35,0.14);background:rgba(0,0,0,0.45);position:sticky;top:0;z-index:100;overflow-x:auto;}
+.tab-btn{flex:1;min-width:70px;padding:11px 6px;background:none;border:none;font-family:Georgia,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.36);cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap;}
+.tab-btn.ativo{color:#f5d878;border-bottom-color:#f5d878;}
+.tab-section{display:none;padding:20px 16px;max-width:780px;margin:0 auto;}
+.tab-section.ativo{display:block;}
+.card{background:rgba(7,4,1,0.88);border:1px solid rgba(190,140,35,0.17);border-radius:13px;padding:16px;margin-bottom:14px;}
+.card-tit{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(190,140,35,0.38);margin-bottom:10px;}
+.card h3{font-size:13px;color:#f5d878;margin-bottom:7px;}
+.card p{font-size:12px;color:rgba(200,175,100,0.62);line-height:1.65;margin-bottom:5px;}
+.lbl{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.38);margin-bottom:4px;}
+input,textarea,select{width:100%;background:rgba(20,12,4,0.90);border:1px solid rgba(190,140,35,0.22);border-radius:8px;padding:9px 12px;color:#e8d5a8;font-family:Georgia,serif;font-size:13px;outline:none;transition:border-color .2s;-webkit-appearance:none;}
+textarea{min-height:64px;resize:vertical;line-height:1.5;}
+input:focus,textarea:focus,select:focus{border-color:rgba(190,140,35,0.52);}
+select option{background:#1a0f04;}
+.campo{margin-bottom:10px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 14px;border:none;border-radius:8px;font-family:Georgia,serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:1px;text-transform:uppercase;-webkit-tap-highlight-color:transparent;}
+.b-ouro{background:rgba(190,140,35,0.16);border:1px solid rgba(220,170,50,0.38);color:#f5d878;}
+.b-ouro:hover{background:rgba(190,140,35,0.28);}
+.b-verde{background:rgba(30,80,30,0.28);border:1px solid rgba(80,160,80,0.38);color:#80c880;}
+.b-red{background:rgba(80,10,10,0.28);border:1px solid rgba(160,30,30,0.38);color:#c87070;}
+.b-big{width:100%;padding:13px;font-size:12px;margin-top:14px;}
+.linha{background:rgba(0,0,0,0.28);border:1px solid rgba(190,140,35,0.11);border-radius:9px;padding:12px;margin-bottom:8px;position:relative;}
+.linha .b-rem{position:absolute;top:8px;right:8px;padding:3px 7px;font-size:9px;}
+.ln{font-size:9px;color:rgba(190,140,35,0.33);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;}
+.ob{background:rgba(0,0,0,0.58);border:1px solid rgba(190,140,35,0.14);border-radius:9px;margin-bottom:14px;overflow:hidden;}
+.ob-head{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:rgba(190,140,35,0.05);border-bottom:1px solid rgba(190,140,35,0.09);}
+.ob-tit{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#f5d878;}
+.ob-body{padding:13px;font-family:monospace;font-size:11px;color:rgba(200,185,130,0.78);line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:260px;overflow-y:auto;}
+.ob-body.exp{max-height:none;}
+.chk-cat{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(190,140,35,0.33);padding:11px 12px 3px;}
+.chk-row{display:flex;align-items:flex-start;gap:9px;padding:9px 12px;border-bottom:1px solid rgba(190,140,35,0.05);}
+.chk-box{flex-shrink:0;width:17px;height:17px;background:rgba(20,12,4,0.80);border:1px solid rgba(190,140,35,0.28);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;margin-top:1px;transition:background .15s;}
+.chk-box.ok{background:rgba(40,90,40,0.38);border-color:rgba(80,160,80,0.48);}
+.chk-txt{flex:1;font-size:12px;color:rgba(200,175,100,0.68);line-height:1.5;}
+.chk-txt.ok{color:rgba(110,150,90,0.52);text-decoration:line-through;}
+.tree{font-family:monospace;font-size:11px;line-height:1.9;color:rgba(180,165,110,0.72);}
+code{font-family:monospace;font-size:11px;background:rgba(0,0,0,0.35);padding:1px 5px;border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>🔮 Oráculo RPG</h1>
+  <h2>Matriz de Instalação de Campanhas</h2>
+  <p>Preencha os dados → gera estrutura de pastas, prompts de arte e código pronto</p>
+</div>
+
+<div id="tab-nav">
+  <button class="tab-btn ativo" onclick="tab('guia',this)">📖 Guia</button>
+  <button class="tab-btn" onclick="tab('construtor',this)">⚙️ Construtor</button>
+  <button class="tab-btn" onclick="tab('saidas',this)">📄 Saídas</button>
+  <button class="tab-btn" onclick="tab('checklist',this)">✅ Checklist</button>
+</div>
+
+<!-- GUIA -->
+<div id="tab-guia" class="tab-section ativo">
+  <div class="card">
+    <div class="card-tit">Anatomia de uma Campanha</div>
+    <p>Toda campanha é um cartridge autossuficiente em <code>public/catalogo/{id}/</code>. Define classes, NPCs, inimigos e cenários. Os arquivos HTML de simulação são clonados do template DN e adaptados.</p>
+  </div>
+  <div class="card">
+    <div class="card-tit">Estrutura de Pastas</div>
+    <div class="tree">public/catalogo/<b style="color:#f5d878">{id}/</b>
+├── classes/
+│   └── {classe}/
+│       ├── retrato/
+│       │   ├── {classe}_m_retrato.png   <span style="color:#80c880">← 512×768 mín · portrait</span>
+│       │   └── {classe}_f_retrato.png
+│       └── peca_tabuleiro/
+│           ├── {classe}_m_peca.png      <span style="color:#80c880">← fundo verde #00ff00</span>
+│           └── {classe}_f_peca.png
+├── npcs/{npc}/retrato/ + peca_tabuleiro/
+├── inimigos/{inimigo}/peca_tabuleiro/
+└── cenarios/{cenario}/
+    ├── {cenario}_int.png                <span style="color:#80c880">← mapa de batalha</span>
+    └── {cenario}_ext.png                <span style="color:#80c880">← cena de diálogo</span></div>
+  </div>
+  <div class="card">
+    <div class="card-tit">Especificações de Arte</div>
+    <div class="g2">
+      <div><h3 style="font-size:11px;margin-bottom:5px">📸 Retratos</h3>
+        <p>Mínimo 512×768 · PNG/JPG · Foco rosto/busto · Qualquer fundo</p></div>
+      <div><h3 style="font-size:11px;margin-bottom:5px">🎭 Peças Tabuleiro</h3>
+        <p>Corpo inteiro em pé · <b>Fundo verde #00ff00</b> · PNG · Mínimo 400×800</p></div>
+      <div><h3 style="font-size:11px;margin-bottom:5px">🗺️ Interior (batalha)</h3>
+        <p>Vista diagonal/isométrica · 1920×1080 · Espaço para peças</p></div>
+      <div><h3 style="font-size:11px;margin-bottom:5px">🏙️ Exterior (diálogo)</h3>
+        <p>Establishing shot · 1920×1080 · Sem personagens em 1º plano</p></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-tit">Arquivos a Criar / Modificar</div>
+    <p style="font-size:12px;color:rgba(200,175,100,0.62);line-height:2.1">
+      ✏️ <code>public/catalog.html</code> — card da campanha + tabs classes/NPCs/inimigos/cenários<br>
+      ✏️ <code>public/simulacao_entrada.html</code> — classes aparecem via JS automaticamente<br>
+      ➕ <code>public/simulacao_dialogo_{id}.html</code> — clonar do DN, trocar NPCS + CONFIG_CENA<br>
+      ✏️ <code>public/arena.html</code> — inimigos carregados por parâmetro (sem mudança estrutural)
+    </p>
+  </div>
+  <div class="card">
+    <div class="card-tit">Script Chromakey (remover fundo verde das peças)</div>
+    <div class="ob">
+      <div class="ob-head"><span class="ob-tit">chromakey.py</span>
+        <button class="btn b-ouro" style="padding:4px 9px;font-size:9px" onclick="cop(this,'ck-py')">Copiar</button></div>
+      <div class="ob-body" id="ck-py">from PIL import Image
+import glob
+
+for path in glob.glob('**/*.png', recursive=True):
+    img = Image.open(path).convert('RGBA')
+    px = img.load()
+    w, h = img.size
+    n = 0
+    for y in range(h):
+        for x in range(w):
+            r,g,b,a = px[x,y]
+            if g > 80 and g > r*1.4 and g > b*1.4:
+                px[x,y] = (0,0,0,0); n+=1
+    img.save(path)
+    print(f'{path}: {n} px removidos')</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-tit">SCHEMA_V — Evitar Conflito entre Campanhas</div>
+    <p>Cada arquivo <code>simulacao_dialogo_{id}.html</code> tem um <code>SCHEMA_V</code> inteiro que identifica o schema do doc Firestore. Use valores distintos por campanha:</p>
+    <p style="font-family:monospace;font-size:12px;margin-top:8px;color:#f5d878">Mhoried = 1 · Death Note = 4 · Próxima = 5 · …</p>
+    <p style="margin-top:6px">Incremente sempre que mudar a estrutura do log para forçar recriação de sessões antigas.</p>
+  </div>
+</div>
+
+<!-- CONSTRUTOR -->
+<div id="tab-construtor" class="tab-section">
+
+  <div class="card">
+    <div class="card-tit">Informação Básica</div>
+    <div class="g2">
+      <div class="campo"><label class="lbl">ID (slug)</label>
+        <input id="c-id" placeholder="ex: one-piece-marineford"></div>
+      <div class="campo"><label class="lbl">Ícone (emoji)</label>
+        <input id="c-icon" placeholder="⚓"></div>
+    </div>
+    <div class="g2">
+      <div class="campo"><label class="lbl">Nome Curto</label>
+        <input id="c-nome" placeholder="One Piece"></div>
+      <div class="campo"><label class="lbl">Nome Longo</label>
+        <input id="c-nome-longo" placeholder="One Piece: Batalha de Marineford"></div>
+    </div>
+    <div class="g2">
+      <div class="campo"><label class="lbl">Subtítulo / Local</label>
+        <input id="c-sub" placeholder="Grande Linha · Marineford"></div>
+      <div class="campo"><label class="lbl">Cor Tema (hex)</label>
+        <input id="c-cor" placeholder="#1a3a6a"></div>
+    </div>
+    <div class="campo"><label class="lbl">Estilo de Arte</label>
+      <select id="c-estilo">
+        <option value="anime">Anime / Mangá japonês</option>
+        <option value="fantasy">RPG Fantasy Medieval</option>
+        <option value="cyberpunk">Cyberpunk / Sci-Fi</option>
+        <option value="horror">Horror / Dark</option>
+        <option value="western">Western / Faroeste</option>
+        <option value="noir">Noir / Policial anos 40</option>
+      </select>
+    </div>
+    <div class="campo"><label class="lbl">Gancho Narrativo</label>
+      <textarea id="c-gancho" placeholder="A guerra iminente em Marineford. Os jogadores são piratas tentando resgatar Ace antes da execução..."></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-tit">Classes Jogáveis (3–6)</div>
+    <p style="font-size:11px;color:rgba(200,175,100,0.46);margin-bottom:11px">Cada classe precisa de retrato (m e f) e peça de tabuleiro (m e f).</p>
+    <div id="lst-cls"></div>
+    <button class="btn b-verde" onclick="addClasse()">+ Adicionar Classe</button>
+  </div>
+
+  <div class="card">
+    <div class="card-tit">NPCs (aparecem na simulação de diálogo)</div>
+    <div id="lst-npc"></div>
+    <button class="btn b-verde" onclick="addNPC()">+ Adicionar NPC</button>
+  </div>
+
+  <div class="card">
+    <div class="card-tit">Inimigos (aparecem nas batalhas)</div>
+    <div id="lst-ini"></div>
+    <button class="btn b-verde" onclick="addInimigo()">+ Adicionar Inimigo</button>
+  </div>
+
+  <div class="card">
+    <div class="card-tit">Cenários</div>
+    <div id="lst-cen"></div>
+    <button class="btn b-verde" onclick="addCenario()">+ Adicionar Cenário</button>
+  </div>
+
+  <button class="btn b-ouro b-big" onclick="gerar()">⚡ GERAR TUDO →</button>
+</div>
+
+<!-- SAÍDAS -->
+<div id="tab-saidas" class="tab-section">
+  <div id="s-vazio" class="card" style="text-align:center;padding:30px">
+    <p style="font-size:28px;margin-bottom:10px">⚙️</p>
+    <p>Preencha o Construtor e clique em <b>GERAR TUDO</b></p>
+  </div>
+  <div id="s-cont" style="display:none"></div>
+</div>
+
+<!-- CHECKLIST -->
+<div id="tab-checklist" class="tab-section">
+  <div class="card">
+    <div class="card-tit">Checklist de Instalação</div>
+    <p style="font-size:11px;color:rgba(200,175,100,0.46);margin-bottom:4px">Salvo automaticamente no browser. Gere as saídas para personalizar com o ID da campanha.</p>
+  </div>
+  <div class="card" id="chk-cont"></div>
+</div>
+
+<script>
+// ── State ──
+let CLS=[], NPC=[], INI=[], CEN=[];
+
+const ESTILOS = {
+  anime:   'anime / mangá japonês, linhas limpas, cores vibrantes',
+  fantasy: 'RPG fantasy medieval, ilustração digital detalhada, paleta terrosa e ouro',
+  cyberpunk:'cyberpunk futurista, neon e sombras, hi-tech lo-life',
+  horror:  'horror gótico, tons frios, atmosfera opressiva',
+  western: 'faroeste americano, cores quentes terrosas, poeira e pôr do sol',
+  noir:    'noir policial, preto e branco com âmbar, sombras anos 40',
+};
+
+// ── Tabs ──
+function tab(id, btn){
+  document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('ativo'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('ativo'));
+  document.getElementById('tab-'+id).classList.add('ativo');
+  btn.classList.add('ativo');
+}
+
+// ── Helpers ──
+function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+function v(id){ return document.getElementById(id)?.value?.trim()||''; }
+function camId(){ return slug(v('c-id')||'campanha'); }
+
+function addClasse(){ CLS.push({}); rCLS(); }
+function addNPC()    { NPC.push({}); rNPC(); }
+function addInimigo(){ INI.push({}); rINI(); }
+function addCenario(){ CEN.push({}); rCEN(); }
+
+function rem(arr,i,fn){ arr.splice(i,1); fn(); }
+
+// ── Renders ──
+function rCLS(){
+  document.getElementById('lst-cls').innerHTML = CLS.map((_,i)=>`
+  <div class="linha" id="cl-${i}">
+    <div class="ln">Classe ${i+1}</div>
+    <button class="btn b-red b-rem" onclick="rem(CLS,${i},rCLS)">✕</button>
+    <div class="g2">
+      <div class="campo"><label class="lbl">ID</label><input placeholder="guerreiro"></div>
+      <div class="campo"><label class="lbl">Nome</label><input placeholder="Guerreiro"></div>
+    </div>
+    <div class="g4">
+      <div class="campo"><label class="lbl">Ícone</label><input placeholder="⚔️"></div>
+      <div class="campo"><label class="lbl">HP</label><input type="number" placeholder="12"></div>
+      <div class="campo"><label class="lbl">SP</label><input type="number" placeholder="80"></div>
+      <div class="campo"><label class="lbl">MOV</label><input type="number" placeholder="5"></div>
+    </div>
+    <div class="g2">
+      <div class="campo"><label class="lbl">Gênero</label>
+        <select><option value="ambos">Ambos (m+f)</option><option value="m">Só m</option><option value="f">Só f</option></select></div>
+      <div class="campo"><label class="lbl">Cor hex</label><input placeholder="#8a4a20"></div>
+    </div>
+    <div class="campo"><label class="lbl">Feat / Característica</label>
+      <input placeholder="Especialista em combate corpo a corpo."></div>
+    <div class="campo"><label class="lbl">Aparência (para prompt de arte)</label>
+      <textarea placeholder="Jovem com armadura pesada, cabelo curto escuro, cicatriz no rosto..." style="min-height:48px"></textarea></div>
+  </div>`).join('');
+}
+
+function rNPC(){
+  document.getElementById('lst-npc').innerHTML = NPC.map((_,i)=>`
+  <div class="linha" id="np-${i}">
+    <div class="ln">NPC ${i+1}</div>
+    <button class="btn b-red b-rem" onclick="rem(NPC,${i},rNPC)">✕</button>
+    <div class="g2">
+      <div class="campo"><label class="lbl">ID</label><input placeholder="barba-branca"></div>
+      <div class="campo"><label class="lbl">Nome</label><input placeholder="Barba Branca"></div>
+    </div>
+    <div class="campo"><label class="lbl">Papel na história</label>
+      <input placeholder="Capitão lendário, protetor de Ace"></div>
+    <div class="campo"><label class="lbl">Personalidade</label>
+      <textarea placeholder="Pai de família, coração generoso, poder absurdo mas prefere proteção à conquista..."></textarea></div>
+    <div class="campo"><label class="lbl">Forma de falar</label>
+      <input placeholder='Grave, pausado. Chama todos de "filho". Poucas palavras, peso máximo.'></div>
+    <div class="campo"><label class="lbl">Fala de abertura (fallback sem IA)</label>
+      <textarea placeholder="[ACAO: Vira devagar, apoiado no arpão.] Novo recruta? Mostrar o que tem não é pedido — é exigido."  style="min-height:52px"></textarea></div>
+    <div class="campo"><label class="lbl">Aparência</label>
+      <textarea placeholder="Gigante idoso, bigode branco em W, cicatrizes pelo corpo, camisa branca aberta..." style="min-height:48px"></textarea></div>
+  </div>`).join('');
+}
+
+function rINI(){
+  document.getElementById('lst-ini').innerHTML = INI.map((_,i)=>`
+  <div class="linha" id="in-${i}">
+    <div class="ln">Inimigo ${i+1}</div>
+    <button class="btn b-red b-rem" onclick="rem(INI,${i},rINI)">✕</button>
+    <div class="g2">
+      <div class="campo"><label class="lbl">ID</label><input placeholder="almirante-akainu"></div>
+      <div class="campo"><label class="lbl">Nome</label><input placeholder="Almirante Akainu"></div>
+    </div>
+    <div class="g4">
+      <div class="campo"><label class="lbl">HP</label><input type="number" placeholder="40"></div>
+      <div class="campo"><label class="lbl">AC</label><input type="number" placeholder="16"></div>
+      <div class="campo"><label class="lbl">ATK</label><input type="number" placeholder="6"></div>
+      <div class="campo"><label class="lbl">MOV</label><input type="number" placeholder="5"></div>
+    </div>
+    <div class="g2">
+      <div class="campo"><label class="lbl">Dano</label><input placeholder="2d8+4"></div>
+      <div class="campo"><label class="lbl">Especial</label><input placeholder="Magma Hound — área 2, ignora armadura"></div>
+    </div>
+    <div class="campo"><label class="lbl">Aparência</label>
+      <textarea placeholder="Almirante de jaleco branco, cabelo preto curto, rosto severo..." style="min-height:48px"></textarea></div>
+  </div>`).join('');
+}
+
+function rCEN(){
+  document.getElementById('lst-cen').innerHTML = CEN.map((_,i)=>`
+  <div class="linha" id="ce-${i}">
+    <div class="ln">Cenário ${i+1}</div>
+    <button class="btn b-red b-rem" onclick="rem(CEN,${i},rCEN)">✕</button>
+    <div class="g2">
+      <div class="campo"><label class="lbl">ID</label><input placeholder="praça-marineford"></div>
+      <div class="campo"><label class="lbl">Nome</label><input placeholder="Praça de Marineford"></div>
+    </div>
+    <div class="campo"><label class="lbl">Descrição do ambiente</label>
+      <textarea placeholder="Grande praça militar com palco de execução central, grades de contenção, mar ao fundo..."></textarea></div>
+    <div class="campo"><label class="lbl">Imagens necessárias</label>
+      <select><option value="ambas">Interior + Exterior</option><option value="int">Só Interior (batalha)</option><option value="ext">Só Exterior (diálogo)</option></select></div>
+  </div>`).join('');
+}
+
+// ── Ler campos do DOM ──
+function lerCLS(){
+  return CLS.map((_,i)=>{
+    const el=document.getElementById('cl-'+i); if(!el) return {};
+    const f=el.querySelectorAll('input,textarea,select');
+    return {id:f[0]?.value||`classe-${i+1}`,nome:f[1]?.value||`Classe ${i+1}`,icon:f[2]?.value||'⚔️',
+      hp:f[3]?.value||'10',sp:f[4]?.value||'80',mov:f[5]?.value||'5',
+      gender:f[6]?.value||'ambos',cor:f[7]?.value||'#444',
+      feat:f[8]?.value||'',aparencia:f[9]?.value||''};
+  });
+}
+function lerNPC(){
+  return NPC.map((_,i)=>{
+    const el=document.getElementById('np-'+i); if(!el) return {};
+    const f=el.querySelectorAll('input,textarea');
+    return {id:f[0]?.value||`npc-${i+1}`,nome:f[1]?.value||`NPC ${i+1}`,
+      papel:f[2]?.value||'',personalidade:f[3]?.value||'',
+      formaDeFalar:f[4]?.value||'',abertura:f[5]?.value||'',aparencia:f[6]?.value||''};
+  });
+}
+function lerINI(){
+  return INI.map((_,i)=>{
+    const el=document.getElementById('in-'+i); if(!el) return {};
+    const f=el.querySelectorAll('input,textarea');
+    return {id:f[0]?.value||`ini-${i+1}`,nome:f[1]?.value||`Inimigo ${i+1}`,
+      hp:f[2]?.value||'20',ac:f[3]?.value||'12',atk:f[4]?.value||'3',mov:f[5]?.value||'4',
+      dano:f[6]?.value||'1d6',especial:f[7]?.value||'',aparencia:f[8]?.value||''};
+  });
+}
+function lerCEN(){
+  return CEN.map((_,i)=>{
+    const el=document.getElementById('ce-'+i); if(!el) return {};
+    const f=el.querySelectorAll('input,textarea,select');
+    return {id:f[0]?.value||`cen-${i+1}`,nome:f[1]?.value||`Cenário ${i+1}`,
+      descricao:f[2]?.value||'',tipo:f[3]?.value||'ambas'};
+  });
+}
+
+// ── Gerar ──
+function gerar(){
+  const id    = camId();
+  const nome  = v('c-nome')||'Campanha';
+  const icon  = v('c-icon')||'⚔️';
+  const cor   = v('c-cor')||'#444';
+  const sub   = v('c-sub')||'';
+  const gancho= v('c-gancho')||'';
+  const nlong = v('c-nome-longo')||nome;
+  const estilo= ESTILOS[v('c-estilo')||'anime']||'anime/mangá';
+
+  const cls = lerCLS(), npc = lerNPC(), ini = lerINI(), cen = lerCEN();
+
+  // 1. Pastas
+  let pas = `public/catalogo/${id}/\n`;
+  pas += cls.length?`├── classes/\n${cls.map((c,i)=>{const l=i===cls.length-1;
+    return `${l?'└':'├'}── ${c.id}/\n`+
+    `│   ├── retrato/\n`+
+    (c.gender!=='f'?`│   │   ├── ${c.id}_m_retrato.png\n`:'')+
+    (c.gender!=='m'?`│   │   └── ${c.id}_f_retrato.png\n`:'')+
+    `│   └── peca_tabuleiro/\n`+
+    (c.gender!=='f'?`│       ├── ${c.id}_m_peca.png\n`:'')+
+    (c.gender!=='m'?`│       └── ${c.id}_f_peca.png\n`:'');
+  }).join('')}`:'';
+  pas += npc.length?`├── npcs/\n${npc.map(n=>`│   ├── ${n.id}/retrato/${n.id}_retrato.png\n│   └── ${n.id}/peca_tabuleiro/${n.id}_peca.png\n`).join('')}`:'';
+  pas += ini.length?`├── inimigos/\n${ini.map(n=>`│   └── ${n.id}/peca_tabuleiro/${n.id}_peca.png\n`).join('')}`:'';
+  pas += cen.length?`└── cenarios/\n${cen.map(n=>`    └── ${n.id}/\n`+(n.tipo!=='ext'?`        ├── ${n.id}_int.png\n`:'')+( n.tipo!=='int'?`        └── ${n.id}_ext.png\n`:'')).join('')}`:'';
+
+  // 2. Prompts
+  let pr = '';
+  cls.forEach(c=>{
+    if(c.gender!=='f'){ pr+=`=== RETRATO · ${c.nome.toUpperCase()} MASCULINO ===\n${c.aparencia||c.nome}, estilo ${estilo}. Retrato de corpo inteiro ou busto. Fundo neutro escuro. Iluminação dramática. Proporção 2:3. Alta qualidade.\n\n`; }
+    if(c.gender!=='m'){ pr+=`=== RETRATO · ${c.nome.toUpperCase()} FEMININO ===\nVersão feminina de: ${c.aparencia||c.nome}, estilo ${estilo}. Retrato de corpo inteiro ou busto. Fundo neutro escuro. Iluminação dramática. Proporção 2:3.\n\n`; }
+    if(c.gender!=='f'){ pr+=`=== PEÇA TABULEIRO · ${c.nome.toUpperCase()} MASCULINO ===\n${c.aparencia||c.nome}, estilo ${estilo}. Corpo INTEIRO em pé, pose heroica. FUNDO VERDE PURO #00ff00 (chromakey). Sem sombras no chão. Proporção 1:2.\n\n`; }
+    if(c.gender!=='m'){ pr+=`=== PEÇA TABULEIRO · ${c.nome.toUpperCase()} FEMININO ===\nVersão feminina de: ${c.aparencia||c.nome}, estilo ${estilo}. Corpo INTEIRO em pé. FUNDO VERDE PURO #00ff00. Proporção 1:2.\n\n`; }
+  });
+  npc.forEach(n=>{
+    pr+=`=== RETRATO · NPC ${n.nome.toUpperCase()} ===\n${n.aparencia||n.nome} (${n.papel||'personagem'}), estilo ${estilo}. Retrato expressivo, busto ou 3/4. Iluminação dramática. Alta qualidade.\n\n`;
+    pr+=`=== PEÇA TABULEIRO · NPC ${n.nome.toUpperCase()} ===\n${n.aparencia||n.nome}, estilo ${estilo}. Corpo INTEIRO em pé, pose característica. FUNDO VERDE PURO #00ff00. Sem sombras no chão.\n\n`;
+  });
+  ini.forEach(n=>{
+    pr+=`=== PEÇA TABULEIRO · INIMIGO ${n.nome.toUpperCase()} ===\n${n.aparencia||n.nome}, estilo ${estilo}. Corpo inteiro, pose ameaçadora. FUNDO VERDE PURO #00ff00. Sem sombras no chão. Proporção 1:2.\n\n`;
+  });
+  cen.forEach(n=>{
+    if(n.tipo!=='ext') pr+=`=== CENÁRIO INTERIOR (BATALHA) · ${n.nome.toUpperCase()} ===\n${n.descricao||n.nome}. Vista diagonal levemente aérea. Estilo ${estilo}. Espaço para peças de personagem. 1920×1080. Sem HUD.\n\n`;
+    if(n.tipo!=='int') pr+=`=== CENÁRIO EXTERIOR (DIÁLOGO) · ${n.nome.toUpperCase()} ===\n${n.descricao||n.nome}. Vista panorâmica / establishing shot. Estilo ${estilo}. Atmosfera da campanha. 1920×1080. Sem personagens em primeiro plano.\n\n`;
+  });
+
+  // 3. CLASSES_DATA
+  const KEY = id.replace(/-/g,'_').toUpperCase();
+  let clsCode = `const ${KEY}_CLASSES_DATA = {\n`;
+  cls.forEach(c=>{
+    const g = c.gender==='ambos'?'m':c.gender;
+    clsCode+=`  ${c.id}: {\n    nome:'${c.nome}', icon:'${c.icon}', gender:'${g}',\n    maxHp:${c.hp}, sp:${c.sp}, mov:${c.mov}, atk:3,\n    cor:'${c.cor}', feat:'${esc2(c.feat)}',\n    attrs:{STR:12,DEX:12,CON:12,INT:12,WIS:12,CHA:12},\n    habs:[\n      {icon:'${c.icon}',nome:'Ataque Básico',desc:'Ataque padrão',dano:'1d6+2',tipo:'melee',sp:0},\n    ],\n  },\n`;
+  });
+  clsCode+=`};\n\n// Caminhos de retrato:\nfunction retrato${KEY}(id,gender){\n  return \`catalogo/${id}/classes/\${id}/retrato/\${id}_\${gender}_retrato.png\`;\n}`;
+
+  // 4. NPCS array
+  const cenaPadrao = cen[0]?.id||'cena-principal';
+  let npcCode = `const NPCS = [\n`;
+  npc.forEach((n,i)=>{
+    npcCode+=`  {\n    nome:'${n.nome}',\n    img:'catalogo/${id}/npcs/${n.id}/peca_tabuleiro/${n.id}_peca.png',\n    cenas:['${cenaPadrao}'],\n    zBase:${i+1},\n    personalidade:'${esc2(n.personalidade)}',\n    conhecimentos:'', // preencher\n    formaDeFalar:'${esc2(n.formaDeFalar)}',\n    abertura:'${n.nome} reage ao jogador que acabou de chegar.',\n    aberturaFallback:'${esc2(n.abertura)||`[ACAO: Olha para você.] Bem-vindo.`}',\n  },\n`;
+  });
+  npcCode+=`];\n\nconst CONFIG_CENA = {\n  id:'${id}', schemaV:5, // use valor único por campanha!\n  bgImg:'catalogo/${id}/cenarios/${cenaPadrao}/${cenaPadrao}_ext.png',\n  titulo:'${sub||nome.toUpperCase()}',\n  corTema:'${cor}',\n};`;
+
+  // 5. INIMIGOS
+  let iniCode = `const INIMIGOS_${KEY} = [\n`;
+  ini.forEach(n=>{
+    iniCode+=`  {\n    id:'${n.id}', nome:'${n.nome}',\n    maxHp:${n.hp}, hp:${n.hp}, ac:${n.ac}, atk:${n.atk}, mov:${n.mov},\n    dano:'${n.dano}', especial:'${esc2(n.especial)}',\n    img:'catalogo/${id}/inimigos/${n.id}/peca_tabuleiro/${n.id}_peca.png',\n  },\n`;
+  });
+  iniCode+=`];\n`;
+
+  // 6. Catalog snippet
+  let catCode = `// ── card na grade de catalog.html ──\n<div class="campaign-card" style="border-color:${cor}88" onclick="openCampaignModal('${id}')">\n  <div class="cc-icon">${icon}</div>\n  <div class="cc-name">${nlong}</div>\n  <div class="cc-sub">${sub}</div>\n</div>\n\n// ── dados da campanha ──\n'${id}':{\n  id:'${id}', nome:'${nlong}', icon:'${icon}', cor:'${cor}',\n  sub:'${sub}', gancho:'${esc2(gancho.slice(0,140))}',\n  classes:${JSON.stringify(cls.map(c=>c.id))},\n  npcs:${JSON.stringify(npc.map(n=>n.id))},\n  inimigos:${JSON.stringify(ini.map(n=>n.id))},\n  cenarios:${JSON.stringify(cen.map(n=>n.id))},\n}`;
+
+  // Render saídas
+  document.getElementById('s-vazio').style.display='none';
+  const sc=document.getElementById('s-cont');
+  sc.style.display='block';
+  sc.innerHTML=[
+    bloco('📁 Estrutura de Pastas',pas,'pas'),
+    bloco('🎨 Prompts de Arte (sequencial)',pr,'pr'),
+    bloco('⚙️ Código: CLASSES_DATA',clsCode,'cls'),
+    bloco('💬 Código: NPCS + CONFIG_CENA',npcCode,'npc'),
+    bloco('⚔️ Código: INIMIGOS',iniCode,'ini'),
+    bloco('📖 Snippet: catalog.html',catCode,'cat'),
+  ].join('');
+
+  // Checklist
+  gerarChk(id, nome);
+
+  // Ir pra saídas
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('ativo',i===2));
+  document.querySelectorAll('.tab-section').forEach((s,i)=>s.classList.toggle('ativo',i===2));
+}
+
+function esc2(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' '); }
+function bloco(tit,body,k){
+  return `<div class="ob"><div class="ob-head"><span class="ob-tit">${tit}</span><div style="display:flex;gap:5px"><button class="btn b-ouro" style="padding:4px 8px;font-size:9px" onclick="xp('ob-${k}')">⤢</button><button class="btn b-ouro" style="padding:4px 8px;font-size:9px" onclick="cop(this,'ob-${k}')">Copiar</button></div></div><div class="ob-body" id="ob-${k}">${esc(body)}</div></div>`;
+}
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function xp(id){ document.getElementById(id).classList.toggle('exp'); }
+function cop(btn,id){
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>{
+    const o=btn.textContent; btn.textContent='✓'; setTimeout(()=>btn.textContent=o,1600);
+  });
+}
+
+// ── Checklist ──
+const CHK=[
+  {cat:'CONFIGURAÇÃO',items:['Criar estrutura de pastas em public/catalogo/{id}/','Definir paleta de cores, ícone e SCHEMA_V único','Escrever gancho narrativo e regras especiais']},
+  {cat:'ARTE — CLASSES',items:['Gerar retratos masculinos de todas as classes','Gerar retratos femininos de todas as classes','Gerar peças de tabuleiro (masc) com fundo verde #00ff00','Gerar peças de tabuleiro (fem) com fundo verde #00ff00','Rodar chromakey.py nas peças para remover verde','Verificar tamanhos mínimos (512×768 retrato · 400×800 peça)']},
+  {cat:'ARTE — NPCs',items:['Gerar retrato de cada NPC','Gerar peça de tabuleiro de cada NPC (fundo verde)','Rodar chromakey.py nas peças de NPC']},
+  {cat:'ARTE — INIMIGOS',items:['Gerar peça de tabuleiro de cada inimigo (fundo verde)','Rodar chromakey.py nas peças de inimigos']},
+  {cat:'ARTE — CENÁRIOS',items:['Gerar imagem interior (mapa de batalha) de cada cenário','Gerar imagem exterior (establishing shot) de cada cenário']},
+  {cat:'CÓDIGO — CATÁLOGO',items:['Adicionar card da campanha em catalog.html','Criar aba Classes com CLASSES_DATA','Criar aba NPCs com modal de personagem','Criar aba Inimigos','Criar aba Cenários','Testar navegação e modais']},
+  {cat:'CÓDIGO — DIÁLOGO',items:['Clonar simulacao_dialogo_dn.html → simulacao_dialogo_{id}.html','Substituir array NPCS com dados da campanha','Substituir CONFIG_CENA (bg, titulo, cor)','Definir SCHEMA_V único (ex: 5, 6, 7…)','Preencher personalidade, conhecimentos e formaDeFalar','Testar abertura fallback (sem Groq key)','Testar conversa com Groq key']},
+  {cat:'CÓDIGO — BATALHA',items:['Configurar inimigos da campanha em arena.html','Testar spawn e movimentação de inimigos','Testar mapa de batalha com cenário da campanha']},
+  {cat:'CÓDIGO — ENTRADA',items:['Verificar classes na tela simulacao_entrada.html','Testar redirecionamento para simulação da campanha']},
+  {cat:'FINALIZAÇÃO',items:['Testar fluxo completo: catálogo → entrada → diálogo → batalha','Verificar imagens no mobile (corte, tamanho, qualidade)','Commit e push de todos os assets','Verificar deploy no GitHub Pages']},
+];
+
+function gerarChk(id,nome){
+  const cid=id||'nova';
+  const el=document.getElementById('chk-cont');
+  el.innerHTML=`<div class="card-tit">${nome||'Nova Campanha'} — Progresso de Instalação</div>`;
+  CHK.forEach(g=>{
+    el.innerHTML+=`<div class="chk-cat">${g.cat}</div>`;
+    g.items.forEach((item,ii)=>{
+      const k=`chk.${cid}.${g.cat}.${ii}`;
+      const ok=localStorage.getItem(k)==='1';
+      el.innerHTML+=`<div class="chk-row"><div class="chk-box${ok?' ok':''}" onclick="tglChk('${k}',this)">${ok?'✓':''}</div><div class="chk-txt${ok?' ok':''}">${item.replace('{id}',cid)}</div></div>`;
+    });
+  });
+}
+
+function tglChk(k,box){
+  const ok=localStorage.getItem(k)!=='1';
+  localStorage.setItem(k,ok?'1':'0');
+  box.classList.toggle('ok',ok); box.textContent=ok?'✓':'';
+  box.nextElementSibling.classList.toggle('ok',ok);
+}
+
+// init
+rCLS(); rNPC(); rINI(); rCEN(); gerarChk('','Nova Campanha');
+</script>
+</body>
+</html>
