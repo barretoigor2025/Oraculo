@@ -803,7 +803,20 @@ function onRoomUpdate(room) {
   _dialogoLog = novoDialogo;
 
   if (mudouCena || mudouModo) atualizarCena();
-  if (mudouCena && _isHost) preencherSelNpc();
+  if (mudouCena && _isHost) {
+    preencherSelNpc();
+    // Se a arena mandou um NPC de gancho pós-batalha, pré-selecionar ele
+    const ganchoNpc = narr.ganchoPosRenderizado;
+    if (ganchoNpc && NPCS[ganchoNpc]) {
+      setTimeout(() => {
+        const sel = document.getElementById('sel-npc');
+        if (sel) { sel.value = ganchoNpc; onSelNpc(); }
+        _marcarChipAtivo(ganchoNpc);
+      }, 200);
+    } else {
+      _dispararFalaEntrada(novaCena);
+    }
+  }
   atualizarBotoesModo();
   renderDialogo();
   atualizarBotoesCena();
@@ -846,6 +859,32 @@ function onRoomUpdate(room) {
 }
 
 // ── Cena ─────────────────────────────────────────────────────────
+// ── Fala automática de entrada do NPC ────────────────────────────
+let _cenaFalaEntradaPostada = null;
+
+async function _dispararFalaEntrada(cenaId) {
+  const cena = CENAS[cenaId];
+  if (!cena?.npcEntrada || !cena?.falaEntrada) return;
+  if (_cenaFalaEntradaPostada === cenaId) return; // já postou nesta cena
+  _cenaFalaEntradaPostada = cenaId;
+
+  const npc = NPCS[cena.npcEntrada];
+  if (!npc) return;
+
+  // Aguarda um beat narrativo antes do NPC falar
+  await new Promise(r => setTimeout(r, 1400));
+
+  const linha = {
+    tipo: 'npc',
+    oradorId: cena.npcEntrada,
+    oradorNome: npc.nome,
+    texto: cena.falaEntrada,
+    ts: Date.now(),
+  };
+  if (window._fbAddDialogue) await window._fbAddDialogue(linha);
+  else { _dialogoLog = [..._dialogoLog, linha].slice(-60); renderDialogo(); }
+}
+
 function atualizarCena() {
   const cena = CENAS[_cenaAtual];
   if (!cena) return;
