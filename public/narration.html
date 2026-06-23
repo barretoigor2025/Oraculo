@@ -842,8 +842,8 @@ const _pid = localStorage.getItem('oraculo.playerId') || (() => {
 })();
 const _pname = localStorage.getItem('oraculo.playerName') || 'Aventureiro';
 const _isHost = localStorage.getItem('oraculo.isHost') !== '0';
-let _cenaAtual = 'mhoried_market';
-let _modoImagem = 'exterior';
+let _cenaAtual = null;   // null força atualizarCena() na primeira leitura do Firebase
+let _modoImagem = null;
 let _lastRoom   = null;
 let _dialogoLog = [];
 let _unsubRoom = null;
@@ -925,21 +925,7 @@ function onRoomUpdate(room) {
   // Sincroniza cenas visitadas
   _cenasVisitadas = new Set(room.cenasVisitadas ?? []);
 
-  // Sincroniza slides do intro (guests seguem o host)
   const novoIntroIdx = narr.introIdx ?? 0;
-  if (!_isHost && novoIntroIdx !== _introIdx && _introSlides.length > 0) {
-    _introIdx = novoIntroIdx;
-    const bg      = document.getElementById('intro-bg');
-    const textoEl = document.getElementById('intro-texto-pag');
-    const btnEl   = document.getElementById('intro-btn-continuar');
-    const dotsEl  = document.getElementById('intro-dots');
-    const overlay = document.getElementById('intro-cinematico');
-    if (_introIdx >= _introSlides.length) {
-      overlay?.classList.add('oculto');
-    } else if (bg && textoEl && btnEl && dotsEl) {
-      _aplicarSlide(bg, textoEl, btnEl, dotsEl);
-    }
-  }
 
   let mudouCena = novaCena !== _cenaAtual;
   let mudouModo = novoModo !== _modoImagem;
@@ -948,7 +934,25 @@ function onRoomUpdate(room) {
   _modoImagem = novoModo;
   _dialogoLog = novoDialogo;
 
+  // atualizarCena() popula _introSlides via mostrarIntroCinemat()
   if (mudouCena || mudouModo) atualizarCena();
+
+  // Sincroniza slides do intro para guests — feito APÓS atualizarCena() para que
+  // _introSlides já esteja preenchido, mesmo na primeira carga da página
+  if (!_isHost && novoIntroIdx !== _introIdx) {
+    _introIdx = novoIntroIdx;
+    const bg      = document.getElementById('intro-bg');
+    const textoEl = document.getElementById('intro-texto-pag');
+    const btnEl   = document.getElementById('intro-btn-continuar');
+    const dotsEl  = document.getElementById('intro-dots');
+    const overlay = document.getElementById('intro-cinematico');
+    if (_introIdx >= _introSlides.length) {
+      overlay?.classList.add('oculto');
+    } else if (_introSlides.length > 0 && bg && textoEl && btnEl && dotsEl) {
+      if (bg) bg.style.opacity = '';
+      _aplicarSlide(bg, textoEl, btnEl, dotsEl);
+    }
+  }
   if (mudouCena && _isHost) {
     preencherSelNpc();
     // Se a arena mandou um NPC de gancho pós-batalha, pré-selecionar ele
@@ -1040,13 +1044,30 @@ function atualizarCena() {
   elIntroTexto.textContent = cena.textoIntro || '';
 
   const imgSrc = _modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior;
-  elImgWrap.classList.add('sem-imagem');
-  elImagem.classList.add('oculto');
   elPlaceholderIcone.textContent = _modoImagem === 'exterior' ? '🏰' : '🕯';
   elPlaceholderTexto.textContent = 'arte em breve';
-  if (imgSrc) {
-    elImagem.src = imgSrc;
-    elImagem.classList.remove('oculto');
+
+  const hasCurrent = elImagem.src && !elImagem.src.endsWith('/') && !elImagem.src.endsWith('#');
+  if (hasCurrent && elImagem.src !== imgSrc) {
+    // Fade-out da imagem atual, depois troca
+    elImagem.classList.add('oculto');
+    setTimeout(() => {
+      if (imgSrc) {
+        elImgWrap.classList.add('sem-imagem');
+        elImagem.src = imgSrc;
+        // onImagemCarregada() faz o fade-in
+      } else {
+        elImgWrap.classList.add('sem-imagem');
+        elImagem.src = '';
+      }
+    }, 400);
+  } else {
+    // Primeira carga ou mesma imagem
+    elImgWrap.classList.add('sem-imagem');
+    elImagem.classList.add('oculto');
+    if (imgSrc) {
+      elImagem.src = imgSrc;
+    }
   }
 
   mostrarIntroCinemat(cena);
@@ -1079,6 +1100,9 @@ function mostrarIntroCinemat(cena) {
 
   _introSlides = makeIntroSlides(cena);
   _introIdx = 0;
+
+  // Reset inline opacity — pode ter ficado em 0 se avancarIntro() foi interrompido
+  if (bg) bg.style.opacity = '';
 
   tituloEl.textContent = cena.titulo;
   subEl.textContent    = cena.subtitulo || '';
@@ -1198,7 +1222,8 @@ async function confirmarPronto() {
 
 function onImagemCarregada() {
   elImgWrap.classList.remove('sem-imagem');
-  elImagem.classList.remove('oculto');
+  // Deixa o browser pintar o frame com oculto (opacity:0) antes de remover → fade-in suave
+  requestAnimationFrame(() => requestAnimationFrame(() => elImagem.classList.remove('oculto')));
 }
 
 function onImagemErro() {
