@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ato 2 — Mapa de Exploração dos Blackwoods</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  min-height:100%;
+  background:#060402;
+  color:#e8d5a8;
+  font-family:'Georgia',serif;
+  padding:0 0 60px;
+}
+
+h1{
+  text-align:center;padding:32px 20px 8px;
+  font-size:20px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(220,185,80,1);
+}
+.subtitulo-global{
+  text-align:center;font-size:11px;letter-spacing:2px;
+  color:rgba(155,130,65,.5);margin-bottom:32px;text-transform:uppercase;
+}
+
+/* ── LEGENDA ── */
+.legenda{
+  display:flex;flex-wrap:wrap;gap:10px;justify-content:center;
+  padding:0 20px 24px;
+}
+.leg-item{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:rgba(190,155,70,.7);
+}
+.leg-dot{
+  width:12px;height:12px;border-radius:50%;flex-shrink:0;
+}
+.leg-visitada{background:rgba(80,160,80,.8);}
+.leg-disponivel{background:rgba(190,135,35,.8);}
+.leg-bloqueada{background:rgba(60,40,10,.6);border:1px solid rgba(100,80,30,.3);}
+.leg-critica{background:rgba(180,60,40,.7);}
+
+/* ── ATOS ── */
+.ato-wrap{
+  max-width:900px;margin:0 auto 40px;padding:0 16px;
+}
+.ato-header{
+  font-size:11px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(155,130,65,.6);
+  padding-bottom:8px;margin-bottom:14px;
+  border-bottom:1px solid rgba(190,135,35,.2);
+}
+
+/* ── LINHA DO TEMPO ATO 1 (linear) ── */
+.linear-flow{
+  display:flex;align-items:stretch;gap:0;overflow-x:auto;
+  padding-bottom:8px;
+}
+.linear-cena{
+  flex:0 0 160px;
+  padding:12px 14px;
+  border:1px solid rgba(190,135,35,.4);
+  border-radius:10px;
+  background:rgba(40,28,8,.8);
+  position:relative;
+}
+.linear-cena + .linear-cena::before{
+  content:'→';
+  color:rgba(190,135,35,.5);
+  font-size:18px;
+  align-self:center;
+  margin:0 6px;
+  display:flex;
+  align-items:center;
+}
+.linear-flow-inner{
+  display:flex;align-items:center;gap:4px;
+}
+
+/* ── GRAFO ACT 2 ── */
+.exploracao-intro{
+  background:rgba(20,14,6,.8);
+  border:1px solid rgba(190,135,35,.2);
+  border-radius:10px;
+  padding:14px 16px;
+  margin-bottom:20px;
+  font-size:12px;
+  color:rgba(190,155,70,.75);
+  line-height:1.6;
+}
+.exploracao-intro strong{color:rgba(220,185,80,.9);}
+
+.entrada-destaque{
+  border:2px solid rgba(220,185,80,.8) !important;
+  background:rgba(60,42,10,.95) !important;
+}
+
+/* Clusters temáticos */
+.cluster{
+  margin-bottom:24px;
+}
+.cluster-titulo{
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(140,115,55,.5);margin-bottom:10px;
+}
+.cenas-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:10px;
+}
+
+/* Cards */
+.cena-card{
+  border-radius:10px;
+  padding:12px 14px;
+  border:1px solid rgba(190,135,35,.3);
+  background:rgba(20,14,6,.7);
+  position:relative;
+  transition:border-color .15s;
+}
+.cena-card:hover{border-color:rgba(220,185,80,.6);}
+.cena-card.visitada{
+  border-color:rgba(80,160,80,.5);
+  background:rgba(20,50,15,.5);
+}
+.cena-card.bloqueada{
+  border-color:rgba(60,40,10,.4);
+  background:rgba(12,8,3,.6);
+  opacity:.65;
+}
+.cena-card.critica{
+  border-color:rgba(180,60,40,.5);
+  background:rgba(40,10,5,.7);
+}
+
+.card-titulo{
+  font-size:12px;font-weight:700;
+  color:rgba(220,185,80,.95);
+  margin-bottom:3px;
+}
+.card-sub{
+  font-size:10px;color:rgba(155,130,65,.6);
+  margin-bottom:8px;line-height:1.3;
+}
+.card-tipo{
+  display:inline-block;
+  font-size:9px;padding:2px 7px;border-radius:4px;
+  background:rgba(40,28,8,.9);
+  color:rgba(190,155,70,.7);
+  border:1px solid rgba(190,135,35,.25);
+  margin-bottom:6px;
+}
+.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
+.tag{
+  font-size:9px;padding:2px 6px;border-radius:4px;
+  background:rgba(40,28,8,.9);
+  color:rgba(190,155,70,.65);
+  border:1px solid rgba(190,135,35,.2);
+}
+.tag.batalha{background:rgba(60,15,10,.9);color:rgba(220,100,80,.8);border-color:rgba(160,50,30,.3);}
+.tag.ingrediente{background:rgba(10,50,30,.9);color:rgba(80,200,130,.8);border-color:rgba(40,140,80,.3);}
+.tag.presa{background:rgba(60,20,60,.9);color:rgba(200,100,220,.8);border-color:rgba(120,40,140,.3);}
+
+.card-chegada{
+  font-size:10px;color:rgba(190,155,70,.65);
+  font-style:italic;line-height:1.45;margin-bottom:6px;
+}
+.card-npc{
+  font-size:10px;color:rgba(140,170,220,.75);
+  margin-bottom:4px;
+}
+.card-fala{
+  font-size:9px;color:rgba(170,145,80,.6);
+  font-style:italic;line-height:1.4;
+  border-left:2px solid rgba(190,135,35,.2);
+  padding-left:8px;
+  margin-bottom:6px;
+}
+.card-exige{
+  font-size:9px;color:rgba(200,80,60,.7);
+  margin-top:4px;
+}
+.card-exige span{color:rgba(220,120,100,.9);font-weight:700;}
+.card-prox{
+  font-size:9px;color:rgba(100,180,100,.65);
+  margin-top:4px;
+}
+.card-pos-batalha{
+  font-size:9px;color:rgba(180,140,80,.6);
+  font-style:italic;margin-top:5px;line-height:1.4;
+  border-top:1px solid rgba(190,135,35,.12);
+  padding-top:5px;
+}
+
+.lock-badge{
+  position:absolute;top:8px;right:10px;
+  font-size:15px;opacity:.6;
+}
+
+/* ── SAÍDA DO ATO 2 ── */
+.saida-linha{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 16px;
+  background:rgba(30,10,10,.6);
+  border:1px solid rgba(180,60,40,.3);
+  border-radius:10px;
+  margin-top:6px;
+}
+.saida-arrow{font-size:20px;color:rgba(180,60,40,.7);}
+.saida-texto{font-size:11px;color:rgba(220,140,100,.8);line-height:1.4;}
+
+/* ── FLUXO FINAL ── */
+.fluxo-final{
+  display:flex;align-items:stretch;gap:4px;
+  flex-wrap:wrap;
+}
+.ff-cena{
+  flex:1;min-width:150px;
+  padding:12px 14px;
+  border:1px solid rgba(180,60,40,.4);
+  border-radius:10px;
+  background:rgba(30,8,5,.7);
+}
+.ff-arrow{
+  display:flex;align-items:center;
+  font-size:20px;color:rgba(180,60,40,.6);
+  padding:0 4px;
+}
+</style>
+</head>
+<body>
+
+<h1>Blackwoods — Ato 2</h1>
+<p class="subtitulo-global">Motor de Progressão Não-Linear · Beast of Black Keep</p>
+
+<!-- LEGENDA -->
+<div class="legenda">
+  <div class="leg-item"><div class="leg-dot leg-disponivel"></div>Disponível desde o início do Ato 2</div>
+  <div class="leg-item"><div class="leg-dot leg-bloqueada"></div>Bloqueada (requer pré-requisito)</div>
+  <div class="leg-item"><div class="leg-dot leg-critica"></div>Crítica para avançar (caminho principal)</div>
+  <div class="leg-item"><div class="leg-dot leg-visitada"></div>Visitada ✓ (desbloqueia dependentes)</div>
+</div>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- ATO 1 (LINEAR, PARA CONTEXTUALIZAR) -->
+<!-- ─────────────────────────────────────────── -->
+<div class="ato-wrap">
+  <div class="ato-header">Ato 1 — Mhoried (linear, obrigatório)</div>
+  <div class="linear-flow">
+    <div class="linear-flow-inner">
+      <div class="linear-cena">
+        <div class="card-titulo">Prólogo</div>
+        <div class="card-sub">Introdução ao mundo de Ygdis</div>
+        <div class="tag">Transição</div>
+      </div>
+      <span style="color:rgba(190,135,35,.5);font-size:18px;padding:0 6px">→</span>
+      <div class="linear-cena">
+        <div class="card-titulo">Feira de St. Phanourios</div>
+        <div class="card-sub">Espantalhos animados atacam</div>
+        <div class="tag batalha">⚔ Batalha</div>
+      </div>
+      <span style="color:rgba(190,135,35,.5);font-size:18px;padding:0 6px">→</span>
+      <div class="linear-cena">
+        <div class="card-titulo">Castelo de Mhoried</div>
+        <div class="card-sub">Duquesa Catherine contrata o grupo</div>
+        <div class="tag">Diálogo</div>
+      </div>
+      <span style="color:rgba(190,135,35,.5);font-size:18px;padding:0 6px">→</span>
+      <div class="linear-cena entrada-destaque">
+        <div class="card-titulo">🌲 Entrada dos Blackwoods</div>
+        <div class="card-sub">Aelar Eisenli aparece — porta do Ato 2</div>
+        <div class="tag">Diálogo</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- ATO 2 — EXPLORAÇÃO LIVRE -->
+<!-- ─────────────────────────────────────────── -->
+<div class="ato-wrap">
+  <div class="ato-header">Ato 2 — Os Grimhollow Blackwoods (exploração livre)</div>
+
+  <div class="exploracao-intro">
+    <strong>Como funciona a exploração livre:</strong> Após entrar na floresta com Aelar, o grupo pode explorar as cenas
+    em qualquer ordem — <em>exceto</em> quando um pré-requisito é necessário (🔒). Cada cena visitada vai sendo marcada
+    no Firebase (<code>cenasVisitadas</code>). Quando todos os requisitos de uma cena bloqueada forem cumpridos, ela se
+    torna disponível automaticamente no painel do narrador.<br><br>
+    O narrador usa o <strong>🗺 Mapa</strong> no painel de controles para ver o estado atual e navegar diretamente para
+    qualquer cena disponível, sem precisar usar as setas ← →.
+  </div>
+
+  <!-- Cluster: Encontros de Estrada (sempre disponíveis) -->
+  <div class="cluster">
+    <div class="cluster-titulo">🛤 Encontros de Estrada — disponíveis ao entrar</div>
+    <div class="cenas-grid">
+
+      <div class="cena-card">
+        <div class="card-titulo">A Carroça Tombada</div>
+        <div class="card-sub">Blackwoods — Estrada Principal</div>
+        <div class="tag">🔍 Descoberta</div>
+        <div class="card-chegada">A estrada está bloqueada por uma carroça tombada com dois comerciantes mortos e flechas não-humanas.</div>
+        <div class="card-pos-batalha">Pistas: rastros elfos → acampamento, machado de Dvalinn, tesouro da carroça.</div>
+      </div>
+
+      <div class="cena-card">
+        <div class="card-titulo">A Encruzilhada</div>
+        <div class="card-sub">Blackwoods — Cruzamento Central</div>
+        <div class="tag batalha">⚔ Batalha</div>
+        <div class="card-chegada">Um javali enorme com lança quebrada e prótese de mão metálica rasga a vegetação.</div>
+        <div class="card-pos-batalha">Na prótese: nome élfico e símbolo de clã gravados — pista para os Kobolds.</div>
+      </div>
+
+      <div class="cena-card">
+        <div class="card-titulo">O Campo das Aranhas</div>
+        <div class="card-sub">Blackwoods — Zona Central</div>
+        <div class="tag batalha">⚔ Batalha</div>
+        <div class="card-chegada">Teias enormes, casulos humanos. Silêncio de emboscada.</div>
+        <div class="card-pos-batalha">No maior casulo: batedor Vhuureth com mapa para o acampamento do Príncipe Kalos.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Cluster: Habitantes da Floresta -->
+  <div class="cluster">
+    <div class="cluster-titulo">🏕 Habitantes da Floresta — disponíveis ao entrar</div>
+    <div class="cenas-grid">
+
+      <div class="cena-card">
+        <div class="card-titulo">O Domínio do Chifrado</div>
+        <div class="card-sub">Blackwoods — Coração da Floresta</div>
+        <div class="tag">💬 Diálogo</div>
+        <div class="card-chegada">Pedras erguidas em círculo. Uma figura com chifres — não um elmo, parte dele — observa sem ameaçar.</div>
+        <div class="card-npc">👤 NPC de entrada: Wulfram, o Chifrado</div>
+        <div class="card-fala">"Mais um grupo." [silêncio longo] "O que querem dos Blackwoods?"</div>
+        <div class="card-pos-batalha">Sabe sobre o portal do Gloamreach. Filho de Mutter — tratá-la com respeito abre diálogo.</div>
+      </div>
+
+      <div class="cena-card">
+        <div class="card-titulo">A Choupana de Mutter</div>
+        <div class="card-sub">Blackwoods — Profundezas do Sul</div>
+        <div class="tag">💬 Diálogo</div>
+        <div class="card-chegada">Choupana torta com crânios de animais. Uma jovem em torpor mágico está presa numa jaula no canto.</div>
+        <div class="card-npc">👤 NPC de entrada: Mutter Grimmhaar</div>
+        <div class="card-fala">"Fechem a porta. Estão deixando entrar o frio."</div>
+        <div class="card-prox">🔓 Desbloqueia: <strong>A Carcaça do Grande Verme</strong></div>
+      </div>
+
+      <div class="cena-card">
+        <div class="card-titulo">Cnoc na Ríthe</div>
+        <div class="card-sub">A Aldeia Druídica</div>
+        <div class="tag">💬 Diálogo</div>
+        <div class="card-chegada">Casas de madeira viva entre árvores. Crianças humanas e elfas brincam. Muirenn prepara ervas.</div>
+        <div class="card-npc">👤 NPCs: Muirenn + Mac Rónán</div>
+        <div class="card-fala">"Vêm em paz ou com problema?"</div>
+        <div class="card-prox">🔓 Desbloqueia: <strong>Ysoria — O Nome que a Floresta Guarda</strong></div>
+      </div>
+
+      <div class="cena-card">
+        <div class="card-titulo">As Ruínas Chamuscadas</div>
+        <div class="card-sub">Blackwoods — Setor Sudoeste</div>
+        <div class="tag">🔍 Descoberta</div>
+        <div class="card-chegada">Pedras enegrecidas. Uma pedra negra lustrosa com rituais ao redor. Sussurro suave de dentro: "Venham mais perto."</div>
+        <div class="card-npc">👤 NPC (opcional): Fariborz, o Piromante</div>
+        <div class="card-fala">"Esta pedra é minha. O que querem?"</div>
+        <div class="card-pos-batalha">Vulkrundshard contém o demônio Thamazul fingindo ser anão preso. Pronunciar o nome = Disputa de Will.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Cluster: Elfos Sombrios -->
+  <div class="cluster">
+    <div class="cluster-titulo">🧝 Os Vhuureth (Elfos Sombrios) — disponíveis ao entrar</div>
+    <div class="cenas-grid">
+
+      <div class="cena-card">
+        <div class="card-titulo">Acampamento dos Vhuureth</div>
+        <div class="card-sub">Blackwoods — Setor Norte</div>
+        <div class="tag batalha">⚔ Batalha</div>
+        <div class="tag">🤝 Negociação</div>
+        <div class="card-chegada">Tendas de seda negra, luzes azul-prateadas. Kalos sentado como se soubesse que viriam. Valmorien calcula. Ysoria observa da sombra.</div>
+        <div class="card-npc">👤 NPCs: Príncipe Kalos · Valmorien · Ysoria</div>
+        <div class="card-fala">"Humanos que chegam ao nosso acampamento sem convite e sem morrer no caminho."</div>
+        <div class="card-pos-batalha">3 dinâmicas: negociação com Kalos / aliança tática com Valmorien / mistério de Ysoria.</div>
+      </div>
+
+      <div class="cena-card">
+        <div class="card-titulo">O Bosque Afogado</div>
+        <div class="card-sub">Blackwoods — Castellet Malvoisin</div>
+        <div class="tag batalha">⚔ Batalha</div>
+        <div class="tag">👻 Aparição</div>
+        <div class="card-chegada">Água escura e parada. Ruínas de torre élfica no centro. Patrulha Vhuureth no caminho. Depois: Ruzalka emerge das águas.</div>
+        <div class="card-npc">👤 NPC: Ruzalka (espírito das águas)</div>
+        <div class="card-fala">"Vocês chegaram. As águas me contaram sobre vocês."</div>
+        <div class="card-ingrediente tag ingrediente">🌿 Ingrediente: Gillshade</div>
+        <div class="card-prox">🔓 Desbloqueia: <strong>O Poço que Chora</strong></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Cluster: Kobolds -->
+  <div class="cluster">
+    <div class="cluster-titulo">🦎 Os Kobolds — disponíveis ao entrar</div>
+    <div class="cenas-grid">
+
+      <div class="cena-card">
+        <div class="card-titulo">Os Três Kobolds da Clareira</div>
+        <div class="card-sub">Perímetro da Cidade Kobold</div>
+        <div class="tag">💬 Diálogo</div>
+        <div class="card-chegada">Três kobolds numa clareira longe das torres de vigia: Krink (estrategista), Drizzle (distraído), Murznut (silencioso).</div>
+        <div class="card-npc">👤 NPC: Krink</div>
+        <div class="card-fala">"Psiu. Baixa a voz." [avalia o grupo] "Vocês vêm aqui por quê?"</div>
+        <div class="card-pos-batalha">Fornece planta da Kobold Town, turnos de guarda, localização de Mac Rónán preso.</div>
+      </div>
+
+      <div class="cena-card critica">
+        <div class="card-titulo">A Cidade Kobold</div>
+        <div class="card-sub">Blackwoods — Território Kobold</div>
+        <div class="tag batalha">⚔ Batalha</div>
+        <div class="tag">🤝 Negociação</div>
+        <div class="card-chegada">Labirinto de estruturas improvisadas. Blunkin no trono. Mac Rónán e Dvalinn presos.</div>
+        <div class="card-npc">👤 NPCs: Blunkin · Mac Rónán · Dvalinn</div>
+        <div class="card-fala">"Visitantes! Ou prisioneiros novos ou mortos agora — Blunkin vai decidir!"</div>
+        <div class="card-pos-batalha">Mac Rónán revelará a localização do Gloamreach após ser libertado.</div>
+        <div class="card-prox">🔓 Desbloqueia: <strong>O Gloamreach</strong> (Ato 3)</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Cluster: Cenas bloqueadas (dependentes) -->
+  <div class="cluster">
+    <div class="cluster-titulo">🔒 Cenas Dependentes — desbloqueadas ao visitar pré-requisitos</div>
+    <div class="cenas-grid">
+
+      <div class="cena-card bloqueada">
+        <div class="lock-badge">🔒</div>
+        <div class="card-titulo">A Carcaça do Grande Verme</div>
+        <div class="card-sub">Blackwoods — Muralha Antiga</div>
+        <div class="card-exige">Requer: <span>Choupana de Mutter</span> (Mutter guia até aqui)</div>
+        <div class="card-tags"><span class="tag batalha">⚔ Batalha</span><span class="tag ingrediente">🌿 Cogumelos</span></div>
+        <div class="card-chegada">Carcaça enorme de larva. Ritual necromântico de Choir abandonado. Cogumelos luminescentes.</div>
+        <div class="card-npc">👤 Mutter acompanha e guia</div>
+      </div>
+
+      <div class="cena-card bloqueada">
+        <div class="lock-badge">🔒</div>
+        <div class="card-titulo">O Poço que Chora</div>
+        <div class="card-sub">Blackwoods — Ruína Élfica</div>
+        <div class="card-exige">Requer: <span>O Bosque Afogado</span> (Ruzalka indica a direção)</div>
+        <div class="card-tags"><span class="tag">👻 Aparição</span></div>
+        <div class="card-chegada">Pedra élfica com água escorrendo como lágrimas. Jariella aparece no reflexo.</div>
+        <div class="card-prox">🔓 Desbloqueia: <strong>A Sepultura de Jariella</strong></div>
+      </div>
+
+      <div class="cena-card bloqueada">
+        <div class="lock-badge">🔒</div>
+        <div class="card-titulo">A Sepultura de Jariella</div>
+        <div class="card-sub">Blackwoods — Margem do Rio Antigo</div>
+        <div class="card-exige">Requer: <span>O Poço que Chora</span> (visões revelam a localização)</div>
+        <div class="card-tags"><span class="tag">🔍 Descoberta</span></div>
+        <div class="card-chegada">Pedra com runas élficas do mar. A espada Selvimar canta sob a terra.</div>
+        <div class="card-pos-batalha">Item lendário Selvimar — portador recebe Jariella como presença espiritual permanente.</div>
+      </div>
+
+      <div class="cena-card bloqueada">
+        <div class="lock-badge">🔒</div>
+        <div class="card-titulo">O Nome que a Floresta Guarda</div>
+        <div class="card-sub">Blackwoods — Clareira da Memória</div>
+        <div class="card-exige">Requer: <span>Cnoc na Ríthe</span> (Mac Rónán menciona Ysoria)</div>
+        <div class="card-tags"><span class="tag batalha">⚔ Batalha</span><span class="tag">👻 Aparição</span></div>
+        <div class="card-chegada">Clareira que a floresta evita. Ysoria, espírito corrompido, fala de vários lugares ao mesmo tempo.</div>
+        <div class="card-npc">👤 NPC: Ysoria (espírito)</div>
+        <div class="card-fala">"Vocês vieram de Mac Rónán. Ele me conhecia. Antes."</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Cluster: Itens de Cura / Dungeons -->
+  <div class="cluster">
+    <div class="cluster-titulo">⚗ Ingredientes de Cura e Dungeons — disponíveis ao entrar</div>
+    <div class="cenas-grid">
+
+      <div class="cena-card">
+        <div class="card-titulo">O Território da Manticore</div>
+        <div class="card-sub">Blackwoods — Zona de Caça</div>
+        <div class="tag batalha">⚔ Batalha</div>
+        <div class="tag ingrediente">🌿 Greybane</div>
+        <div class="card-chegada">Marcas de garras enormes. Valmorien, Ysoria e Father Halric em apuros — precisam de ajuda.</div>
+        <div class="card-npc">👤 Valmorien lidera o pedido de ajuda</div>
+        <div class="card-pos-batalha">Greybane brota onde o sangue da manticore tocar o solo.</div>
+      </div>
+
+      <div class="cena-card">
+        <div class="card-titulo">As Ruínas de Simithari</div>
+        <div class="card-sub">Blackwoods — Colina dos Corvos</div>
+        <div class="tag batalha">⚔ Batalha</div>
+        <div class="tag">🔍 Descoberta</div>
+        <div class="card-chegada">Corvos em círculo. Larder subterrâneo com experimentos de Choir. Notas com plano de traição.</div>
+        <div class="card-pos-batalha">Revelação dupla: Choir planeja trair Chutter + lista de "protegidos" do necromante.</div>
+      </div>
+
+      <div class="cena-card">
+        <div class="card-titulo">O Vale Dual</div>
+        <div class="card-sub">Blackwoods — Coração Vivo</div>
+        <div class="tag batalha">⚔ Batalha</div>
+        <div class="tag ingrediente">🌿 Starshade Blooms</div>
+        <div class="card-chegada">Árvores com rostos entalhados. Campo de flores brancas e luminosas — Starshade Blooms.</div>
+        <div class="card-pos-batalha">As Barkthreshers protegem as flores. Derrotá-las libera o ingrediente mais raro da campanha.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Saída do Ato 2 -->
+  <div class="saida-linha">
+    <div class="saida-arrow">⚔</div>
+    <div class="saida-texto">
+      <strong>Saída do Ato 2:</strong> Após visitar a <strong>Cidade Kobold</strong> e libertar Mac Rónán,
+      ele revela a localização do <strong>Gloamreach</strong> — o único acesso ao Ato 3.
+      A cena do Gloamreach só aparece disponível no mapa após o jogador visitar Kobold Town.
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- ATOS 3 E 4 (LINEARES) -->
+<!-- ─────────────────────────────────────────── -->
+<div class="ato-wrap">
+  <div class="ato-header">Ato 3–4 — O Caminho Final (linear, desbloqueado pela Kobold Town)</div>
+  <div class="fluxo-final">
+    <div class="ff-cena">
+      <div class="card-titulo">O Gloamreach</div>
+      <div class="card-sub">Covil dos Thools — Templo Élfico Profanado</div>
+      <div class="card-exige" style="color:rgba(200,80,60,.7);font-size:10px">Requer: Kobold Town visitada</div>
+      <div class="card-tags"><span class="tag batalha">⚔ Batalha</span><span class="tag">🤝 Negociação</span></div>
+      <div class="card-chegada">Abismo com degraus em espiral. Thools guardam. Um deles hesita — marca dos Laskaris no ombro.</div>
+      <div class="card-pos-batalha">Portal para a Torre de Limm. Duque Oswald transformado em Thool pode ser reconhecido aqui.</div>
+    </div>
+    <div class="ff-arrow">→</div>
+    <div class="ff-cena">
+      <div class="card-titulo">A Torre das Estrelas de Limm</div>
+      <div class="card-sub">Pico das Montanhas de Granito</div>
+      <div class="card-tags"><span class="tag batalha">⚔ Batalha Final</span></div>
+      <div class="card-chegada">Torre que projeta sombra na direção errada. Rei Chutter e seus Golems de Pergaminho.</div>
+      <div class="card-fala">"Entrem, vermes. Chutter quer saber o que trouxe vocês até o fim do mundo."</div>
+      <div class="card-pos-batalha">Chutter cai. As sombras começam a se dissipar. A floresta respira diferente pela primeira vez.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

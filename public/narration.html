@@ -54,6 +54,17 @@ if(_cfg&&_rid){
       }catch(e){console.warn('fbAtualizarPercepcao:',e);}
     };
     window._fbListenRoom=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
+    window._fbMarcarVisitada=async(cenaId)=>{
+      try{
+        const snap=await getDoc(rd);
+        if(!snap.exists())return;
+        const visitadas=[...(snap.data().cenasVisitadas??[])];
+        if(!visitadas.includes(cenaId)){
+          visitadas.push(cenaId);
+          await updateDoc(rd,{'cenasVisitadas':visitadas,'narration.ts':Date.now()});
+        }
+      }catch(e){console.warn('fbMarcarVisitada:',e);}
+    };
   }catch(e){console.warn('Narração Firebase init:',e);}
 }
 window._fbReady=true;
@@ -592,6 +603,108 @@ html,body{
 .intro-img-reveal #intro-content,
 .intro-img-reveal #intro-btn-continuar{opacity:0;pointer-events:none;}
 
+/* ── MAPA DE EXPLORAÇÃO ── */
+#mapa-overlay{
+  position:fixed;inset:0;z-index:800;
+  background:rgba(0,0,0,.88);
+  backdrop-filter:blur(6px);
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+  padding:20px 16px max(24px,env(safe-area-inset-bottom));
+}
+#mapa-overlay.oculto{display:none;}
+#mapa-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+#mapa-titulo{
+  font-size:16px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(220,185,80,1);
+}
+#mapa-fechar{
+  background:none;border:1px solid rgba(190,135,35,.4);
+  color:rgba(220,185,80,.8);
+  padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;
+}
+.mapa-ato{
+  margin-bottom:14px;
+}
+.mapa-ato-titulo{
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(155,130,65,.6);
+  margin-bottom:8px;padding-bottom:4px;
+  border-bottom:1px solid rgba(190,135,35,.15);
+}
+.mapa-cena-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+}
+.mapa-cena{
+  padding:10px 12px;border-radius:10px;
+  border:1px solid rgba(190,135,35,.25);
+  background:rgba(20,14,6,.6);
+  cursor:pointer;
+  transition:border-color .15s,background .15s;
+  position:relative;
+}
+.mapa-cena.visitada{
+  border-color:rgba(80,160,80,.5);
+  background:rgba(30,60,20,.4);
+}
+.mapa-cena.disponivel{
+  border-color:rgba(190,135,35,.5);
+  background:rgba(40,28,8,.7);
+}
+.mapa-cena.disponivel:hover{
+  border-color:rgba(220,185,80,.8);
+  background:rgba(55,38,10,.85);
+}
+.mapa-cena.atual{
+  border-color:rgba(220,185,80,1) !important;
+  background:rgba(60,42,10,.9) !important;
+}
+.mapa-cena.bloqueada{
+  opacity:.4;cursor:default;
+}
+.mapa-cena-titulo{
+  font-size:12px;font-weight:700;
+  color:rgba(220,185,80,.9);
+  margin-bottom:3px;
+}
+.mapa-cena.bloqueada .mapa-cena-titulo{color:rgba(155,130,65,.5);}
+.mapa-cena-sub{
+  font-size:10px;color:rgba(155,130,65,.6);
+}
+.mapa-cena-tags{
+  display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;
+}
+.mapa-tag{
+  font-size:9px;padding:2px 6px;border-radius:4px;
+  background:rgba(60,40,10,.8);
+  color:rgba(190,155,70,.7);
+  border:1px solid rgba(190,135,35,.2);
+}
+.mapa-tag.tag-batalha{
+  background:rgba(80,20,20,.8);color:rgba(220,100,80,.8);
+  border-color:rgba(180,60,40,.3);
+}
+.mapa-tag.tag-visitado{
+  background:rgba(20,60,20,.8);color:rgba(100,200,100,.8);
+  border-color:rgba(60,150,60,.3);
+}
+.mapa-tag.tag-atual{
+  background:rgba(60,42,10,.9);color:rgba(220,185,80,1);
+  border-color:rgba(190,135,35,.6);
+}
+.mapa-lock{
+  position:absolute;top:8px;right:10px;
+  font-size:14px;opacity:.5;
+}
+.mapa-gancho{
+  font-size:10px;color:rgba(190,155,70,.6);
+  margin-top:5px;font-style:italic;
+  line-height:1.4;
+}
+
 </style>
 </head>
 <body>
@@ -643,10 +756,20 @@ html,body{
       <button class="btn-cena" id="btn-cena-ant" onclick="navegarCena(-1)">← Cena Ant.</button>
       <button class="btn-cena" id="btn-cfg-ia" onclick="abrirCfgIA()">⚙ IA</button>
       <button class="btn-cena" id="btn-cena-prox" onclick="navegarCena(1)">Próx. Cena →</button>
+      <button class="btn-cena" id="btn-mapa-exp" onclick="abrirMapaExploracao()">🗺 Mapa</button>
       <button id="btn-iniciar-batalha" onclick="iniciarBatalha()">⚔ Batalha!</button>
     </div>
   </div>
 
+</div>
+
+<!-- Mapa de Exploração -->
+<div id="mapa-overlay" class="oculto">
+  <div id="mapa-header">
+    <span id="mapa-titulo">🗺 Mapa dos Blackwoods</span>
+    <button id="mapa-fechar" onclick="fecharMapaExploracao()">✕ Fechar</button>
+  </div>
+  <div id="mapa-conteudo"></div>
 </div>
 
 <!-- Modal de Teste de Percepção -->
@@ -725,6 +848,7 @@ let _lastRoom   = null;
 let _dialogoLog = [];
 let _unsubRoom = null;
 let _percepcaoEmAndamento = false;
+let _cenasVisitadas = new Set();
 
 // ── Referências DOM ──────────────────────────────────────────────
 const elTitulo = document.getElementById('narr-titulo');
@@ -755,6 +879,9 @@ window.enviarFala = enviarFala;
 window.onKeydownInput = onKeydownInput;
 window.navegarCena = navegarCena;
 window.iniciarBatalha = iniciarBatalha;
+window.abrirMapaExploracao = abrirMapaExploracao;
+window.fecharMapaExploracao = fecharMapaExploracao;
+window.irParaCena = irParaCena;
 window.abrirCfgIA = abrirCfgIA;
 window.fecharCfgIA = fecharCfgIA;
 window.salvarCfgIA = salvarCfgIA;
@@ -795,6 +922,9 @@ function onRoomUpdate(room) {
   const novoModo = narr.modoImagem ?? 'exterior';
   const novoDialogo = narr.dialogo ?? [];
 
+  // Sincroniza cenas visitadas
+  _cenasVisitadas = new Set(room.cenasVisitadas ?? []);
+
   let mudouCena = novaCena !== _cenaAtual;
   let mudouModo = novoModo !== _modoImagem;
 
@@ -803,7 +933,20 @@ function onRoomUpdate(room) {
   _dialogoLog = novoDialogo;
 
   if (mudouCena || mudouModo) atualizarCena();
-  if (mudouCena && _isHost) preencherSelNpc();
+  if (mudouCena && _isHost) {
+    preencherSelNpc();
+    // Se a arena mandou um NPC de gancho pós-batalha, pré-selecionar ele
+    const ganchoNpc = narr.ganchoPosRenderizado;
+    if (ganchoNpc && NPCS[ganchoNpc]) {
+      setTimeout(() => {
+        const sel = document.getElementById('sel-npc');
+        if (sel) { sel.value = ganchoNpc; onSelNpc(); }
+        _marcarChipAtivo(ganchoNpc);
+      }, 200);
+    } else {
+      _dispararFalaEntrada(novaCena);
+    }
+  }
   atualizarBotoesModo();
   renderDialogo();
   atualizarBotoesCena();
@@ -846,6 +989,32 @@ function onRoomUpdate(room) {
 }
 
 // ── Cena ─────────────────────────────────────────────────────────
+// ── Fala automática de entrada do NPC ────────────────────────────
+let _cenaFalaEntradaPostada = null;
+
+async function _dispararFalaEntrada(cenaId) {
+  const cena = CENAS[cenaId];
+  if (!cena?.npcEntrada || !cena?.falaEntrada) return;
+  if (_cenaFalaEntradaPostada === cenaId) return; // já postou nesta cena
+  _cenaFalaEntradaPostada = cenaId;
+
+  const npc = NPCS[cena.npcEntrada];
+  if (!npc) return;
+
+  // Aguarda um beat narrativo antes do NPC falar
+  await new Promise(r => setTimeout(r, 1400));
+
+  const linha = {
+    tipo: 'npc',
+    oradorId: cena.npcEntrada,
+    oradorNome: npc.nome,
+    texto: cena.falaEntrada,
+    ts: Date.now(),
+  };
+  if (window._fbAddDialogue) await window._fbAddDialogue(linha);
+  else { _dialogoLog = [..._dialogoLog, linha].slice(-60); renderDialogo(); }
+}
+
 function atualizarCena() {
   const cena = CENAS[_cenaAtual];
   if (!cena) return;
@@ -1401,12 +1570,167 @@ async function navegarCena(delta) {
 }
 
 function _executarNavegacao(novaCena) {
+  // Marca a cena atual como visitada antes de sair
+  if (_cenaAtual && !_cenasVisitadas.has(_cenaAtual)) {
+    _cenasVisitadas.add(_cenaAtual);
+    if (window._fbMarcarVisitada) window._fbMarcarVisitada(_cenaAtual);
+  }
   if (window._fbUpdateNarration) {
     window._fbUpdateNarration({ cenaId: novaCena, modoImagem: 'exterior', introConfirmados: {}, percepcao: { ativo: false } });
   } else {
     _cenaAtual = novaCena; _modoImagem = 'exterior';
     atualizarCena(); atualizarBotoesModo(); atualizarBotoesCena();
   }
+}
+
+// ── Mapa de Exploração ───────────────────────────────────────────
+function _cenaDisponivel(cena) {
+  if (!cena.exigeAntes || cena.exigeAntes.length === 0) return true;
+  return cena.exigeAntes.every(req => _cenasVisitadas.has(req));
+}
+
+function abrirMapaExploracao() {
+  const overlay = document.getElementById('mapa-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('oculto');
+
+  const cont = document.getElementById('mapa-conteudo');
+  cont.innerHTML = '';
+
+  const GRUPOS = [
+    { ato: 1, label: 'Ato 1 — Mhoried', ids: ['prologo', 'mhoried_market', 'castelo_mhoried'] },
+    { ato: 2, label: 'Ato 2 — Entrada dos Blackwoods', ids: ['blackwoods_entrada'] },
+    { ato: 2, label: 'Ato 2 — Exploração Livre (Blackwoods)', ids: [
+      'carroça_tombada', 'encruzilhada', 'campo_aranhas', 'dominio_wulfram',
+      'ruinas_piromante', 'choupana_mutter', 'cnoc_na_rithe', 'acampamento_elfico',
+      'kobolds_dissidentes', 'kobold_town', 'drowned_grove', 'manticore_grounds',
+      'great_grub_carcass', 'weepers_well', 'ruins_simithari', 'twinfold_hollow',
+      'ysoria_revelacao', 'sepultura_jariella',
+    ]},
+    { ato: 3, label: 'Ato 3 — O Gloamreach', ids: ['gloamreach'] },
+    { ato: 4, label: 'Ato 4 — A Torre de Limm', ids: ['torre_limm'] },
+  ];
+
+  for (const grupo of GRUPOS) {
+    const secao = document.createElement('div');
+    secao.className = 'mapa-ato';
+
+    const titulo = document.createElement('div');
+    titulo.className = 'mapa-ato-titulo';
+    titulo.textContent = grupo.label;
+    secao.appendChild(titulo);
+
+    const grid = document.createElement('div');
+    grid.className = 'mapa-cena-grid';
+
+    for (const id of grupo.ids) {
+      const cena = CENAS[id];
+      if (!cena) continue;
+
+      const visitada = _cenasVisitadas.has(id);
+      const eAtual   = id === _cenaAtual;
+      const disponivel = _cenaDisponivel(cena);
+      const bloqueada = !disponivel && !visitada && !eAtual;
+
+      const card = document.createElement('div');
+      card.className = 'mapa-cena';
+      if (eAtual) card.classList.add('atual');
+      else if (visitada) card.classList.add('visitada');
+      else if (disponivel) card.classList.add('disponivel');
+      else card.classList.add('bloqueada');
+
+      if (!bloqueada) {
+        card.onclick = () => irParaCena(id);
+      }
+
+      // Lock icon
+      if (bloqueada) {
+        const lock = document.createElement('span');
+        lock.className = 'mapa-lock';
+        lock.textContent = '🔒';
+        card.appendChild(lock);
+      }
+
+      const tit = document.createElement('div');
+      tit.className = 'mapa-cena-titulo';
+      tit.textContent = cena.titulo;
+      card.appendChild(tit);
+
+      const sub = document.createElement('div');
+      sub.className = 'mapa-cena-sub';
+      sub.textContent = cena.subtitulo || '';
+      card.appendChild(sub);
+
+      // Tags
+      const tags = document.createElement('div');
+      tags.className = 'mapa-cena-tags';
+      if (eAtual) {
+        const t = document.createElement('span');
+        t.className = 'mapa-tag tag-atual';
+        t.textContent = '📍 Aqui';
+        tags.appendChild(t);
+      } else if (visitada) {
+        const t = document.createElement('span');
+        t.className = 'mapa-tag tag-visitado';
+        t.textContent = '✓ Visitada';
+        tags.appendChild(t);
+      }
+      if (cena.temBatalha) {
+        const t = document.createElement('span');
+        t.className = 'mapa-tag tag-batalha';
+        t.textContent = '⚔ Batalha';
+        tags.appendChild(t);
+      }
+      if (cena.tipo) {
+        const TIPOS = { emboscada:'⚡ Emboscada', dialogo:'💬 Diálogo', negociacao:'🤝 Negociação',
+                        descoberta:'🔍 Descoberta', aparicao:'👻 Aparição', transicao:'➡ Transição' };
+        const t = document.createElement('span');
+        t.className = 'mapa-tag';
+        t.textContent = TIPOS[cena.tipo] || cena.tipo;
+        tags.appendChild(t);
+      }
+      card.appendChild(tags);
+
+      // Gancho de chegada (se disponível/desbloqueada, mostra o gancho)
+      if (!bloqueada && cena.ganchoChegada) {
+        const g = document.createElement('div');
+        g.className = 'mapa-gancho';
+        g.textContent = cena.ganchoChegada;
+        card.appendChild(g);
+      } else if (bloqueada && cena.exigeAntes?.length) {
+        const g = document.createElement('div');
+        g.className = 'mapa-gancho';
+        const faltam = cena.exigeAntes.filter(r => !_cenasVisitadas.has(r))
+          .map(r => CENAS[r]?.titulo || r).join(', ');
+        g.textContent = `Requer: ${faltam}`;
+        card.appendChild(g);
+      }
+
+      grid.appendChild(card);
+    }
+
+    secao.appendChild(grid);
+    cont.appendChild(secao);
+  }
+}
+
+function fecharMapaExploracao() {
+  document.getElementById('mapa-overlay')?.classList.add('oculto');
+}
+
+function irParaCena(cenaId) {
+  if (!_isHost) return;
+  fecharMapaExploracao();
+  const cena = CENAS[cenaId];
+  if (!cena) return;
+  // Gatilho de saída da cena atual
+  const cenaAtualObj = CENAS[_cenaAtual];
+  const gatilhosSaida = cenaAtualObj?.gatilhos_saida || [];
+  if (gatilhosSaida.length > 0 && !_percepcaoEmAndamento) {
+    triggerTestePercepcao(gatilhosSaida[0], 'saida', cenaId);
+    return;
+  }
+  _executarNavegacao(cenaId);
 }
 
 // ── Diálogo ──────────────────────────────────────────────────────
