@@ -648,29 +648,43 @@
       .card-grid { grid-template-columns: repeat(2, 1fr) !important; gap:10px; }
     }
 
-    /* ── Seletor de campanha ── */
-    .cat-camp-bar {
-      display: flex; align-items: center; gap: 6px;
-      padding: 8px 20px 0;
+    /* ── Seletor de campanha — dropdown ── */
+    #camp-sel-wrap { position:relative; flex-shrink:0; }
+    #camp-sel-btn {
+      display:flex; align-items:center; gap:5px;
+      padding:6px 12px; border-radius:20px;
+      background:rgba(200,160,64,0.10); border:1px solid rgba(200,160,64,0.28);
+      color:#e8c060; font-family:inherit; font-size:12px; font-weight:700;
+      cursor:pointer; white-space:nowrap; transition:background .18s;
+      -webkit-tap-highlight-color:transparent;
     }
-    .cat-camp-btn {
-      padding: 5px 16px; border-radius: 20px; font-size: 11px;
-      font-family: inherit; font-weight: 700; cursor: pointer;
-      border: 1px solid transparent; letter-spacing: .3px;
-      transition: background .18s, border-color .18s, color .18s;
-      -webkit-tap-highlight-color: transparent;
-      background: none; color: rgba(200,180,128,0.35);
-      border-color: rgba(200,160,64,0.15);
+    #camp-sel-btn:hover { background:rgba(200,160,64,0.20); }
+    #camp-menu {
+      display:none; position:absolute; top:calc(100% + 6px); left:0;
+      background:#181410; border:1px solid rgba(200,160,64,0.22);
+      border-radius:10px; overflow:hidden;
+      box-shadow:0 8px 28px rgba(0,0,0,0.85); z-index:300; min-width:170px;
     }
-    .cat-camp-btn.cat-camp-mhoried.active {
-      background: rgba(200,160,48,.15); border-color: rgba(200,160,48,.6);
-      color: #c8a030;
+    #camp-menu.open { display:block; }
+    .camp-menu-item {
+      padding:11px 16px; font-size:12px; cursor:pointer;
+      color:rgba(200,180,128,0.55); transition:background .12s, color .12s;
+      border-bottom:1px solid rgba(200,160,64,0.07);
     }
-    .cat-camp-btn.cat-camp-dn.active {
-      background: rgba(180,30,30,.16); border-color: rgba(200,50,50,.6);
-      color: #e06060;
+    .camp-menu-item:last-child { border-bottom:none; }
+    .camp-menu-item:hover { background:rgba(200,160,64,0.10); color:#e8c060; }
+    .camp-menu-item.active { background:rgba(200,160,64,0.08); color:#e8c060; }
+
+    /* ── Placeholder cards (Campanha Fantasma) ── */
+    .card.placeholder {
+      opacity:0.40; border:1px dashed rgba(200,160,64,0.18) !important;
+      cursor:default; pointer-events:none;
     }
-    .cat-camp-btn:not(.active):hover { border-color: rgba(200,160,64,0.35); color: rgba(200,180,128,0.6); }
+    .card.placeholder .card-portrait {
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,0.2); height:280px;
+    }
+    .placeholder-icon { font-size:40px; opacity:0.18; }
 
     /* ── Cards Death Note ── */
     .dn-card {
@@ -722,31 +736,32 @@
 
 <header>
   <div class="header-top">
-    <h1 id="cat-titulo">⚔️ Oráculo — Catálogo de Personagens</h1>
+    <!-- Seletor de campanha — canto superior esquerdo -->
+    <div id="camp-sel-wrap">
+      <button id="camp-sel-btn" onclick="toggleCampMenu()">
+        <span id="camp-sel-icon">⚔️</span>
+        <span id="camp-sel-nome">Mhoried</span>
+        <span style="font-size:9px;opacity:.45;margin-left:2px">▾</span>
+      </button>
+      <div id="camp-menu">
+        <div class="camp-menu-item active" data-camp="mhoried">⚔️ Mhoried</div>
+        <div class="camp-menu-item" data-camp="death-note">📓 Death Note</div>
+        <div class="camp-menu-item" data-camp="fantasma">👻 C. Fantasma</div>
+      </div>
+    </div>
+    <h1 id="cat-titulo">Mhoried</h1>
     <a class="btn-sim" href="simulacao_entrada.html">🎮 Simulação</a>
     <span id="count-label"></span>
   </div>
-  <!-- Seletor de campanha -->
-  <div class="cat-camp-bar">
-    <button class="cat-camp-btn cat-camp-mhoried active" data-camp="mhoried">⚔️ Mhoried</button>
-    <button class="cat-camp-btn cat-camp-dn" data-camp="death-note">📓 Death Note</button>
-  </div>
-  <!-- Tabs Mhoried -->
-  <nav class="tabs" id="tabs-mhoried">
+  <!-- Tabs unificados para todas as campanhas -->
+  <nav class="tabs" id="tabs-main">
     <button class="tab-btn active" data-tab="classes">Classes</button>
     <button class="tab-btn" data-tab="npcs">NPCs</button>
     <button class="tab-btn" data-tab="inimigos">Inimigos</button>
     <button class="tab-btn" data-tab="cenarios">Cenários</button>
     <button class="tab-btn" data-tab="roteiro">Roteiro</button>
     <button class="tab-btn" data-tab="checklist">✓ Check</button>
-    <button class="tab-btn" data-tab="size">📐 Size</button>
-  </nav>
-  <!-- Tabs Death Note -->
-  <nav class="tabs" id="tabs-dn" style="display:none">
-    <button class="tab-btn-dn active" data-tab-dn="dn-classes">Classes</button>
-    <button class="tab-btn-dn" data-tab-dn="dn-personagens">NPCs</button>
-    <button class="tab-btn-dn" data-tab-dn="dn-regras">Regras</button>
-    <button class="tab-btn-dn" data-tab-dn="dn-cenarios">Cenários</button>
+    <button class="tab-btn" id="tab-size-btn" data-tab="size">📐 Size</button>
   </nav>
 </header>
 
@@ -760,19 +775,13 @@
 </div>
 
 <main>
-  <!-- Mhoried tabs -->
-  <div id="classes-tab"   class="tab-content mh-tab active"></div>
-  <div id="npcs-tab"      class="tab-content mh-tab"></div>
-  <div id="inimigos-tab"  class="tab-content mh-tab"></div>
-  <div id="cenarios-tab"  class="tab-content mh-tab"></div>
-  <div id="roteiro-tab"   class="tab-content mh-tab"></div>
-  <div id="checklist-tab" class="tab-content mh-tab"></div>
-  <div id="size-tab"      class="tab-content mh-tab"></div>
-  <!-- Death Note tabs -->
-  <div id="dn-classes-tab"     class="tab-content dn-tab" style="display:none"></div>
-  <div id="dn-personagens-tab" class="tab-content dn-tab" style="display:none"></div>
-  <div id="dn-regras-tab"      class="tab-content dn-tab" style="display:none"></div>
-  <div id="dn-cenarios-tab"    class="tab-content dn-tab" style="display:none"></div>
+  <div id="classes-tab"   class="tab-content active"></div>
+  <div id="npcs-tab"      class="tab-content"></div>
+  <div id="inimigos-tab"  class="tab-content"></div>
+  <div id="cenarios-tab"  class="tab-content"></div>
+  <div id="roteiro-tab"   class="tab-content"></div>
+  <div id="checklist-tab" class="tab-content"></div>
+  <div id="size-tab"      class="tab-content"></div>
 </main>
 
 <!-- Modal -->
@@ -791,6 +800,8 @@
 <script type="module">
 import { NPCS, INIMIGOS_DATA as INIMIGOS_COMPLETO } from './catalogo/mhoried/loader.js';
 import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js';
+
+let campAtual = localStorage.getItem('oraculo.campaign') || 'mhoried';
 
 // ── DATA ──────────────────────────────────────────────────────────────
 
@@ -963,20 +974,40 @@ function npcStandeeUrl(id){ return `catalogo/mhoried/npcs/${id}/peca_tabuleiro/$
 
 function buildClassesTab(){
   const tab = document.getElementById('classes-tab');
-  const header = `<div class="section-header"><h2>Classes de Jogadores</h2><span class="count-badge">${Object.keys(CLASSES_DATA).length} classes</span></div>`;
+  const data = campAtual==='mhoried' ? CLASSES_DATA :
+               campAtual==='death-note' ? DN_CLASSES_DATA : FANTASMA_CLASSES;
+  const header = `<div class="section-header"><h2>Classes de Jogadores</h2><span class="count-badge">${Object.keys(data).length} classes</span></div>`;
 
   let cards = '<div class="card-grid">';
-  for(const [id, cls] of Object.entries(CLASSES_DATA)){
+  for(const [id, cls] of Object.entries(data)){
+    if(cls.placeholder){
+      cards += `
+        <div class="card placeholder">
+          <div class="card-portrait"><span class="placeholder-icon">+</span></div>
+          <div class="card-body">
+            <div class="card-name" style="color:rgba(200,160,64,0.30)">${cls.nome}</div>
+            <div class="card-sub" style="font-style:italic;opacity:.5">Aguardando arte</div>
+          </div>
+        </div>`;
+      continue;
+    }
+    let imgUrl, toggleHtml='';
+    if(campAtual==='mhoried'){
+      imgUrl = classSpriteUrl(id,'m');
+      toggleHtml = `<div class="portrait-toggle">
+        <button class="pt-btn active" id="pt-${id}-m" onclick="event.stopPropagation();togglePortrait('${id}','m')">M</button>
+        <button class="pt-btn" id="pt-${id}-f" onclick="event.stopPropagation();togglePortrait('${id}','f')">F</button>
+      </div>`;
+    } else {
+      imgUrl = `catalogo/death-note/classes/${id}/retrato/${id}_${cls.gender}_retrato.png`;
+    }
     cards += `
       <div class="card" onclick="openClassModal('${id}')">
-        <div class="card-portrait" style="background:linear-gradient(180deg, rgba(0,0,0,.4), ${cls.cor}44);">
+        <div class="card-portrait" style="background:linear-gradient(180deg,rgba(0,0,0,.4),${cls.cor}44)">
           <span class="cat-badge cat-classe" style="top:6px;left:6px;right:auto">${cls.icon} Classe</span>
-          <img id="cp-${id}" src="${classSpriteUrl(id,'m')}" alt="${cls.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          <img id="cp-${id}" src="${imgUrl}" alt="${cls.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
           <span class="no-img" style="display:none">${cls.icon}</span>
-          <div class="portrait-toggle">
-            <button class="pt-btn active" id="pt-${id}-m" onclick="event.stopPropagation();togglePortrait('${id}','m')">M</button>
-            <button class="pt-btn" id="pt-${id}-f" onclick="event.stopPropagation();togglePortrait('${id}','f')">F</button>
-          </div>
+          ${toggleHtml}
         </div>
         <div class="card-body">
           <div class="card-name">${cls.icon} ${cls.nome}</div>
@@ -997,15 +1028,28 @@ function buildClassesTab(){
 
 function buildNpcsTab(){
   const tab = document.getElementById('npcs-tab');
-  const npcList = Object.values(NPCS);
+  const npcList = campAtual==='mhoried' ? Object.values(NPCS) :
+                  campAtual==='death-note' ? DN_PERSONAGENS : FANTASMA_NPCS;
   const header = `<div class="section-header"><h2>NPCs da Campanha</h2><span class="count-badge">${npcList.length} personagens</span></div>`;
 
   let cards = '<div class="card-grid" id="npc-grid">';
   for(const npc of npcList){
-    const sprUrl = npc.retrato || npcSpriteUrl(npc.id, false);
+    if(npc.placeholder){
+      cards += `
+        <div class="card placeholder" data-cat="${npc.categoria}">
+          <div class="card-portrait"><span class="placeholder-icon">+</span></div>
+          <div class="card-body">
+            <div class="card-name" style="color:rgba(200,160,64,0.30)">${npc.nome}</div>
+            <div class="card-sub" style="font-style:italic;opacity:.5">Aguardando arte</div>
+          </div>
+        </div>`;
+      continue;
+    }
+    const sprUrl = npc.retrato || npcRetratoUrl(npc.id);
     const snippet = (npc.descFisica||npc.nome||'').slice(0,80).replace(/`/g,'') + '…';
+    const openFn = campAtual==='death-note' ? `openDnPersonagemModal('${npc.id}')` : `openNpcModal('${npc.id}')`;
     cards += `
-      <div class="card" data-cat="${npc.categoria}" onclick="openNpcModal('${npc.id}')">
+      <div class="card" data-cat="${npc.categoria}" onclick="${openFn}">
         <div class="card-portrait" style="background:rgba(0,0,0,.35)">
           <span class="cat-badge cat-${npc.categoria}" style="top:6px;left:6px;right:auto">${catLabel(npc.categoria)}</span>
           <img src="${sprUrl}" alt="${npc.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
@@ -1025,11 +1069,29 @@ function buildNpcsTab(){
 
 function buildInimigosTab(){
   const tab = document.getElementById('inimigos-tab');
-  const listaInimigos = INIMIGOS_COMPLETO || INIMIGOS_DATA;
-  const header = `<div class="section-header"><h2>Inimigos &amp; Criaturas</h2><span class="count-badge">${listaInimigos.length} tipos</span></div>`;
+  const listaInimigos = campAtual==='mhoried' ? (INIMIGOS_COMPLETO||INIMIGOS_DATA) :
+                        campAtual==='death-note' ? [] : FANTASMA_INIMIGOS;
 
+  if(listaInimigos.length===0){
+    tab.innerHTML = `<div class="section-header"><h2>Inimigos &amp; Criaturas</h2><span class="count-badge">0 tipos</span></div>
+      <div style="text-align:center;padding:48px;color:rgba(200,160,64,0.22);font-size:11px;letter-spacing:1.5px;text-transform:uppercase">Nenhum inimigo cadastrado</div>`;
+    return;
+  }
+
+  const header = `<div class="section-header"><h2>Inimigos &amp; Criaturas</h2><span class="count-badge">${listaInimigos.length} tipos</span></div>`;
   let cards = '<div class="card-grid">';
   for(const en of listaInimigos){
+    if(en.placeholder){
+      cards += `
+        <div class="card placeholder">
+          <div class="card-portrait"><span class="placeholder-icon">+</span></div>
+          <div class="card-body">
+            <div class="card-name" style="color:rgba(200,160,64,0.30)">${en.nome}</div>
+            <div class="card-sub" style="font-style:italic;opacity:.5">Aguardando arte</div>
+          </div>
+        </div>`;
+      continue;
+    }
     const spr = inimRetratoUrl(en.id);
     cards += `
       <div class="card" onclick="openEnemyModal('${en.id}')">
@@ -1052,20 +1114,21 @@ function buildInimigosTab(){
 // ── MODALS ────────────────────────────────────────────────────────────
 
 window.openClassModal = function(id, _idx){
-  const cls = CLASSES_DATA[id];
-  if(!cls) return;
-  const list = Object.keys(CLASSES_DATA);
+  const data = campAtual==='mhoried' ? CLASSES_DATA :
+               campAtual==='death-note' ? DN_CLASSES_DATA : FANTASMA_CLASSES;
+  const cls = data[id];
+  if(!cls || cls.placeholder) return;
+  const list = Object.keys(data);
   _setNav('classe', list, _idx ?? list.indexOf(id));
 
-  const attrKeys = Object.keys(cls.attrs);
-  const attrsHtml = attrKeys.map(k=>`
+  const attrsHtml = Object.entries(cls.attrs).map(([k,v])=>`
     <div class="attr-box">
-      <div class="av">${cls.attrs[k]}</div>
-      <div class="am">${mod(cls.attrs[k])}</div>
+      <div class="av">${v}</div>
+      <div class="am">${mod(v)}</div>
       <div class="ak">${k}</div>
     </div>`).join('');
 
-  const habsHtml = cls.habs.map(h=>`
+  const habsHtml = (cls.habs||[]).map(h=>`
     <div class="hab-row">
       <span class="hab-icon">${h.icon}</span>
       <div class="hab-info">
@@ -1079,25 +1142,33 @@ window.openClassModal = function(id, _idx){
       </div>
     </div>`).join('');
 
-  const _MAX_STH = 400; // bárbaro_m é o mais alto
-  const _MODAL_GRID_H = 150; // px da área de display no modal
-  const standeePairs = ['m','f'].map(g=>{
-    const stH = _standeeH(id, g);
-    const dispH = Math.round(stH / _MAX_STH * _MODAL_GRID_H);
-    return `<div class="modal-std-col">
-      <div class="modal-std-grid">
-        <img src="${classStandee(id,g)}" alt="${g==='m'?'♂':'♀'}" style="height:${dispH}px" onerror="this.style.opacity='.15'">
-      </div>
+  let standeeHtml;
+  if(campAtual==='mhoried'){
+    const _MAX_STH=400, _MODAL_GRID_H=150;
+    const pairs = ['m','f'].map(g=>{
+      const stH=_standeeH(id,g), dispH=Math.round(stH/_MAX_STH*_MODAL_GRID_H);
+      return `<div class="modal-std-col">
+        <div class="modal-std-grid">
+          <img src="${classStandee(id,g)}" alt="${g==='m'?'♂':'♀'}" style="height:${dispH}px" onerror="this.style.opacity='.15'">
+        </div>
+        <div class="modal-std-baseline"></div>
+        <div class="sprite-label">${g==='m'?'♂ Masc':'♀ Fem'}</div>
+      </div>`;
+    }).join('');
+    standeeHtml = `<div class="modal-sprites-cls">${pairs}</div>`;
+  } else {
+    const g = cls.gender||'m';
+    const pecaUrl = `catalogo/death-note/classes/${id}/peca_tabuleiro/${id}_${g}_peca.png`;
+    standeeHtml = `<div class="modal-sprites-cls"><div class="modal-std-col">
+      <div class="modal-std-grid"><img src="${pecaUrl}" style="max-height:150px" onerror="this.style.opacity='.1'"></div>
       <div class="modal-std-baseline"></div>
-      <div class="sprite-label">${g==='m'?'♂ Masc':'♀ Fem'}</div>
-    </div>`;
-  }).join('');
+      <div class="sprite-label">Standee</div>
+    </div></div>`;
+  }
 
   document.getElementById('modal-inner').innerHTML = `
     <div class="modal-header">
-      <div class="modal-sprites-cls">
-        ${standeePairs}
-      </div>
+      ${standeeHtml}
       <div class="modal-title-area">
         <div class="modal-name">${cls.icon} ${cls.nome}</div>
         <div class="modal-cat"><span class="cat-badge cat-classe">Classe Jogável</span></div>
@@ -1280,10 +1351,9 @@ window.navModal = function(dir){
   const ni = _nav.idx + dir;
   if(ni < 0 || ni >= _nav.list.length) return;
   const id = _nav.list[ni];
-  if(_nav.type === 'classe')   openClassModal(id,  ni);
+  if(_nav.type === 'classe' || _nav.type === 'dn-classe') openClassModal(id, ni);
   if(_nav.type === 'npc')      openNpcModal(id,    ni);
-  if(_nav.type === 'inimigo')       openEnemyModal(id,        ni);
-  if(_nav.type === 'dn-classe')     openDnClassModal(id,        ni);
+  if(_nav.type === 'inimigo')  openEnemyModal(id,  ni);
   if(_nav.type === 'dn-personagem') openDnPersonagemModal(id, ni);
 };
 
@@ -1323,21 +1393,59 @@ window.togglePortrait = function(id, gender){
 
 function buildCenariosTab(){
   const tab = document.getElementById('cenarios-tab');
-  const cenas = CENAS_ORDEM.map(id=>CENAS[id]).filter(Boolean);
-  const header = `<div class="section-header"><h2>Cenários da Campanha</h2><span class="count-badge">${cenas.length} cenários</span></div>`;
-  let html = '<div class="cenario-grid">';
-  for(const c of cenas){
-    const imgSrc = `catalogo/mhoried/cenarios/${c.id}.png`;
-    html += `<div class="cenario-card">
-      <img class="cenario-img" src="${imgSrc}" alt="${c.titulo}" onerror="this.style.display='none'">
-      <div class="cenario-body">
-        <div class="cenario-nome">${c.titulo||c.id}</div>
-        <div class="cenario-sub">Ato ${c.ato||1}</div>
-        <div class="cenario-tags">
-          <span class="cenario-tag ato">Ato ${c.ato||1}</span>
-          ${c.temBatalha?'<span class="cenario-tag batalha">⚔️ Batalha</span>':''}
-          ${(c.npcsPresentes||[]).length>0?'<span class="cenario-tag npc">👥 NPCs</span>':''}
+
+  if(campAtual==='mhoried'){
+    const cenas = CENAS_ORDEM.map(id=>CENAS[id]).filter(Boolean);
+    const header = `<div class="section-header"><h2>Cenários da Campanha</h2><span class="count-badge">${cenas.length} cenários</span></div>`;
+    let html = '<div class="cenario-grid">';
+    for(const c of cenas){
+      const imgSrc = `catalogo/mhoried/cenarios/${c.id}.png`;
+      html += `<div class="cenario-card">
+        <img class="cenario-img" src="${imgSrc}" alt="${c.titulo}" onerror="this.style.display='none'">
+        <div class="cenario-body">
+          <div class="cenario-nome">${c.titulo||c.id}</div>
+          <div class="cenario-sub">Ato ${c.ato||1}</div>
+          <div class="cenario-tags">
+            <span class="cenario-tag ato">Ato ${c.ato||1}</span>
+            ${c.temBatalha?'<span class="cenario-tag batalha">⚔️ Batalha</span>':''}
+            ${(c.npcsPresentes||[]).length>0?'<span class="cenario-tag npc">👥 NPCs</span>':''}
+          </div>
         </div>
+      </div>`;
+    }
+    html += '</div>';
+    tab.innerHTML = header + html;
+    return;
+  }
+
+  if(campAtual==='death-note'){
+    const header = `<div class="section-header"><h2>Cenários</h2><span class="count-badge">${DN_CENARIOS.length} locais</span></div>`;
+    let html = '<div class="cenario-grid">';
+    for(const c of DN_CENARIOS){
+      const imgSrc = c.id ? `catalogo/death-note/cenarios/${c.id}/${c.id}_int.png` : '';
+      html += `<div class="cenario-card">
+        ${imgSrc?`<img class="cenario-img" src="${imgSrc}" alt="${c.nome}" onerror="this.style.display='none'">` : ''}
+        <div class="cenario-body">
+          <div class="cenario-nome">📍 ${c.nome}</div>
+          <div class="cenario-sub" style="color:rgba(200,100,100,.55)">${c.local}</div>
+          <div class="dn-cen-desc" style="margin-top:6px;font-size:11px;color:rgba(200,170,150,.6);line-height:1.5">${c.desc}</div>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+    tab.innerHTML = header + html;
+    return;
+  }
+
+  // Fantasma
+  const header = `<div class="section-header"><h2>Cenários</h2><span class="count-badge">${FANTASMA_CENARIOS.length} locais</span></div>`;
+  let html = '<div class="cenario-grid">';
+  for(const c of FANTASMA_CENARIOS){
+    html += `<div class="cenario-card" style="opacity:.38;border:1px dashed rgba(200,160,64,0.14)">
+      <div style="height:110px;background:rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-size:36px;opacity:.15">+</div>
+      <div class="cenario-body">
+        <div class="cenario-nome" style="color:rgba(200,160,64,0.30)">${c.nome}</div>
+        <div class="cenario-sub" style="font-style:italic">Aguardando imagem</div>
       </div>
     </div>`;
   }
@@ -1349,38 +1457,56 @@ function buildCenariosTab(){
 
 function buildRoteiroTab(){
   const tab = document.getElementById('roteiro-tab');
-  const cenas = CENAS_ORDEM.map(id=>CENAS[id]).filter(Boolean);
-  const atos = {};
-  for(const c of cenas){
-    const a = c.ato||1;
-    if(!atos[a]) atos[a] = [];
-    atos[a].push(c);
+
+  if(campAtual==='mhoried'){
+    const cenas = CENAS_ORDEM.map(id=>CENAS[id]).filter(Boolean);
+    const atos = {};
+    for(const c of cenas){ const a=c.ato||1; if(!atos[a]) atos[a]=[]; atos[a].push(c); }
+    const header = `<div class="section-header"><h2>Roteiro da Campanha</h2><span class="count-badge">${cenas.length} cenas</span></div>`;
+    let html = '';
+    for(const [ato, lista] of Object.entries(atos)){
+      html += `<div class="rot-ato"><div class="rot-ato-titulo">Ato ${ato}</div>`;
+      lista.forEach((c,i)=>{
+        html += `<div class="rot-cena">
+          <div class="rot-cena-num">Cena ${i+1}</div>
+          <div class="rot-cena-titulo">${c.titulo||c.id}</div>
+          <div class="rot-cena-texto">${(c.textoIntro||'').slice(0,200)}</div>
+          <div class="rot-cena-badges">
+            ${c.temBatalha?'<span class="rot-badge batalha">⚔️ Batalha</span>':''}
+            ${(c.npcsPresentes||[]).map(n=>`<span class="rot-badge npc">👤 ${n}</span>`).join('')}
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    tab.innerHTML = header + html;
+    return;
   }
-  const header = `<div class="section-header"><h2>Roteiro da Campanha</h2><span class="count-badge">${cenas.length} cenas</span></div>`;
-  let html = '';
-  for(const [ato, lista] of Object.entries(atos)){
-    html += `<div class="rot-ato">
-      <div class="rot-ato-titulo">Ato ${ato}</div>`;
-    lista.forEach((c,i)=>{
-      html += `<div class="rot-cena">
-        <div class="rot-cena-num">Cena ${i+1}</div>
-        <div class="rot-cena-titulo">${c.titulo||c.id}</div>
-        <div class="rot-cena-texto">${(c.textoIntro||'').slice(0,200)}</div>
-        <div class="rot-cena-badges">
-          ${c.temBatalha?'<span class="rot-badge batalha">⚔️ Batalha</span>':''}
-          ${(c.npcsPresentes||[]).map(n=>`<span class="rot-badge npc">👤 ${n}</span>`).join('')}
-        </div>
-      </div>`;
-    });
-    html += '</div>';
+
+  if(campAtual==='death-note'){
+    const header = `<div class="section-header"><h2>Regras do Death Note</h2><span class="count-badge">${DN_REGRAS.length} regras</span></div>`;
+    const items = DN_REGRAS.map(r=>`
+      <div class="dn-regra">
+        <div class="dn-regra-num">REGRA ${r.num}</div>
+        <div class="dn-regra-txt">${r.txt}</div>
+      </div>`).join('');
+    tab.innerHTML = header + `<div style="padding:16px">${items}</div>`;
+    return;
   }
-  tab.innerHTML = header + html;
+
+  tab.innerHTML = `<div class="section-header"><h2>Roteiro</h2></div>
+    <div style="text-align:center;padding:48px;color:rgba(200,160,64,0.22);font-size:11px;letter-spacing:1.5px;text-transform:uppercase">Roteiro a ser definido</div>`;
 }
 
 // ── BUILD CHECKLIST TAB ───────────────────────────────────────────────
 
 function buildChecklistTab(){
   const tab = document.getElementById('checklist-tab');
+  if(campAtual !== 'mhoried'){
+    tab.innerHTML = `<div class="section-header"><h2>Checklist</h2></div>
+      <div style="text-align:center;padding:48px;color:rgba(200,160,64,0.22);font-size:11px;letter-spacing:1.5px;text-transform:uppercase">Checklist em construção</div>`;
+    return;
+  }
   const npcList = Object.values(NPCS);
   const inimList = INIMIGOS_COMPLETO || INIMIGOS_DATA;
   const classes = Object.keys(CLASSES_DATA);
@@ -2152,121 +2278,33 @@ const DN_CENARIOS = [
   },
 ];
 
-let _dnBuilt = false;
-
-
-// ── BUILD DN CLASSES TAB ──────────────────────────────────────────────
-function buildDnClassesTab(){
-  const tab = document.getElementById('dn-classes-tab');
-  const header = `<div class="section-header"><h2>Classes Jogáveis</h2><span class="count-badge">${Object.keys(DN_CLASSES_DATA).length} classes</span></div>`;
-  let cards = '<div class="card-grid">';
-  for(const [id, cls] of Object.entries(DN_CLASSES_DATA)){
-    const retUrl = `catalogo/death-note/classes/${id}/retrato/${id}_${cls.gender}_retrato.png`;
-    cards += `
-      <div class="card" onclick="openDnClassModal('${id}')">
-        <div class="card-portrait" style="background:linear-gradient(180deg,rgba(0,0,0,.4),${cls.cor}66)">
-          <span class="cat-badge cat-classe" style="top:6px;left:6px;right:auto">${cls.icon} Classe</span>
-          <img src="${retUrl}" alt="${cls.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-          <span class="no-img" style="display:none">${cls.icon}</span>
-        </div>
-        <div class="card-body">
-          <div class="card-name">${cls.icon} ${cls.nome}</div>
-          <div class="stat-chips">
-            <span class="chip">❤️ ${cls.maxHp} PV</span>
-            <span class="chip">👢 MOV ${cls.mov}</span>
-            <span class="chip">🎲 d${cls.atk+4}</span>
-          </div>
-          <div class="card-sub" style="margin-top:6px">${cls.feat}</div>
-        </div>
-      </div>`;
-  }
-  cards += '</div>';
-  tab.innerHTML = header + cards;
-}
-
-window.openDnClassModal = function(id, _idx){
-  const cls = DN_CLASSES_DATA[id];
-  if(!cls) return;
-  const list = Object.keys(DN_CLASSES_DATA);
-  _setNav('dn-classe', list, _idx ?? list.indexOf(id));
-
-  const attrsHtml = Object.entries(cls.attrs).map(([k,v])=>`
-    <div class="attr-box">
-      <div class="av">${v}</div>
-      <div class="am">${mod(v)}</div>
-      <div class="ak">${k}</div>
-    </div>`).join('');
-
-  const habsHtml = cls.habs.map(h=>`
-    <div class="hab-row">
-      <span class="hab-icon">${h.icon}</span>
-      <div class="hab-info">
-        <div class="hab-nome">${h.nome}</div>
-        <div class="hab-desc">${h.desc}</div>
-        <div class="hab-tags">
-          ${h.dano!=='—'?`<span class="htag dano">⚔️ ${h.dano}</span>`:''}
-          ${h.sp>0?`<span class="htag sp">💠 ${h.sp} SP</span>`:''}
-          <span class="htag type">${h.tipo}</span>
-        </div>
-      </div>
-    </div>`).join('');
-
-  const pecaUrl = `catalogo/death-note/classes/${id}/peca_tabuleiro/${id}_${cls.gender}_peca.png`;
-  const standeeSlot = `<div class="modal-std-col">
-    <div class="modal-std-grid">
-      <img src="${pecaUrl}" alt="Standee" style="max-height:150px" onerror="this.style.opacity='.15'">
-    </div>
-    <div class="modal-std-baseline"></div>
-    <div class="sprite-label">Standee</div>
-  </div>`;
-
-  document.getElementById('modal-inner').innerHTML = `
-    <div class="modal-header">
-      <div class="modal-sprites-cls">${standeeSlot}</div>
-      <div class="modal-title-area">
-        <div class="modal-name">${cls.icon} ${cls.nome}</div>
-        <div class="modal-cat"><span class="cat-badge cat-classe">Classe Jogável</span></div>
-        <div class="modal-feat">${cls.feat}</div>
-        <div class="stats-row">
-          <div class="stat-box"><div class="sv">❤️ ${cls.maxHp}</div><div class="sk">PV Máx</div></div>
-          <div class="stat-box"><div class="sv">💠 ${cls.sp}</div><div class="sk">SP Máx</div></div>
-          <div class="stat-box"><div class="sv">👢 ${cls.mov}</div><div class="sk">Mov/Turno</div></div>
-          <div class="stat-box"><div class="sv">🎲 d${cls.atk+4}</div><div class="sk">Dado Atk</div></div>
-        </div>
-        <div class="attrs-grid">${attrsHtml}</div>
-      </div>
-    </div>
-    <div class="modal-body">
-      <div class="section">
-        <div class="section-title">Habilidades</div>
-        <div class="habs-list">${habsHtml}</div>
-      </div>
-    </div>`;
-  openModal();
+// ── CAMPANHA FANTASMA: DADOS ESQUELETO ────────────────────────────────
+const FANTASMA_CLASSES = {
+  classe_a:{ nome:'Classe A', icon:'?', gender:'m', cor:'#1a1a2a', placeholder:true,
+    maxHp:0, sp:0, mov:0, atk:0, attrs:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10}, feat:'Classe a ser definida.', habs:[] },
+  classe_b:{ nome:'Classe B', icon:'?', gender:'f', cor:'#1a2a1a', placeholder:true,
+    maxHp:0, sp:0, mov:0, atk:0, attrs:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10}, feat:'Classe a ser definida.', habs:[] },
+  classe_c:{ nome:'Classe C', icon:'?', gender:'m', cor:'#2a1a1a', placeholder:true,
+    maxHp:0, sp:0, mov:0, atk:0, attrs:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10}, feat:'Classe a ser definida.', habs:[] },
 };
+const FANTASMA_NPCS = [
+  {id:'f_npc_1', nome:'Personagem 1', categoria:'neutro', placeholder:true},
+  {id:'f_npc_2', nome:'Personagem 2', categoria:'neutro', placeholder:true},
+  {id:'f_npc_3', nome:'Personagem 3', categoria:'neutro', placeholder:true},
+];
+const FANTASMA_INIMIGOS = [
+  {id:'f_ini_1', nome:'Criatura 1', tipo:'?', desc:'A ser definida.', placeholder:true},
+  {id:'f_ini_2', nome:'Criatura 2', tipo:'?', desc:'A ser definida.', placeholder:true},
+];
+const FANTASMA_CENARIOS = [
+  {id:'f_cen_1', nome:'Cenário 1', local:'—', desc:'A ser definido.', placeholder:true},
+  {id:'f_cen_2', nome:'Cenário 2', local:'—', desc:'A ser definido.', placeholder:true},
+];
 
-function buildDnPersonagensTab(){
-  const tab = document.getElementById('dn-personagens-tab');
-  const header = `<div class="section-header"><h2>Personagens de Death Note</h2><span class="count-badge">${DN_PERSONAGENS.length} personagens</span></div>`;
-  let cards = '<div class="card-grid" id="dn-npc-grid">';
-  for(const p of DN_PERSONAGENS){
-    const snippet = (p.descFisica||'').slice(0,80) + '…';
-    cards += `
-      <div class="card" data-cat="${p.categoria}" onclick="openDnPersonagemModal('${p.id}')">
-        <div class="card-portrait" style="background:rgba(20,4,4,.5)">
-          <span class="cat-badge cat-${p.categoria}" style="top:6px;left:6px;right:auto">${catLabel(p.categoria)}</span>
-          <img src="${p.retrato}" alt="${p.nome}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-          <span class="no-img" style="display:none">🖤</span>
-        </div>
-        <div class="card-body">
-          <div class="card-name">${p.nome}</div>
-          <div class="card-sub">${snippet}</div>
-        </div>
-      </div>`;
-  }
-  cards += '</div>';
-  tab.innerHTML = header + cards;
-}
+function buildDnClassesTab(){ buildClassesTab(); }
+
+// openDnClassModal — redirecionado para openClassModal unificado
+window.openDnClassModal = function(id, _idx){ openClassModal(id, _idx); };
 
 window.openDnPersonagemModal = function(id, _idx){
   const list = DN_PERSONAGENS.map(p=>p.id);
@@ -2307,102 +2345,69 @@ window.openDnPersonagemModal = function(id, _idx){
   openModal();
 };
 
-function buildDnRegrasTab(){
-  const tab = document.getElementById('dn-regras-tab');
-  const header = `<div class="section-header"><h2>Regras do Death Note</h2><span class="count-badge">${DN_REGRAS.length} regras essenciais</span></div>`;
-  const items = DN_REGRAS.map(r=>`
-    <div class="dn-regra">
-      <div class="dn-regra-num">REGRA ${r.num}</div>
-      <div class="dn-regra-txt">${r.txt}</div>
-    </div>`).join('');
-  tab.innerHTML = header + `<div style="padding:16px">${items}</div>`;
-}
+function buildDnRegrasTab(){ buildRoteiroTab(); }
+function buildDnCenariosTab(){ buildCenariosTab(); }
 
-function buildDnCenariosTab(){
-  const tab = document.getElementById('dn-cenarios-tab');
-  const header = `<div class="section-header"><h2>Cenários</h2><span class="count-badge">${DN_CENARIOS.length} locais</span></div>`;
-  let html = '<div class="cenario-grid" style="padding:16px">';
-  for(const c of DN_CENARIOS){
-    const imgSrc = c.id ? `catalogo/death-note/cenarios/${c.id}/${c.id}_int.png` : '';
-    html += `<div class="cenario-card">
-      ${imgSrc ? `<img class="cenario-img" src="${imgSrc}" alt="${c.nome}" onerror="this.style.display='none'">` : ''}
-      <div class="cenario-body">
-        <div class="cenario-nome">📍 ${c.nome}</div>
-        <div class="cenario-sub" style="color:rgba(200,100,100,.55)">${c.local}</div>
-        <div class="cenario-tags" style="margin-top:5px">
-          ${c.id ? '<span class="cenario-tag ato">✅ Disponível</span>' : '<span class="cenario-tag" style="color:rgba(140,140,140,.5);border-color:rgba(140,140,140,.2)">Em breve</span>'}
-        </div>
-        <div class="dn-cen-desc" style="margin-top:6px">${c.desc}</div>
-      </div>
-    </div>`;
-  }
-  html += '</div>';
-  tab.innerHTML = header + html;
-}
-
-// ── Tabs Death Note ────────────────────────────────────────────────────
-document.querySelectorAll('.tab-btn-dn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const tab = btn.dataset.tabDn;
-    document.querySelectorAll('.tab-btn-dn').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.dn-tab').forEach(t=>t.style.display='none');
-    btn.classList.add('active');
-    document.getElementById(`${tab}-tab`).style.display='block';
+// ── Seletor de campanha — dropdown ────────────────────────────────────
+window.toggleCampMenu = function(){
+  document.getElementById('camp-menu').classList.toggle('open');
+};
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#camp-sel-wrap'))
+    document.getElementById('camp-menu').classList.remove('open');
+});
+document.querySelectorAll('.camp-menu-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    aplicarCampanha(item.dataset.camp);
+    document.getElementById('camp-menu').classList.remove('open');
   });
 });
 
-// ── Seletor de campanha ────────────────────────────────────────────────
-(function(){
-  let campAtual = localStorage.getItem('oraculo.campaign') || 'mhoried';
+function _switchTab(tabId){
+  document.querySelectorAll('#tabs-main .tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tabId));
+  document.querySelectorAll('main .tab-content').forEach(t=>t.classList.toggle('active', t.id===tabId+'-tab'));
+}
 
-  const campBtns = document.querySelectorAll('.cat-camp-btn');
-  const tabsMh   = document.getElementById('tabs-mhoried');
-  const tabsDn   = document.getElementById('tabs-dn');
-  const filterBar= document.getElementById('filter-bar');
-  const mhTabs   = document.querySelectorAll('.mh-tab');
-  const dnTabs   = document.querySelectorAll('.dn-tab');
+function _rebuildAllTabs(){
+  buildClassesTab();
+  buildNpcsTab();
+  buildInimigosTab();
+  buildCenariosTab();
+  buildRoteiroTab();
+  buildChecklistTab();
+  if(campAtual==='mhoried') buildSizeTab();
+}
 
-  function aplicarCampanha(camp){
-    campAtual = camp;
-    localStorage.setItem('oraculo.campaign', camp);
-    campBtns.forEach(b => b.classList.toggle('active', b.dataset.camp === camp));
+function aplicarCampanha(camp){
+  campAtual = camp;
+  localStorage.setItem('oraculo.campaign', camp);
+  const CAMP_ICONS = {mhoried:'⚔️','death-note':'📓',fantasma:'👻'};
+  const CAMP_NAMES = {mhoried:'Mhoried','death-note':'Death Note',fantasma:'C. Fantasma'};
+  document.querySelectorAll('.camp-menu-item').forEach(i=>i.classList.toggle('active', i.dataset.camp===camp));
+  document.getElementById('camp-sel-icon').textContent = CAMP_ICONS[camp]||'?';
+  document.getElementById('camp-sel-nome').textContent = CAMP_NAMES[camp]||camp;
+  document.getElementById('cat-titulo').textContent = CAMP_NAMES[camp]||camp;
+  const sizeBtn = document.getElementById('tab-size-btn');
+  if(sizeBtn) sizeBtn.style.display = camp==='mhoried' ? '' : 'none';
+  _rebuildAllTabs();
+  _switchTab('classes');
+  updateCount('classes');
+}
 
-    const isDn = camp === 'death-note';
-    tabsMh.style.display    = isDn ? 'none' : '';
-    tabsDn.style.display    = isDn ? '' : 'none';
-    filterBar.style.display = 'none';
-
-    if(isDn){
-      // Esconder todos os tabs Mhoried via inline (sobrepõe .active)
-      mhTabs.forEach(t => { t.style.display = 'none'; });
-      // Construir DN na primeira vez
-      if(!_dnBuilt){ buildDnClassesTab();
-buildDnClassesTab(); buildDnPersonagensTab(); buildDnRegrasTab(); buildDnCenariosTab(); _dnBuilt=true; }
-      // Mostrar tab DN ativa
-      dnTabs.forEach(t => { t.style.display = 'none'; });
-      const activeDnBtn = document.querySelector('.tab-btn-dn.active');
-      const activeTab = (activeDnBtn ? activeDnBtn.dataset.tabDn : 'dn-classes');
-      document.getElementById(activeTab+'-tab').style.display = 'block';
-      document.getElementById('count-label').textContent = `${Object.keys(DN_CLASSES_DATA).length} classes`;
-      document.getElementById('cat-titulo').textContent = '📓 Death Note — Tokyo Defender';
-    } else {
-      // Esconder tabs DN
-      dnTabs.forEach(t => { t.style.display = 'none'; });
-      // Remover inline style dos tabs Mhoried — deixar CSS .active controlar
-      mhTabs.forEach(t => { t.style.display = ''; });
-      document.getElementById('cat-titulo').textContent = '⚔️ Oráculo — Catálogo de Personagens';
-      const activeMhBtn = document.querySelector('#tabs-mhoried .tab-btn.active');
-      updateCount(activeMhBtn ? activeMhBtn.dataset.tab : 'classes');
-    }
-  }
-
-  campBtns.forEach(btn=>{
-    btn.addEventListener('click', ()=> aplicarCampanha(btn.dataset.camp));
+// Tabs unificados
+document.querySelectorAll('#tabs-main .tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    _switchTab(btn.dataset.tab);
+    updateCount(btn.dataset.tab);
   });
+});
 
-  // Aplicar estado salvo no load
-  if(campAtual === 'death-note') aplicarCampanha('death-note');
-})();
+// Aplicar campanha salva no load
+if(campAtual !== 'mhoried'){
+  aplicarCampanha(campAtual);
+} else {
+  document.querySelectorAll('.camp-menu-item').forEach(i=>i.classList.toggle('active', i.dataset.camp==='mhoried'));
+}
 
 // ── NPC FILTER ────────────────────────────────────────────────────────
 
@@ -2421,21 +2426,21 @@ document.querySelectorAll('.filter-btn').forEach(btn=>{
 // ── COUNT LABEL ──────────────────────────────────────────────────────
 
 function updateCount(tab){
+  const data = campAtual==='mhoried' ? CLASSES_DATA :
+               campAtual==='death-note' ? DN_CLASSES_DATA : FANTASMA_CLASSES;
+  const nData = campAtual==='mhoried' ? NPCS :
+                campAtual==='death-note' ? {length:DN_PERSONAGENS.length} : {length:FANTASMA_NPCS.length};
   const labels = {
-    classes: `${Object.keys(CLASSES_DATA).length} classes`,
-    npcs:    `${Object.keys(NPCS).length} personagens`,
-    inimigos:`${(INIMIGOS_COMPLETO||INIMIGOS_DATA).length} criaturas`,
+    classes: `${Object.keys(data).length} classes`,
+    npcs:    `${campAtual==='mhoried'?Object.keys(nData).length:nData.length} personagens`,
+    inimigos:`${campAtual==='mhoried'?(INIMIGOS_COMPLETO||INIMIGOS_DATA).length:0} criaturas`,
   };
   document.getElementById('count-label').textContent = labels[tab]||'';
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────
 
-buildClassesTab();
-buildNpcsTab();
-buildInimigosTab();
-buildCenariosTab();
-buildRoteiroTab();
+_rebuildAllTabs();
 updateCount('classes');
 </script>
 </body>
