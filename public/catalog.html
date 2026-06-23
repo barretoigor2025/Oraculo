@@ -686,6 +686,50 @@
     }
     .placeholder-icon { font-size:40px; opacity:0.18; }
 
+    /* ── Paleta Death Note (vermelho/preto) ── */
+    [data-camp="death-note"] { background:#0d0808; }
+    [data-camp="death-note"] header { background:linear-gradient(180deg,#080404 0%,#140b0b 100%); }
+    [data-camp="death-note"] .cenario-card { border-color:rgba(180,30,30,.2); background:rgba(18,5,5,.6); }
+    [data-camp="death-note"] .cenario-nome { color:#e05050; }
+    [data-camp="death-note"] .rot-ato-titulo { color:rgba(180,30,30,.5); border-color:rgba(180,30,30,.15); }
+    [data-camp="death-note"] .rot-cena { border-color:rgba(180,30,30,.15); background:rgba(18,5,5,.5); }
+    [data-camp="death-note"] .rot-cena-num { color:rgba(180,30,30,.4); }
+    [data-camp="death-note"] .rot-cena-titulo { color:#e05050; }
+    [data-camp="death-note"] .rot-badge { border-color:rgba(180,30,30,.25); color:rgba(180,100,100,.65); }
+    [data-camp="death-note"] .ck-section-title { color:rgba(180,30,30,.5); border-color:rgba(180,30,30,.12); }
+    [data-camp="death-note"] .ck-summary { border-color:rgba(180,30,30,.2); background:rgba(18,5,5,.5); }
+    [data-camp="death-note"] #camp-sel-btn { background:rgba(180,30,30,0.10); border-color:rgba(180,30,30,0.30); color:#e84040; }
+    [data-camp="death-note"] #camp-sel-btn:hover { background:rgba(180,30,30,0.22); }
+    [data-camp="death-note"] #camp-menu { border-color:rgba(180,30,30,0.22); background:#140b0b; }
+    [data-camp="death-note"] .camp-menu-item:hover { background:rgba(180,30,30,0.12); color:#e84040; }
+    [data-camp="death-note"] .camp-menu-item.active { background:rgba(180,30,30,0.09); color:#e84040; }
+    [data-camp="death-note"] .card.placeholder { border-color:rgba(180,30,30,0.18) !important; }
+    [data-camp="death-note"] .btn-sim { background:rgba(180,30,30,0.12); border-color:rgba(180,30,30,0.38); color:#e84040; }
+    [data-camp="death-note"] .btn-sim:hover { background:rgba(180,30,30,0.24); border-color:rgba(180,30,30,0.65); }
+    [data-camp="death-note"] .pt-btn.active { background:rgba(180,30,30,0.25); border-color:#cc2020; }
+
+    /* ── Paleta Campanha Fantasma (cinza/espectral) ── */
+    [data-camp="fantasma"] { background:#09090e; }
+    [data-camp="fantasma"] header { background:linear-gradient(180deg,#050508 0%,#0e1018 100%); }
+    [data-camp="fantasma"] .cenario-card { border-color:rgba(100,130,170,.2); background:rgba(8,10,18,.6); }
+    [data-camp="fantasma"] .cenario-nome { color:#aabbcc; }
+    [data-camp="fantasma"] .rot-ato-titulo { color:rgba(100,130,170,.5); border-color:rgba(100,130,170,.15); }
+    [data-camp="fantasma"] .rot-cena { border-color:rgba(100,130,170,.15); background:rgba(8,10,18,.5); }
+    [data-camp="fantasma"] .rot-cena-num { color:rgba(100,130,170,.4); }
+    [data-camp="fantasma"] .rot-cena-titulo { color:#aabbcc; }
+    [data-camp="fantasma"] .rot-badge { border-color:rgba(100,130,170,.25); color:rgba(130,160,190,.65); }
+    [data-camp="fantasma"] .ck-section-title { color:rgba(100,130,170,.5); border-color:rgba(100,130,170,.12); }
+    [data-camp="fantasma"] .ck-summary { border-color:rgba(100,130,170,.2); background:rgba(8,10,18,.5); }
+    [data-camp="fantasma"] #camp-sel-btn { background:rgba(100,130,170,0.10); border-color:rgba(100,130,170,0.28); color:#aabbcc; }
+    [data-camp="fantasma"] #camp-sel-btn:hover { background:rgba(100,130,170,0.20); }
+    [data-camp="fantasma"] #camp-menu { border-color:rgba(100,130,170,0.22); background:#0e1018; }
+    [data-camp="fantasma"] .camp-menu-item:hover { background:rgba(100,130,170,0.10); color:#aabbcc; }
+    [data-camp="fantasma"] .camp-menu-item.active { background:rgba(100,130,170,0.08); color:#aabbcc; }
+    [data-camp="fantasma"] .card.placeholder { border-color:rgba(100,130,170,0.28) !important; opacity:0.55; }
+    [data-camp="fantasma"] .btn-sim { background:rgba(100,130,170,0.12); border-color:rgba(100,130,170,0.38); color:#aabbcc; }
+    [data-camp="fantasma"] .btn-sim:hover { background:rgba(100,130,170,0.24); border-color:rgba(100,130,170,0.65); }
+    [data-camp="fantasma"] .pt-btn.active { background:rgba(100,130,170,0.25); border-color:#7799bb; }
+
     /* ── Cards Death Note ── */
     .dn-card {
       background: rgba(18,5,5,.75); border: 1px solid rgba(160,30,30,.25);
@@ -2378,6 +2422,12 @@ function _rebuildAllTabs(){
   if(campAtual==='mhoried') buildSizeTab();
 }
 
+const CAMP_PALETTE = {
+  mhoried:      {'--gold':'#c8a040','--gold2':'#e8c060','--gold-dim':'rgba(200,160,64,0.18)','--border':'rgba(200,160,64,0.18)','--bg':'#0e0c0a','--bg2':'#181410','--bg3':'#221e18','--text':'#e0d0a8','--text-dim':'rgba(200,180,128,0.55)'},
+  'death-note': {'--gold':'#cc2020','--gold2':'#e84040','--gold-dim':'rgba(200,30,30,0.18)','--border':'rgba(200,30,30,0.18)','--bg':'#0d0808','--bg2':'#140b0b','--bg3':'#1e1010','--text':'#e0c0c0','--text-dim':'rgba(200,150,150,0.55)'},
+  fantasma:     {'--gold':'#7799bb','--gold2':'#aabbcc','--gold-dim':'rgba(100,130,170,0.18)','--border':'rgba(100,130,170,0.18)','--bg':'#09090e','--bg2':'#0e1018','--bg3':'#141824','--text':'#c0cce0','--text-dim':'rgba(170,190,220,0.55)'},
+};
+
 function aplicarCampanha(camp){
   campAtual = camp;
   localStorage.setItem('oraculo.campaign', camp);
@@ -2387,6 +2437,10 @@ function aplicarCampanha(camp){
   document.getElementById('camp-sel-icon').textContent = CAMP_ICONS[camp]||'?';
   document.getElementById('camp-sel-nome').textContent = CAMP_NAMES[camp]||camp;
   document.getElementById('cat-titulo').textContent = CAMP_NAMES[camp]||camp;
+  // Aplicar paleta de cores da campanha
+  document.body.dataset.camp = camp;
+  const pal = CAMP_PALETTE[camp] || CAMP_PALETTE.mhoried;
+  Object.entries(pal).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
   const sizeBtn = document.getElementById('tab-size-btn');
   if(sizeBtn) sizeBtn.style.display = camp==='mhoried' ? '' : 'none';
   _rebuildAllTabs();
@@ -2403,11 +2457,7 @@ document.querySelectorAll('#tabs-main .tab-btn').forEach(btn=>{
 });
 
 // Aplicar campanha salva no load
-if(campAtual !== 'mhoried'){
-  aplicarCampanha(campAtual);
-} else {
-  document.querySelectorAll('.camp-menu-item').forEach(i=>i.classList.toggle('active', i.dataset.camp==='mhoried'));
-}
+aplicarCampanha(campAtual);
 
 // ── NPC FILTER ────────────────────────────────────────────────────────
 
