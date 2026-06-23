@@ -53,6 +53,9 @@ if(_cfg&&_rid&&_pid){
     window._fbAddPostBattleConfirm=async()=>{
       try{await updateDoc(rd,{[`postBattleConfirmados.${_pid}`]:true});}catch{}
     };
+    window._fbBroadcastAcaoLivre=async(data)=>{
+      try{await updateDoc(rd,{acaoLivre:{...data,pid:_pid,ts:Date.now()}});}catch{}
+    };
   }catch(e){console.warn('Arena Firebase init:',e);}
 }
 window._fbReady=true;
@@ -92,6 +95,14 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   display:flex; flex-direction:column;
   z-index:200;
   box-shadow:0 -6px 24px rgba(0,0,0,0.85);
+}
+/* Espaçador de safe-area: garante padding mínimo acima da barra de nav Android */
+#safe-area-spacer{
+  flex-shrink:0;
+  height:env(safe-area-inset-bottom,0px);
+}
+@media screen and (max-width:520px){
+  #safe-area-spacer{ height:max(env(safe-area-inset-bottom,0px),52px); }
 }
 
 /* ── Faixa 1: Herói ── */
@@ -171,17 +182,20 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   filter:drop-shadow(0 0 4px rgba(200,150,40,0.45));
 }
 
-/* ── Verb buttons (fixed 3) ── */
+/* ── Verb buttons (fixed 4, 2×2 grid) ── */
 #panel-verbs{
-  flex-shrink:0; width:84px;
-  display:flex; flex-direction:column; gap:4px;
-  padding:0 6px; justify-content:center;
+  flex-shrink:0; width:clamp(100px,32vw,124px);
+  display:grid; grid-template-columns:1fr 1fr; gap:4px;
+  padding:0 6px; align-content:center;
 }
 .verb-btn{
-  height:34px !important;
-  width:72px !important;
-  border-radius:8px !important;
+  height:28px !important;
+  width:auto !important;
+  border-radius:7px !important;
+  padding:0 2px !important;
 }
+.verb-btn .btn-icon{ font-size:14px !important; }
+.verb-btn .btn-label{ font-size:8px !important; letter-spacing:.2px !important; }
 .verb-btn.inativo{ opacity:0.22 !important; }
 
 /* ── Faixa 2: Detalhe contextual ── */
@@ -236,7 +250,6 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 #action-row{
   display:grid; grid-template-columns:1fr 2fr; gap:8px;
   padding:5px 10px;
-  padding-bottom:max(8px,env(safe-area-inset-bottom));
   flex-shrink:0;
 }
 
@@ -244,7 +257,7 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 #log-strip{
   flex-shrink:0;
   display:flex; align-items:center; gap:8px;
-  padding:4px 12px max(6px,env(safe-area-inset-bottom));
+  padding:4px 12px 6px;
   background:rgba(0,0,0,0.35);
   border-top:1px solid rgba(190,140,35,0.12);
   min-height:26px;
@@ -295,6 +308,12 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   border:1px solid rgba(140,85,10,0.22);
   box-shadow:0 2px 8px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06);
 }
+#btn-acao-livre{
+  background:linear-gradient(155deg,#1a3a2e,#0d2018);
+  color:#6ab89a;
+  border:1px solid rgba(40,140,90,0.22);
+  box-shadow:0 2px 8px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06);
+}
 
 /* ── Modal Ação Livre ── */
 #acao-modal{
@@ -320,8 +339,47 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 #acao-textarea::placeholder{ color:rgba(200,160,80,0.40); }
 #acao-close{
   height:44px; border:none; border-radius:10px;
+  background:rgba(100,60,10,0.5); border:1px solid rgba(200,130,0,0.3);
+  color:rgba(220,185,120,0.85); font-size:13px; font-weight:700;
+  cursor:pointer; touch-action:manipulation; flex:1;
+}
+#acao-send{
+  height:44px; border:none; border-radius:10px;
   background:linear-gradient(135deg,#b87800,#8a5a00);
   color:#fff; font-size:14px; font-weight:800;
+  cursor:pointer; touch-action:manipulation; flex:2;
+}
+#acao-send:disabled{ opacity:0.5; }
+#acao-btns{ display:flex; gap:8px; }
+#acao-result{
+  display:none;
+  background:rgba(0,0,0,0.45);
+  border:1px solid rgba(200,150,40,0.3);
+  border-radius:9px; padding:10px;
+  font-size:12px; color:rgba(220,190,110,0.9); line-height:1.55;
+  max-height:130px; overflow-y:auto;
+}
+/* Overlay de resultado para todos os jogadores */
+#acao-result-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,0.75);
+  z-index:400; display:none; align-items:center; justify-content:center;
+}
+#acao-result-overlay.visivel{ display:flex; }
+#acao-result-inner{
+  background:#0f0a06; border:2px solid rgba(200,130,0,0.6);
+  border-radius:16px; padding:22px; width:min(360px,92vw);
+  display:flex; flex-direction:column; gap:12px;
+  box-shadow:0 0 40px rgba(200,130,0,0.4);
+}
+.acao-ov-title{ font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(200,160,60,0.6); }
+.acao-ov-jogador{ font-size:13px; font-weight:900; color:#f5d878; }
+.acao-ov-acao{ font-size:12px; color:rgba(220,200,150,0.75); font-style:italic; }
+.acao-ov-resultado{ font-size:14px; font-weight:800; }
+.acao-ov-efeito{ font-size:11px; color:rgba(160,255,160,0.85); }
+#acao-ov-fechar{
+  height:42px; border:none; border-radius:9px;
+  background:rgba(180,100,0,0.35); border:1px solid rgba(200,140,40,0.35);
+  color:rgba(220,185,100,0.85); font-size:12px; font-weight:700;
   cursor:pointer; touch-action:manipulation;
 }
 
@@ -571,10 +629,13 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
         <span class="btn-icon">👢</span><span class="btn-label">MOVER</span>
       </button>
       <button class="act-btn verb-btn inativo" id="btn-atacar" onclick="clicarAtacar()" disabled>
-        <span class="btn-icon">⚔️</span><span class="btn-label">ATACAR</span>
+        <span class="btn-icon">⚔️</span><span class="btn-label">ATAQUE</span>
       </button>
       <button class="act-btn verb-btn inativo" id="btn-skill"  onclick="abrirSkillPanel()" disabled>
-        <span class="btn-icon">🪄</span><span class="btn-label">AÇÃO</span>
+        <span class="btn-icon">🪄</span><span class="btn-label">SKILL</span>
+      </button>
+      <button class="act-btn verb-btn inativo" id="btn-acao-livre" onclick="abrirAcaoLivre()" disabled>
+        <span class="btn-icon">✨</span><span class="btn-label">AÇÃO</span>
       </button>
     </div>
   </div>
@@ -607,6 +668,9 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
     <span id="log-text">—</span>
   </div>
 
+  <!-- Espaçador seguro: empurra conteúdo acima da barra de nav Android -->
+  <div id="safe-area-spacer"></div>
+
 </div>
 
 <div id="bag-modal">
@@ -621,10 +685,26 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 
 <div id="acao-modal">
   <div id="acao-inner">
-    <div class="acao-title">🧠 Ação Livre</div>
-    <div class="acao-desc">Descreva o que seu personagem quer fazer.<br>A IA vai analisar e rolar os dados.</div>
+    <div class="acao-title">✨ Ação Livre</div>
+    <div class="acao-desc">Descreva o que seu personagem quer fazer.<br>A IA analisa, rola os dados e envia para todos.</div>
     <textarea id="acao-textarea" placeholder="Ex: Tento escalar a parede para alcançar o arqueiro inimigo..."></textarea>
-    <button id="acao-close" onclick="fecharAcao()">Fechar</button>
+    <div id="acao-result"></div>
+    <div id="acao-btns">
+      <button id="acao-close" onclick="fecharAcao()">✕ Fechar</button>
+      <button id="acao-send" onclick="enviarAcaoLivre()">🧠 Analisar</button>
+    </div>
+  </div>
+</div>
+
+<div id="acao-result-overlay">
+  <div id="acao-result-inner">
+    <div class="acao-ov-title">✨ Ação Livre</div>
+    <div class="acao-ov-jogador" id="acao-ov-jogador">—</div>
+    <div class="acao-ov-acao" id="acao-ov-acao">—</div>
+    <div id="acao-ov-desc" style="font-size:11px;color:rgba(200,175,120,0.65);line-height:1.4"></div>
+    <div class="acao-ov-resultado" id="acao-ov-resultado">—</div>
+    <div class="acao-ov-efeito" id="acao-ov-efeito"></div>
+    <button id="acao-ov-fechar" onclick="document.getElementById('acao-result-overlay').classList.remove('visivel')">OK</button>
   </div>
 </div>
 
@@ -1004,6 +1084,7 @@ let atkTargets    = [];     // hexes de alvos válidos
 // ── estado de turno ──
 let faseDoTurno          = 'idle';
 let _lastDiceTs          = null, _firstRoomUpdate = true;
+let _lastAcaoLivreTs     = null;
 let remoteIntents        = {};
 let enemyIntent          = null;
 let _currentTurnPlayerId = null;
@@ -1890,17 +1971,18 @@ function atualizarHUD(){
 
 function _updateVerbBtns(){
   const estados = {
-    'planejar_mover':  {mover:true,  atacar:false, skill:false},
-    'mover_ativo':     {mover:true,  atacar:false, skill:false},
-    'planejar_acao':   {mover:false, atacar:true,  skill:true},
-    'acao_ativa':      {mover:false, atacar:true,  skill:true},
-    'acao_pronta':     {mover:false, atacar:false, skill:false},
-    'resolvendo':      {mover:false, atacar:false, skill:false},
-    'turno_inimigo':   {mover:false, atacar:false, skill:false},
-    'aguardando':      {mover:false, atacar:false, skill:false},
-    'idle':            {mover:false, atacar:false, skill:false},
+    'planejar_mover':  {mover:true,  atacar:false, skill:false, acaolivre:true},
+    'mover_ativo':     {mover:true,  atacar:false, skill:false, acaolivre:false},
+    'planejar_acao':   {mover:false, atacar:true,  skill:true,  acaolivre:true},
+    'acao_ativa':      {mover:false, atacar:true,  skill:true,  acaolivre:false},
+    'acao_pronta':     {mover:false, atacar:false, skill:false, acaolivre:false},
+    'resolvendo':      {mover:false, atacar:false, skill:false, acaolivre:false},
+    'turno_inimigo':   {mover:false, atacar:false, skill:false, acaolivre:false},
+    'aguardando':      {mover:false, atacar:false, skill:false, acaolivre:false},
+    'idle':            {mover:false, atacar:false, skill:false, acaolivre:false},
   };
-  const e = estados[faseDoTurno] || {mover:false,atacar:false,skill:false};
+  const e = estados[faseDoTurno] || {mover:false,atacar:false,skill:false,acaolivre:false};
+  // mover, atacar, skill usam prefixo direto; ação livre tem id btn-acao-livre
   ['mover','atacar','skill'].forEach(k=>{
     const btn = document.getElementById('btn-'+k);
     if(!btn) return;
@@ -1908,6 +1990,12 @@ function _updateVerbBtns(){
     btn.classList.toggle('inativo', !e[k]);
     btn.disabled = !e[k];
   });
+  const btnAl = document.getElementById('btn-acao-livre');
+  if(btnAl){
+    btnAl.classList.toggle('ativo', e.acaolivre);
+    btnAl.classList.toggle('inativo', !e.acaolivre);
+    btnAl.disabled = !e.acaolivre;
+  }
 }
 
 function cancelarAcaoPlano(){
@@ -2896,13 +2984,114 @@ function abrirBagModal(){
 function fecharBagModal(){
   document.getElementById('bag-modal').classList.remove('visivel');
 }
-function abrirAcao(){
-  document.getElementById('acao-modal').classList.add('visivel');
+function abrirAcaoLivre(){
+  const modal = document.getElementById('acao-modal');
+  if(!modal) return;
+  const ta = document.getElementById('acao-textarea');
+  if(ta) ta.value = '';
+  const res = document.getElementById('acao-result');
+  if(res){ res.style.display='none'; res.innerHTML=''; }
+  const sb = document.getElementById('acao-send');
+  if(sb){ sb.disabled=false; sb.textContent='🧠 Analisar'; }
+  modal.classList.add('visivel');
 }
+window.abrirAcaoLivre = abrirAcaoLivre;
 
 function fecharAcao(){
   document.getElementById('acao-modal').classList.remove('visivel');
 }
+
+async function enviarAcaoLivre(){
+  const txt = (document.getElementById('acao-textarea')?.value||'').trim();
+  if(!txt) return;
+  const sb = document.getElementById('acao-send');
+  const res = document.getElementById('acao-result');
+  if(sb){ sb.disabled=true; sb.textContent='⏳ Analisando...'; }
+  if(res){ res.style.display='none'; }
+
+  const u = selUnit || unidades.find(u=>u.tipo==='heroi');
+  const apiKey = localStorage.getItem('oraculo.groqKey');
+
+  const ctxChar = u
+    ? `Personagem: ${u.nome} | HP: ${u.hp}/${u.maxHp} | SP: ${u.sp}/${u.maxSp} | MOV restante: ${u.mov}`
+    : 'Personagem desconhecido';
+  const ctxInimigos = unidades.filter(e=>e.tipo==='inimigo'&&e.hp>0)
+    .map(e=>`${e.nome} HP:${e.hp}/${e.maxHp}`).join(', ') || 'nenhum';
+  const habList = (u?.habs||[]).map(h=>h.nome||h).join(', ') || 'nenhuma';
+
+  const sysPrompt = `Você é o Mestre do RPG Oráculo (sistema GURPS simplificado). Um jogador descreve uma ação livre.
+Analise e responda em JSON:
+{
+  "possivel": true|false,
+  "descricao": "Narração curta (1-2 frases) do que o personagem tenta fazer",
+  "teste": {"atributo":"DX/IQ/ST/Per/HT","valor":10,"bonus":0} | null,
+  "rolagem": "3d6 ≤ X — Resultado: Y (sucesso/falha)" | null,
+  "resultado": "sucesso"|"falha"|"automatico",
+  "narrativa": "Como a cena se desenrola (2-3 frases vívidas)",
+  "efeito": "Efeito mecânico se houver (dano, bônus, penalidade)" | null
+}
+Se houver teste, role mentalmente 3d6 e compare ao atributo. Declare sucesso ou falha.
+Contexto: ${ctxChar} | Habs: ${habList} | Inimigos: ${ctxInimigos}
+Responda APENAS JSON válido, sem texto fora.`;
+
+  let dados;
+  if(!apiKey){
+    dados = {
+      possivel:true,
+      descricao: txt,
+      teste:null, rolagem:null, resultado:'automatico',
+      narrativa:'A ação é realizada com esforço. Configure uma chave Groq (🔑) para análise dinâmica da IA.',
+      efeito:null
+    };
+  } else {
+    try{
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        method:'POST',
+        headers:{'Authorization':`Bearer ${apiKey}`,'content-type':'application/json'},
+        body:JSON.stringify({
+          model:'llama-3.3-70b-versatile', max_tokens:350,
+          response_format:{type:'json_object'},
+          messages:[
+            {role:'system',content:sysPrompt},
+            {role:'user',content:`Ação: "${txt}"`}
+          ]
+        })
+      });
+      const d = await resp.json();
+      dados = JSON.parse(d.choices?.[0]?.message?.content||'{}');
+    } catch(e){
+      dados = {
+        possivel:true, descricao:txt,
+        teste:null, rolagem:null, resultado:'pendente',
+        narrativa:'Erro ao contatar IA. Tente novamente.',
+        efeito:null
+      };
+    }
+  }
+
+  // Exibe no modal
+  if(res){
+    const icon = dados.resultado==='sucesso'?'✅':dados.resultado==='falha'?'❌':'🎲';
+    res.innerHTML = [
+      dados.descricao ? `<div style="opacity:.65;margin-bottom:5px">${dados.descricao}</div>` : '',
+      dados.rolagem   ? `<div style="font-size:11px;color:#d4a830;margin-bottom:4px">🎲 ${dados.rolagem}</div>` : '',
+      `<div style="font-size:13px;font-weight:800;margin-bottom:4px">${icon} ${dados.narrativa}</div>`,
+      dados.efeito    ? `<div style="font-size:11px;color:#a0ffa0">${dados.efeito}</div>` : '',
+    ].join('');
+    res.style.display='block';
+  }
+  if(sb){ sb.disabled=false; sb.textContent='🔄 Nova Ação'; }
+
+  // Broadcast para todos os jogadores
+  if(window._fbBroadcastAcaoLivre){
+    await window._fbBroadcastAcaoLivre({
+      jogador: u?.nome||'Jogador',
+      acao: txt,
+      dados
+    });
+  }
+}
+window.enviarAcaoLivre = enviarAcaoLivre;
 
 function renderBottomPanel(){
   const u = selUnit || unidades.find(u=>u.tipo==='heroi');
@@ -3326,6 +3515,25 @@ function renderRemoteIntents(){
   }
 }
 
+function _mostrarAcaoLivreOverlay(al){
+  const ov = document.getElementById('acao-result-overlay');
+  if(!ov) return;
+  const d = al.dados || {};
+  const icon = d.resultado==='sucesso'?'✅':d.resultado==='falha'?'❌':'🎲';
+  document.getElementById('acao-ov-jogador').textContent = al.jogador||'Jogador';
+  document.getElementById('acao-ov-acao').textContent = `"${al.acao||''}"`;
+  document.getElementById('acao-ov-desc').textContent = d.descricao||'';
+  const resEl = document.getElementById('acao-ov-resultado');
+  resEl.innerHTML = [
+    d.rolagem ? `<span style="font-size:11px;color:#d4a830;display:block;margin-bottom:4px">🎲 ${d.rolagem}</span>` : '',
+    `${icon} ${d.narrativa||''}`,
+  ].join('');
+  const efEl = document.getElementById('acao-ov-efeito');
+  efEl.textContent = d.efeito||'';
+  efEl.style.display = d.efeito ? 'block' : 'none';
+  ov.classList.add('visivel');
+}
+
 function onRoomUpdate(room){
   if(!room||!room.players) return;
 
@@ -3458,6 +3666,17 @@ function onRoomUpdate(room){
       _lastDiceTs=room.diceRoll.ts;
       DiceOverlay.mostrar(room.diceRoll.rolls,()=>{});
     }
+  }
+
+  // ── Ação Livre: exibir overlay para todos ──
+  if(room.acaoLivre && !wasFirst){
+    const al=room.acaoLivre;
+    if(al.ts!==_lastAcaoLivreTs){
+      _lastAcaoLivreTs=al.ts;
+      _mostrarAcaoLivreOverlay(al);
+    }
+  } else if(wasFirst && room.acaoLivre){
+    _lastAcaoLivreTs=room.acaoLivre.ts;
   }
 
   _firstRoomUpdate=false;
