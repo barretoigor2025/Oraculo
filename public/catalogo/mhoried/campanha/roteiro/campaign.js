@@ -308,7 +308,7 @@ export const CENAS = {
     entradaBorda: 'norte',
     ato: 4,
     imgExterior: 'catalogo/mhoried/cenarios/conversacao/torre_limm/imagem/torre_limm.png',
-    imgInterior: 'catalogo/mhoried/cenarios/conversacao/torre_limm/imagem/torre_limm.png',
+    imgInterior: 'catalogo/mhoried/cenarios/conversacao/torre_limm/imagem/torre_limm_int.png',
     npcsPresentes: ['npc_rei_chutter'],
     temBatalha: true,
     descBatalha: 'Confronto final com o Rei Chutter e seus Golems de Pergaminho no topo da torre',
