@@ -2276,8 +2276,8 @@ function _cinematicaVitoria() {
     _cinAnimarParaHex(h, dest.col, dest.row, 900 + i*180, null);
   });
 
-  // Gregoras spawna após animação dos heróis (timer fixo, não depende de callback)
-  const gregoDelay = herois.length > 0 ? 1200 : 300;
+  // Gregoras entra ~1,5s após a vitória — caminha em paralelo enquanto heróis se posicionam
+  const gregoDelay = herois.length > 0 ? 250 : 150;
   setTimeout(_cinSpawnGregoras, gregoDelay);
 }
 
@@ -2352,7 +2352,7 @@ function _cinEntradaNPC(npcId, path, onChegou) {
   }
 
   let stepIdx=0, stepStart=null, frIdx=0, lastFrTs=0;
-  const stepDur=700, FPS=5;
+  const stepDur=380, FPS=5;
   placeAt(path[0].col, path[0].row);
   renderUnits();
 
@@ -2364,12 +2364,13 @@ function _cinEntradaNPC(npcId, path, onChegou) {
     if(stepIdx<path.length-1){
       if(!stepStart) stepStart=ts;
       let t=Math.min((ts-stepStart)/stepDur,1);
-      t=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
       const from=hexCentro(path[stepIdx].col,path[stepIdx].row);
       const to=hexCentro(path[stepIdx+1].col,path[stepIdx+1].row);
       const cx=from.x+(to.x-from.x)*t, cy=from.y+(to.y-from.y)*t;
+      // Arco de pulo: salta de hexágono em hexágono como peça de tabuleiro
+      const hop=Math.sin(Math.PI*t)*HR*0.55;
       div.style.left=Math.round(cx-dispW/2)+'px';
-      div.style.top=Math.round(cy+OOFF*.3-dispH)+'px';
+      div.style.top=Math.round(cy+OOFF*.3-dispH-hop)+'px';
       if(t>=1){stepIdx++;stepStart=null;}
     }
     if(stepIdx<path.length-1){ requestAnimationFrame(loop); return; }
@@ -2494,22 +2495,28 @@ async function _cinMostrarDialogo() {
     </div>
   </div>`;
 
-  // ── Curtain: painel sobe para cobrir o mapa inteiro ──
-  bp.style.transition = 'top 0.65s cubic-bezier(0.22,1,0.36,1), height 0.65s cubic-bezier(0.22,1,0.36,1)';
+  // ── Painel sobe PARCIALMENTE: mapa e Gregoras continuam visíveis (sem cortina) ──
+  bp.style.transition = 'top 0.55s cubic-bezier(0.22,1,0.36,1), height 0.55s cubic-bezier(0.22,1,0.36,1)';
   requestAnimationFrame(() => {
-    bp.style.top    = '0px';
-    bp.style.height = '100%';
+    bp.style.top    = '';
+    bp.style.height = 'min(46vh, 360px)';
   });
 
-  // ── Mobile keyboard: shrink panel so input stays visible ──
+  // ── Mobile keyboard: só enquanto digita o painel cresce; ao fechar volta ao parcial ──
   function _onVVResize() {
     if (!window.visualViewport) return;
     const vvH = window.visualViewport.height;
     const winH = window.innerHeight;
     const kbH  = Math.max(0, winH - vvH);
-    bp.style.height = (vvH) + 'px';
-    bp.style.top    = '0px';
-    bp.style.bottom = kbH > 0 ? kbH + 'px' : '';
+    if (kbH > 40) {
+      bp.style.height = vvH + 'px';
+      bp.style.top    = '0px';
+      bp.style.bottom = kbH + 'px';
+    } else {
+      bp.style.top    = '';
+      bp.style.bottom = '0px';
+      bp.style.height = 'min(46vh, 360px)';
+    }
   }
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', _onVVResize);
@@ -2550,6 +2557,24 @@ async function _cinMostrarDialogo() {
     logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
   }
 
+  // Mantém só DOIS cards visíveis: o último do NPC e o último do jogador
+  function _trimCards() {
+    const msgs = [...logEl.querySelectorAll('.cin-msg')];
+    const temJogador = msgs.some(m => m.classList.contains('player'));
+    let mantemNpc = false, mantemJog = false;
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      const isPlayer = msgs[i].classList.contains('player');
+      if (isPlayer && !mantemJog) { mantemJog = true; continue; }
+      if (!isPlayer && !mantemNpc) { mantemNpc = true; continue; }
+      msgs[i].remove();
+    }
+    // Após a primeira fala do jogador, remove narração introdutória e dicas
+    if (temJogador) {
+      logEl.querySelectorAll('.cin-narr').forEach(n => n.remove());
+      logEl.querySelectorAll('[data-hint]').forEach(n => n.remove());
+    }
+  }
+
   function appendMsg(quem, nome, portrait, txt, loading=false) {
     const d = document.createElement('div');
     d.className = 'cin-msg'+(quem==='player'?' player':'')+(loading?' loading':'');
@@ -2557,7 +2582,7 @@ async function _cinMostrarDialogo() {
       ? `<div class="cin-msg-port"><img src="${portrait}" onerror="this.parentElement.style.display='none'"></div>`
       : `<div class="cin-msg-port" style="display:flex;align-items:center;justify-content:center;font-size:22px">${quem==='player'?'🧑':'📜'}</div>`;
     d.innerHTML = `${portHTML}<div class="cin-msg-body"><div class="cin-msg-nome">${nome}</div><div class="cin-msg-txt">${txt}</div></div>`;
-    logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+    logEl.appendChild(d); _trimCards(); logEl.scrollTop = logEl.scrollHeight;
     return d;
   }
 
@@ -2599,6 +2624,7 @@ REGRAS: Português brasileiro. Máximo 2-3 frases por resposta — você não di
       convHist.push({role:'user', content: userMsg}, {role:'assistant', content: fb});
       logEl.scrollTop = logEl.scrollHeight;
       const hint = document.createElement('div');
+      hint.dataset.hint = '1';
       hint.style.cssText = 'font-size:10px;color:rgba(190,160,70,.4);text-align:center;padding:3px 0;font-style:italic;';
       hint.textContent = '(Configure 🔑 para respostas dinâmicas da IA)';
       logEl.appendChild(hint);
@@ -2689,7 +2715,7 @@ function verificarVitoria(){
   if(inimigos.length===0){
     unidades=unidades.filter(u=>u.tipo!=='inimigo'); // remove inimigos mortos do array
     render();
-    mostrarLetreiro('VITÓRIA!','os inimigos foram derrotados','',2500, _cinematicaVitoria);
+    mostrarLetreiro('VITÓRIA!','os inimigos foram derrotados','',1400, _cinematicaVitoria);
     return true;
   }
   if(herois.length===0){
@@ -2751,32 +2777,69 @@ function finalizarTurno(){
 function executarAtaquePlano(hab, atacante, alvo, onDone){
   const cb = onDone || proximoTurno;
 
-  // AoE: projétil voa até o hex central → explosão → dado de dano → HP atualiza → mortos somem
+  // AoE: 1) teste de conjuração → 2) projétil voa → 3) explosão → 4) dano (modulado pela margem) → HP
   if(hab.areaRaio>0 && planoAtaque?.areaAlvos){
     if((hab.custoSP||0)>0 && atacante.sp>=hab.custoSP){
       atacante.sp=Math.max(0,atacante.sp-hab.custoSP); renderBottomPanel();
     }
     const areaAlvos=planoAtaque.areaAlvos;
     const alvoHex=planoAtaque.alvoHex||alvo;
-    // Projétil voa → onImpact dispara uma única explosão central
-    lancarAtaque(hab,atacante,alvoHex,()=>{
-      // Depois da explosão visual: rola o dano
-      const dmgR=rollNotacao(hab.dano);
-      const playlist=[{
-        tipo:'rolar', label:`${hab.icone} Dano em Área`,
-        nomeJog:atacante.nome,
-        alvo:areaAlvos.length?areaAlvos.map(e=>e.nome).join(', '):'(ninguém)',
-        resultado:dmgR.total, notacao:hab.dano,
-        dados:parseNotacao(hab.dano)?.sides||6, condicionalDe:0
-      }];
-      if(window._fbBroadcastDice) window._fbBroadcastDice(playlist);
-      DiceOverlay.mostrar(playlist,results=>{
-        const dmg=results[0].resultado;
-        for(const e of areaAlvos) e.hp=Math.max(0,e.hp-dmg);
-        unidades=unidades.filter(u=>u.tipo!=='inimigo'||u.hp>0);
-        if(window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
-        _updateLogStrip(atacante.nome+' causou '+dmg+' de dano em área');
-        render(); renderBottomPanel(); cb();
+
+    // ── Teste de conjuração (a magia pode falhar) ──
+    const conjMod = ATTR_MOD[atacante.nome] || 2;
+    const conjCD  = hab.cd || 11;
+    const d20c    = Math.floor(Math.random()*20)+1;
+    const totalC  = d20c + conjMod;
+    const critico = d20c===20, catastrofe = d20c===1;
+    const sucesso = (totalC>=conjCD || critico) && !catastrofe;
+    const margem  = totalC - conjCD;
+    const modStrC = conjMod>=0?`+${conjMod}`:`${conjMod}`;
+
+    const castPlaylist=[{
+      tipo:'testar', label:`${hab.icone} Conjurar ${hab.nome}`,
+      nomeJog:atacante.nome, alvo:`zona ${hexLabel(alvoHex.col,alvoHex.row)}`,
+      d20:d20c, modStr:modStrC, total:totalC, dc:conjCD,
+      sucesso, critico, catastrofe
+    }];
+    if(window._fbBroadcastDice) window._fbBroadcastDice(castPlaylist);
+    DiceOverlay.mostrar(castPlaylist, castResults=>{
+      const c=castResults[0];
+      // Falha de conjuração → magia não sai, sem dano
+      if(!(c.sucesso||c.critico) || c.catastrofe){
+        const msg = c.catastrofe ? 'A magia desfez-se nas mãos!' : 'A conjuração falhou — nada acontece';
+        mostrarLetreiro('FALHOU', hab.nome, '✦ '+msg, 1700, ()=>{
+          _updateLogStrip(atacante.nome+' falhou ao conjurar '+hab.nome);
+          render(); renderBottomPanel(); cb();
+        });
+        return;
+      }
+
+      // Qualidade da conjuração modula o dano (margem de sucesso)
+      let mult=1, qLabel='';
+      if(c.critico || margem>=7){ mult=1.5; qLabel=' (×1.5 perfeito!)'; }
+      else if(margem>=3){ mult=1; qLabel=''; }
+      else { mult=0.6; qLabel=' (×0.6 instável)'; }
+
+      // Projétil voa → explosão → só então rola o dano modulado
+      lancarAtaque(hab,atacante,alvoHex,()=>{
+        const dmgR=rollNotacao(hab.dano);
+        const finalDmg=Math.max(1, Math.round(dmgR.total*mult));
+        const playlist=[{
+          tipo:'rolar', label:`${hab.icone} Dano em Área`,
+          nomeJog:atacante.nome,
+          alvo:areaAlvos.length?areaAlvos.map(e=>e.nome).join(', '):'(ninguém)',
+          resultado:finalDmg, notacao:hab.dano+qLabel,
+          dados:parseNotacao(hab.dano)?.sides||6, condicionalDe:0
+        }];
+        if(window._fbBroadcastDice) window._fbBroadcastDice(playlist);
+        DiceOverlay.mostrar(playlist,results=>{
+          const dmg=results[0].resultado;
+          for(const e of areaAlvos) e.hp=Math.max(0,e.hp-dmg);
+          unidades=unidades.filter(u=>u.tipo!=='inimigo'||u.hp>0);
+          if(window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
+          _updateLogStrip(atacante.nome+' causou '+dmg+' de dano em área');
+          render(); renderBottomPanel(); cb();
+        });
       });
     });
     return;
