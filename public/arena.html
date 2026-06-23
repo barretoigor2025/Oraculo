@@ -2062,12 +2062,11 @@ function renderActionRow(){
     'acao_ativa': [
       {id:'btn-cancelar', icon:'✕', label:'CANCELAR', fn:'cancelarAtaqueAtual()', ativo:true},
       ...(habAtual?.areaRaio>0
-        // AoE: LANÇAR aparece imediatamente (desabilitado até clicar no hex)
-        ? [{id:'btn-lançar', icon:'💥', label:areaPreview?'LANÇAR!':'LANÇAR', fn:'confirmarAoeAlvo()', ativo:!!areaPreview}]
-        // Alvo único: botão de confirmar direto (sem precisar clicar no mapa)
+        // AoE: confirmação acontece no toque do hex, só CANCELAR aqui
+        ? []
+        // Alvo único: botão de confirmar direto
         : atkTargets.length===1
           ? [{id:'btn-confirmar', icon:'✓', label:'CONFIRMAR', fn:'confirmarAlvoUnico()', ativo:true}]
-          // Múltiplos alvos: instrução, aguarda clique no mapa
           : []
       ),
     ],
@@ -3224,9 +3223,7 @@ function renderBottomPanel(){
         elL.innerHTML=tracker;
         const habNm=`<span style="color:#cc8844">${habAtual?.nome||'?'}</span>`;
         if(habAtual?.areaRaio>0){
-          const dica=areaPreview
-            ? `${habNm} → ${hexLabel(areaPreview.col,areaPreview.row)} — toque LANÇAR!`
-            : `${habNm} — Toque no mapa para mirar`;
+          const dica=`${habNm} — Toque no hex para lançar`;
           elBody.innerHTML=dica;
         } else if(atkTargets.length===1){
           const t=atkTargets[0];
@@ -3396,7 +3393,7 @@ document.getElementById('world').addEventListener('pointerdown',e=>{
       // AoE: clique em qualquer hex do alcance seleciona o centro da explosão
       if(atkTargets.some(h=>h.col===hex.col&&h.row===hex.row)){
         areaPreview={col:hex.col,row:hex.row};
-        renderActionRow(); renderSel(); renderBottomPanel();
+        confirmarAoeAlvo();
       } else {
         cancelarAtaqueAtual();
       }
