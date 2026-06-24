@@ -705,6 +705,77 @@ html,body{
   line-height:1.4;
 }
 
+/* ══════════════════════════════════════════════════════════
+   DIAL ENGINE — modo diálogo com standees e balões
+   ══════════════════════════════════════════════════════════ */
+#dial-overlay{
+  position:fixed;inset:0;z-index:80;
+  pointer-events:none;display:none;
+}
+#dial-overlay.ativo{ pointer-events:all; }
+
+#dial-personagens{
+  position:absolute;bottom:0;left:0;right:0;
+  height:clamp(160px,38vh,320px);
+  pointer-events:none;overflow:hidden;
+}
+.dial-npc{
+  position:absolute;bottom:0;left:0;width:auto;height:100%;
+  transform:translateX(-130%);
+  transition:transform .52s cubic-bezier(.32,.72,0,1),opacity .32s ease,filter .32s ease;
+  filter:drop-shadow(0 12px 32px rgba(0,0,0,.95));
+}
+.dial-npc.dentro{transform:translateX(0);}
+.dial-npc.inativo{opacity:.28;filter:brightness(.45) saturate(.35);}
+.dial-npc canvas{display:block;width:auto;height:100%;transform:scaleX(-1);}
+
+#dial-balao{
+  position:absolute;top:60px;left:12px;right:12px;
+  background:rgba(7,3,1,.91);border:1px solid rgba(190,140,35,.44);
+  border-radius:16px;padding:13px 16px 14px;
+  backdrop-filter:blur(16px);box-shadow:0 4px 32px rgba(0,0,0,.82);
+  opacity:0;transform:translateY(-6px) scale(.98);
+  transition:opacity .28s ease,transform .28s ease;
+  pointer-events:none;z-index:2;
+}
+#dial-balao.visivel{opacity:1;transform:none;pointer-events:all;}
+#dial-balao-nome{font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(190,140,35,.80);margin-bottom:6px;}
+#dial-balao-acao{font-size:11px;color:rgba(185,160,85,.58);font-style:italic;line-height:1.4;margin-bottom:5px;display:none;}
+#dial-balao-texto{font-size:clamp(13px,3.6vw,15.5px);color:rgba(240,218,162,.96);line-height:1.66;font-style:italic;}
+
+#dial-player-card{
+  position:absolute;top:60px;left:12px;right:12px;
+  display:flex;flex-direction:column;gap:8px;
+  opacity:0;pointer-events:none;
+  transform:translateY(-6px) scale(.98);
+  transition:opacity .28s ease,transform .28s ease;z-index:2;
+}
+#dial-player-card.visivel{opacity:1;transform:none;pointer-events:all;}
+.dial-pc-fala{
+  background:rgba(4,8,20,.92);border:1px solid rgba(100,155,220,.40);
+  border-radius:14px;padding:9px 13px 10px;
+  backdrop-filter:blur(16px);display:flex;gap:12px;
+}
+.dial-pc-nome{font-size:8px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(110,160,230,.80);margin-bottom:5px;}
+.dial-pc-texto{font-size:clamp(13px,3.6vw,15px);color:rgba(215,230,255,.94);line-height:1.6;font-style:italic;}
+
+#dial-continuar{
+  position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(clamp(160px,38vh,320px) + 12px);
+  z-index:3;
+  background:rgba(22,11,2,.94);border:1px solid rgba(190,140,35,.58);
+  border-radius:24px;padding:9px 28px;
+  color:#f5d878;font-family:Georgia,serif;font-size:13px;font-weight:700;
+  cursor:pointer;pointer-events:all;white-space:nowrap;
+  box-shadow:0 4px 24px rgba(0,0,0,.7);
+  animation:dial-pulse 1.8s ease-in-out infinite;
+  display:none;
+}
+@keyframes dial-pulse{0%,100%{box-shadow:0 0 0 0 rgba(190,140,35,.35);}50%{box-shadow:0 0 0 7px rgba(190,140,35,0);}}
+
+/* host controls float above dial overlay */
+#controles-host{position:relative;z-index:85;}
+
 </style>
 </head>
 <body>
@@ -830,9 +901,22 @@ html,body{
 <!-- Badge de status -->
 <div id="narr-status">Narração</div>
 
+<!-- DialEngine overlay (dialogue mode: standees + balloon) -->
+<div id="dial-overlay">
+  <div id="dial-personagens"></div>
+  <div id="dial-balao">
+    <div id="dial-balao-nome">—</div>
+    <div id="dial-balao-acao"></div>
+    <div id="dial-balao-texto">…</div>
+  </div>
+  <div id="dial-player-card"></div>
+  <button id="dial-continuar" onclick="window._dialContinuar()">▶ Continuar</button>
+</div>
+
 <script type="module">
 import { NPCS } from './catalogo/mhoried/loader.js';
 import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js';
+import { NARRACAO_NPCS as _dialNpcs } from './catalogo/mhoried/narracao.js';
 
 // ── Estado local ─────────────────────────────────────────────────
 const _pid = localStorage.getItem('oraculo.playerId') || (() => {
@@ -969,6 +1053,8 @@ function onRoomUpdate(room) {
   }
   atualizarBotoesModo();
   renderDialogo();
+  if (mudouCena) _dialDesativar();
+  _dialVerificarCena();
   atualizarBotoesCena();
 
   // Verificar se todos confirmaram o gancho de batalha
@@ -2095,6 +2181,251 @@ function esc(v) {
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
     .replace(/'/g,'&#039;');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DIAL ENGINE — standees chromakey + balões por beat
+// ═══════════════════════════════════════════════════════════
+
+let _dialAtivo        = false;
+let _dialReadIdx      = 0;
+let _dialAnimBeat     = false;
+let _dialAwaitingCont = false;
+let _dialNpcEls       = [];     // [{par, npc}]
+let _dialNarracaoCena = null;   // narracao scene id ('feira'|'castelo')
+
+// Mapeia cena de campanha → cena de narracao (via npcsPresentes)
+function _dialGetNarracaoCena(campCenaId) {
+  const cena = CENAS[campCenaId];
+  const presentes = cena?.npcsPresentes || [];
+  for (const npc of _dialNpcs) {
+    if (presentes.some(fullId => fullId.includes(npc.id))) return npc.cenas[0];
+  }
+  return null;
+}
+
+// ── Chromakey canvas (cópia fiel de simulacao_dialogo.html) ──────
+function _dialLoadCanvas(src, canvas, onOk, onErr) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    try {
+      const H = 900, W = Math.round(H * img.naturalWidth / img.naturalHeight);
+      const tmp = document.createElement('canvas');
+      tmp.width = W; tmp.height = H;
+      const tctx = tmp.getContext('2d');
+      tctx.drawImage(img, 0, 0, W, H);
+      _dialChroma(tctx, W, H);
+      const bb = _dialBbox(tctx, W, H);
+      const cw = bb.r - bb.l + 1, ch = bb.b - bb.t + 1;
+      canvas.width = cw; canvas.height = ch;
+      canvas.getContext('2d').drawImage(tmp, bb.l, bb.t, cw, ch, 0, 0, cw, ch);
+      if (onOk) onOk();
+    } catch (_) { if (onErr) onErr(); }
+  };
+  img.onerror = () => { if (onErr) onErr(); };
+  img.src = src;
+}
+
+function _dialBbox(ctx, w, h) {
+  const d = ctx.getImageData(0, 0, w, h).data;
+  let l = w, r = -1, t = h, b = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (d[(y * w + x) * 4 + 3] > 24) {
+        if (x < l) l = x; if (x > r) r = x;
+        if (y < t) t = y; if (y > b) b = y;
+      }
+    }
+  }
+  if (r < l || b < t) return { l: 0, t: 0, r: w - 1, b: h - 1 };
+  return { l, t, r, b };
+}
+
+function _dialChroma(ctx, w, h) {
+  const id = ctx.getImageData(0, 0, w, h), d = id.data;
+  for (let i = 3; i < d.length; i += 4) { if (d[i] < 230) return; }
+  const pts = [[0,0],[w-1,0],[0,h-1],[w-1,h-1],[Math.floor(w/2),0],[0,Math.floor(h/2)],[w-1,Math.floor(h/2)],[Math.floor(w/2),h-1]];
+  let kr = 0, kg = 0, kb = 0;
+  for (const [x, y] of pts) { const b = (y * w + x) * 4; kr += d[b]; kg += d[b+1]; kb += d[b+2]; }
+  kr = Math.round(kr / pts.length); kg = Math.round(kg / pts.length); kb = Math.round(kb / pts.length);
+  for (let i = 0; i < d.length; i += 4) {
+    const dist = Math.abs(d[i] - kr) + Math.abs(d[i+1] - kg) + Math.abs(d[i+2] - kb);
+    if (dist < 52)       { d[i+3] = 0; }
+    else if (dist < 95)  { d[i+3] = Math.round((dist - 52) / 43 * 255); }
+  }
+  ctx.putImageData(id, 0, 0);
+}
+
+// ── Ativar / desativar ───────────────────────────────────────────
+function _dialActivar(campCenaId) {
+  _dialReadIdx      = 0;
+  _dialAnimBeat     = false;
+  _dialAwaitingCont = false;
+  _dialNpcEls       = [];
+
+  const narracaoCena = _dialGetNarracaoCena(campCenaId);
+  _dialNarracaoCena  = narracaoCena;
+
+  // Construir standees
+  const container = document.getElementById('dial-personagens');
+  container.innerHTML = '';
+
+  const npcsNaCena = _dialNpcs.filter(n => !narracaoCena || n.cenas.includes(narracaoCena));
+  npcsNaCena.forEach((npc, i) => {
+    const div = document.createElement('div');
+    div.className = 'dial-npc' + (i > 0 ? ' inativo' : '');
+    div.id = `dial-par-${npc.id}`;
+    div.style.zIndex = String(npc.zBase || 5);
+    div.style.left   = `${npc.offsetPx || 0}px`;
+
+    const canvas = document.createElement('canvas');
+    div.appendChild(canvas);
+    _dialLoadCanvas(
+      npc.img, canvas,
+      null,
+      () => {
+        canvas.remove();
+        const sp = document.createElement('span');
+        sp.style.cssText = 'font-size:80px;display:block;padding-top:16px';
+        sp.textContent = npc.avatar || '👤';
+        div.appendChild(sp);
+      }
+    );
+
+    container.appendChild(div);
+    _dialNpcEls.push({ par: div, npc });
+  });
+
+  // Mostrar overlay e esconder log textual
+  document.getElementById('dial-overlay').style.display = 'block';
+  document.getElementById('dial-overlay').classList.add('ativo');
+  elLog.style.display = 'none';
+  _dialAtivo = true;
+
+  _dialTickDisplay();
+}
+
+function _dialDesativar() {
+  if (!_dialAtivo) return;
+  _dialAtivo = false;
+  const ov = document.getElementById('dial-overlay');
+  ov.style.display  = 'none';
+  ov.classList.remove('ativo');
+  document.getElementById('dial-balao').classList.remove('visivel');
+  document.getElementById('dial-player-card').classList.remove('visivel');
+  document.getElementById('dial-continuar').style.display = 'none';
+  elLog.style.display = '';
+}
+
+// ── Foco visual no NPC falante ───────────────────────────────────
+function _dialFocarNpc(npcId) {
+  _dialNpcEls.forEach(({ par, npc }) => {
+    const ativo = npc.id === npcId;
+    par.classList.toggle('inativo', !ativo);
+    par.style.zIndex = ativo ? String((npc.zBase || 5) + 2) : String(npc.zBase || 5);
+    if (ativo && !par.classList.contains('dentro')) par.classList.add('dentro');
+  });
+}
+
+// ── Mostrar balão de NPC ─────────────────────────────────────────
+function _dialMostrarNPC(npcId, npcNome, acao, texto) {
+  document.getElementById('dial-player-card').classList.remove('visivel');
+  document.getElementById('dial-player-card').innerHTML = '';
+  document.getElementById('dial-balao-nome').textContent = (npcNome || 'NPC').toUpperCase();
+  const acaoEl = document.getElementById('dial-balao-acao');
+  if (acao) { acaoEl.textContent = acao; acaoEl.style.display = 'block'; }
+  else      { acaoEl.style.display = 'none'; }
+  document.getElementById('dial-balao-texto').textContent = texto || '';
+  if (npcId) _dialFocarNpc(npcId);
+  document.getElementById('dial-balao').classList.add('visivel');
+}
+
+// ── Mostrar card de jogador ───────────────────────────────────────
+function _dialMostrarPlayer(nome, texto) {
+  document.getElementById('dial-balao').classList.remove('visivel');
+  const pcard = document.getElementById('dial-player-card');
+  pcard.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'dial-pc-fala';
+  const body = document.createElement('div');
+  const nm = document.createElement('div'); nm.className = 'dial-pc-nome'; nm.textContent = nome;
+  const tx = document.createElement('div'); tx.className = 'dial-pc-texto'; tx.textContent = texto;
+  body.append(nm, tx);
+  row.appendChild(body);
+  pcard.appendChild(row);
+  pcard.classList.add('visivel');
+}
+
+// ── Motor de exibição (um beat por vez) ──────────────────────────
+function _dialTickDisplay() {
+  if (!_dialAtivo || _dialAnimBeat || _dialAwaitingCont) return;
+  if (_dialReadIdx >= _dialogoLog.length) return;
+  const beat = _dialogoLog[_dialReadIdx];
+  _dialAnimBeat = true;
+  _dialRenderBeat(beat);
+}
+
+async function _dialRenderBeat(beat) {
+  const { tipo, oradorId, oradorNome, texto } = beat;
+
+  if (tipo === 'npc' || tipo === 'acao') {
+    let acao = null, fala = texto || '';
+    if (tipo === 'npc') {
+      const m = fala.match(/\[ACAO:\s*([^\]]+)\]/i);
+      acao = m?.[1]?.trim() || null;
+      fala = fala.replace(/\[ACAO:[^\]]+\]\s*/gi, '').trim();
+    }
+    // tipo === 'acao': texto já é a descrição da ação, vai direto no texto do balão
+    const npcData = tipo === 'npc' ? _dialNpcs.find(n => (oradorId || '').includes(n.id)) : null;
+    _dialMostrarNPC(npcData?.id || null, oradorNome, acao, fala || texto);
+
+    document.getElementById('dial-continuar').style.display = 'block';
+    _dialAnimBeat     = false;
+    _dialAwaitingCont = true;
+
+  } else if (tipo === 'jogador') {
+    _dialMostrarPlayer(oradorNome || 'Jogador', texto || '');
+    // Avança automaticamente após breve pausa
+    await new Promise(r => setTimeout(r, 700));
+    document.getElementById('dial-balao').classList.remove('visivel');
+    document.getElementById('dial-player-card').classList.remove('visivel');
+    _dialReadIdx++;
+    _dialAnimBeat = false;
+    _dialTickDisplay();
+
+  } else {
+    // narrador / sistema — avança sem exibir
+    _dialReadIdx++;
+    _dialAnimBeat = false;
+    _dialTickDisplay();
+  }
+}
+
+window._dialContinuar = function () {
+  document.getElementById('dial-continuar').style.display = 'none';
+  _dialAwaitingCont = false;
+  _dialReadIdx++;
+  _dialTickDisplay();
+};
+
+// ── Verificar e (re)ativar conforme a cena ───────────────────────
+function _dialVerificarCena() {
+  const cena     = CENAS[_cenaAtual];
+  const ehDialogo = cena?.tipo === 'dialogo';
+
+  if (ehDialogo) {
+    const narracaoCena = _dialGetNarracaoCena(_cenaAtual);
+    if (!_dialAtivo || narracaoCena !== _dialNarracaoCena) {
+      _dialDesativar();
+      _dialActivar(_cenaAtual);
+    } else {
+      // já ativo na mesma cena — checar novos beats
+      _dialTickDisplay();
+    }
+  } else {
+    _dialDesativar();
+  }
 }
 
 // ── Boot ──────────────────────────────────────────────────────────

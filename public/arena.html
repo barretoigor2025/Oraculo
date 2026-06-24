@@ -2384,12 +2384,13 @@ function _cinEntradaNPC(npcId, path, onChegou) {
       setTimeout(()=>{
         mostrarLetreiro(nd.nome.toUpperCase(), nd.titulo, '', 2500, ()=>{
           div.remove();
-          // Adiciona unit estático ao canvas
+          // Adiciona unit estático ao canvas com standee (peca_tabuleiro)
+          const pecaSrc = `catalogo/mhoried/npcs/${npcId}/peca_tabuleiro/${npcId}_peca.png`;
           const unit={
             nome:nd.nome, tipo:'aliado_cin',
             emoji:'👤', col:path[path.length-1].col, row:path[path.length-1].row,
             hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10, cor:'#8899bb',
-            imgSrc:nd.spriteFrente,
+            imgSrc:pecaSrc,
             img:null, portrait:null, flipH:false,
             _ax:null, _ay:null, clipBottom:0, itens:[], id:unitId,
           };
