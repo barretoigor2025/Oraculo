@@ -776,12 +776,10 @@ html,body{
 .dial-pc-nome{font-size:8px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(110,160,230,.80);margin-bottom:5px;}
 .dial-pc-texto{font-size:clamp(13px,3.6vw,15px);color:rgba(215,230,255,.94);line-height:1.6;font-style:italic;}
 
-/* Botão Continuar */
+/* Botão Continuar — dentro do balão, após o texto */
 #dial-btn-continuar{
-  display:none;position:absolute;
-  left:50%;transform:translateX(-50%);
-  bottom:calc(122px + clamp(280px,48vh,440px) + 14px);
-  z-index:15;
+  display:none;width:fit-content;
+  margin:14px auto 2px;
   background:rgba(22,11,2,.94);border:1px solid rgba(190,140,35,.58);
   border-radius:24px;padding:9px 28px;
   color:#f5d878;font-family:Georgia,serif;font-size:13px;font-weight:700;
@@ -793,12 +791,11 @@ html,body{
 
 /* IA pensando */
 #dial-ia-pensando{
-  display:none;position:absolute;
-  bottom:calc(122px + clamp(280px,48vh,440px) + 14px);
-  left:50%;transform:translateX(-50%);
+  display:none;width:fit-content;
+  margin:12px auto 0;
   background:rgba(60,28,100,.92);border:1px solid rgba(150,80,240,.5);
   border-radius:20px;padding:7px 18px;color:rgba(200,140,255,.92);
-  font-size:12px;letter-spacing:.4px;z-index:15;white-space:nowrap;
+  font-size:12px;letter-spacing:.4px;white-space:nowrap;
 }
 
 /* Chips de NPC */
@@ -1038,12 +1035,11 @@ html,body{
     <div id="dial-balao-nome">—</div>
     <div id="dial-balao-acao"></div>
     <div id="dial-balao-texto">…</div>
+    <div id="dial-ia-pensando">✨ Pensando…</div>
+    <button id="dial-btn-continuar" onclick="window._dialContinuar()">▶ Continuar</button>
   </div>
 
   <div id="dial-player-card"></div>
-
-  <button id="dial-btn-continuar" onclick="window._dialContinuar()">▶ Continuar</button>
-  <div id="dial-ia-pensando">✨ Pensando…</div>
 
   <button id="dial-btn-historico" onclick="window._dialAbrirHistorico()">📜</button>
 
@@ -1080,6 +1076,7 @@ html,body{
 import { NPCS } from './catalogo/mhoried/loader.js';
 import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js';
 import { NARRACAO_NPCS as _dialNpcs, NARRACAO_FLUXO } from './catalogo/mhoried/narracao.js';
+import { NPCS_REGISTRY } from './catalogo/mhoried/npcs_registry.js';
 
 // ── Estado local ─────────────────────────────────────────────────
 const _pid = localStorage.getItem('oraculo.playerId') || (() => {
@@ -2379,6 +2376,7 @@ let _dialAnimBeat     = false;
 let _dialAwaitingCont = false;
 let _dialNpcEls       = [];      // [{par, npc, idx}]
 let _dialNarracaoCena = null;
+let _dialCampCenaAtiva = null;  // ID de campanha da cena atual no overlay
 let _dialNpcAtivoIdx  = 0;       // índice no array de NPCs presentes na cena
 let _dialJogadorAtivo = null;    // {id, nome, classId} do jogador que fala
 let _dialHistoricoLocal = [];    // [{tipo:'npc'|'jogador', quem, texto}]
@@ -2453,7 +2451,7 @@ function _dialChroma(ctx, w, h) {
 
 // ── Activar / Desativar ────────────────────────────────────
 function _dialActivar(campCenaId) {
-  _dialReadIdx      = 0;
+  _dialReadIdx      = _dialogoLog.length; // só exibe beats novos a partir daqui
   _dialAnimBeat     = false;
   _dialAwaitingCont = false;
   _dialNpcEls       = [];
@@ -2461,6 +2459,7 @@ function _dialActivar(campCenaId) {
 
   const narracaoCena = _dialGetNarracaoCena(campCenaId);
   _dialNarracaoCena  = narracaoCena;
+  _dialCampCenaAtiva = campCenaId;
 
   const cena = CENAS[campCenaId];
 
@@ -2472,7 +2471,14 @@ function _dialActivar(campCenaId) {
   // Standees
   const container = document.getElementById('dial-personagens');
   container.innerHTML = '';
-  const npcsNaCena = _dialNpcs.filter(n => !narracaoCena || n.cenas.includes(narracaoCena));
+  // Use npcsPresentes da cena como fonte primária; curated NARRACAO_NPCS tem prioridade
+  const npcsIds = cena?.npcsPresentes ?? [];
+  const npcsNaCena = npcsIds.length > 0
+    ? npcsIds.map(id => {
+        const curated = _dialNpcs.find(n => n.id === id || id === n.id);
+        return curated || NPCS_REGISTRY[id] || null;
+      }).filter(Boolean)
+    : narracaoCena ? _dialNpcs.filter(n => n.cenas.includes(narracaoCena)) : [];
 
   const _ALTURA_REF_CM = 180, _ALTURA_REF_VH = 44;
   npcsNaCena.forEach((npc, i) => {
@@ -2565,7 +2571,7 @@ function _dialAtualizarChips() {
   const btnProximo = document.getElementById('dial-btn-proximo');
   if (btnProximo) {
     const cena = CENAS[_cenaAtual];
-    const fluxo = NARRACAO_FLUXO?.find?.(f => f.id === _dialNarracaoCena);
+    const fluxo = NARRACAO_FLUXO?.find?.(f => f.id === _dialCampCenaAtiva) || NARRACAO_FLUXO?.find?.(f => f.id === _dialNarracaoCena);
     const label = fluxo?.btnLabel || (cena?.proximaCena ? '→ Avançar' : null);
     if (label) { btnProximo.textContent = label; btnProximo.style.display = 'block'; }
     else btnProximo.style.display = 'none';
@@ -2729,17 +2735,12 @@ async function _dialChamarIA(npcIdx, mensagemJogador) {
     : '(a cena acaba de começar)';
   const contextoCena = `LOCAL: ${local}.\nPRESENTES: ${nomesPresentes} e ${jogadoresNomes} (aventureiros).\n\nDIÁLOGOS RECENTES:\n${historicoTexto}`;
 
+  const sysBase = npc.promptSistema
+    ? `${npc.promptSistema}\n\nQUEM VOCÊ É: ${npc.personalidade}\nO QUE VOCÊ SABE (revele gradualmente): ${npc.conhecimentos}\n\n${contextoCena}\n\nREGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. Use [ACAO: desc] antes da fala para ações físicas visíveis. Reaja ao contexto da cena, não apenas à última fala.`
+    : `Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. NUNCA quebre o personagem.\n\nQUEM VOCÊ É: ${npc.personalidade}\nO QUE VOCÊ SABE (revele gradualmente): ${npc.conhecimentos}\nSUA FORMA DE FALAR: ${npc.formaDeFalar}\n\n${contextoCena}\n\nREGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. Use [ACAO: desc] antes da fala para ações físicas visíveis. Reaja ao contexto da cena, não apenas à última fala.`;
+
   const messages = [
-    { role: 'system', content:
-`Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. NUNCA quebre o personagem.
-
-QUEM VOCÊ É: ${npc.personalidade}
-O QUE VOCÊ SABE (revele gradualmente): ${npc.conhecimentos}
-SUA FORMA DE FALAR: ${npc.formaDeFalar}
-
-${contextoCena}
-
-REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. Use [ACAO: desc] antes da fala para ações físicas visíveis. Reaja ao contexto da cena, não apenas à última fala.` },
+    { role: 'system', content: sysBase },
     { role: 'user', content: mensagemJogador },
   ];
 
@@ -2829,7 +2830,7 @@ window._dialEnviar = async function () {
 // ── Navegação e histórico ──────────────────────────────────
 window._dialProximaCena = function () {
   const fluxo = typeof NARRACAO_FLUXO !== 'undefined'
-    ? NARRACAO_FLUXO?.find?.(f => f.id === _dialNarracaoCena)
+    ? (NARRACAO_FLUXO?.find?.(f => f.id === _dialCampCenaAtiva) || NARRACAO_FLUXO?.find?.(f => f.id === _dialNarracaoCena))
     : null;
   const proximaId = fluxo?.proximo || CENAS[_cenaAtual]?.proximaCena;
   if (!proximaId) return;
@@ -2866,8 +2867,7 @@ function _dialVerificarCena() {
   const ehDialogo = cena?.tipo === 'dialogo';
 
   if (ehDialogo) {
-    const narracaoCena = _dialGetNarracaoCena(_cenaAtual);
-    if (!_dialAtivo || narracaoCena !== _dialNarracaoCena) {
+    if (!_dialAtivo || _cenaAtual !== _dialCampCenaAtiva) {
       _dialDesativar();
       _dialActivar(_cenaAtual);
     } else {
