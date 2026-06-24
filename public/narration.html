@@ -983,7 +983,22 @@ function init() {
   }
 
   const conectar = () => {
-    if (!window._fbListenRoom) { setTimeout(conectar, 100); return; }
+    if (!window._fbListenRoom) {
+      // Solo fallback: arena.html stored the target scene in localStorage
+      const soloCena = localStorage.getItem('oraculo.soloNarrCena');
+      if (soloCena) {
+        localStorage.removeItem('oraculo.soloNarrCena');
+        onRoomUpdate({
+          status: 'narration',
+          narration: { cenaId: soloCena, dialogo: [], modoImagem: 'exterior', introConfirmados: {}, introIdx: 0 },
+          players: { [_pid]: { nome: _pname } },
+          cenasVisitadas: [],
+        });
+        return;
+      }
+      setTimeout(conectar, 100);
+      return;
+    }
     _unsubRoom = window._fbListenRoom(onRoomUpdate);
   };
 
@@ -1118,7 +1133,12 @@ async function _dispararFalaEntrada(cenaId) {
     ts: Date.now(),
   };
   if (window._fbAddDialogue) await window._fbAddDialogue(linha);
-  else { _dialogoLog = [..._dialogoLog, linha].slice(-60); renderDialogo(); }
+  else {
+    _dialogoLog = [..._dialogoLog, linha].slice(-60);
+    renderDialogo();
+    // In solo mode: Firebase won't trigger onRoomUpdate, so tick the DialEngine manually
+    if (_dialAtivo) _dialTickDisplay();
+  }
 }
 
 function atualizarCena() {

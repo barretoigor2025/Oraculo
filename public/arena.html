@@ -2301,7 +2301,7 @@ function _cinAnimarParaHex(unit, dc, dr, dur, onDone) {
 // NPCs com sprite-sheet de caminhada (2 frames: costas/frente separados)
 const _NPC_CIN_DATA = {
   npc_gregoras_pellos: {
-    nome:'Gregoras Pellos', titulo:'Senhor da Feira Negra',
+    nome:'Grégoras Pellos', titulo:'Mensageiro da Duquesa',
     spriteCostas:'catalogo/mhoried/npcs/npc_gregoras_pellos/sprites/costas/npc_gregoras_pellos_costas.png',
     spriteFrente:'catalogo/mhoried/npcs/npc_gregoras_pellos/sprites/frente/npc_gregoras_pellos_frente.png',
     frameW:362, frameH:1086, nFrames:2,
@@ -2407,14 +2407,37 @@ function _cinEntradaNPC(npcId, path, onChegou) {
 window._cinEntradaNPC = _cinEntradaNPC;
 
 function _cinSpawnGregoras() {
-  _cinEntradaNPC('npc_gregoras_pellos', [
+  const npcId = 'npc_gregoras_pellos';
+  const path = [
     {col:6,row:13},{col:6,row:12},{col:6,row:11},{col:6,row:10},
     {col:6,row:9},{col:6,row:8},{col:6,row:7},{col:6,row:6},
     {col:6,row:5},{col:6,row:4},{col:6,row:3}
-  ], (unit) => {
-    if(unit) unit.id = '_greg_cin';
-    setTimeout(_cinIrParaConversaFeira, 400);
-  });
+  ];
+  const pecaSrc = `catalogo/mhoried/npcs/${npcId}/peca_tabuleiro/${npcId}_peca.png`;
+  const unit = {
+    nome:'Grégoras Pellos', tipo:'aliado_cin',
+    emoji:'⚔️', col:path[0].col, row:path[0].row,
+    hp:1, maxHp:1, sp:0, maxSp:0, mov:0, ac:10, cor:'#8899bb',
+    imgSrc:pecaSrc, img:null, portrait:null, flipH:false,
+    _ax:null, _ay:null, clipBottom:0, itens:[], id:'_greg_cin',
+  };
+  _loadSprite(unit);
+  unidades.push(unit);
+  render();
+  let stepIdx = 0;
+  function doStep() {
+    if (stepIdx + 1 >= path.length) {
+      renderUnits();
+      mostrarLetreiro('GRÉGORAS PELLOS', 'Mensageiro da Duquesa', '', 2500, () => {
+        setTimeout(_cinIrParaConversaFeira, 300);
+      });
+      return;
+    }
+    const next = path[stepIdx + 1];
+    stepIdx++;
+    _cinAnimarParaHex(unit, next.col, next.row, 700, doStep);
+  }
+  doStep();
 }
 
 function _cinIrParaConversaFeira() {
@@ -2441,6 +2464,7 @@ function _cinIrParaConversaFeira() {
         });
         // A redirecção acontece via room listener (status === 'narration')
       } else {
+        localStorage.setItem('oraculo.soloNarrCena', 'conversa_gregoras_feira');
         window.location.href = 'narration.html';
       }
     }, 750);
