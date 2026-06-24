@@ -776,12 +776,10 @@ html,body{
 .dial-pc-nome{font-size:8px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(110,160,230,.80);margin-bottom:5px;}
 .dial-pc-texto{font-size:clamp(13px,3.6vw,15px);color:rgba(215,230,255,.94);line-height:1.6;font-style:italic;}
 
-/* Botão Continuar */
+/* Botão Continuar — dentro do balão, após o texto */
 #dial-btn-continuar{
-  display:none;position:absolute;
-  left:50%;transform:translateX(-50%);
-  bottom:calc(122px + clamp(280px,48vh,440px) + 14px);
-  z-index:15;
+  display:none;width:fit-content;
+  margin:14px auto 2px;
   background:rgba(22,11,2,.94);border:1px solid rgba(190,140,35,.58);
   border-radius:24px;padding:9px 28px;
   color:#f5d878;font-family:Georgia,serif;font-size:13px;font-weight:700;
@@ -793,12 +791,11 @@ html,body{
 
 /* IA pensando */
 #dial-ia-pensando{
-  display:none;position:absolute;
-  bottom:calc(122px + clamp(280px,48vh,440px) + 14px);
-  left:50%;transform:translateX(-50%);
+  display:none;width:fit-content;
+  margin:12px auto 0;
   background:rgba(60,28,100,.92);border:1px solid rgba(150,80,240,.5);
   border-radius:20px;padding:7px 18px;color:rgba(200,140,255,.92);
-  font-size:12px;letter-spacing:.4px;z-index:15;white-space:nowrap;
+  font-size:12px;letter-spacing:.4px;white-space:nowrap;
 }
 
 /* Chips de NPC */
@@ -1038,12 +1035,11 @@ html,body{
     <div id="dial-balao-nome">—</div>
     <div id="dial-balao-acao"></div>
     <div id="dial-balao-texto">…</div>
+    <div id="dial-ia-pensando">✨ Pensando…</div>
+    <button id="dial-btn-continuar" onclick="window._dialContinuar()">▶ Continuar</button>
   </div>
 
   <div id="dial-player-card"></div>
-
-  <button id="dial-btn-continuar" onclick="window._dialContinuar()">▶ Continuar</button>
-  <div id="dial-ia-pensando">✨ Pensando…</div>
 
   <button id="dial-btn-historico" onclick="window._dialAbrirHistorico()">📜</button>
 
@@ -2453,7 +2449,7 @@ function _dialChroma(ctx, w, h) {
 
 // ── Activar / Desativar ────────────────────────────────────
 function _dialActivar(campCenaId) {
-  _dialReadIdx      = 0;
+  _dialReadIdx      = _dialogoLog.length; // só exibe beats novos a partir daqui
   _dialAnimBeat     = false;
   _dialAwaitingCont = false;
   _dialNpcEls       = [];
@@ -2472,7 +2468,7 @@ function _dialActivar(campCenaId) {
   // Standees
   const container = document.getElementById('dial-personagens');
   container.innerHTML = '';
-  const npcsNaCena = _dialNpcs.filter(n => !narracaoCena || n.cenas.includes(narracaoCena));
+  const npcsNaCena = narracaoCena ? _dialNpcs.filter(n => n.cenas.includes(narracaoCena)) : [];
 
   const _ALTURA_REF_CM = 180, _ALTURA_REF_VH = 44;
   npcsNaCena.forEach((npc, i) => {
