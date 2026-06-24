@@ -1165,7 +1165,8 @@ function init() {
     _unsubRoom = window._fbListenRoom(onRoomUpdate);
   };
 
-  if (window._fbReady) conectar();
+  const hasFbConfig = !!(localStorage.getItem('oraculo.fbConfig') && localStorage.getItem('oraculo.roomId'));
+  if (!hasFbConfig || window._fbReady) conectar();
   else window.addEventListener('fbReady', conectar, { once: true });
 }
 
