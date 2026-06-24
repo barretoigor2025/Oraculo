@@ -730,9 +730,9 @@ html,body{
 
 /* Standees */
 #dial-personagens{
-  position:absolute;bottom:0;left:0;right:0;
-  height:clamp(180px,40vh,320px);
-  pointer-events:none;overflow:hidden;z-index:5;
+  position:absolute;bottom:122px;left:0;right:0;
+  height:clamp(280px,65vh,600px);
+  pointer-events:none;overflow:visible;z-index:5;
 }
 .dial-npc{
   position:absolute;bottom:0;left:0;width:auto;height:100%;
@@ -780,7 +780,7 @@ html,body{
 #dial-btn-continuar{
   display:none;position:absolute;
   left:50%;transform:translateX(-50%);
-  bottom:calc(clamp(180px,40vh,320px) + 10px);
+  bottom:calc(122px + clamp(280px,48vh,440px) + 14px);
   z-index:15;
   background:rgba(22,11,2,.94);border:1px solid rgba(190,140,35,.58);
   border-radius:24px;padding:9px 28px;
@@ -794,7 +794,7 @@ html,body{
 /* IA pensando */
 #dial-ia-pensando{
   display:none;position:absolute;
-  bottom:calc(clamp(180px,40vh,320px) + 10px);
+  bottom:calc(122px + clamp(280px,48vh,440px) + 14px);
   left:50%;transform:translateX(-50%);
   background:rgba(60,28,100,.92);border:1px solid rgba(150,80,240,.5);
   border-radius:20px;padding:7px 18px;color:rgba(200,140,255,.92);
@@ -2474,10 +2474,12 @@ function _dialActivar(campCenaId) {
   container.innerHTML = '';
   const npcsNaCena = _dialNpcs.filter(n => !narracaoCena || n.cenas.includes(narracaoCena));
 
+  const _ALTURA_REF_CM = 180, _ALTURA_REF_VH = 44;
   npcsNaCena.forEach((npc, i) => {
     const div = document.createElement('div');
     div.className = 'dial-npc';
-    div.style.cssText = `z-index:${npc.zBase || 5};left:${npc.offsetPx || 0}px;`;
+    const npcVh = Math.min((npc.altura_cm || _ALTURA_REF_CM) / _ALTURA_REF_CM * _ALTURA_REF_VH, 62).toFixed(1);
+    div.style.cssText = `z-index:${npc.zBase || 5};left:${npc.offsetPx || 0}px;height:${npcVh}vh;`;
     if (i > 0) div.classList.add('inativo');
     const canvas = document.createElement('canvas');
     _dialLoadCanvas(npc.img, canvas, () => {
@@ -2602,7 +2604,7 @@ function _dialAtualizarTurnoBar() {
   lista.forEach(([id, p]) => {
     const chip = document.createElement('button');
     chip.className = 'dial-turno-chip' + (id === _dialJogadorAtivo?.id ? ' ativo' : '');
-    chip.textContent = (p.nome || id).split(' ')[0];
+    chip.textContent = (p.nome || (id === _pid ? _pname : null) || 'Jog.').split(' ')[0];
     chip.onclick = () => {
       _dialJogadorAtivo = { id, nome: p.nome || id, classId: p.classId || 'guerreiro' };
       document.querySelectorAll('.dial-turno-chip').forEach((c, i) => c.classList.toggle('ativo', lista[i]?.[0] === id));

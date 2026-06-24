@@ -6,6 +6,7 @@ export const NARRACAO_NPCS = [
     id:'gregoras', nome:'Grégoras Pellos', avatar:'⚔️',
     img:'catalogo/mhoried/npcs/npc_gregoras_pellos/peca_tabuleiro/npc_gregoras_pellos_peca.png',
     tipo:'standee', zBase:6, offsetPx:0,
+    altura_cm:183, peso_kg:98,
     cenas:['feira','castelo','conversa_feira'],
     personalidade:'Mercenário veterano de meia-idade, ex-soldado do exército de Mhoried. Cicatrizes e postura comunicam mais do que palavras. Leal até a morte com quem confia, perigoso com quem trai. Fala pouco e pesa cada palavra. Respeita força e honestidade acima de tudo. Humor seco difícil de perceber. Quando quer convencer alguém, não pressiona — revela informação estratégica que torna a escolha óbvia por si mesma. Ele os escolheu antes de a batalha terminar: isso significa algo.',
     conhecimentos:'Sabe que os espantalhos foram criados por Choir — mago corrupto que faz experimentos proibidos em Gloamreach. Sabe que pessoas somem nos Blackwoods e voltam "diferentes". Conhece Finn Willowheel desde a infância. Foi ele quem sugeriu à Duquesa contratar esses aventureiros específicos — ele os escolheu. Conhece o caminho para o Castelo. A Duquesa pode oferecer 5.000 peças de ouro e terras — pode revelar isso se o grupo mostrar hesitação genuína.',
@@ -18,6 +19,7 @@ export const NARRACAO_NPCS = [
     id:'finn', nome:'Finn Willowheel', avatar:'🌿',
     img:'catalogo/mhoried/npcs/npc_finn_willowheel/peca_tabuleiro/npc_finn_willowheel_peca.png',
     tipo:'standee', zBase:5, offsetPx:28,
+    altura_cm:162, peso_kg:75,
     cenas:['feira'],
     personalidade:'Meio-halfling comerciante jovem, animado e curioso. Vende ervas, temperos e itens curiosos. Observador nato — nota detalhes que outros ignoram. Parece inocente mas guarda segredos comerciais com astúcia. Amigo de longa data de Grégoras.',
     conhecimentos:'Conhece quase todos os comerciantes da feira. Sabe que uma caixa misteriosa passou pela feira há dois dias — alguém pagou muito bem para que ninguém soubesse. Conhece atalhos por Phanourios e sabe onde ficam os Kobolds pacíficos. Conhece Catherine Laskaris desde criança — ela comprava ervas medicinais para o pai.',
@@ -30,6 +32,7 @@ export const NARRACAO_NPCS = [
     id:'catherine', nome:'Duquesa Catherine', avatar:'👑',
     img:'catalogo/mhoried/npcs/npc_catherine_laskaris/peca_tabuleiro/npc_catherine_laskaris_peca.png',
     tipo:'standee', zBase:8, offsetPx:12,
+    altura_cm:168, peso_kg:58,
     cenas:['castelo'],
     personalidade:'Catherine Laskaris governa Mhoried com inteligência e compaixão calculada. Cresceu numa corte onde cada palavra é uma jogada e aprendeu a usar a gentileza como ferramenta sem perder a genuinidade por trás dela. Sob a compostura há uma pessoa que perdeu muito e recusa-se a perder mais.',
     conhecimentos:'Sabe que os espantalhos foram animados por Choir — mago corrupto que está realizando experimentos proibidos. Quer que os aventureiros investiguem Gloamreach, onde as pessoas desaparecem. Suspeita do Rei Chutter mas ainda não tem provas. Sabe que o Duque Oswald Thool (seu irmão) foi transformado. Pode oferecer 5.000 peças de ouro e terras por ajuda. Conhece Finn Willowheel desde criança. Mantém correspondência secreta com o Alto Druida Mac Rónán.',
@@ -56,7 +59,7 @@ export const NARRACAO_CENAS = {
 };
 
 export const NARRACAO_FLUXO = [
-  { id:'feira',          proximo:'castelo', btnLabel:'⚔️ Ir ao Castelo →', condFirebase:'btnCastelo' },
-  { id:'conversa_feira', proximo:'castelo', btnLabel:'🏰 Ir ao Castelo →' },
+  { id:'feira',          proximo:'castelo_mhoried', btnLabel:'⚔️ Ir ao Castelo →' },
+  { id:'conversa_feira', proximo:'castelo_mhoried', btnLabel:'🏰 Ir ao Castelo →' },
   { id:'castelo',        proximo:null },
 ];
