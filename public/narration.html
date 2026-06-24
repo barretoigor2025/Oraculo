@@ -2463,9 +2463,9 @@ function _dialActivar(campCenaId) {
 
   const cena = CENAS[campCenaId];
 
-  // Background da cena de diálogo
+  // Background da cena de diálogo — overlay de conversa usa sempre interior (é o close-up do encontro)
   const bg = document.getElementById('dial-cena-bg');
-  const bgSrc = _modoImagem === 'interior' ? cena?.imgInterior : cena?.imgExterior;
+  const bgSrc = cena?.imgInterior || cena?.imgExterior;
   if (bg && bgSrc) bg.style.backgroundImage = `url(${bgSrc})`;
 
   // Standees
