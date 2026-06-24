@@ -706,29 +706,45 @@ html,body{
 }
 
 /* ══════════════════════════════════════════════════════════
-   DIAL ENGINE — modo diálogo com standees e balões
+   DIAL ENGINE — modo diálogo interativo com IA
    ══════════════════════════════════════════════════════════ */
 #dial-overlay{
-  position:fixed;inset:0;z-index:80;
-  pointer-events:none;display:none;
+  position:fixed;inset:0;z-index:80;display:none;
+  pointer-events:none;
+  background:#050302;
 }
-#dial-overlay.ativo{ pointer-events:all; }
+#dial-overlay.ativo{ display:flex;flex-direction:column;pointer-events:all; }
 
+/* Cenário de fundo da cena de diálogo */
+#dial-cena-bg{
+  position:absolute;inset:0;
+  background-size:cover;background-position:top center;background-repeat:no-repeat;
+  transition:opacity .7s ease;
+}
+#dial-cena-bg::after{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 50% 62%, transparent 28%, rgba(0,0,0,.52) 100%),
+    linear-gradient(to bottom, rgba(0,0,0,.04) 0%, rgba(0,0,0,.66) 92%);
+}
+
+/* Standees */
 #dial-personagens{
   position:absolute;bottom:0;left:0;right:0;
-  height:clamp(160px,38vh,320px);
-  pointer-events:none;overflow:hidden;
+  height:clamp(180px,40vh,320px);
+  pointer-events:none;overflow:hidden;z-index:5;
 }
 .dial-npc{
   position:absolute;bottom:0;left:0;width:auto;height:100%;
   transform:translateX(-130%);
   transition:transform .52s cubic-bezier(.32,.72,0,1),opacity .32s ease,filter .32s ease;
-  filter:drop-shadow(0 12px 32px rgba(0,0,0,.95));
+  filter:drop-shadow(0 10px 28px rgba(0,0,0,.92));
 }
-.dial-npc.dentro{transform:translateX(0);}
-.dial-npc.inativo{opacity:.28;filter:brightness(.45) saturate(.35);}
-.dial-npc canvas{display:block;width:auto;height:100%;transform:scaleX(-1);}
+.dial-npc.dentro{ transform:translateX(0); }
+.dial-npc.inativo{ opacity:.28;filter:brightness(.45) saturate(.35); }
+.dial-npc canvas{ display:block;width:auto;height:100%;transform:scaleX(-1); }
 
+/* Balão de fala NPC */
 #dial-balao{
   position:absolute;top:60px;left:12px;right:12px;
   background:rgba(7,3,1,.91);border:1px solid rgba(190,140,35,.44);
@@ -736,42 +752,154 @@ html,body{
   backdrop-filter:blur(16px);box-shadow:0 4px 32px rgba(0,0,0,.82);
   opacity:0;transform:translateY(-6px) scale(.98);
   transition:opacity .28s ease,transform .28s ease;
-  pointer-events:none;z-index:2;
+  pointer-events:none;z-index:10;
 }
 #dial-balao.visivel{opacity:1;transform:none;pointer-events:all;}
 #dial-balao-nome{font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(190,140,35,.80);margin-bottom:6px;}
 #dial-balao-acao{font-size:11px;color:rgba(185,160,85,.58);font-style:italic;line-height:1.4;margin-bottom:5px;display:none;}
 #dial-balao-texto{font-size:clamp(13px,3.6vw,15.5px);color:rgba(240,218,162,.96);line-height:1.66;font-style:italic;}
 
+/* Card do player */
 #dial-player-card{
   position:absolute;top:60px;left:12px;right:12px;
   display:flex;flex-direction:column;gap:8px;
   opacity:0;pointer-events:none;
   transform:translateY(-6px) scale(.98);
-  transition:opacity .28s ease,transform .28s ease;z-index:2;
+  transition:opacity .28s ease,transform .28s ease;z-index:10;
 }
 #dial-player-card.visivel{opacity:1;transform:none;pointer-events:all;}
 .dial-pc-fala{
   background:rgba(4,8,20,.92);border:1px solid rgba(100,155,220,.40);
   border-radius:14px;padding:9px 13px 10px;
-  backdrop-filter:blur(16px);display:flex;gap:12px;
+  backdrop-filter:blur(16px);display:flex;gap:12px;align-items:center;
 }
 .dial-pc-nome{font-size:8px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(110,160,230,.80);margin-bottom:5px;}
 .dial-pc-texto{font-size:clamp(13px,3.6vw,15px);color:rgba(215,230,255,.94);line-height:1.6;font-style:italic;}
 
-#dial-continuar{
-  position:absolute;left:50%;transform:translateX(-50%);
-  bottom:calc(clamp(160px,38vh,320px) + 12px);
-  z-index:3;
+/* Botão Continuar */
+#dial-btn-continuar{
+  display:none;position:absolute;
+  left:50%;transform:translateX(-50%);
+  bottom:calc(clamp(180px,40vh,320px) + 10px);
+  z-index:15;
   background:rgba(22,11,2,.94);border:1px solid rgba(190,140,35,.58);
   border-radius:24px;padding:9px 28px;
   color:#f5d878;font-family:Georgia,serif;font-size:13px;font-weight:700;
-  cursor:pointer;pointer-events:all;white-space:nowrap;
+  cursor:pointer;white-space:nowrap;pointer-events:all;
   box-shadow:0 4px 24px rgba(0,0,0,.7);
   animation:dial-pulse 1.8s ease-in-out infinite;
-  display:none;
 }
 @keyframes dial-pulse{0%,100%{box-shadow:0 0 0 0 rgba(190,140,35,.35);}50%{box-shadow:0 0 0 7px rgba(190,140,35,0);}}
+
+/* IA pensando */
+#dial-ia-pensando{
+  display:none;position:absolute;
+  bottom:calc(clamp(180px,40vh,320px) + 10px);
+  left:50%;transform:translateX(-50%);
+  background:rgba(60,28,100,.92);border:1px solid rgba(150,80,240,.5);
+  border-radius:20px;padding:7px 18px;color:rgba(200,140,255,.92);
+  font-size:12px;letter-spacing:.4px;z-index:15;white-space:nowrap;
+}
+
+/* Chips de NPC */
+#dial-npc-chips{
+  position:absolute;bottom:calc(58px + 28px);left:0;right:0;height:36px;
+  padding:0 12px;background:rgba(4,2,1,.90);
+  border-top:1px solid rgba(190,140,35,.12);
+  display:flex;align-items:center;gap:8px;z-index:20;
+  overflow-x:auto;scrollbar-width:none;
+}
+#dial-npc-chips::-webkit-scrollbar{display:none;}
+.dial-chip-label{font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:rgba(190,140,35,.28);flex-shrink:0;}
+.dial-chip-npc{
+  flex-shrink:0;padding:4px 14px;
+  border:1px solid rgba(190,140,35,.24);border-radius:20px;
+  background:rgba(25,16,5,.7);color:rgba(200,175,100,.52);
+  font-size:11px;font-family:Georgia,serif;cursor:pointer;white-space:nowrap;
+  transition:background .2s,color .2s,border-color .2s;
+}
+.dial-chip-npc.ativo{background:rgba(190,140,35,.20);border-color:rgba(190,140,35,.58);color:#f5d878;}
+.dial-chip-spacer{flex:1;min-width:4px;}
+.dial-btn-acao{
+  flex-shrink:0;padding:5px 14px;
+  border:1px solid rgba(190,140,35,.48);border-radius:20px;
+  background:rgba(190,140,35,.18);color:#f5d878;
+  font-size:11px;font-family:Georgia,serif;cursor:pointer;white-space:nowrap;
+}
+.dial-btn-sair{border-color:rgba(200,80,60,.40);background:rgba(200,80,60,.12);color:rgba(235,130,110,.90);}
+
+/* Turno bar (chips de jogadores) */
+#dial-turno-bar{
+  position:absolute;bottom:58px;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:4px 12px;background:rgba(4,2,1,.88);
+  border-top:1px solid rgba(190,140,35,.10);
+  z-index:20;min-height:28px;
+}
+#dial-turno-players{display:flex;gap:8px;align-items:center;flex:1;}
+.dial-turno-chip{
+  font-size:10px;padding:2px 10px;border-radius:20px;
+  border:1px solid rgba(190,140,35,.18);color:rgba(200,175,100,.45);
+  background:transparent;cursor:pointer;transition:all .2s;
+}
+.dial-turno-chip.ativo{border-color:rgba(190,140,35,.55);color:#f5d878;background:rgba(190,140,35,.14);}
+#dial-turno-vez{font-size:10px;color:rgba(190,140,35,.45);letter-spacing:.5px;white-space:nowrap;flex-shrink:0;}
+
+/* Input bar */
+#dial-input-bar{
+  position:absolute;bottom:0;left:0;right:0;height:58px;
+  padding:9px 12px max(9px,env(safe-area-inset-bottom));
+  background:rgba(4,2,1,.95);border-top:1px solid rgba(190,140,35,.18);
+  display:flex;align-items:center;gap:9px;z-index:20;
+}
+#dial-msg-input{
+  flex:1;background:rgba(25,16,5,.95);
+  border:1px solid rgba(190,140,35,.28);border-radius:10px;
+  padding:10px 14px;color:#e8d5a8;font-family:Georgia,serif;font-size:14px;outline:none;
+}
+#dial-msg-input::placeholder{color:rgba(190,165,90,.32);}
+#dial-msg-input:disabled{opacity:.45;}
+#dial-btn-enviar{
+  flex-shrink:0;background:rgba(190,140,35,.16);
+  border:1px solid rgba(190,140,35,.42);border-radius:10px;
+  padding:10px 18px;color:#f5d878;font-family:Georgia,serif;
+  font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;
+}
+#dial-btn-enviar:disabled{opacity:.38;cursor:default;}
+
+/* Botão histórico */
+#dial-btn-historico{
+  position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;z-index:25;
+  background:rgba(7,3,1,.75);border:1px solid rgba(190,140,35,.30);
+  border-radius:50%;width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;cursor:pointer;backdrop-filter:blur(10px);
+}
+
+/* Drawer histórico */
+#dial-historico-drawer{
+  position:absolute;inset:0;z-index:30;
+  background:rgba(4,2,1,.96);
+  display:flex;flex-direction:column;
+}
+#dial-historico-drawer.oculto{display:none;}
+#dial-hd-header{
+  flex-shrink:0;padding:16px 18px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(190,140,35,.15);
+}
+#dial-hd-titulo{font-size:13px;font-weight:700;letter-spacing:.6px;color:#f5d878;}
+#dial-hd-fechar{background:none;border:none;color:rgba(190,165,90,.6);font-size:20px;cursor:pointer;padding:4px 8px;}
+#dial-hd-corpo{
+  flex:1;overflow-y:auto;padding:14px 18px 24px;
+  display:flex;flex-direction:column;gap:10px;
+  scrollbar-width:thin;scrollbar-color:rgba(190,140,35,.25) transparent;
+}
+.dial-hd-entrada{padding:8px 12px;border-left:2px solid rgba(190,140,35,.28);}
+.dial-hd-entrada.player{border-left-color:rgba(100,155,220,.45);}
+.dial-hd-quem{font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(190,140,35,.60);margin-bottom:4px;}
+.dial-hd-entrada.player .dial-hd-quem{color:rgba(110,160,230,.65);}
+.dial-hd-texto{font-size:13px;color:rgba(220,195,140,.88);line-height:1.58;font-style:italic;}
 
 /* host controls float above dial overlay */
 #controles-host{position:relative;z-index:85;}
@@ -901,22 +1029,57 @@ html,body{
 <!-- Badge de status -->
 <div id="narr-status">Narração</div>
 
-<!-- DialEngine overlay (dialogue mode: standees + balloon) -->
+<!-- DialEngine overlay — modo diálogo interativo -->
 <div id="dial-overlay">
+  <div id="dial-cena-bg"></div>
   <div id="dial-personagens"></div>
+
   <div id="dial-balao">
     <div id="dial-balao-nome">—</div>
     <div id="dial-balao-acao"></div>
     <div id="dial-balao-texto">…</div>
   </div>
+
   <div id="dial-player-card"></div>
-  <button id="dial-continuar" onclick="window._dialContinuar()">▶ Continuar</button>
+
+  <button id="dial-btn-continuar" onclick="window._dialContinuar()">▶ Continuar</button>
+  <div id="dial-ia-pensando">✨ Pensando…</div>
+
+  <button id="dial-btn-historico" onclick="window._dialAbrirHistorico()">📜</button>
+
+  <div id="dial-historico-drawer" class="oculto">
+    <div id="dial-hd-header">
+      <span id="dial-hd-titulo">📜 Histórico da Cena</span>
+      <button id="dial-hd-fechar" onclick="window._dialFecharHistorico()">✕</button>
+    </div>
+    <div id="dial-hd-corpo"></div>
+  </div>
+
+  <!-- NPC chips (FALAR COM:) -->
+  <div id="dial-npc-chips">
+    <span class="dial-chip-label">Falar com:</span>
+    <div class="dial-chip-spacer"></div>
+    <button id="dial-btn-proximo" class="dial-btn-acao" style="display:none" onclick="window._dialProximaCena()">→ Continuar</button>
+    <button class="dial-btn-acao dial-btn-sair" onclick="window._dialFecharDialogo()">← Sair</button>
+  </div>
+
+  <!-- Turno bar (player chips) -->
+  <div id="dial-turno-bar">
+    <div id="dial-turno-players"></div>
+    <div id="dial-turno-vez">Sua vez</div>
+  </div>
+
+  <!-- Input bar (host only) -->
+  <div id="dial-input-bar">
+    <input id="dial-msg-input" type="text" placeholder="O que você diz…" autocomplete="off" spellcheck="false">
+    <button id="dial-btn-enviar" onclick="window._dialEnviar()">Enviar →</button>
+  </div>
 </div>
 
 <script type="module">
 import { NPCS } from './catalogo/mhoried/loader.js';
 import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js';
-import { NARRACAO_NPCS as _dialNpcs } from './catalogo/mhoried/narracao.js';
+import { NARRACAO_NPCS as _dialNpcs, NARRACAO_FLUXO } from './catalogo/mhoried/narracao.js';
 
 // ── Estado local ─────────────────────────────────────────────────
 const _pid = localStorage.getItem('oraculo.playerId') || (() => {
@@ -2205,30 +2368,39 @@ function esc(v) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  DIAL ENGINE — standees chromakey + balões por beat
+//  DIAL ENGINE — motor interativo de diálogo com IA
 // ═══════════════════════════════════════════════════════════
 
+// ── Estado ────────────────────────────────────────────────
 let _dialAtivo        = false;
 let _dialReadIdx      = 0;
 let _dialAnimBeat     = false;
 let _dialAwaitingCont = false;
-let _dialNpcEls       = [];     // [{par, npc}]
-let _dialNarracaoCena = null;   // narracao scene id ('feira'|'castelo')
+let _dialNpcEls       = [];      // [{par, npc, idx}]
+let _dialNarracaoCena = null;
+let _dialNpcAtivoIdx  = 0;       // índice no array de NPCs presentes na cena
+let _dialJogadorAtivo = null;    // {id, nome, classId} do jogador que fala
+let _dialHistoricoLocal = [];    // [{tipo:'npc'|'jogador', quem, texto}]
 
-// Mapeia cena de campanha → cena de narracao
+// ── Helpers ───────────────────────────────────────────────
+const _dialDelay = ms => new Promise(r => setTimeout(r, ms));
+
+function _dialParsearFala(raw) {
+  const m = raw.match(/\[ACAO:\s*([^\]]+)\]/i);
+  return { acao: m?.[1]?.trim() || null, fala: raw.replace(/\[ACAO:[^\]]+\]\s*/gi, '').trim() };
+}
+
 function _dialGetNarracaoCena(campCenaId) {
   const cena = CENAS[campCenaId];
-  // Hint explícito no campo dialCena da cena de campanha
   if (cena?.dialCena) return cena.dialCena;
-  // Fallback: primeiro NPC presente que tenha uma cena de narracao
   const presentes = cena?.npcsPresentes || [];
   for (const npc of _dialNpcs) {
-    if (presentes.some(fullId => fullId.includes(npc.id))) return npc.cenas[0];
+    if (presentes.some(id => id.includes(npc.id))) return npc.cenas[0];
   }
   return null;
 }
 
-// ── Chromakey canvas (cópia fiel de simulacao_dialogo.html) ──────
+// ── Chromakey canvas ──────────────────────────────────────
 function _dialLoadCanvas(src, canvas, onOk, onErr) {
   const img = new Image();
   img.crossOrigin = 'anonymous';
@@ -2254,12 +2426,9 @@ function _dialLoadCanvas(src, canvas, onOk, onErr) {
 function _dialBbox(ctx, w, h) {
   const d = ctx.getImageData(0, 0, w, h).data;
   let l = w, r = -1, t = h, b = -1;
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      if (d[(y * w + x) * 4 + 3] > 24) {
-        if (x < l) l = x; if (x > r) r = x;
-        if (y < t) t = y; if (y > b) b = y;
-      }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (d[(y * w + x) * 4 + 3] > 24) {
+      if (x < l) l = x; if (x > r) r = x; if (y < t) t = y; if (y > b) b = y;
     }
   }
   if (r < l || b < t) return { l: 0, t: 0, r: w - 1, b: h - 1 };
@@ -2272,61 +2441,95 @@ function _dialChroma(ctx, w, h) {
   const pts = [[0,0],[w-1,0],[0,h-1],[w-1,h-1],[Math.floor(w/2),0],[0,Math.floor(h/2)],[w-1,Math.floor(h/2)],[Math.floor(w/2),h-1]];
   let kr = 0, kg = 0, kb = 0;
   for (const [x, y] of pts) { const b = (y * w + x) * 4; kr += d[b]; kg += d[b+1]; kb += d[b+2]; }
-  kr = Math.round(kr / pts.length); kg = Math.round(kg / pts.length); kb = Math.round(kb / pts.length);
+  kr = Math.round(kr/pts.length); kg = Math.round(kg/pts.length); kb = Math.round(kb/pts.length);
   for (let i = 0; i < d.length; i += 4) {
-    const dist = Math.abs(d[i] - kr) + Math.abs(d[i+1] - kg) + Math.abs(d[i+2] - kb);
-    if (dist < 52)       { d[i+3] = 0; }
-    else if (dist < 95)  { d[i+3] = Math.round((dist - 52) / 43 * 255); }
+    const dist = Math.abs(d[i]-kr) + Math.abs(d[i+1]-kg) + Math.abs(d[i+2]-kb);
+    if (dist < 52) d[i+3] = 0;
+    else if (dist < 95) d[i+3] = Math.round((dist-52)/43*255);
   }
   ctx.putImageData(id, 0, 0);
 }
 
-// ── Ativar / desativar ───────────────────────────────────────────
+// ── Activar / Desativar ────────────────────────────────────
 function _dialActivar(campCenaId) {
   _dialReadIdx      = 0;
   _dialAnimBeat     = false;
   _dialAwaitingCont = false;
   _dialNpcEls       = [];
+  _dialHistoricoLocal = [];
 
   const narracaoCena = _dialGetNarracaoCena(campCenaId);
   _dialNarracaoCena  = narracaoCena;
 
-  // Construir standees
+  const cena = CENAS[campCenaId];
+
+  // Background da cena de diálogo
+  const bg = document.getElementById('dial-cena-bg');
+  const bgSrc = _modoImagem === 'interior' ? cena?.imgInterior : cena?.imgExterior;
+  if (bg && bgSrc) bg.style.backgroundImage = `url(${bgSrc})`;
+
+  // Standees
   const container = document.getElementById('dial-personagens');
   container.innerHTML = '';
-
   const npcsNaCena = _dialNpcs.filter(n => !narracaoCena || n.cenas.includes(narracaoCena));
+
   npcsNaCena.forEach((npc, i) => {
     const div = document.createElement('div');
-    div.className = 'dial-npc' + (i > 0 ? ' inativo' : '');
-    div.id = `dial-par-${npc.id}`;
-    div.style.zIndex = String(npc.zBase || 5);
-    div.style.left   = `${npc.offsetPx || 0}px`;
-
+    div.className = 'dial-npc';
+    div.style.cssText = `z-index:${npc.zBase || 5};left:${npc.offsetPx || 0}px;`;
+    if (i > 0) div.classList.add('inativo');
     const canvas = document.createElement('canvas');
-    div.appendChild(canvas);
-    _dialLoadCanvas(
-      npc.img, canvas,
-      null,
-      () => {
-        canvas.remove();
-        const sp = document.createElement('span');
-        sp.style.cssText = 'font-size:80px;display:block;padding-top:16px';
-        sp.textContent = npc.avatar || '👤';
-        div.appendChild(sp);
-      }
-    );
-
+    _dialLoadCanvas(npc.img, canvas, () => {
+      div.appendChild(canvas);
+      requestAnimationFrame(() => div.classList.add('dentro'));
+    }, () => {
+      const fb = document.createElement('span');
+      fb.style.cssText = 'font-size:48px;display:flex;align-items:flex-start;padding-top:16px;';
+      fb.textContent = npc.avatar || '👤';
+      div.appendChild(fb);
+      requestAnimationFrame(() => div.classList.add('dentro'));
+    });
     container.appendChild(div);
-    _dialNpcEls.push({ par: div, npc });
+    _dialNpcEls.push({ par: div, npc, idx: i });
   });
 
-  // Mostrar overlay e esconder log textual
-  document.getElementById('dial-overlay').style.display = 'block';
-  document.getElementById('dial-overlay').classList.add('ativo');
+  // Selecionar primeiro NPC ativo
+  _dialNpcAtivoIdx = 0;
+
+  // Chips de NPC
+  _dialAtualizarChips();
+
+  // Jogador ativo padrão
+  const jogadores = Object.entries(_lastRoom?.players || {});
+  _dialJogadorAtivo = jogadores.length > 0
+    ? { id: jogadores[0][0], nome: jogadores[0][1].nome || _pname, classId: jogadores[0][1].classId || 'guerreiro' }
+    : { id: _pid, nome: _pname, classId: localStorage.getItem('oraculo.classId') || 'guerreiro' };
+  _dialAtualizarTurnoBar();
+
+  // Mostrar/esconder input (só host digita)
+  const inputBar = document.getElementById('dial-input-bar');
+  const turnoBar = document.getElementById('dial-turno-bar');
+  if (inputBar) inputBar.style.display = _isHost ? 'flex' : 'none';
+  if (turnoBar) turnoBar.style.display = _isHost ? 'flex' : 'none';
+
+  // Limpar state do balão
+  document.getElementById('dial-balao').classList.remove('visivel');
+  document.getElementById('dial-player-card').classList.remove('visivel');
+  document.getElementById('dial-player-card').innerHTML = '';
+  document.getElementById('dial-btn-continuar').style.display = 'none';
+  document.getElementById('dial-ia-pensando').style.display = 'none';
+
+  // Ativar overlay
+  const ov = document.getElementById('dial-overlay');
+  ov.style.display = 'flex';
+  ov.classList.add('ativo');
+
+  // Esconder log do host
   elLog.style.display = 'none';
+
   _dialAtivo = true;
 
+  // Checar se há beats já no log para exibir
   _dialTickDisplay();
 }
 
@@ -2334,58 +2537,124 @@ function _dialDesativar() {
   if (!_dialAtivo) return;
   _dialAtivo = false;
   const ov = document.getElementById('dial-overlay');
-  ov.style.display  = 'none';
+  ov.style.display = 'none';
   ov.classList.remove('ativo');
   document.getElementById('dial-balao').classList.remove('visivel');
   document.getElementById('dial-player-card').classList.remove('visivel');
-  document.getElementById('dial-continuar').style.display = 'none';
+  document.getElementById('dial-btn-continuar').style.display = 'none';
+  document.getElementById('dial-ia-pensando').style.display = 'none';
   elLog.style.display = '';
 }
 
-// ── Foco visual no NPC falante ───────────────────────────────────
-function _dialFocarNpc(npcId) {
-  _dialNpcEls.forEach(({ par, npc }) => {
-    const ativo = npc.id === npcId;
+// ── NPC chips ─────────────────────────────────────────────
+function _dialAtualizarChips() {
+  const bar = document.getElementById('dial-npc-chips');
+  bar.querySelectorAll('.dial-chip-npc').forEach(c => c.remove());
+  const spacer = bar.querySelector('.dial-chip-spacer');
+  _dialNpcEls.forEach(({ npc }, i) => {
+    const chip = document.createElement('button');
+    chip.className = 'dial-chip-npc' + (i === _dialNpcAtivoIdx ? ' ativo' : '');
+    chip.textContent = npc.nome.split(' ')[0];
+    chip.onclick = () => _dialSelecionarNpc(i);
+    bar.insertBefore(chip, spacer);
+  });
+  // Botão "próxima cena" — mostra se a cena tem proximaCena
+  const btnProximo = document.getElementById('dial-btn-proximo');
+  if (btnProximo) {
+    const cena = CENAS[_cenaAtual];
+    const fluxo = NARRACAO_FLUXO?.find?.(f => f.id === _dialNarracaoCena);
+    const label = fluxo?.btnLabel || (cena?.proximaCena ? '→ Avançar' : null);
+    if (label) { btnProximo.textContent = label; btnProximo.style.display = 'block'; }
+    else btnProximo.style.display = 'none';
+  }
+  // Atualizar placeholder
+  const npcAtivo = _dialNpcEls[_dialNpcAtivoIdx]?.npc;
+  const input = document.getElementById('dial-msg-input');
+  if (input && npcAtivo) input.placeholder = `O que você diz para ${npcAtivo.nome.split(' ')[0]}…`;
+}
+
+function _dialSelecionarNpc(idx) {
+  _dialNpcAtivoIdx = idx;
+  _dialNpcEls.forEach(({ par, npc }, i) => {
+    const ativo = i === idx;
     par.classList.toggle('inativo', !ativo);
     par.style.zIndex = ativo ? String((npc.zBase || 5) + 2) : String(npc.zBase || 5);
-    if (ativo && !par.classList.contains('dentro')) par.classList.add('dentro');
+  });
+  document.querySelectorAll('.dial-chip-npc').forEach((c, i) => c.classList.toggle('ativo', i === idx));
+  const npcAtivo = _dialNpcEls[idx]?.npc;
+  const input = document.getElementById('dial-msg-input');
+  if (input && npcAtivo) input.placeholder = `O que você diz para ${npcAtivo.nome.split(' ')[0]}…`;
+}
+
+function _dialFocarNpc(npcId) {
+  const idx = _dialNpcEls.findIndex(({ npc }) => npc.id === npcId || (npcId || '').includes(npc.id));
+  if (idx >= 0) _dialSelecionarNpc(idx);
+}
+
+// ── Turno bar (players) ────────────────────────────────────
+function _dialAtualizarTurnoBar() {
+  const bar = document.getElementById('dial-turno-players');
+  if (!bar) return;
+  bar.innerHTML = '';
+  const jogadores = Object.entries(_lastRoom?.players || {});
+  const lista = jogadores.length > 0 ? jogadores : [[_pid, { nome: _pname }]];
+  lista.forEach(([id, p]) => {
+    const chip = document.createElement('button');
+    chip.className = 'dial-turno-chip' + (id === _dialJogadorAtivo?.id ? ' ativo' : '');
+    chip.textContent = (p.nome || id).split(' ')[0];
+    chip.onclick = () => {
+      _dialJogadorAtivo = { id, nome: p.nome || id, classId: p.classId || 'guerreiro' };
+      document.querySelectorAll('.dial-turno-chip').forEach((c, i) => c.classList.toggle('ativo', lista[i]?.[0] === id));
+    };
+    bar.appendChild(chip);
   });
 }
 
-// ── Mostrar balão de NPC ─────────────────────────────────────────
-function _dialMostrarNPC(npcId, npcNome, acao, texto) {
+// ── Balão NPC ─────────────────────────────────────────────
+function _dialMostrarBalaoNPC(nome, acao, texto, comContinuar) {
+  const balao = document.getElementById('dial-balao');
+  document.getElementById('dial-balao-nome').textContent = (nome || 'NPC').toUpperCase();
+  const acaoEl = document.getElementById('dial-balao-acao');
+  if (acao) { acaoEl.textContent = acao; acaoEl.style.display = 'block'; } else { acaoEl.style.display = 'none'; }
+  document.getElementById('dial-balao-texto').textContent = texto || '';
   document.getElementById('dial-player-card').classList.remove('visivel');
   document.getElementById('dial-player-card').innerHTML = '';
-  document.getElementById('dial-balao-nome').textContent = (npcNome || 'NPC').toUpperCase();
-  const acaoEl = document.getElementById('dial-balao-acao');
-  if (acao) { acaoEl.textContent = acao; acaoEl.style.display = 'block'; }
-  else      { acaoEl.style.display = 'none'; }
-  document.getElementById('dial-balao-texto').textContent = texto || '';
-  if (npcId) _dialFocarNpc(npcId);
-  document.getElementById('dial-balao').classList.add('visivel');
+  balao.classList.add('visivel');
+  document.getElementById('dial-btn-continuar').style.display = comContinuar ? 'block' : 'none';
 }
 
-// ── Mostrar card de jogador ───────────────────────────────────────
-function _dialMostrarPlayer(nome, texto) {
+function _dialOcultarBalao() {
   document.getElementById('dial-balao').classList.remove('visivel');
-  const pcard = document.getElementById('dial-player-card');
-  pcard.innerHTML = '';
+  document.getElementById('dial-player-card').classList.remove('visivel');
+  document.getElementById('dial-player-card').innerHTML = '';
+  document.getElementById('dial-btn-continuar').style.display = 'none';
+}
+
+// ── Card Player ───────────────────────────────────────────
+function _dialMostrarCardPlayer(nome, avatar, texto) {
+  document.getElementById('dial-balao').classList.remove('visivel');
+  const card = document.getElementById('dial-player-card');
+  card.innerHTML = '';
   const row = document.createElement('div');
   row.className = 'dial-pc-fala';
+  const avatarEl = document.createElement('span');
+  avatarEl.style.cssText = 'font-size:28px;flex-shrink:0;';
+  avatarEl.textContent = avatar || '⚔️';
   const body = document.createElement('div');
   const nm = document.createElement('div'); nm.className = 'dial-pc-nome'; nm.textContent = nome;
   const tx = document.createElement('div'); tx.className = 'dial-pc-texto'; tx.textContent = texto;
   body.append(nm, tx);
-  row.appendChild(body);
-  pcard.appendChild(row);
-  pcard.classList.add('visivel');
+  row.append(avatarEl, body);
+  card.appendChild(row);
+  card.classList.add('visivel');
 }
 
-// ── Motor de exibição (um beat por vez) ──────────────────────────
+// ── Motor de exibição (tick por beat) ─────────────────────
 function _dialTickDisplay() {
   if (!_dialAtivo || _dialAnimBeat || _dialAwaitingCont) return;
-  if (_dialReadIdx >= _dialogoLog.length) return;
-  const beat = _dialogoLog[_dialReadIdx];
+  const log = _dialogoLog;
+  if (_dialReadIdx >= log.length) return;
+  const beat = log[_dialReadIdx];
   _dialAnimBeat = true;
   _dialRenderBeat(beat);
 }
@@ -2393,31 +2662,37 @@ function _dialTickDisplay() {
 async function _dialRenderBeat(beat) {
   const { tipo, oradorId, oradorNome, texto } = beat;
 
-  if (tipo === 'npc' || tipo === 'acao') {
-    let acao = null, fala = texto || '';
-    if (tipo === 'npc') {
-      const m = fala.match(/\[ACAO:\s*([^\]]+)\]/i);
-      acao = m?.[1]?.trim() || null;
-      fala = fala.replace(/\[ACAO:[^\]]+\]\s*/gi, '').trim();
-    }
-    // tipo === 'acao': texto já é a descrição da ação, vai direto no texto do balão
-    const npcData = tipo === 'npc' ? _dialNpcs.find(n => (oradorId || '').includes(n.id)) : null;
-    _dialMostrarNPC(npcData?.id || null, oradorNome, acao, fala || texto);
-
-    document.getElementById('dial-continuar').style.display = 'block';
-    _dialAnimBeat     = false;
+  if (tipo === 'npc') {
+    const { acao, fala } = _dialParsearFala(texto || '');
+    _dialOcultarBalao();
+    await _dialDelay(120);
+    _dialFocarNpc(oradorId);
+    // Entrar NPC se ainda não entrou
+    _dialNpcEls.forEach(({ par }) => {
+      if (!par.classList.contains('dentro')) par.classList.add('dentro');
+    });
+    await _dialDelay(300);
+    _dialMostrarBalaoNPC(oradorNome, acao, fala || texto, true);
+    _dialHistoricoLocal.push({ tipo: 'npc', quem: oradorNome, texto: fala || texto });
+    _dialAnimBeat = false;
     _dialAwaitingCont = true;
 
   } else if (tipo === 'jogador') {
-    _dialMostrarPlayer(oradorNome || 'Jogador', texto || '');
-    // Avança automaticamente após breve pausa
-    await new Promise(r => setTimeout(r, 700));
-    document.getElementById('dial-balao').classList.remove('visivel');
-    document.getElementById('dial-player-card').classList.remove('visivel');
-    _dialReadIdx++;
-    _dialAnimBeat = false;
-    _dialTickDisplay();
-
+    const CLASS_AVATAR = { mago:'🔮', guerreiro:'⚔️', ladino:'🗡️', clerigo:'✝️', arqueiro:'🏹', druida:'🌿', barbaro:'🪓' };
+    const avatar = CLASS_AVATAR[beat.classId] || '⚔️';
+    _dialMostrarCardPlayer(oradorNome || 'Jogador', avatar, texto || '');
+    _dialHistoricoLocal.push({ tipo: 'jogador', quem: oradorNome || 'Jogador', texto: texto || '' });
+    // Se fui eu quem enviou → avança automaticamente; senão → Continuar
+    if (beat.authorId === _pid) {
+      _dialReadIdx++;
+      _dialAnimBeat = false;
+      await _dialDelay(600);
+      _dialTickDisplay();
+    } else {
+      document.getElementById('dial-btn-continuar').style.display = 'block';
+      _dialAnimBeat = false;
+      _dialAwaitingCont = true;
+    }
   } else {
     // narrador / sistema — avança sem exibir
     _dialReadIdx++;
@@ -2427,13 +2702,162 @@ async function _dialRenderBeat(beat) {
 }
 
 window._dialContinuar = function () {
-  document.getElementById('dial-continuar').style.display = 'none';
+  document.getElementById('dial-btn-continuar').style.display = 'none';
   _dialAwaitingCont = false;
   _dialReadIdx++;
+  _dialOcultarBalao();
   _dialTickDisplay();
 };
 
-// ── Verificar e (re)ativar conforme a cena ───────────────────────
+// ── IA (Groq) ─────────────────────────────────────────────
+async function _dialChamarIA(npcIdx, mensagemJogador) {
+  const key = localStorage.getItem('oraculo.groqKey');
+  if (!key) return null;
+  const npc = _dialNpcEls[npcIdx]?.npc;
+  if (!npc) return null;
+
+  // Contexto da cena
+  const cena = CENAS[_cenaAtual];
+  const nomesPresentes = _dialNpcEls.map(e => e.npc.nome).join(', ');
+  const local = cena?.titulo || _cenaAtual;
+  const jogadoresNomes = Object.values(_lastRoom?.players || {}).map(p => p.nome).join(', ') || _pname;
+  const historicoTexto = _dialHistoricoLocal.length
+    ? _dialHistoricoLocal.map(e => `${e.quem}: "${e.texto}"`).join('\n')
+    : '(a cena acaba de começar)';
+  const contextoCena = `LOCAL: ${local}.\nPRESENTES: ${nomesPresentes} e ${jogadoresNomes} (aventureiros).\n\nDIÁLOGOS RECENTES:\n${historicoTexto}`;
+
+  const messages = [
+    { role: 'system', content:
+`Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. NUNCA quebre o personagem.
+
+QUEM VOCÊ É: ${npc.personalidade}
+O QUE VOCÊ SABE (revele gradualmente): ${npc.conhecimentos}
+SUA FORMA DE FALAR: ${npc.formaDeFalar}
+
+${contextoCena}
+
+REGRAS: Português brasileiro, 1ª pessoa. Máximo 2-3 frases. Use [ACAO: desc] antes da fala para ações físicas visíveis. Reaja ao contexto da cena, não apenas à última fala.` },
+    { role: 'user', content: mensagemJogador },
+  ];
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 18000);
+  try {
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST', signal: controller.signal,
+      headers: { 'Authorization': `Bearer ${key}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 200, messages }),
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.choices?.[0]?.message?.content?.trim() || null;
+  } catch (_) { return null; }
+  finally { clearTimeout(timer); }
+}
+
+// ── Reação espontânea ──────────────────────────────────────
+async function _dialVerificarReacao(npcQueRespondeuIdx) {
+  const outros = _dialNpcEls.filter((_, i) => i !== npcQueRespondeuIdx);
+  if (!outros.length) return;
+  const reator = outros[Math.floor(Math.random() * outros.length)];
+  const npc = reator.npc;
+  if (Math.random() > (npc.reatividade ?? 0.20)) return;
+
+  const recenteLog = _dialHistoricoLocal.slice(-4).map(e => `${e.quem}: "${e.texto}"`).join('\n');
+  const prompt = `Você observou:\n${recenteLog}\n\nDado exatamente quem você é, você diria algo agora? 1 frase brevíssima no seu estilo. Se não, responda exatamente "---".`;
+  const reacao = await _dialChamarIA(reator.idx, prompt);
+  if (!reacao || reacao.trim().startsWith('---')) return;
+
+  const npcData = reator.npc;
+  const beat = { tipo: 'npc', oradorId: npcData.id, oradorNome: npcData.nome, texto: reacao, ts: Date.now() };
+  if (window._fbAddDialogue) await window._fbAddDialogue(beat);
+  else { _dialogoLog = [..._dialogoLog, beat].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
+}
+
+// ── Enviar fala do jogador ─────────────────────────────────
+window._dialEnviar = async function () {
+  if (!_isHost || !_dialAtivo) return;
+  const input = document.getElementById('dial-msg-input');
+  const texto = (input?.value || '').trim();
+  if (!texto) return;
+
+  const key = localStorage.getItem('oraculo.groqKey');
+  if (!key) {
+    document.getElementById('cfg-overlay')?.classList.remove('oculto');
+    return;
+  }
+
+  input.value = '';
+  input.disabled = true;
+  document.getElementById('dial-btn-enviar').disabled = true;
+
+  // Registrar fala do jogador
+  const jogador = _dialJogadorAtivo || { id: _pid, nome: _pname, classId: 'guerreiro' };
+  const beatJogador = {
+    tipo: 'jogador', oradorId: jogador.id, oradorNome: jogador.nome,
+    texto, classId: jogador.classId, authorId: _pid, ts: Date.now(),
+  };
+  if (window._fbAddDialogue) await window._fbAddDialogue(beatJogador);
+  else { _dialogoLog = [..._dialogoLog, beatJogador].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
+
+  // Chamar IA para o NPC ativo
+  document.getElementById('dial-ia-pensando').style.display = 'block';
+  const resposta = await _dialChamarIA(_dialNpcAtivoIdx, texto);
+  document.getElementById('dial-ia-pensando').style.display = 'none';
+
+  input.disabled = false;
+  document.getElementById('dial-btn-enviar').disabled = false;
+  input.focus();
+
+  if (!resposta) return;
+
+  const npc = _dialNpcEls[_dialNpcAtivoIdx]?.npc;
+  if (!npc) return;
+
+  const beatNpc = { tipo: 'npc', oradorId: npc.id, oradorNome: npc.nome, texto: resposta, ts: Date.now() };
+  if (window._fbAddDialogue) await window._fbAddDialogue(beatNpc);
+  else { _dialogoLog = [..._dialogoLog, beatNpc].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
+
+  // Verificar reação espontânea de outros NPCs
+  await _dialDelay(400);
+  await _dialVerificarReacao(_dialNpcAtivoIdx);
+};
+
+// ── Navegação e histórico ──────────────────────────────────
+window._dialProximaCena = function () {
+  const fluxo = typeof NARRACAO_FLUXO !== 'undefined'
+    ? NARRACAO_FLUXO?.find?.(f => f.id === _dialNarracaoCena)
+    : null;
+  const proximaId = fluxo?.proximo || CENAS[_cenaAtual]?.proximaCena;
+  if (!proximaId) return;
+  _executarNavegacao(proximaId);
+};
+
+window._dialFecharDialogo = function () {
+  _dialDesativar();
+};
+
+window._dialAbrirHistorico = function () {
+  const corpo = document.getElementById('dial-hd-corpo');
+  corpo.innerHTML = _dialHistoricoLocal.length
+    ? _dialHistoricoLocal.map(e => {
+        const cls = e.tipo === 'jogador' ? 'dial-hd-entrada player' : 'dial-hd-entrada';
+        return `<div class="${cls}"><div class="dial-hd-quem">${e.quem.toUpperCase()}</div><div class="dial-hd-texto">${e.texto}</div></div>`;
+      }).join('')
+    : '<div style="padding:40px;text-align:center;color:rgba(190,140,35,.35);font-style:italic;">Nenhuma fala ainda.</div>';
+  document.getElementById('dial-historico-drawer').classList.remove('oculto');
+};
+
+window._dialFecharHistorico = function () {
+  document.getElementById('dial-historico-drawer').classList.add('oculto');
+};
+
+// ── Enter key no input ────────────────────────────────────
+document.getElementById('dial-msg-input')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window._dialEnviar(); }
+});
+
+// ── Verificar e (re)ativar conforme a cena ────────────────
 function _dialVerificarCena() {
   const cena     = CENAS[_cenaAtual];
   const ehDialogo = cena?.tipo === 'dialogo';
@@ -2444,11 +2868,10 @@ function _dialVerificarCena() {
       _dialDesativar();
       _dialActivar(_cenaAtual);
     } else {
-      // já ativo na mesma cena — checar novos beats
       _dialTickDisplay();
     }
   } else {
-    _dialDesativar();
+    if (_dialAtivo) _dialDesativar();
   }
 }
 
