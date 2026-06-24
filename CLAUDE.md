@@ -14,6 +14,8 @@ public/
   campanha_builder.html     ← Builder manual (formulário auxiliar)
   catalogo/
     mhoried/                ← Campanha de referência (padrão visual e técnico)
+      narracao.js           ← NARRACAO_NPCS curado (poucos NPCs), NARRACAO_CENAS, NARRACAO_FLUXO
+      npcs_registry.js      ← NPCS_REGISTRY auto-gerado (todos os NPCs da campanha via dados.json)
     death-note/             ← Segunda campanha instalada
     fantasma/               ← Campanha placeholder (esqueleto vazio)
     {nova-campanha}/        ← Toda campanha nova segue esta estrutura
@@ -31,9 +33,10 @@ Desenvolver em `claude/firebase-setup-check-ThkUc`, depois merge para `main` (Gi
 2. Analise o PDF — entenda o universo, personagens, história, regras especiais
 3. Siga o **Fluxo de Instalação** documentado em `docs/o_oraculo.md`
 4. Gere todos os arquivos em `public/catalogo/{campaign-id}/`
-5. Registre a campanha no seletor do `catalog.html`
-6. Entregue o checklist de assets (arte) a criar
-7. Commit e push
+5. Gere `npcs_registry.js` com todos os NPCs (leia os `dados.json` e exporte `NPCS_REGISTRY`)
+6. Registre a campanha no seletor do `catalog.html`
+7. Entregue o checklist de assets (arte) a criar
+8. Commit e push
 
 ## Regra de ouro
 

@@ -47,7 +47,7 @@ Absorve o que o Construtor gerou e dá vida à história durante o jogo:
 - Responde às ações inesperadas dos jogadores com consistência do universo
 
 **Quem executa:** Groq API (rápido, gratuito, recebe a personalidade do NPC como system prompt).  
-**Dados necessários:** `narracao.js` de cada campanha (contém personalidade, conhecimentos, forma de falar de cada NPC).
+**Dados necessários:** `npcsPresentes` de cada cena em `campaign.js` define quais NPCs aparecem. O motor busca os dados em duas fontes por prioridade: (1) `narracao.js` → `NARRACAO_NPCS` (curado: offsetPx, avatar, cenas especiais); (2) `npcs_registry.js` → `NPCS_REGISTRY` (auto-gerado de todos os `npcs/{id}/dados.json`). Qualquer NPC listado em `npcsPresentes` aparece automaticamente com standee e chip de interação — sem precisar estar em `NARRACAO_NPCS`.
 
 ---
 
@@ -152,7 +152,8 @@ public/catalogo/{id}/
   classes.js                    ← export const CLASSES_DATA
   loader.js                     ← export { NPCS, INIMIGOS_DATA }
   data.js                       ← export { personagens, cenarios, regras especiais da campanha }
-  narracao.js                   ← export { NARRACAO_NPCS, NARRACAO_CENAS, NARRACAO_FLUXO }
+  narracao.js                   ← export { NARRACAO_NPCS, NARRACAO_CENAS, NARRACAO_FLUXO } (curado, opcional)
+  npcs_registry.js              ← export { NPCS_REGISTRY } — auto-gerado de npcs/*/dados.json (todos os NPCs)
   campanha/
     config_campanha.json        ← metadata da campanha
     roteiro/
@@ -214,25 +215,62 @@ export const CLASSES_DATA = {
 
 ---
 
-### `narracao.js` — Configuração do Narrador por campanha
+### `npcs_registry.js` — Registro automático de NPCs (gerado)
+
+Gerado a partir dos `npcs/{id}/dados.json` de cada campanha. O motor de narração usa este arquivo como fallback automático para qualquer NPC listado em `npcsPresentes` que não esteja em `NARRACAO_NPCS`.
+
+**Não editar manualmente.** Regenerar via script quando novos NPCs forem adicionados:
+```bash
+python3 scripts/gerar_npcs_registry.py {campanha_id}
+# Ou manualmente: ler todos npcs/*/dados.json e gerar o export
+```
+
+```javascript
+export const NPCS_REGISTRY = {
+  'npc_id': {
+    id: 'npc_id',
+    nome: 'Nome Completo',
+    img: 'catalogo/{camp}/npcs/npc_id/peca_tabuleiro/npc_id_peca.png',
+    avatar: '🔷',          // derivado de categoria: aliado=🤝 neutro=🔷 hostil=⚔️ vilao=💀
+    altura_cm: 175,
+    zBase: 5, offsetPx: 0, reatividade: 0.20,
+    personalidade: '...',  // de dados.json campo "personalidade"
+    conhecimentos: '...',  // de dados.json campo "conhecimentos"
+    formaDeFalar: '...',   // de dados.json campo "formaDeFalar"
+    promptSistema: '...',  // de dados.json campo ia.prompt_sistema (usado como system prompt da IA)
+  },
+};
+```
+
+**Como o motor decide qual fonte usar:**
+1. Lê `cena.npcsPresentes` do `campaign.js` — lista os IDs dos NPCs da cena
+2. Para cada ID: tenta `NARRACAO_NPCS` primeiro (dados curados, prioridade)
+3. Se não encontrar: usa `NPCS_REGISTRY[id]` (dados automáticos do dados.json)
+4. Se `npcsPresentes` estiver vazio: fallback para `NARRACAO_NPCS` filtrado por `cena`
+
+---
+
+### `narracao.js` — Configuração curada do Narrador (opcional)
+
+Usado para NPCs que precisam de ajustes visuais finos (offsetPx, zBase diferente) ou cenas especiais de narração com backgrounds próprios. **Não é necessário listar todos os NPCs aqui** — o `npcs_registry.js` cobre os demais automaticamente.
 
 ```javascript
 export const NARRACAO_NPCS = [
   {
-    id: 'nome_id',
+    id: 'nome_id',         // deve bater com o ID em npcsPresentes
     nome: 'Nome Completo',
     avatar: '⚔️',
     img: 'catalogo/{id}/npcs/{id}/peca_tabuleiro/{id}_peca.png',
-    tipo: 'standee',
-    zBase: 6,             // profundidade visual na cena (5-9)
-    offsetPx: 0,          // deslocamento horizontal em pixels
-    cenas: ['cena_a', 'cena_b'],  // em quais cenas este NPC aparece
-    personalidade: 'Descrição detalhada de quem este personagem é, o que o motiva.',
-    conhecimentos: 'O que este NPC sabe que é relevante para a história.',
-    formaDeFalar: 'Como este NPC se expressa — ritmo, vocabulário, maneirismos.',
-    reatividade: 0.15,    // 0.0 a 1.0 — probabilidade de reagir espontaneamente
-    abertura: '(Prompt para o Groq gerar a fala de abertura deste NPC nesta cena.)',
-    aberturaFallback: '[ACAO: descrição de ação] Fala de fallback caso a IA falhe.',
+    zBase: 6,              // profundidade visual na cena (5-9)
+    offsetPx: 0,           // deslocamento horizontal em pixels
+    cenas: ['cena_a'],     // usado como fallback se npcsPresentes estiver vazio
+    altura_cm: 183,        // altura real do personagem (180cm = referência 44vh)
+    personalidade: '...',
+    conhecimentos: '...',
+    formaDeFalar: '...',
+    reatividade: 0.15,
+    abertura: '(Prompt para o Groq gerar a fala de abertura.)',
+    aberturaFallback: '[ACAO: desc] Fala de fallback.',
   },
 ];
 
@@ -244,7 +282,8 @@ export const NARRACAO_CENAS = {
 };
 
 export const NARRACAO_FLUXO = [
-  { id:'cena_a', proximo:'cena_b', btnLabel:'→ Próxima Cena', condFirebase:'btnProximo' },
+  { id:'cena_a', proximo:'id_cena_campanha', btnLabel:'→ Próxima Cena' },
+  // proximo deve ser o ID de cena do campaign.js (não narracao ID)
   { id:'cena_b', proximo:null },
 ];
 ```
@@ -263,7 +302,8 @@ export const CENAS = {
     local: 'Nome do Local',
     tipo: 'dialogo',      // 'dialogo', 'batalha', 'exploracao', 'transicao'
     desc: 'O que acontece nesta cena. Narrado em segunda pessoa.',
-    npcs: ['id_npc1', 'id_npc2'],
+    npcsPresentes: ['id_npc1', 'id_npc2'],  // NPCs que aparecem como standees interativos nesta cena
+    dialCena: 'nome_cena_narracao',         // (opcional) override do background de diálogo — mapeia para NARRACAO_CENAS
     gatilho: 'O que desencadeia esta cena — o evento que a inicia.',
     tom: 'misterio',      // 'acao', 'emocional', 'misterio', 'investigacao', 'perseguicao', 'tragedia', 'alívio'
     badges: ['npc'],      // 'batalha', 'npc', 'exploracao'
