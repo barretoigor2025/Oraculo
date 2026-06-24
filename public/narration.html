@@ -2194,9 +2194,12 @@ let _dialAwaitingCont = false;
 let _dialNpcEls       = [];     // [{par, npc}]
 let _dialNarracaoCena = null;   // narracao scene id ('feira'|'castelo')
 
-// Mapeia cena de campanha → cena de narracao (via npcsPresentes)
+// Mapeia cena de campanha → cena de narracao
 function _dialGetNarracaoCena(campCenaId) {
   const cena = CENAS[campCenaId];
+  // Hint explícito no campo dialCena da cena de campanha
+  if (cena?.dialCena) return cena.dialCena;
+  // Fallback: primeiro NPC presente que tenha uma cena de narracao
   const presentes = cena?.npcsPresentes || [];
   for (const npc of _dialNpcs) {
     if (presentes.some(fullId => fullId.includes(npc.id))) return npc.cenas[0];

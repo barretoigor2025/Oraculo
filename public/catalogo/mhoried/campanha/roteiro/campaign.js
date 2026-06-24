@@ -88,6 +88,29 @@ export const CENAS = {
     ],
   },
 
+  conversa_gregoras_feira: {
+    id: 'conversa_gregoras_feira',
+    titulo: 'A Feira de St. Phanourios',
+    subtitulo: 'Entre os escombros da batalha',
+    tipo: 'dialogo',
+    dialCena: 'conversa_feira',
+    exigeAntes: ['mhoried_market'],
+    npcEntrada: 'npc_gregoras_pellos',
+    falaEntrada: '[ACAO: Para a alguns passos de distância, sem apressar. Olhos que avaliaram duzentos rostos antes do de vocês fazem uma leitura rápida do grupo.] Grégoras Pellos. Trabalho para a Duquesa Catherine de Mhoried. — Ela viu o que acabaram de fazer. Tem perguntas sobre quem criou esses espantalhos. E uma proposta que — dependendo de vocês — pode valer a pena ouvir.',
+    proximaCena: 'castelo_mhoried',
+    ordemNarrativa: 1.2,
+    ato: 1,
+    imgExterior: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_int.png',
+    imgInterior: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_int.png',
+    npcsPresentes: ['npc_gregoras_pellos'],
+    introSlides: [
+      {
+        imagem: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_int.png',
+        texto: `A poeira da batalha ainda não assentou quando um homem de cicatrizes atravessa os feridos e os escombros sem desviar o passo. Ele os escolheu antes mesmo de a luta terminar.`,
+      },
+    ],
+  },
+
   castelo_mhoried: {
     id: 'castelo_mhoried',
     titulo: 'O Castelo de Mhoried',

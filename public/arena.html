@@ -2412,8 +2412,38 @@ function _cinSpawnGregoras() {
     {col:6,row:9},{col:6,row:8},{col:6,row:7},{col:6,row:6},
     {col:6,row:5},{col:6,row:4},{col:6,row:3}
   ], (unit) => {
-    if(unit) unit.id = '_greg_cin'; // compat com _cinMostrarDialogo
-    setTimeout(_cinMostrarDialogo, 0);
+    if(unit) unit.id = '_greg_cin';
+    setTimeout(_cinIrParaConversaFeira, 400);
+  });
+}
+
+function _cinIrParaConversaFeira() {
+  // Vira Grégoras para encarar os heróis
+  const greg = unidades.find(u => u.id === '_greg_cin');
+  if (greg) { greg.flipH = true; renderUnits(); }
+
+  // Fade to black → transição para narration com cena de conversa
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9000;opacity:0;transition:opacity .7s;pointer-events:all;';
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => {
+    ov.style.opacity = '1';
+    setTimeout(() => {
+      if (window._fbSetStatus) {
+        window._fbSetStatus('narration', {
+          'narration.cenaId':           'conversa_gregoras_feira',
+          'narration.dialogo':          [],
+          'narration.introConfirmados': {},
+          'narration.introIdx':         0,
+          'narration.modoImagem':       'exterior',
+          postBattleConfirmados:        {},
+          batalha:                      {},
+        });
+        // A redirecção acontece via room listener (status === 'narration')
+      } else {
+        window.location.href = 'narration.html';
+      }
+    }, 750);
   });
 }
 

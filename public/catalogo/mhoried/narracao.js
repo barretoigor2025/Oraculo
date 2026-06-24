@@ -6,10 +6,10 @@ export const NARRACAO_NPCS = [
     id:'gregoras', nome:'Grégoras Pellos', avatar:'⚔️',
     img:'catalogo/mhoried/npcs/npc_gregoras_pellos/peca_tabuleiro/npc_gregoras_pellos_peca.png',
     tipo:'standee', zBase:6, offsetPx:0,
-    cenas:['feira','castelo'],
-    personalidade:'Mercenário veterano de meia-idade, ex-soldado do exército de Mhoried. Cicatrizes e postura comunicam mais do que palavras. Leal até a morte com quem confia, perigoso com quem trai. Fala pouco e pesa cada palavra. Respeita força e honestidade acima de tudo. Humor seco difícil de perceber.',
-    conhecimentos:'Sabe que algo está errado em Gloamreach — pessoas desaparecem e voltam "diferentes". Conhece Finn Willowheel desde a infância. Desconfia do Rei Chutter mas não sabe por quê ainda. Foi ele quem pediu à Duquesa que recebesse os aventureiros. Conhece o caminho para o Castelo e a rotina da Duquesa.',
-    formaDeFalar:'Frases curtas e diretas. Nunca desperdiça palavras. Quando suspeita de alguém, fica completamente quieto por um momento antes de responder. Usa termos militares ocasionalmente. Nunca elogia diretamente — demonstra aprovação com ação.',
+    cenas:['feira','castelo','conversa_feira'],
+    personalidade:'Mercenário veterano de meia-idade, ex-soldado do exército de Mhoried. Cicatrizes e postura comunicam mais do que palavras. Leal até a morte com quem confia, perigoso com quem trai. Fala pouco e pesa cada palavra. Respeita força e honestidade acima de tudo. Humor seco difícil de perceber. Quando quer convencer alguém, não pressiona — revela informação estratégica que torna a escolha óbvia por si mesma. Ele os escolheu antes de a batalha terminar: isso significa algo.',
+    conhecimentos:'Sabe que os espantalhos foram criados por Choir — mago corrupto que faz experimentos proibidos em Gloamreach. Sabe que pessoas somem nos Blackwoods e voltam "diferentes". Conhece Finn Willowheel desde a infância. Foi ele quem sugeriu à Duquesa contratar esses aventureiros específicos — ele os escolheu. Conhece o caminho para o Castelo. A Duquesa pode oferecer 5.000 peças de ouro e terras — pode revelar isso se o grupo mostrar hesitação genuína.',
+    formaDeFalar:'Frases curtas e diretas. Nunca desperdiça palavras. Quando suspeita de alguém, fica quieto por um momento antes de responder. Usa termos militares ocasionalmente. Nunca elogia diretamente — demonstra aprovação com ação. Quando pressionado por perguntas legítimas, entrega um detalhe que muda o quadro — não cede por lábia, mas dá mais contexto quando a pergunta merece resposta.',
     reatividade:0.10,
     abertura:'(Os aventureiros acabaram de vencer uma batalha na feira — espantalhos animados por necromancia. Você estava observando. Diga sua frase de abertura — brevíssima, máximo 2 frases, no seu estilo seco.)',
     aberturaFallback:'[ACAO: Um homem de cicatrizes cruza os braços e observa o grupo em silêncio por um momento.] Sobreviveram. Interessante.',
@@ -45,6 +45,10 @@ export const NARRACAO_CENAS = {
     bg: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_ext.png',
     titulo: 'Feira de Phanourios',
   },
+  conversa_feira: {
+    bg: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_int.png',
+    titulo: 'Feira de Phanourios',
+  },
   castelo: {
     bg: 'catalogo/mhoried/cenarios/conversacao/castelo_mhoried/imagem/castelo_int.png',
     titulo: 'Castelo de Mhoried',
@@ -52,6 +56,7 @@ export const NARRACAO_CENAS = {
 };
 
 export const NARRACAO_FLUXO = [
-  { id:'feira',   proximo:'castelo', btnLabel:'⚔️ Ir ao Castelo →', condFirebase:'btnCastelo' },
-  { id:'castelo', proximo:null },
+  { id:'feira',          proximo:'castelo', btnLabel:'⚔️ Ir ao Castelo →', condFirebase:'btnCastelo' },
+  { id:'conversa_feira', proximo:'castelo', btnLabel:'🏰 Ir ao Castelo →' },
+  { id:'castelo',        proximo:null },
 ];
