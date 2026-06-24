@@ -117,6 +117,7 @@ export const CENAS = {
     subtitulo: 'Salão Privado da Duquesa — Após a Batalha',
     textoIntro: `As chamas dos espantalhos ainda fumegam na praça lá embaixo. Gregoras conduz o grupo pelos corredores do castelo sem cerimônia — "A Duquesa pediu para não haver anúncios formais," ele diz abrindo uma porta lateral. No salão privado, Catherine Laskaris está de pé junto à janela, observando o caos da feira. Quando se vira, seus olhos percorrem cada rosto com a avaliação rápida de quem precisa de aliados e não pode errar na escolha.`,
     tipo: 'dialogo',
+    dialCena: 'castelo',
     exigeAntes: ['mhoried_market'],
     ganchoChegada: 'Gregoras conduziu o grupo pelos corredores do castelo sem cerimônia — a Duquesa pediu para não haver anúncios formais.',
     npcEntrada: 'npc_catherine_laskaris',

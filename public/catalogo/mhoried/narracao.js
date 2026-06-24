@@ -56,7 +56,7 @@ export const NARRACAO_CENAS = {
 };
 
 export const NARRACAO_FLUXO = [
-  { id:'feira',          proximo:'castelo', btnLabel:'⚔️ Ir ao Castelo →', condFirebase:'btnCastelo' },
-  { id:'conversa_feira', proximo:'castelo', btnLabel:'🏰 Ir ao Castelo →' },
+  { id:'feira',          proximo:'castelo_mhoried', btnLabel:'⚔️ Ir ao Castelo →' },
+  { id:'conversa_feira', proximo:'castelo_mhoried', btnLabel:'🏰 Ir ao Castelo →' },
   { id:'castelo',        proximo:null },
 ];
