@@ -20,6 +20,12 @@ if(_cfg&&_rid){
       u['mapa.ts']=Date.now();
       await updateDoc(rd,u);
     };
+    // Atualiza campos de narração diretamente (sem prefixo mapa.)
+    window._fbUpdateNarration=async(fields)=>{
+      const u={'narration.ts':Date.now()};
+      for(const[k,v]of Object.entries(fields)) u[`narration.${k}`]=v;
+      await updateDoc(rd,u);
+    };
     window._fbListen=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
     window._fbInit=async(estado)=>{
       const snap=await getDoc(rd);
@@ -372,7 +378,7 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
   <div id="vot-ov-proponente">—</div>
   <div id="vot-ov-info">
     <div id="vot-ov-contagem">— votos</div>
-    <div id="vot-ov-timer">10</div>
+    <div id="vot-ov-timer">60</div>
   </div>
   <div id="vot-ov-btns">
     <button id="vot-ov-sim" onclick="window._votar(true)">✓ Vamos!</button>
@@ -620,7 +626,7 @@ window._proporRota = async function(destino) {
     proponente: _pid,
     proponenteNome: _nome,
     votos: { [_pid]: true },
-    expiresAt: Date.now() + 10000,
+    expiresAt: Date.now() + 60000,
     iniciouEm: Date.now(),
   };
   if (window._fbUpdate) await window._fbUpdate({ votacao });
@@ -719,7 +725,22 @@ async function _iniciarViagem(destino) {
       descobertos: novoDesc,
       viagemEmAndamento: false,
     });
-    _addChatSistema(`📍 Chegaram em ${NOS[destino]?.titulo}.`);
+    // Sincronizar narração com o novo local — funciona para solo e multiplayer
+    if (window._fbUpdateNarration) {
+      await window._fbUpdateNarration({
+        cenaId: destino,
+        modoImagem: 'exterior',
+        introConfirmados: {},
+        introIdx: 0,
+        percepcao: { ativo: false },
+        dialogo: [],
+      });
+    } else {
+      // Solo sem Firebase: salvar no localStorage e redirecionar
+      localStorage.setItem('oraculo.soloNarrCena', destino);
+      setTimeout(() => { window.location.href = 'narration.html'; }, 1800);
+    }
+    _addChatSistema(`📍 Chegaram em ${NOS[destino]?.titulo}.${window._fbUpdateNarration ? ' Narração atualizada!' : ' Indo para narração…'}`);
     if (encontro) _mostrarEncontro(encontro, caminho);
   }, duracao + 200);
 }
