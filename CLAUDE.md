@@ -20,7 +20,7 @@ public/
   narration.html            ← Narrador ao vivo via Firebase (pilar 2)
   mapa.html                 ← Mapa do Mundo / lobby (pilar 5) — viagem sincroniza narration.cenaId
   simulacao_dialogo.html    ← Simulação de diálogo (carrega campanha do localStorage)
-  campanha_builder.html     ← Builder manual (formulário auxiliar — DESATUALIZADO: não gera npcsPresentes, npcs_registry.js nem mapa.js)
+  campanha_builder.html     ← Builder manual (formulário auxiliar — gera campaign.js c/ npcsPresentes, npcs_registry.js, dados.json e mapa.js)
   catalogo/
     mhoried/                ← Campanha de referência (padrão visual e técnico)
       narracao.js           ← NARRACAO_NPCS curado (poucos NPCs), NARRACAO_CENAS, NARRACAO_FLUXO

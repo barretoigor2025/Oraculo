@@ -72,25 +72,28 @@ code{font-family:monospace;font-size:11px;background:rgba(0,0,0,0.35);padding:1p
 <!-- GUIA -->
 <div id="tab-guia" class="tab-section ativo">
   <div class="card">
-    <div class="card-tit">Anatomia de uma Campanha</div>
-    <p>Toda campanha é um cartridge autossuficiente em <code>public/catalogo/{id}/</code>. Define classes, NPCs, inimigos e cenários. Os arquivos HTML de simulação são clonados do template DN e adaptados.</p>
+    <div class="card-tit">Anatomia de uma Campanha — Cinco Pilares</div>
+    <p>Toda campanha é um cartridge autossuficiente em <code>public/catalogo/{id}/</code>. Alimenta os cinco pilares: <b>Construtor</b> (gera tudo), <b>Narrador</b> (NPCs por <code>npcsPresentes</code>), <b>Catálogo</b>, <b>Arena</b> e o <b>Mapa do Mundo</b> (Pilar 5).</p>
+    <p style="margin-top:6px">Este builder gera os arquivos do novo modelo: <code>campaign.js</code> (cenas + <code>npcsPresentes</code>), <code>npcs_registry.js</code>, <code>dados.json</code> por NPC, e <code>mapa.js</code> (nós + caminhos). <b>Regra de ouro:</b> o ID de cada cena é também o ID do nó no mapa — é assim que viajar abre a cena certa no Narrador.</p>
   </div>
   <div class="card">
     <div class="card-tit">Estrutura de Pastas</div>
     <div class="tree">public/catalogo/<b style="color:#f5d878">{id}/</b>
-├── classes/
-│   └── {classe}/
-│       ├── retrato/
-│       │   ├── {classe}_m_retrato.png   <span style="color:#80c880">← 512×768 mín · portrait</span>
-│       │   └── {classe}_f_retrato.png
-│       └── peca_tabuleiro/
-│           ├── {classe}_m_peca.png      <span style="color:#80c880">← fundo verde #00ff00</span>
-│           └── {classe}_f_peca.png
-├── npcs/{npc}/retrato/ + peca_tabuleiro/
+├── campaign.js  <span style="color:#80c880">← em campanha/roteiro/ · CENAS + npcsPresentes</span>
+├── npcs_registry.js  <span style="color:#80c880">← NPCS_REGISTRY (auto)</span>
+├── mapa.js  <span style="color:#80c880">← NOS + CAMINHOS (Pilar 5)</span>
+├── mapa/mapa_{id}.png  <span style="color:#80c880">← imagem do mundo (~2:1)</span>
+├── classes/{classe}/
+│       ├── retrato/{classe}_m|f_retrato.png   <span style="color:#80c880">← 512×768 mín</span>
+│       └── peca_tabuleiro/{classe}_m|f_peca.png <span style="color:#80c880">← fundo verde #00ff00</span>
+├── npcs/{npc}/
+│       ├── dados.json  <span style="color:#80c880">← fonte do registry</span>
+│       ├── retrato/{npc}_retrato.png
+│       └── peca_tabuleiro/{npc}_peca.png
 ├── inimigos/{inimigo}/peca_tabuleiro/
-└── cenarios/{cenario}/
-    ├── {cenario}_int.png                <span style="color:#80c880">← mapa de batalha</span>
-    └── {cenario}_ext.png                <span style="color:#80c880">← cena de diálogo</span></div>
+└── cenarios/{cena}/
+    ├── imagem/{cena}.png  <span style="color:#80c880">← cena de diálogo</span>
+    └── mapa/{cena}_mapa.png  <span style="color:#80c880">← mapa de batalha</span></div>
   </div>
   <div class="card">
     <div class="card-tit">Especificações de Arte</div>
@@ -108,10 +111,11 @@ code{font-family:monospace;font-size:11px;background:rgba(0,0,0,0.35);padding:1p
   <div class="card">
     <div class="card-tit">Arquivos a Criar / Modificar</div>
     <p style="font-size:12px;color:rgba(200,175,100,0.62);line-height:2.1">
-      ✏️ <code>public/catalog.html</code> — card da campanha + tabs classes/NPCs/inimigos/cenários<br>
-      ✏️ <code>public/simulacao_entrada.html</code> — classes aparecem via JS automaticamente<br>
-      ➕ <code>public/simulacao_dialogo_{id}.html</code> — clonar do DN, trocar NPCS + CONFIG_CENA<br>
-      ✏️ <code>public/arena.html</code> — inimigos carregados por parâmetro (sem mudança estrutural)
+      ➕ <code>catalogo/{id}/campaign.js · npcs_registry.js · mapa.js</code> — gerados nas Saídas<br>
+      ➕ <code>catalogo/{id}/npcs/{id}/dados.json</code> — um por NPC (gerado nas Saídas)<br>
+      ✏️ <code>public/catalog.html</code> — seletor + imports + paleta + branches das abas<br>
+      ✅ <code>public/narration.html · mapa.html · arena.html</code> — leem a campanha pelo localStorage, sem mudança estrutural<br>
+      📖 Detalhes completos em <code>docs/o_oraculo.md</code>
     </p>
   </div>
   <div class="card">
@@ -202,9 +206,17 @@ for path in glob.glob('**/*.png', recursive=True):
   </div>
 
   <div class="card">
-    <div class="card-tit">Cenários</div>
+    <div class="card-tit">Cenas / Locais (= cenários + nós do mapa)</div>
+    <p style="font-size:11px;color:rgba(200,175,100,0.46);margin-bottom:11px">Cada cena é também um local no Mapa do Mundo. O <b>ID será o nó do mapa E a cena do Narrador</b> — viajar até ele abre a cena.</p>
     <div id="lst-cen"></div>
-    <button class="btn b-verde" onclick="addCenario()">+ Adicionar Cenário</button>
+    <button class="btn b-verde" onclick="addCenario()">+ Adicionar Cena / Local</button>
+  </div>
+
+  <div class="card">
+    <div class="card-tit">🗺️ Caminhos do Mapa (ligações entre locais)</div>
+    <p style="font-size:11px;color:rgba(200,175,100,0.46);margin-bottom:11px">Quais locais se conectam. <code>de</code> e <code>ate</code> são IDs das cenas acima.</p>
+    <div id="lst-cam"></div>
+    <button class="btn b-verde" onclick="addCaminho()">+ Adicionar Caminho</button>
   </div>
 
   <button class="btn b-ouro b-big" onclick="gerar()">⚡ GERAR TUDO →</button>
@@ -230,7 +242,7 @@ for path in glob.glob('**/*.png', recursive=True):
 
 <script>
 // ── State ──
-let CLS=[], NPC=[], INI=[], CEN=[];
+let CLS=[], NPC=[], INI=[], CEN=[], CAM=[];
 
 const ESTILOS = {
   anime:   'anime / mangá japonês, linhas limpas, cores vibrantes',
@@ -258,6 +270,7 @@ function addClasse(){ CLS.push({}); rCLS(); }
 function addNPC()    { NPC.push({}); rNPC(); }
 function addInimigo(){ INI.push({}); rINI(); }
 function addCenario(){ CEN.push({}); rCEN(); }
+function addCaminho(){ CAM.push({}); rCAM(); }
 
 function rem(arr,i,fn){ arr.splice(i,1); fn(); }
 
@@ -295,13 +308,20 @@ function rNPC(){
     <div class="ln">NPC ${i+1}</div>
     <button class="btn b-red b-rem" onclick="rem(NPC,${i},rNPC)">✕</button>
     <div class="g2">
-      <div class="campo"><label class="lbl">ID</label><input placeholder="barba-branca"></div>
+      <div class="campo"><label class="lbl">ID</label><input placeholder="npc_barba_branca"></div>
       <div class="campo"><label class="lbl">Nome</label><input placeholder="Barba Branca"></div>
     </div>
     <div class="campo"><label class="lbl">Papel na história</label>
       <input placeholder="Capitão lendário, protetor de Ace"></div>
+    <div class="g2">
+      <div class="campo"><label class="lbl">Categoria</label>
+        <select><option value="aliado">Aliado 🤝</option><option value="neutro">Neutro 🔷</option><option value="hostil">Hostil ⚔️</option><option value="vilao">Vilão 💀</option></select></div>
+      <div class="campo"><label class="lbl">Altura (cm)</label><input type="number" placeholder="175"></div>
+    </div>
     <div class="campo"><label class="lbl">Personalidade</label>
       <textarea placeholder="Pai de família, coração generoso, poder absurdo mas prefere proteção à conquista..."></textarea></div>
+    <div class="campo"><label class="lbl">Conhecimentos (o que sabe — revelado aos poucos)</label>
+      <textarea placeholder="Sabe da localização de Ace, das intenções da Marinha, do passado de Roger..." style="min-height:48px"></textarea></div>
     <div class="campo"><label class="lbl">Forma de falar</label>
       <input placeholder='Grave, pausado. Chama todos de "filho". Poucas palavras, peso máximo.'></div>
     <div class="campo"><label class="lbl">Fala de abertura (fallback sem IA)</label>
@@ -338,17 +358,57 @@ function rINI(){
 function rCEN(){
   document.getElementById('lst-cen').innerHTML = CEN.map((_,i)=>`
   <div class="linha" id="ce-${i}">
-    <div class="ln">Cenário ${i+1}</div>
+    <div class="ln">Cena / Local ${i+1}</div>
     <button class="btn b-red b-rem" onclick="rem(CEN,${i},rCEN)">✕</button>
     <div class="g2">
-      <div class="campo"><label class="lbl">ID</label><input placeholder="praça-marineford"></div>
+      <div class="campo"><label class="lbl">ID (= nó do mapa)</label><input placeholder="praca_marineford"></div>
       <div class="campo"><label class="lbl">Nome</label><input placeholder="Praça de Marineford"></div>
+    </div>
+    <div class="g3">
+      <div class="campo"><label class="lbl">Ato</label><input type="number" placeholder="1"></div>
+      <div class="campo"><label class="lbl">Tem batalha?</label>
+        <select><option value="sim">Sim</option><option value="nao">Não</option></select></div>
+      <div class="campo"><label class="lbl">Ícone mapa</label><input placeholder="⚓"></div>
     </div>
     <div class="campo"><label class="lbl">Descrição do ambiente</label>
       <textarea placeholder="Grande praça militar com palco de execução central, grades de contenção, mar ao fundo..."></textarea></div>
-    <div class="campo"><label class="lbl">Imagens necessárias</label>
-      <select><option value="ambas">Interior + Exterior</option><option value="int">Só Interior (batalha)</option><option value="ext">Só Exterior (diálogo)</option></select></div>
+    <div class="campo"><label class="lbl">NPCs presentes (IDs separados por vírgula — viram npcsPresentes)</label>
+      <input placeholder="npc_barba_branca, npc_garp"></div>
+    <div class="g4">
+      <div class="campo"><label class="lbl">Mapa X %</label><input type="number" placeholder="20"></div>
+      <div class="campo"><label class="lbl">Mapa Y %</label><input type="number" placeholder="38"></div>
+      <div class="campo"><label class="lbl">Estado inicial</label>
+        <select><option value="desconhecido">Desconhecido</option><option value="ouviu_falar">Ouviu falar</option><option value="descoberto">Descoberto</option></select></div>
+      <div class="campo"><label class="lbl">Imagens</label>
+        <select><option value="ambas">Int + Ext</option><option value="int">Só batalha</option><option value="ext">Só diálogo</option></select></div>
+    </div>
   </div>`).join('');
+}
+
+function rCAM(){
+  document.getElementById('lst-cam').innerHTML = CAM.map((_,i)=>`
+  <div class="linha" id="ca-${i}">
+    <div class="ln">Caminho ${i+1}</div>
+    <button class="btn b-red b-rem" onclick="rem(CAM,${i},rCAM)">✕</button>
+    <div class="g2">
+      <div class="campo"><label class="lbl">De (ID)</label><input placeholder="praca_marineford"></div>
+      <div class="campo"><label class="lbl">Até (ID)</label><input placeholder="muralha_norte"></div>
+    </div>
+    <div class="g3">
+      <div class="campo"><label class="lbl">Perigo (0-5)</label><input type="number" placeholder="2"></div>
+      <div class="campo"><label class="lbl">Distância</label>
+        <select><option value="curta">Curta</option><option value="media">Média</option><option value="longa">Longa</option></select></div>
+      <div class="campo"><label class="lbl">Chance encontro (0-1)</label><input type="number" step="0.05" placeholder="0.25"></div>
+    </div>
+  </div>`).join('');
+}
+function lerCAM(){
+  return CAM.map((_,i)=>{
+    const el=document.getElementById('ca-'+i); if(!el) return {};
+    const f=el.querySelectorAll('input,textarea,select');
+    return {de:slug(f[0]?.value||'').replace(/-/g,'_'),ate:slug(f[1]?.value||'').replace(/-/g,'_'),
+      perigo:f[2]?.value||'1',dist:f[3]?.value||'media',chance:f[4]?.value||''};
+  }).filter(c=>c.de&&c.ate);
 }
 
 // ── Ler campos do DOM ──
@@ -365,10 +425,13 @@ function lerCLS(){
 function lerNPC(){
   return NPC.map((_,i)=>{
     const el=document.getElementById('np-'+i); if(!el) return {};
-    const f=el.querySelectorAll('input,textarea');
-    return {id:f[0]?.value||`npc-${i+1}`,nome:f[1]?.value||`NPC ${i+1}`,
-      papel:f[2]?.value||'',personalidade:f[3]?.value||'',
-      formaDeFalar:f[4]?.value||'',abertura:f[5]?.value||'',aparencia:f[6]?.value||''};
+    const f=el.querySelectorAll('input,textarea,select');
+    // ordem DOM: 0 id, 1 nome, 2 papel, 3 categoria(select), 4 altura,
+    //            5 personalidade, 6 conhecimentos, 7 formaDeFalar, 8 abertura, 9 aparencia
+    return {id:slug(f[0]?.value||`npc-${i+1}`).replace(/-/g,'_'),nome:f[1]?.value||`NPC ${i+1}`,
+      papel:f[2]?.value||'',categoria:f[3]?.value||'neutro',altura:f[4]?.value||'175',
+      personalidade:f[5]?.value||'',conhecimentos:f[6]?.value||'',
+      formaDeFalar:f[7]?.value||'',abertura:f[8]?.value||'',aparencia:f[9]?.value||''};
   });
 }
 function lerINI(){
@@ -384,8 +447,14 @@ function lerCEN(){
   return CEN.map((_,i)=>{
     const el=document.getElementById('ce-'+i); if(!el) return {};
     const f=el.querySelectorAll('input,textarea,select');
-    return {id:f[0]?.value||`cen-${i+1}`,nome:f[1]?.value||`Cenário ${i+1}`,
-      descricao:f[2]?.value||'',tipo:f[3]?.value||'ambas'};
+    // ordem DOM: 0 id, 1 nome, 2 ato, 3 temBatalha(select), 4 icon, 5 descricao,
+    //            6 npcsPresentes, 7 mapX, 8 mapY, 9 estado(select), 10 tipo(select)
+    const npcs=(f[6]?.value||'').split(',').map(s=>slug(s).replace(/-/g,'_')).filter(Boolean);
+    return {id:slug(f[0]?.value||`cen-${i+1}`).replace(/-/g,'_'),nome:f[1]?.value||`Cenário ${i+1}`,
+      ato:f[2]?.value||'1',temBatalha:(f[3]?.value||'sim')==='sim',icon:f[4]?.value||'📍',
+      descricao:f[5]?.value||'',npcsPresentes:npcs,
+      mapX:f[7]?.value||'50',mapY:f[8]?.value||'50',estado:f[9]?.value||'desconhecido',
+      tipo:f[10]?.value||'ambas'};
   });
 }
 
@@ -400,22 +469,27 @@ function gerar(){
   const nlong = v('c-nome-longo')||nome;
   const estilo= ESTILOS[v('c-estilo')||'anime']||'anime/mangá';
 
-  const cls = lerCLS(), npc = lerNPC(), ini = lerINI(), cen = lerCEN();
+  const cls = lerCLS(), npc = lerNPC(), ini = lerINI(), cen = lerCEN(), cam = lerCAM();
 
   // 1. Pastas
   let pas = `public/catalogo/${id}/\n`;
-  pas += cls.length?`├── classes/\n${cls.map((c,i)=>{const l=i===cls.length-1;
-    return `${l?'└':'├'}── ${c.id}/\n`+
-    `│   ├── retrato/\n`+
-    (c.gender!=='f'?`│   │   ├── ${c.id}_m_retrato.png\n`:'')+
-    (c.gender!=='m'?`│   │   └── ${c.id}_f_retrato.png\n`:'')+
-    `│   └── peca_tabuleiro/\n`+
-    (c.gender!=='f'?`│       ├── ${c.id}_m_peca.png\n`:'')+
-    (c.gender!=='m'?`│       └── ${c.id}_f_peca.png\n`:'');
+  pas += `├── classes.js · loader.js · narracao.js (curado, opcional)\n`;
+  pas += `├── npcs_registry.js          ← auto-gerado (NPCS_REGISTRY)\n`;
+  pas += `├── mapa.js                   ← MAPA_IMG, NOS, CAMINHOS (Pilar 5)\n`;
+  pas += `├── mapa/\n│   └── mapa_${id}.png\n`;
+  pas += `├── campanha/roteiro/campaign.js   ← CENAS + CENAS_ORDEM\n`;
+  pas += cls.length?`├── classes/\n${cls.map((c,i)=>{
+    return `│   ├── ${c.id}/\n`+
+    `│   │   ├── retrato/\n`+
+    (c.gender!=='f'?`│   │   │   ├── ${c.id}_m_retrato.png\n`:'')+
+    (c.gender!=='m'?`│   │   │   └── ${c.id}_f_retrato.png\n`:'')+
+    `│   │   └── peca_tabuleiro/\n`+
+    (c.gender!=='f'?`│   │       ├── ${c.id}_m_peca.png\n`:'')+
+    (c.gender!=='m'?`│   │       └── ${c.id}_f_peca.png\n`:'');
   }).join('')}`:'';
-  pas += npc.length?`├── npcs/\n${npc.map(n=>`│   ├── ${n.id}/retrato/${n.id}_retrato.png\n│   └── ${n.id}/peca_tabuleiro/${n.id}_peca.png\n`).join('')}`:'';
+  pas += npc.length?`├── npcs/\n${npc.map(n=>`│   ├── ${n.id}/dados.json\n│   ├── ${n.id}/retrato/${n.id}_retrato.png\n│   └── ${n.id}/peca_tabuleiro/${n.id}_peca.png\n`).join('')}`:'';
   pas += ini.length?`├── inimigos/\n${ini.map(n=>`│   └── ${n.id}/peca_tabuleiro/${n.id}_peca.png\n`).join('')}`:'';
-  pas += cen.length?`└── cenarios/\n${cen.map(n=>`    └── ${n.id}/\n`+(n.tipo!=='ext'?`        ├── ${n.id}_int.png\n`:'')+( n.tipo!=='int'?`        └── ${n.id}_ext.png\n`:'')).join('')}`:'';
+  pas += cen.length?`└── cenarios/\n${cen.map(n=>`    └── ${n.id}/\n`+(n.tipo!=='ext'?`        ├── mapa/${n.id}_mapa.png\n`:'')+( n.tipo!=='int'?`        └── imagem/${n.id}.png\n`:'')).join('')}`:'';
 
   // 2. Prompts
   let pr = '';
@@ -436,6 +510,8 @@ function gerar(){
     if(n.tipo!=='ext') pr+=`=== CENÁRIO INTERIOR (BATALHA) · ${n.nome.toUpperCase()} ===\n${n.descricao||n.nome}. Vista diagonal levemente aérea. Estilo ${estilo}. Espaço para peças de personagem. 1920×1080. Sem HUD.\n\n`;
     if(n.tipo!=='int') pr+=`=== CENÁRIO EXTERIOR (DIÁLOGO) · ${n.nome.toUpperCase()} ===\n${n.descricao||n.nome}. Vista panorâmica / establishing shot. Estilo ${estilo}. Atmosfera da campanha. 1920×1080. Sem personagens em primeiro plano.\n\n`;
   });
+  // Mapa do Mundo (Pilar 5)
+  pr+=`=== MAPA DO MUNDO · ${nome.toUpperCase()} ===\nMapa-múndi ilustrado do território da campanha, estilo ${estilo}. Visão panorâmica horizontal (~2:1) mostrando os locais: ${cen.map(c=>c.nome).join(', ')||'(adicione cenas)'}. Locais reconhecíveis e conectados por caminhos/estradas. SEM texto ou rótulos. Formato landscape panorâmico para scroll horizontal.\n\n`;
 
   // 3. CLASSES_DATA
   const KEY = id.replace(/-/g,'_').toUpperCase();
@@ -446,13 +522,48 @@ function gerar(){
   });
   clsCode+=`};\n\n// Caminhos de retrato:\nfunction retrato${KEY}(id,gender){\n  return \`catalogo/${id}/classes/\${id}/retrato/\${id}_\${gender}_retrato.png\`;\n}`;
 
-  // 4. NPCS array
-  const cenaPadrao = cen[0]?.id||'cena-principal';
-  let npcCode = `const NPCS = [\n`;
-  npc.forEach((n,i)=>{
-    npcCode+=`  {\n    nome:'${n.nome}',\n    img:'catalogo/${id}/npcs/${n.id}/peca_tabuleiro/${n.id}_peca.png',\n    cenas:['${cenaPadrao}'],\n    zBase:${i+1},\n    personalidade:'${esc2(n.personalidade)}',\n    conhecimentos:'', // preencher\n    formaDeFalar:'${esc2(n.formaDeFalar)}',\n    abertura:'${n.nome} reage ao jogador que acabou de chegar.',\n    aberturaFallback:'${esc2(n.abertura)||`[ACAO: Olha para você.] Bem-vindo.`}',\n  },\n`;
+  // 4. npcs_registry.js — NPCS_REGISTRY (fonte automática do Narrador)
+  const AVATAR = {aliado:'🤝',neutro:'🔷',hostil:'⚔️',vilao:'💀'};
+  let regCode = `// AUTO-GERADO de npcs/*/dados.json — não editar à mão; regenerar ao adicionar NPCs\nexport const NPCS_REGISTRY = {\n`;
+  npc.forEach(n=>{
+    const av = AVATAR[n.categoria]||'🔷';
+    const prompt = `Você é ${n.nome}.${n.papel?' '+n.papel+'.':''} ${n.personalidade} Fala assim: ${n.formaDeFalar}`;
+    regCode+=`  '${n.id}': {\n    id:'${n.id}', nome:'${esc2(n.nome)}',\n    img:'catalogo/${id}/npcs/${n.id}/peca_tabuleiro/${n.id}_peca.png',\n    avatar:'${av}', altura_cm:${Number(n.altura)||175},\n    zBase:5, offsetPx:0, reatividade:0.20,\n    personalidade:'${esc2(n.personalidade)}',\n    conhecimentos:'${esc2(n.conhecimentos)}',\n    formaDeFalar:'${esc2(n.formaDeFalar)}',\n    promptSistema:'${esc2(prompt)}',\n  },\n`;
   });
-  npcCode+=`];\n\nconst CONFIG_CENA = {\n  id:'${id}', schemaV:5, // use valor único por campanha!\n  bgImg:'catalogo/${id}/cenarios/${cenaPadrao}/${cenaPadrao}_ext.png',\n  titulo:'${sub||nome.toUpperCase()}',\n  corTema:'${cor}',\n};`;
+  regCode+=`};\n`;
+
+  // 4b. dados.json por NPC (fonte de verdade do registry)
+  let dadosCode = '';
+  npc.forEach(n=>{
+    const av = AVATAR[n.categoria]||'🔷';
+    dadosCode += `// ━━ npcs/${n.id}/dados.json ━━\n`+JSON.stringify({
+      id:n.id, nome:n.nome, categoria:n.categoria, papel:n.papel,
+      altura_cm:Number(n.altura)||175, avatar:av,
+      aparencia:n.aparencia, personalidade:n.personalidade,
+      conhecimentos:n.conhecimentos, formaDeFalar:n.formaDeFalar,
+      aberturaFallback:n.abertura,
+      ia:{ prompt_sistema:`Você é ${n.nome}.${n.papel?' '+n.papel+'.':''} ${n.personalidade} Fala assim: ${n.formaDeFalar}` }
+    },null,2)+'\n\n';
+  });
+
+  // 4c. campaign.js — CENAS com npcsPresentes
+  let campCode = `export const CENAS = {\n`;
+  cen.forEach(c=>{
+    campCode+=`  ${c.id}: {\n    id:'${c.id}', ato:${Number(c.ato)||1}, titulo:'${esc2(c.nome)}',\n    tipo:'${c.temBatalha?'batalha':'dialogo'}', temBatalha:${c.temBatalha},\n    desc:'${esc2(c.descricao)}',\n    npcsPresentes:[${c.npcsPresentes.map(x=>`'${x}'`).join(', ')}],\n  },\n`;
+  });
+  campCode+=`};\n\nexport const CENAS_ORDEM = [${cen.map(c=>`'${c.id}'`).join(', ')}];\n`;
+
+  // 4d. mapa.js — NOS + CAMINHOS (Pilar 5). IDs dos nós = IDs de cena.
+  let mapaCode = `export const MAPA_IMG = 'catalogo/${id}/mapa/mapa_${id}.png';\n\n// x e y são % da imagem (0-100)\nexport const NOS = {\n`;
+  cen.forEach(c=>{
+    mapaCode+=`  ${c.id}: {\n    titulo:'${esc2(c.nome)}', subtitulo:'${esc2(sub)}',\n    x:${Number(c.mapX)||50}, y:${Number(c.mapY)||50}, icon:'${c.icon}',\n    estadoInicial:'${c.estado}',\n    desc:'${esc2((c.descricao||'').slice(0,120))}',\n  },\n`;
+  });
+  mapaCode+=`};\n\n// perigo:0-5 | dist:'curta'|'media'|'longa' | encontros:[{chance,tipo}]\nexport const CAMINHOS = [\n`;
+  cam.forEach(c=>{
+    const enc = c.chance ? `[{chance:${c.chance}, tipo:'combate'}]` : '[]';
+    mapaCode+=`  { de:'${c.de}', ate:'${c.ate}', perigo:${Number(c.perigo)||0}, dist:'${c.dist}', encontros:${enc} },\n`;
+  });
+  mapaCode+=`];\n`;
 
   // 5. INIMIGOS
   let iniCode = `const INIMIGOS_${KEY} = [\n`;
@@ -461,8 +572,18 @@ function gerar(){
   });
   iniCode+=`];\n`;
 
-  // 6. Catalog snippet
-  let catCode = `// ── card na grade de catalog.html ──\n<div class="campaign-card" style="border-color:${cor}88" onclick="openCampaignModal('${id}')">\n  <div class="cc-icon">${icon}</div>\n  <div class="cc-name">${nlong}</div>\n  <div class="cc-sub">${sub}</div>\n</div>\n\n// ── dados da campanha ──\n'${id}':{\n  id:'${id}', nome:'${nlong}', icon:'${icon}', cor:'${cor}',\n  sub:'${sub}', gancho:'${esc2(gancho.slice(0,140))}',\n  classes:${JSON.stringify(cls.map(c=>c.id))},\n  npcs:${JSON.stringify(npc.map(n=>n.id))},\n  inimigos:${JSON.stringify(ini.map(n=>n.id))},\n  cenarios:${JSON.stringify(cen.map(n=>n.id))},\n}`;
+  // 6. Registro em catalog.html (modelo real: menu + imports + paleta)
+  let catCode =
+`<!-- 1) item no seletor de campanha (#camp-menu) -->\n`+
+`<div class="camp-menu-item" data-camp="${id}">${icon} ${nome}</div>\n\n`+
+`// 2) imports no <script> de catalog.html\n`+
+`import { CENAS, CENAS_ORDEM } from './catalogo/${id}/campanha/roteiro/campaign.js';\n`+
+`import { CLASSES_DATA as ${KEY}_CLASSES } from './catalogo/${id}/classes.js';\n`+
+`import { NPCS as ${KEY}_NPCS, INIMIGOS_DATA as ${KEY}_INI } from './catalogo/${id}/loader.js';\n\n`+
+`// 3) paleta (CAMP_PALETTE) + overrides CSS [data-camp="${id}"]\n`+
+`${id}: { '--gold':'${cor}', '--gold2':'${cor}', '--bg':'#0e0c0a' },\n\n`+
+`// 4) adicionar o ramo "${id}" nos builders de aba (buildClassesTab, etc.)\n`+
+`// Detalhes: docs/o_oraculo.md › "Registrar Campanha no catalog.html"`;
 
   // Render saídas
   document.getElementById('s-vazio').style.display='none';
@@ -471,10 +592,13 @@ function gerar(){
   sc.innerHTML=[
     bloco('📁 Estrutura de Pastas',pas,'pas'),
     bloco('🎨 Prompts de Arte (sequencial)',pr,'pr'),
+    bloco('🎬 campaign.js — CENAS + npcsPresentes',campCode,'camp'),
+    bloco('🗺️ mapa.js — NOS + CAMINHOS (Pilar 5)',mapaCode,'mapa'),
+    bloco('🧠 npcs_registry.js — NPCS_REGISTRY',regCode,'reg'),
+    bloco('📇 dados.json (um arquivo por NPC)',dadosCode,'dados'),
     bloco('⚙️ Código: CLASSES_DATA',clsCode,'cls'),
-    bloco('💬 Código: NPCS + CONFIG_CENA',npcCode,'npc'),
     bloco('⚔️ Código: INIMIGOS',iniCode,'ini'),
-    bloco('📖 Snippet: catalog.html',catCode,'cat'),
+    bloco('📖 Registrar em catalog.html',catCode,'cat'),
   ].join('');
 
   // Checklist
@@ -503,12 +627,13 @@ const CHK=[
   {cat:'ARTE — CLASSES',items:['Gerar retratos masculinos de todas as classes','Gerar retratos femininos de todas as classes','Gerar peças de tabuleiro (masc) com fundo verde #00ff00','Gerar peças de tabuleiro (fem) com fundo verde #00ff00','Rodar chromakey.py nas peças para remover verde','Verificar tamanhos mínimos (512×768 retrato · 400×800 peça)']},
   {cat:'ARTE — NPCs',items:['Gerar retrato de cada NPC','Gerar peça de tabuleiro de cada NPC (fundo verde)','Rodar chromakey.py nas peças de NPC']},
   {cat:'ARTE — INIMIGOS',items:['Gerar peça de tabuleiro de cada inimigo (fundo verde)','Rodar chromakey.py nas peças de inimigos']},
-  {cat:'ARTE — CENÁRIOS',items:['Gerar imagem interior (mapa de batalha) de cada cenário','Gerar imagem exterior (establishing shot) de cada cenário']},
-  {cat:'CÓDIGO — CATÁLOGO',items:['Adicionar card da campanha em catalog.html','Criar aba Classes com CLASSES_DATA','Criar aba NPCs com modal de personagem','Criar aba Inimigos','Criar aba Cenários','Testar navegação e modais']},
-  {cat:'CÓDIGO — DIÁLOGO',items:['Clonar simulacao_dialogo_dn.html → simulacao_dialogo_{id}.html','Substituir array NPCS com dados da campanha','Substituir CONFIG_CENA (bg, titulo, cor)','Definir SCHEMA_V único (ex: 5, 6, 7…)','Preencher personalidade, conhecimentos e formaDeFalar','Testar abertura fallback (sem Groq key)','Testar conversa com Groq key']},
-  {cat:'CÓDIGO — BATALHA',items:['Configurar inimigos da campanha em arena.html','Testar spawn e movimentação de inimigos','Testar mapa de batalha com cenário da campanha']},
-  {cat:'CÓDIGO — ENTRADA',items:['Verificar classes na tela simulacao_entrada.html','Testar redirecionamento para simulação da campanha']},
-  {cat:'FINALIZAÇÃO',items:['Testar fluxo completo: catálogo → entrada → diálogo → batalha','Verificar imagens no mobile (corte, tamanho, qualidade)','Commit e push de todos os assets','Verificar deploy no GitHub Pages']},
+  {cat:'ARTE — CENÁRIOS',items:['Gerar imagem de diálogo de cada cena (cenarios/{cena}/imagem/{cena}.png)','Gerar mapa de batalha das cenas com temBatalha (cenarios/{cena}/mapa/{cena}_mapa.png)']},
+  {cat:'ARTE — MAPA DO MUNDO (Pilar 5)',items:['Gerar imagem do mundo mapa/mapa_{id}.png (~2:1, horizontal, sem rótulos)','Ajustar x/y % de cada nó sobre a imagem no mapa.js','Conferir CAMINHOS ligando os locais corretos']},
+  {cat:'CÓDIGO — DADOS',items:['Salvar campaign.js em campanha/roteiro/ (CENAS + CENAS_ORDEM)','Conferir npcsPresentes de cada cena (IDs batem com os NPCs)','Criar npcs/{id}/dados.json de cada NPC','Gerar/salvar npcs_registry.js (NPCS_REGISTRY)','Salvar mapa.js (IDs dos nós = IDs de cena)','Salvar classes.js e loader.js (NPCS, INIMIGOS_DATA)']},
+  {cat:'CÓDIGO — CATÁLOGO',items:['Adicionar item no seletor de campanha (camp-menu-item)','Importar campaign.js, classes.js, loader.js','Adicionar paleta CAMP_PALETTE + overrides [data-camp]','Adicionar branch da campanha nos builders de aba','Testar navegação, checklist e botão 🗺 Mapa']},
+  {cat:'CÓDIGO — NARRADOR & ARENA',items:['Testar narração: cada cena mostra os NPCs de npcsPresentes (standee + chip)','Testar abertura fallback (sem Groq key) e com Groq key','Configurar inimigos em arena.html e testar batalha']},
+  {cat:'CÓDIGO — MAPA & INTEGRAÇÃO',items:['Abrir mapa.html: nós aparecem nas posições certas','Testar viagem: votação → standee se move → abre a cena no Narrador','Conferir que viajar grava narration.cenaId (multi) / soloNarrCena (solo)']},
+  {cat:'FINALIZAÇÃO',items:['Testar fluxo completo: catálogo → mapa → narração → batalha','Verificar imagens no mobile (corte, tamanho, qualidade)','Commit e push (dev → merge main)','Verificar deploy no GitHub Pages']},
 ];
 
 function gerarChk(id,nome){
@@ -533,7 +658,7 @@ function tglChk(k,box){
 }
 
 // init
-rCLS(); rNPC(); rINI(); rCEN(); gerarChk('','Nova Campanha');
+rCLS(); rNPC(); rINI(); rCEN(); rCAM(); gerarChk('','Nova Campanha');
 </script>
 </body>
 </html>
