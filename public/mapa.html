@@ -516,18 +516,23 @@ function _renderMapa() {
     svg.appendChild(line);
   }
 
-  // Nós
+  // Nós — posição em px (igual ao SVG) para evitar ambiguidade de %
   const nosEl = document.getElementById('mapa-nos');
+  nosEl.style.cssText = `position:absolute;top:0;left:0;width:${W}px;height:${H}px;z-index:5;`;
   nosEl.innerHTML = '';
-  for (const [id, no] of Object.entries(NOS)) {
-    const estado = _estadoNo(id);
-    const div = document.createElement('div');
-    div.className = `no-mapa ${estado}${id===localAtual?' atual':''}${id===_noSelecionado?' selecionado':''}`;
-    div.style.cssText = `left:${no.x}%;top:${no.y}%;`;
-    const nomeExibido = estado === 'desconhecido' ? '???' : no.titulo;
-    div.innerHTML = `<div class="no-icone"><span>${estado==='desconhecido'?'🌫':no.icon}</span></div><div class="no-nome">${nomeExibido}</div>`;
-    div.onclick = (e) => { e.stopPropagation(); _clicarNo(id, div, e); };
-    nosEl.appendChild(div);
+  if (W > 0 && H > 0) {
+    for (const [id, no] of Object.entries(NOS)) {
+      const estado = _estadoNo(id);
+      const px = Math.round(no.x / 100 * W);
+      const py = Math.round(no.y / 100 * H);
+      const div = document.createElement('div');
+      div.className = `no-mapa ${estado}${id===localAtual?' atual':''}${id===_noSelecionado?' selecionado':''}`;
+      div.style.cssText = `left:${px}px;top:${py}px;`;
+      const nomeExibido = estado === 'desconhecido' ? '???' : no.titulo;
+      div.innerHTML = `<div class="no-icone"><span>${estado==='desconhecido'?'🌫':no.icon}</span></div><div class="no-nome">${nomeExibido}</div>`;
+      div.onclick = (e) => { e.stopPropagation(); _clicarNo(id, div, e); };
+      nosEl.appendChild(div);
+    }
   }
 
   // Standees dos jogadores
@@ -889,9 +894,15 @@ async function init() {
   if (window._fbMapaReady) boot();
   else window.addEventListener('fbMapaReady', boot);
 
-  // Re-renderizar ao redimensionar
-  window.addEventListener('resize', () => { if (_state) _renderMapa(); });
-  document.getElementById('mapa-img').onload = () => { if (_state) _renderMapa(); else _renderMapa(); };
+  // Re-renderizar ao redimensionar e quando imagem carrega
+  window.addEventListener('resize', _renderMapa);
+  const _img = document.getElementById('mapa-img');
+  if (_img.complete && _img.naturalWidth > 0) {
+    // imagem em cache — agendar para próximo frame (garante que layout está pronto)
+    requestAnimationFrame(_renderMapa);
+  } else {
+    _img.onload = _renderMapa;
+  }
 }
 
 init();
