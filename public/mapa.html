@@ -60,17 +60,18 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
 
 /* ── ÁREA DO MAPA ── */
 #mapa-scroll{
-  flex:1;overflow-x:auto;overflow-y:hidden;
+  flex:1;min-height:0;
+  overflow-x:auto;overflow-y:hidden;
   -webkit-overflow-scrolling:touch;
   position:relative;
 }
 #mapa-scroll::-webkit-scrollbar{display:none;}
 #mapa-container{
   position:relative;display:inline-block;
-  height:100%;white-space:nowrap;
+  white-space:nowrap;
 }
 #mapa-img{
-  height:100%;width:auto;display:block;
+  display:block;
   pointer-events:none;
 }
 
@@ -476,6 +477,20 @@ function _nosAlcancaveis(origem) {
 function _renderMapa() {
   const container = document.getElementById('mapa-container');
   const img = document.getElementById('mapa-img');
+  const scroll = document.getElementById('mapa-scroll');
+
+  // Forçar imagem a preencher altura disponível
+  const scrollH = scroll.clientHeight;
+  if (scrollH > 0 && img.naturalWidth > 0) {
+    const ratio = img.naturalWidth / img.naturalHeight;
+    const imgH = scrollH;
+    const imgW = Math.round(imgH * ratio);
+    img.style.height = imgH + 'px';
+    img.style.width  = imgW + 'px';
+    container.style.height = imgH + 'px';
+    container.style.width  = imgW + 'px';
+  }
+
   const W = img.offsetWidth || img.naturalWidth;
   const H = img.offsetHeight || img.naturalHeight;
 
