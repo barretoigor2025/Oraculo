@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,viewport-fit=cover">
+<title>Oráculo — Mapa</title>
+<script type="module">
+import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import{getFirestore,doc,onSnapshot,updateDoc,getDoc,arrayUnion}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+const _cfg=JSON.parse(localStorage.getItem('oraculo.fbConfig')||'null');
+const _rid=localStorage.getItem('oraculo.roomId');
+if(_cfg&&_rid){
+  try{
+    const app=getApps().find(a=>a.name==='mapa')||initializeApp(_cfg,'mapa');
+    const db=getFirestore(app);
+    const rd=doc(db,'rooms',_rid);
+    window._fbUpdate=async(fields)=>{
+      const u={};
+      for(const[k,v]of Object.entries(fields)) u[`mapa.${k}`]=v;
+      u['mapa.ts']=Date.now();
+      await updateDoc(rd,u);
+    };
+    window._fbListen=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
+    window._fbInit=async(estado)=>{
+      const snap=await getDoc(rd);
+      if(!snap.exists())return;
+      const atual=snap.data().mapa;
+      if(!atual){
+        await updateDoc(rd,{'mapa':estado,'mapa.ts':Date.now()});
+      }
+    };
+  }catch(e){console.warn('Mapa Firebase:',e);}
+}
+window._fbMapaReady=true;
+window.dispatchEvent(new Event('fbMapaReady'));
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-family:'Georgia',serif;user-select:none;-webkit-user-select:none;}
+
+/* ── LAYOUT ── */
+#mapa-wrap{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;}
+
+/* ── HEADER ── */
+#mapa-header{
+  flex-shrink:0;display:flex;align-items:center;gap:10px;
+  padding:max(8px,calc(4px+env(safe-area-inset-top))) 14px 8px;
+  background:linear-gradient(180deg,#0d0b08 0%,rgba(13,11,8,0) 100%);
+  border-bottom:1px solid rgba(190,135,35,0.20);
+  min-height:46px;
+}
+#mapa-titulo{flex:1;font-size:13px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(210,175,90,0.85);}
+#mapa-local-label{font-size:11px;color:rgba(190,155,70,0.65);letter-spacing:.5px;}
+.mapa-nav-btn{
+  background:rgba(30,18,5,0.9);border:1px solid rgba(190,140,35,0.3);
+  border-radius:8px;padding:5px 10px;color:rgba(210,175,90,0.8);font-size:11px;
+  cursor:pointer;white-space:nowrap;
+}
+.mapa-nav-btn:active{opacity:0.7;}
+
+/* ── ÁREA DO MAPA ── */
+#mapa-scroll{
+  flex:1;overflow-x:auto;overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  position:relative;
+}
+#mapa-scroll::-webkit-scrollbar{display:none;}
+#mapa-container{
+  position:relative;display:inline-block;
+  height:100%;white-space:nowrap;
+}
+#mapa-img{
+  height:100%;width:auto;display:block;
+  pointer-events:none;
+}
+
+/* ── SVG CAMINHOS ── */
+#mapa-svg{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  pointer-events:none;overflow:visible;
+}
+.caminho-linha{stroke:rgba(190,140,35,0.30);stroke-width:2;stroke-dasharray:6 4;fill:none;}
+.caminho-linha.perigo-alto{stroke:rgba(180,60,40,0.35);}
+.caminho-linha.ativo{stroke:rgba(190,140,35,0.70);stroke-dasharray:none;stroke-width:2.5;}
+
+/* ── NÓS DO MAPA ── */
+.no-mapa{
+  position:absolute;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  cursor:pointer;z-index:10;
+}
+.no-icone{
+  width:36px;height:36px;border-radius:50%;
+  border:2px solid rgba(190,140,35,0.60);
+  background:rgba(12,8,3,0.85);
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.6);
+  transition:transform 0.15s,border-color 0.15s;
+}
+.no-mapa:active .no-icone{transform:scale(0.92);}
+.no-mapa.selecionado .no-icone{border-color:rgba(240,200,60,0.95);box-shadow:0 0 12px rgba(240,200,60,0.4);}
+.no-mapa.atual .no-icone{border-color:#f0c83c;box-shadow:0 0 16px rgba(240,200,60,0.55);animation:no-pulsa 2s ease-in-out infinite;}
+@keyframes no-pulsa{0%,100%{box-shadow:0 0 16px rgba(240,200,60,0.55);}50%{box-shadow:0 0 28px rgba(240,200,60,0.80);}}
+.no-nome{
+  font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+  color:rgba(220,190,110,0.90);text-align:center;white-space:nowrap;
+  background:rgba(10,6,2,0.75);padding:2px 5px;border-radius:4px;
+  max-width:80px;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* Estados de descoberta */
+.no-mapa.desconhecido .no-icone{
+  background:rgba(8,5,2,0.90);border-color:rgba(80,60,30,0.30);
+  filter:blur(0.5px);
+}
+.no-mapa.desconhecido .no-icone span{filter:blur(2px);opacity:0.35;}
+.no-mapa.desconhecido .no-nome{color:rgba(100,80,40,0.45);letter-spacing:2px;}
+.no-mapa.ouviu_falar .no-icone{border-color:rgba(120,100,50,0.50);opacity:0.70;}
+.no-mapa.ouviu_falar .no-nome{color:rgba(160,130,60,0.60);font-style:italic;}
+
+/* ── STANDEES NO MAPA ── */
+#mapa-standees{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:20;}
+.mapa-standee{
+  position:absolute;transform:translate(-50%,-140%);
+  display:flex;flex-direction:column;align-items:center;
+  transition:left 1.5s cubic-bezier(0.4,0,0.2,1),top 1.5s cubic-bezier(0.4,0,0.2,1);
+}
+.mapa-standee-avatar{
+  width:28px;height:28px;border-radius:50%;
+  border:2px solid rgba(240,200,60,0.85);
+  background:rgba(20,12,4,0.95);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:#f0c83c;
+  box-shadow:0 2px 8px rgba(0,0,0,0.7);
+}
+.mapa-standee-nome{
+  font-size:8px;color:rgba(220,190,100,0.80);
+  background:rgba(8,5,2,0.80);padding:1px 4px;border-radius:3px;
+  white-space:nowrap;margin-top:2px;
+}
+
+/* ── TOOLTIP DO NÓ ── */
+#no-tooltip{
+  position:fixed;z-index:100;
+  background:rgba(14,10,4,0.97);border:1px solid rgba(190,140,35,0.45);
+  border-radius:10px;padding:10px 13px;max-width:220px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.7);
+  pointer-events:none;display:none;
+}
+#no-tooltip.visivel{display:block;}
+#tt-titulo{font-size:13px;font-weight:700;color:#f0c83c;margin-bottom:2px;}
+#tt-sub{font-size:10px;color:rgba(170,140,70,0.70);letter-spacing:.4px;margin-bottom:6px;}
+#tt-desc{font-size:11px;color:rgba(210,185,120,0.85);line-height:1.5;margin-bottom:8px;}
+#tt-perigo{font-size:10px;color:rgba(200,120,60,0.80);}
+#tt-btn{
+  display:none;width:100%;padding:7px;border:1px solid rgba(190,140,35,0.5);
+  border-radius:7px;background:rgba(30,18,5,0.9);color:#f0c83c;
+  font-size:11px;font-weight:700;cursor:pointer;pointer-events:all;
+  margin-top:6px;
+}
+#tt-btn:active{opacity:0.75;}
+
+/* ── PAINEL INFERIOR ── */
+#mapa-painel{
+  flex-shrink:0;
+  border-top:1px solid rgba(190,135,35,0.20);
+  background:rgba(10,7,3,0.97);
+  display:flex;flex-direction:column;
+  max-height:38vh;
+}
+
+/* Votação ativa */
+#votacao-bar{
+  display:none;
+  flex-shrink:0;align-items:center;gap:8px;
+  padding:8px 12px;
+  background:rgba(30,15,5,0.98);
+  border-bottom:1px solid rgba(190,140,35,0.25);
+}
+#votacao-bar.ativa{display:flex;}
+#vot-texto{flex:1;font-size:11px;color:rgba(210,175,90,0.90);line-height:1.4;}
+#vot-timer{font-size:12px;font-weight:700;color:#f0c83c;min-width:28px;text-align:center;}
+.vot-btn{
+  padding:6px 14px;border-radius:8px;border:1px solid;font-size:12px;font-weight:700;cursor:pointer;
+}
+#vot-sim{background:rgba(40,90,40,0.85);border-color:rgba(80,160,80,0.60);color:#90e090;}
+#vot-nao{background:rgba(90,30,30,0.85);border-color:rgba(160,60,60,0.60);color:#e08080;}
+#vot-sim:active,#vot-nao:active{opacity:0.7;}
+
+/* Chat */
+#mapa-chat{
+  flex:1;overflow-y:auto;padding:8px 12px 4px;display:flex;flex-direction:column;gap:5px;
+  min-height:70px;
+}
+#mapa-chat::-webkit-scrollbar{width:3px;}
+#mapa-chat::-webkit-scrollbar-thumb{background:rgba(190,140,35,0.25);border-radius:2px;}
+.chat-msg{font-size:11px;line-height:1.5;}
+.chat-nome{font-weight:700;color:rgba(240,200,60,0.85);margin-right:4px;}
+.chat-texto{color:rgba(210,185,130,0.85);}
+.chat-sistema{color:rgba(160,130,70,0.60);font-style:italic;font-size:10px;}
+.chat-evento{color:rgba(200,120,60,0.85);font-weight:700;font-size:10px;letter-spacing:.4px;}
+
+#mapa-input-row{
+  flex-shrink:0;display:flex;gap:6px;padding:6px 10px max(8px,env(safe-area-inset-bottom));
+  border-top:1px solid rgba(190,135,35,0.12);
+}
+#mapa-input{
+  flex:1;background:rgba(18,12,4,0.90);border:1px solid rgba(190,140,35,0.25);
+  border-radius:20px;padding:8px 12px;color:#e8d5a8;font-size:12px;
+  outline:none;font-family:Georgia,serif;
+}
+#mapa-input::placeholder{color:rgba(150,120,55,0.50);}
+#mapa-send{
+  background:rgba(190,140,35,0.20);border:1px solid rgba(190,140,35,0.40);
+  border-radius:20px;padding:8px 14px;color:#f0c83c;font-size:12px;font-weight:700;cursor:pointer;
+}
+#mapa-send:active{opacity:0.7;}
+#mapa-propor{
+  background:rgba(30,18,5,0.90);border:1px solid rgba(190,140,35,0.40);
+  border-radius:20px;padding:8px 10px;color:rgba(210,175,90,0.85);font-size:12px;cursor:pointer;
+}
+#mapa-propor:active{opacity:0.7;}
+
+/* ── MODAL DE SELEÇÃO DE ROTA ── */
+#modal-rota{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,0.75);align-items:flex-end;justify-content:center;
+}
+#modal-rota.aberto{display:flex;}
+#modal-rota-inner{
+  background:rgba(14,10,4,0.99);border:1px solid rgba(190,140,35,0.40);
+  border-radius:16px 16px 0 0;width:100%;max-width:500px;
+  padding:16px 14px max(16px,env(safe-area-inset-bottom));
+  max-height:60vh;overflow-y:auto;
+}
+#modal-rota-titulo{font-size:13px;font-weight:700;letter-spacing:1px;color:#f0c83c;margin-bottom:12px;text-transform:uppercase;}
+.rota-opcao{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border:1px solid rgba(190,140,35,0.20);
+  border-radius:10px;margin-bottom:6px;cursor:pointer;
+  background:rgba(20,13,4,0.80);
+}
+.rota-opcao:active{background:rgba(40,28,8,0.90);}
+.rota-opcao-icon{font-size:20px;flex-shrink:0;}
+.rota-opcao-info{flex:1;}
+.rota-opcao-nome{font-size:12px;font-weight:700;color:rgba(220,190,110,0.95);}
+.rota-opcao-perigo{font-size:10px;color:rgba(180,100,50,0.75);margin-top:2px;}
+#modal-rota-cancelar{
+  width:100%;padding:10px;margin-top:8px;border:1px solid rgba(190,140,35,0.25);
+  border-radius:10px;background:transparent;color:rgba(180,150,70,0.60);
+  font-size:12px;cursor:pointer;
+}
+
+/* ── ENCONTRO OVERLAY ── */
+#encontro-overlay{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,0.88);align-items:center;justify-content:center;flex-direction:column;
+  gap:16px;
+}
+#encontro-overlay.ativo{display:flex;}
+#encontro-icon{font-size:64px;animation:enc-aparecer 0.4s ease;}
+@keyframes enc-aparecer{from{transform:scale(0.3);opacity:0;}to{transform:scale(1);opacity:1;}}
+#encontro-titulo{font-size:20px;font-weight:700;color:#f0c83c;letter-spacing:1px;}
+#encontro-desc{font-size:13px;color:rgba(210,185,120,0.85);text-align:center;max-width:280px;line-height:1.6;}
+#encontro-btn{
+  padding:12px 32px;background:rgba(190,140,35,0.20);border:1px solid rgba(190,140,35,0.55);
+  border-radius:24px;color:#f0c83c;font-size:14px;font-weight:700;cursor:pointer;
+}
+</style>
+</head>
+<body>
+<div id="mapa-wrap">
+
+  <!-- Header -->
+  <div id="mapa-header">
+    <div>
+      <div id="mapa-titulo">🗺 Mapa do Mundo</div>
+      <div id="mapa-local-label">—</div>
+    </div>
+    <button class="mapa-nav-btn" onclick="location.href='narration.html'">📖 Narrar</button>
+    <button class="mapa-nav-btn" onclick="location.href='catalog.html'">📚 Catálogo</button>
+  </div>
+
+  <!-- Mapa com scroll horizontal -->
+  <div id="mapa-scroll">
+    <div id="mapa-container">
+      <img id="mapa-img" src="" alt="Mapa">
+      <svg id="mapa-svg"></svg>
+      <div id="mapa-nos"></div>
+      <div id="mapa-standees"></div>
+    </div>
+  </div>
+
+  <!-- Tooltip do nó (posicionado via JS) -->
+  <div id="no-tooltip">
+    <div id="tt-titulo">—</div>
+    <div id="tt-sub">—</div>
+    <div id="tt-desc"></div>
+    <div id="tt-perigo"></div>
+    <button id="tt-btn" onclick="window._proporRota(_tooltipNoId)">🗺 Propor rota aqui</button>
+  </div>
+
+  <!-- Painel inferior -->
+  <div id="mapa-painel">
+
+    <!-- Barra de votação (aparece quando há voto ativo) -->
+    <div id="votacao-bar">
+      <div id="vot-texto">—</div>
+      <span id="vot-timer">60</span>
+      <button id="vot-sim" class="vot-btn" onclick="window._votar(true)">✓ Sim</button>
+      <button id="vot-nao" class="vot-btn" onclick="window._votar(false)">✕ Não</button>
+    </div>
+
+    <!-- Chat -->
+    <div id="mapa-chat"></div>
+
+    <!-- Input -->
+    <div id="mapa-input-row">
+      <button id="mapa-propor" onclick="window._abrirModalRota()" title="Propor rota">🗺</button>
+      <input id="mapa-input" placeholder="Diga algo ao grupo…" onkeydown="if(event.key==='Enter')window._enviarChat()">
+      <button id="mapa-send" onclick="window._enviarChat()">→</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal de seleção de rota -->
+<div id="modal-rota">
+  <div id="modal-rota-inner">
+    <div id="modal-rota-titulo">Para onde ir?</div>
+    <div id="modal-rota-lista"></div>
+    <button id="modal-rota-cancelar" onclick="window._fecharModalRota()">Cancelar</button>
+  </div>
+</div>
+
+<!-- Encontro overlay -->
+<div id="encontro-overlay">
+  <div id="encontro-icon">⚔️</div>
+  <div id="encontro-titulo">Encontro!</div>
+  <div id="encontro-desc"></div>
+  <button id="encontro-btn" onclick="window._fecharEncontro()">Continuar →</button>
+</div>
+
+<script type="module">
+import { MAPA_IMG, NOS, CAMINHOS } from './catalogo/mhoried/mapa.js';
+
+// ── Estado local ──────────────────────────────────────────
+const _pid  = localStorage.getItem('oraculo.playerId') || crypto.randomUUID();
+const _nome = localStorage.getItem('oraculo.playerName') || 'Aventureiro';
+const _cls  = localStorage.getItem('oraculo.classId') || 'guerreiro';
+localStorage.setItem('oraculo.playerId', _pid);
+
+const CLASS_ICON = {guerreiro:'⚔️',mago:'🔮',ladino:'🗡️',clerigo:'✝️',druida:'🌿',ranger:'🏹',paladino:'🛡️',bardo:'🎵'};
+
+let _state = null;        // snapshot do Firebase mapa
+let _noSelecionado = null;
+let _votacaoTimer = null;
+let _viagemTimeout = null;
+
+window._tooltipNoId = null;
+
+// ── Helpers ───────────────────────────────────────────────
+const DIST_MS = { curta: 1800, media: 3200, longa: 5000 };
+const PERIGO_LABEL = ['Seguro','Leve','Moderado','Perigoso','Muito Perigoso','Extremo'];
+
+function _estadoNo(id) {
+  if (!_state) return NOS[id]?.estadoInicial || 'desconhecido';
+  const desc = _state.descobertos || [];
+  const ouv  = _state.ouviuFalar  || [];
+  if (desc.includes(id)) return 'descoberto';
+  if (ouv.includes(id))  return 'ouviu_falar';
+  return NOS[id]?.estadoInicial || 'desconhecido';
+}
+
+function _caminhoEntre(a, b) {
+  return CAMINHOS.find(c => (c.de===a&&c.ate===b)||(c.de===b&&c.ate===a)) || null;
+}
+
+function _nosAlcancaveis(origem) {
+  return CAMINHOS
+    .filter(c => c.de===origem || c.ate===origem)
+    .map(c => c.de===origem ? c.ate : c.de);
+}
+
+// ── Renderizar mapa ───────────────────────────────────────
+function _renderMapa() {
+  const container = document.getElementById('mapa-container');
+  const img = document.getElementById('mapa-img');
+  const W = img.offsetWidth || img.naturalWidth;
+  const H = img.offsetHeight || img.naturalHeight;
+
+  // SVG caminhos
+  const svg = document.getElementById('mapa-svg');
+  svg.innerHTML = '';
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  const localAtual = _state?.localAtual || 'mhoried_market';
+  const alcancaveis = _nosAlcancaveis(localAtual);
+
+  for (const c of CAMINHOS) {
+    const na = NOS[c.de], nb = NOS[c.ate];
+    if (!na || !nb) continue;
+    const x1 = na.x/100*W, y1 = na.y/100*H;
+    const x2 = nb.x/100*W, y2 = nb.y/100*H;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+    line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+    line.className = 'caminho-linha' +
+      (c.perigo >= 4 ? ' perigo-alto' : '') +
+      ((alcancaveis.includes(c.de)||alcancaveis.includes(c.ate)) ? ' ativo' : '');
+    svg.appendChild(line);
+  }
+
+  // Nós
+  const nosEl = document.getElementById('mapa-nos');
+  nosEl.innerHTML = '';
+  for (const [id, no] of Object.entries(NOS)) {
+    const estado = _estadoNo(id);
+    const div = document.createElement('div');
+    div.className = `no-mapa ${estado}${id===localAtual?' atual':''}${id===_noSelecionado?' selecionado':''}`;
+    div.style.cssText = `left:${no.x}%;top:${no.y}%;`;
+    const nomeExibido = estado === 'desconhecido' ? '???' : no.titulo;
+    div.innerHTML = `<div class="no-icone"><span>${estado==='desconhecido'?'🌫':no.icon}</span></div><div class="no-nome">${nomeExibido}</div>`;
+    div.onclick = (e) => { e.stopPropagation(); _clicarNo(id, div, e); };
+    nosEl.appendChild(div);
+  }
+
+  // Standees dos jogadores
+  _renderStandees(W, H);
+
+  // Label local atual
+  document.getElementById('mapa-local-label').textContent =
+    `📍 ${NOS[localAtual]?.titulo || localAtual}`;
+}
+
+function _renderStandees(W, H) {
+  const el = document.getElementById('mapa-standees');
+  el.innerHTML = '';
+  const localAtual = _state?.localAtual || 'mhoried_market';
+  const players = _state?.players || {};
+  if (!Object.keys(players).length) {
+    // fallback: mostrar o jogador atual
+    players[_pid] = { nome: _nome, classId: _cls };
+  }
+  const total = Object.keys(players).length;
+  Object.entries(players).forEach(([pid, p], i) => {
+    const no = NOS[localAtual];
+    if (!no) return;
+    const offset = (i - (total-1)/2) * 22;
+    const x = no.x/100*W + offset;
+    const y = no.y/100*H;
+    const div = document.createElement('div');
+    div.className = 'mapa-standee';
+    div.id = `standee-${pid}`;
+    div.style.cssText = `left:${x}px;top:${y}px;`;
+    const icon = CLASS_ICON[p.classId||'guerreiro'] || '⚔️';
+    div.innerHTML = `<div class="mapa-standee-avatar">${icon}</div><div class="mapa-standee-nome">${(p.nome||'?').split(' ')[0]}</div>`;
+    el.appendChild(div);
+  });
+}
+
+// ── Tooltip ───────────────────────────────────────────────
+function _clicarNo(id, el, ev) {
+  const estado = _estadoNo(id);
+  _noSelecionado = id;
+  window._tooltipNoId = id;
+  _renderMapa();
+  _mostrarTooltip(id, estado, ev);
+}
+
+function _mostrarTooltip(id, estado, ev) {
+  const no = NOS[id];
+  const tt = document.getElementById('no-tooltip');
+  const localAtual = _state?.localAtual || 'mhoried_market';
+  const alcancavel = _caminhoEntre(localAtual, id) !== null;
+
+  document.getElementById('tt-titulo').textContent =
+    estado === 'desconhecido' ? '??? Local Desconhecido' :
+    estado === 'ouviu_falar' ? `${no.titulo} (ouviu falar)` : no.titulo;
+  document.getElementById('tt-sub').textContent =
+    estado === 'desconhecido' ? 'Nenhuma informação disponível.' : no.subtitulo;
+  document.getElementById('tt-desc').textContent =
+    estado === 'desconhecido' ? '' :
+    estado === 'ouviu_falar' ? (no.desc || 'Informações vagas sobre este local.') : (no.desc || '');
+
+  const caminho = _caminhoEntre(localAtual, id);
+  document.getElementById('tt-perigo').textContent =
+    caminho ? `⚠ ${PERIGO_LABEL[caminho.perigo]} · Distância: ${caminho.dist}` : '';
+
+  const btn = document.getElementById('tt-btn');
+  btn.style.display = (alcancavel && estado !== 'desconhecido' && id !== localAtual) ? 'block' : 'none';
+
+  // Posicionar tooltip
+  const rect = document.getElementById('mapa-scroll').getBoundingClientRect();
+  const x = Math.min(ev.clientX + 10, window.innerWidth - 240);
+  const y = Math.min(ev.clientY - 10, window.innerHeight - 200);
+  tt.style.left = x + 'px';
+  tt.style.top  = y + 'px';
+  tt.classList.add('visivel');
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.no-mapa') && !e.target.closest('#no-tooltip')) {
+    document.getElementById('no-tooltip').classList.remove('visivel');
+    _noSelecionado = null;
+    window._tooltipNoId = null;
+    _renderMapa();
+  }
+});
+
+// ── Modal de rota ─────────────────────────────────────────
+window._abrirModalRota = function() {
+  const localAtual = _state?.localAtual || 'mhoried_market';
+  const destinos = _nosAlcancaveis(localAtual)
+    .filter(id => _estadoNo(id) !== 'desconhecido' && id !== localAtual);
+  const lista = document.getElementById('modal-rota-lista');
+  lista.innerHTML = '';
+  if (!destinos.length) {
+    lista.innerHTML = '<div class="chat-sistema">Nenhum destino alcançável conhecido a partir daqui.</div>';
+  }
+  for (const id of destinos) {
+    const no = NOS[id];
+    const c  = _caminhoEntre(localAtual, id);
+    const div = document.createElement('div');
+    div.className = 'rota-opcao';
+    div.innerHTML = `<div class="rota-opcao-icon">${no.icon}</div>
+      <div class="rota-opcao-info">
+        <div class="rota-opcao-nome">${no.titulo}</div>
+        <div class="rota-opcao-perigo">⚠ ${PERIGO_LABEL[c?.perigo||0]} · ${c?.dist||'?'}</div>
+      </div>`;
+    div.onclick = () => { window._proporRota(id); window._fecharModalRota(); };
+    lista.appendChild(div);
+  }
+  document.getElementById('modal-rota').classList.add('aberto');
+};
+
+window._fecharModalRota = () => document.getElementById('modal-rota').classList.remove('aberto');
+
+window._proporRota = async function(destino) {
+  document.getElementById('no-tooltip').classList.remove('visivel');
+  if (!destino) return;
+  const estado = _estadoNo(destino);
+  if (estado === 'desconhecido') return;
+  const localAtual = _state?.localAtual || 'mhoried_market';
+  if (!_caminhoEntre(localAtual, destino)) return;
+
+  const votacao = {
+    destino,
+    proponente: _pid,
+    proponenteNome: _nome,
+    votos: { [_pid]: true },
+    expiresAt: Date.now() + 60000,
+    iniciouEm: Date.now(),
+  };
+  if (window._fbUpdate) await window._fbUpdate({ votacao });
+  _addChatSistema(`🗺 ${_nome} propõe viajar para ${NOS[destino]?.titulo}. Vote!`);
+};
+
+// ── Votação ───────────────────────────────────────────────
+window._votar = async function(sim) {
+  if (!_state?.votacao) return;
+  const votos = { ..._state.votacao.votos, [_pid]: sim };
+  if (window._fbUpdate) await window._fbUpdate({ 'votacao.votos': votos });
+};
+
+function _renderVotacao() {
+  const bar = document.getElementById('votacao-bar');
+  const v = _state?.votacao;
+  if (!v) { bar.classList.remove('ativa'); clearInterval(_votacaoTimer); return; }
+  bar.classList.add('ativa');
+  const no = NOS[v.destino];
+  const votos = v.votos || {};
+  const sim = Object.values(votos).filter(Boolean).length;
+  const nao = Object.values(votos).filter(x=>x===false).length;
+  document.getElementById('vot-texto').innerHTML =
+    `<b>${v.proponenteNome}</b> propõe ir para <b>${no?.titulo}</b> &nbsp;✓${sim} ✕${nao}`;
+
+  clearInterval(_votacaoTimer);
+  _votacaoTimer = setInterval(() => {
+    const restante = Math.max(0, Math.ceil((v.expiresAt - Date.now()) / 1000));
+    document.getElementById('vot-timer').textContent = restante + 's';
+    if (restante <= 0) { clearInterval(_votacaoTimer); _resolverVotacao(); }
+  }, 500);
+}
+
+async function _resolverVotacao() {
+  if (!_state?.votacao) return;
+  const v = _state.votacao;
+  const votos = v.votos || {};
+  const sim = Object.values(votos).filter(Boolean).length;
+  const nao = Object.values(votos).filter(x=>x===false).length;
+  const total = sim + nao;
+  const venceu = total === 0 ? false : sim > nao;
+
+  if (window._fbUpdate) await window._fbUpdate({ votacao: null });
+
+  if (venceu) {
+    _addChatSistema(`✅ Votação aprovada! Viajando para ${NOS[v.destino]?.titulo}…`);
+    _iniciarViagem(v.destino);
+  } else {
+    _addChatSistema(`❌ Rota não aprovada. Permanecendo em ${NOS[_state?.localAtual]?.titulo}.`);
+  }
+}
+
+// ── Viagem ────────────────────────────────────────────────
+async function _iniciarViagem(destino) {
+  const localAtual = _state?.localAtual || 'mhoried_market';
+  const caminho = _caminhoEntre(localAtual, destino);
+  if (!caminho) return;
+  const duracao = DIST_MS[caminho.dist] || 2000;
+
+  if (window._fbUpdate) await window._fbUpdate({ viagemEmAndamento: true });
+
+  // Animar standees
+  _animarStandeesParaNo(destino, duracao);
+
+  clearTimeout(_viagemTimeout);
+  _viagemTimeout = setTimeout(async () => {
+    // Rolar encontros
+    const encontro = _rolarEncontros(caminho);
+    // Marcar chegada
+    const novoDesc = [...(_state?.descobertos || [])];
+    if (!novoDesc.includes(destino)) novoDesc.push(destino);
+    if (window._fbUpdate) await window._fbUpdate({
+      localAtual: destino,
+      descobertos: novoDesc,
+      viagemEmAndamento: false,
+    });
+    _addChatSistema(`📍 Chegaram em ${NOS[destino]?.titulo}.`);
+    if (encontro) _mostrarEncontro(encontro, caminho);
+  }, duracao + 200);
+}
+
+function _animarStandeesParaNo(destino, duracao) {
+  const img = document.getElementById('mapa-img');
+  const W = img.offsetWidth;
+  const H = img.offsetHeight;
+  const no = NOS[destino];
+  if (!no) return;
+  const players = _state?.players || { [_pid]: { nome: _nome, classId: _cls } };
+  const total = Object.keys(players).length;
+  Object.keys(players).forEach((pid, i) => {
+    const el = document.getElementById(`standee-${pid}`);
+    if (!el) return;
+    const offset = (i - (total-1)/2) * 22;
+    el.style.transitionDuration = duracao + 'ms';
+    el.style.left = (no.x/100*W + offset) + 'px';
+    el.style.top  = (no.y/100*H) + 'px';
+  });
+}
+
+function _rolarEncontros(caminho) {
+  for (const enc of (caminho.encontros || [])) {
+    if (Math.random() < enc.chance) return enc;
+  }
+  return null;
+}
+
+function _mostrarEncontro(enc, caminho) {
+  const tipos = {
+    combate: { icon:'⚔️', titulo:'Emboscada!', desc:`Inimigos bloqueiam o caminho! Nível de perigo: ${PERIGO_LABEL[caminho.perigo]}.` },
+    roubo:   { icon:'🗡️', titulo:'Tentativa de Roubo!', desc:'Um grupo suspeito cerca o grupo exigindo seus pertences.' },
+    dialogo: { icon:'🧙', titulo:'Encontro Inesperado!', desc:'Uma figura aparece no caminho. Suas intenções são incertas.' },
+  };
+  const t = tipos[enc.tipo] || tipos.dialogo;
+  document.getElementById('encontro-icon').textContent = t.icon;
+  document.getElementById('encontro-titulo').textContent = t.titulo;
+  document.getElementById('encontro-desc').textContent  = t.desc;
+  document.getElementById('encontro-overlay').classList.add('ativo');
+}
+
+window._fecharEncontro = () => document.getElementById('encontro-overlay').classList.remove('ativo');
+
+// ── Chat ──────────────────────────────────────────────────
+window._enviarChat = async function() {
+  const input = document.getElementById('mapa-input');
+  const texto = (input?.value || '').trim();
+  if (!texto) return;
+  input.value = '';
+  const msg = { pid:_pid, nome:_nome, texto, ts:Date.now() };
+  if (window._fbUpdate) await window._fbUpdate({ chat: _buildChat(msg) });
+  else _appendChatMsg(msg);
+};
+
+function _buildChat(novaMsg) {
+  const chat = [...(_state?.chat || []), novaMsg].slice(-60);
+  return chat;
+}
+
+function _renderChat() {
+  const el = document.getElementById('mapa-chat');
+  const msgs = _state?.chat || [];
+  el.innerHTML = '';
+  for (const m of msgs) {
+    if (m.sistema) { _appendChatSistemaEl(m.texto); continue; }
+    _appendChatMsgEl(m);
+  }
+  el.scrollTop = el.scrollHeight;
+}
+
+function _appendChatMsg(m) {
+  _appendChatMsgEl(m);
+  document.getElementById('mapa-chat').scrollTop = 9999;
+}
+
+function _appendChatMsgEl(m) {
+  const el = document.getElementById('mapa-chat');
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = `<span class="chat-nome">${m.nome}:</span><span class="chat-texto">${m.texto}</span>`;
+  el.appendChild(div);
+}
+
+function _appendChatSistemaEl(texto) {
+  const el = document.getElementById('mapa-chat');
+  const div = document.createElement('div');
+  div.className = 'chat-sistema';
+  div.textContent = texto;
+  el.appendChild(div);
+}
+
+async function _addChatSistema(texto) {
+  const msg = { sistema: true, texto, ts: Date.now() };
+  if (window._fbUpdate) await window._fbUpdate({ chat: _buildChat(msg) });
+  else _appendChatSistemaEl(texto);
+}
+
+// ── Firebase sync ─────────────────────────────────────────
+function _onState(data) {
+  const prev = _state;
+  _state = data?.mapa || null;
+
+  // Resolver votação expirada
+  if (_state?.votacao && Date.now() > _state.votacao.expiresAt) {
+    _resolverVotacao();
+    return;
+  }
+
+  _renderMapa();
+  _renderVotacao();
+  _renderChat();
+
+  // Detecção de viagem concluída para animar standees imediatamente
+  if (prev?.localAtual && _state?.localAtual && prev.localAtual !== _state.localAtual) {
+    _animarStandeesParaNo(_state.localAtual, 1200);
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────
+async function init() {
+  // Carregar imagem
+  document.getElementById('mapa-img').src = MAPA_IMG;
+
+  // Estado inicial do Firebase
+  const estadoInicial = {
+    localAtual: 'mhoried_market',
+    descobertos: Object.entries(NOS).filter(([,n])=>n.estadoInicial==='descoberto').map(([id])=>id),
+    ouviuFalar:  Object.entries(NOS).filter(([,n])=>n.estadoInicial==='ouviu_falar').map(([id])=>id),
+    chat: [],
+    votacao: null,
+    viagemEmAndamento: false,
+    players: { [_pid]: { nome: _nome, classId: _cls } },
+  };
+
+  const boot = async () => {
+    if (window._fbInit) await window._fbInit(estadoInicial);
+    if (window._fbUpdate) await window._fbUpdate({ [`players.${_pid}`]: { nome: _nome, classId: _cls } });
+    if (window._fbListen) window._fbListen(_onState);
+    else _onState(null);
+  };
+
+  if (window._fbMapaReady) boot();
+  else window.addEventListener('fbMapaReady', boot);
+
+  // Re-renderizar ao redimensionar
+  window.addEventListener('resize', () => { if (_state) _renderMapa(); });
+  document.getElementById('mapa-img').onload = () => { if (_state) _renderMapa(); else _renderMapa(); };
+}
+
+init();
+</script>
+</body>
+</html>
