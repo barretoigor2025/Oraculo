@@ -58,95 +58,58 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
 }
 .mapa-nav-btn:active{opacity:0.7;}
 
-/* ── ÁREA DO MAPA ── */
+/* ── ÁREA DO MAPA (SVG único) ── */
 #mapa-scroll{
   flex:1;min-height:0;
   overflow-x:auto;overflow-y:hidden;
   -webkit-overflow-scrolling:touch;
   position:relative;
+  background:#0a0806;
 }
 #mapa-scroll::-webkit-scrollbar{display:none;}
-#mapa-container{
-  position:relative;display:inline-block;
-  white-space:nowrap;
-}
-#mapa-img{
-  display:block;
-  pointer-events:none;
-}
-
-/* ── SVG CAMINHOS ── */
+/* O SVG inteiro escala junto: imagem + caminhos + nós + standees
+   vivem no mesmo sistema de coordenadas (viewBox). Sem cálculo de pixel. */
 #mapa-svg{
-  position:absolute;top:0;left:0;width:100%;height:100%;
-  pointer-events:none;overflow:visible;
+  display:block;height:100%;width:auto;
 }
-.caminho-linha{stroke:rgba(190,140,35,0.30);stroke-width:2;stroke-dasharray:6 4;fill:none;}
-.caminho-linha.perigo-alto{stroke:rgba(180,60,40,0.35);}
-.caminho-linha.ativo{stroke:rgba(190,140,35,0.70);stroke-dasharray:none;stroke-width:2.5;}
 
-/* ── CONTAINERS DOS NÓS E STANDEES ── */
-#mapa-nos, #mapa-standees{
-  position:absolute;top:0;left:0;
-  width:100%;height:100%;
-  pointer-events:none;
-}
-#mapa-nos{ pointer-events:all; }
+/* ── CAMINHOS ── */
+.caminho-linha{stroke:rgba(190,140,35,0.32);stroke-width:3;stroke-dasharray:8 6;fill:none;}
+.caminho-linha.perigo-alto{stroke:rgba(180,60,40,0.38);}
+.caminho-linha.ativo{stroke:rgba(190,140,35,0.75);stroke-dasharray:none;stroke-width:4;}
 
 /* ── NÓS DO MAPA ── */
-.no-mapa{
-  position:absolute;transform:translate(-50%,-50%);
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  cursor:pointer;z-index:10;
+.no-g{cursor:pointer;}
+.no-circ{
+  fill:rgba(12,8,3,0.88);
+  stroke:rgba(190,140,35,0.65);stroke-width:3;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));
 }
-.no-icone{
-  width:36px;height:36px;border-radius:50%;
-  border:2px solid rgba(190,140,35,0.60);
-  background:rgba(12,8,3,0.85);
-  display:flex;align-items:center;justify-content:center;
-  font-size:17px;
-  box-shadow:0 2px 12px rgba(0,0,0,0.6);
-  transition:transform 0.15s,border-color 0.15s;
+.no-emoji{font-size:30px;}
+.no-lbl{
+  font-family:Georgia,serif;font-size:18px;font-weight:700;
+  letter-spacing:.5px;fill:rgba(225,195,115,0.95);
+  paint-order:stroke;stroke:rgba(8,5,2,0.95);stroke-width:4;stroke-linejoin:round;
 }
-.no-mapa:active .no-icone{transform:scale(0.92);}
-.no-mapa.selecionado .no-icone{border-color:rgba(240,200,60,0.95);box-shadow:0 0 12px rgba(240,200,60,0.4);}
-.no-mapa.atual .no-icone{border-color:#f0c83c;box-shadow:0 0 16px rgba(240,200,60,0.55);animation:no-pulsa 2s ease-in-out infinite;}
-@keyframes no-pulsa{0%,100%{box-shadow:0 0 16px rgba(240,200,60,0.55);}50%{box-shadow:0 0 28px rgba(240,200,60,0.80);}}
-.no-nome{
-  font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
-  color:rgba(220,190,110,0.90);text-align:center;white-space:nowrap;
-  background:rgba(10,6,2,0.75);padding:2px 5px;border-radius:4px;
-  max-width:80px;overflow:hidden;text-overflow:ellipsis;
-}
+.no-g.atual .no-circ{stroke:#f0c83c;stroke-width:5;filter:drop-shadow(0 0 10px rgba(240,200,60,0.6));}
+.no-g.selecionado .no-circ{stroke:rgba(240,200,60,0.95);stroke-width:4;}
+.no-g.desconhecido .no-circ{fill:rgba(8,5,2,0.92);stroke:rgba(90,68,32,0.45);}
+.no-g.desconhecido .no-emoji{opacity:0.45;}
+.no-g.desconhecido .no-lbl{fill:rgba(120,95,50,0.55);letter-spacing:3px;}
+.no-g.ouviu_falar .no-circ{stroke:rgba(130,108,55,0.55);}
+.no-g.ouviu_falar .no-lbl{fill:rgba(170,140,70,0.7);font-style:italic;}
 
-/* Estados de descoberta */
-.no-mapa.desconhecido .no-icone{
-  background:rgba(8,5,2,0.90);border-color:rgba(80,60,30,0.30);
-  filter:blur(0.5px);
+/* ── STANDEES ── */
+.st-g{transition:transform 1.5s cubic-bezier(0.4,0,0.2,1);}
+.st-circ{
+  fill:rgba(20,12,4,0.96);
+  stroke:rgba(240,200,60,0.9);stroke-width:3;
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,0.8));
 }
-.no-mapa.desconhecido .no-icone span{filter:blur(2px);opacity:0.35;}
-.no-mapa.desconhecido .no-nome{color:rgba(100,80,40,0.45);letter-spacing:2px;}
-.no-mapa.ouviu_falar .no-icone{border-color:rgba(120,100,50,0.50);opacity:0.70;}
-.no-mapa.ouviu_falar .no-nome{color:rgba(160,130,60,0.60);font-style:italic;}
-
-/* ── STANDEES NO MAPA ── */
-#mapa-standees{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:20;}
-.mapa-standee{
-  position:absolute;transform:translate(-50%,-140%);
-  display:flex;flex-direction:column;align-items:center;
-  transition:left 1.5s cubic-bezier(0.4,0,0.2,1),top 1.5s cubic-bezier(0.4,0,0.2,1);
-}
-.mapa-standee-avatar{
-  width:28px;height:28px;border-radius:50%;
-  border:2px solid rgba(240,200,60,0.85);
-  background:rgba(20,12,4,0.95);
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;color:#f0c83c;
-  box-shadow:0 2px 8px rgba(0,0,0,0.7);
-}
-.mapa-standee-nome{
-  font-size:8px;color:rgba(220,190,100,0.80);
-  background:rgba(8,5,2,0.80);padding:1px 4px;border-radius:3px;
-  white-space:nowrap;margin-top:2px;
+.st-emoji{font-size:24px;}
+.st-lbl{
+  font-family:Georgia,serif;font-size:14px;fill:rgba(230,200,110,0.92);
+  paint-order:stroke;stroke:rgba(8,5,2,0.92);stroke-width:3.5;stroke-linejoin:round;
 }
 
 /* ── TOOLTIP DO NÓ ── */
@@ -358,14 +321,11 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
     <button class="mapa-nav-btn" onclick="location.href='catalog.html'">📚 Catálogo</button>
   </div>
 
-  <!-- Mapa com scroll horizontal -->
+  <!-- Mapa com scroll horizontal — tudo dentro de um SVG único -->
   <div id="mapa-scroll">
-    <div id="mapa-container">
-      <img id="mapa-img" src="" alt="Mapa">
-      <svg id="mapa-svg"></svg>
-      <div id="mapa-nos"></div>
-      <div id="mapa-standees"></div>
-    </div>
+    <svg id="mapa-svg" xmlns="http://www.w3.org/2000/svg"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         preserveAspectRatio="xMidYMid meet"></svg>
   </div>
 
   <!-- Tooltip do nó (posicionado via JS) -->
@@ -473,121 +433,99 @@ function _nosAlcancaveis(origem) {
     .map(c => c.de===origem ? c.ate : c.de);
 }
 
-// ── Renderizar mapa ───────────────────────────────────────
+// ── Renderizar mapa (SVG único — imagem + caminhos + nós + standees) ──
+// Coordenadas nativas da imagem do mapa. Tudo vive neste sistema de
+// coordenadas via viewBox; nada depende de offsetWidth nem timing de load.
+const MAP_NW = 1774, MAP_NH = 887;
+
+function _esc(s){ return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
 function _renderMapa() {
-  const container = document.getElementById('mapa-container');
-  const img = document.getElementById('mapa-img');
-  const scroll = document.getElementById('mapa-scroll');
-
-  // Forçar imagem a preencher altura disponível
-  const scrollH = scroll.clientHeight;
-  if (scrollH > 0 && img.naturalWidth > 0) {
-    const ratio = img.naturalWidth / img.naturalHeight;
-    const imgH = scrollH;
-    const imgW = Math.round(imgH * ratio);
-    img.style.height = imgH + 'px';
-    img.style.width  = imgW + 'px';
-    container.style.height = imgH + 'px';
-    container.style.width  = imgW + 'px';
-  }
-
-  const W = img.offsetWidth || img.naturalWidth;
-  const H = img.offsetHeight || img.naturalHeight;
-
-  // SVG caminhos
   const svg = document.getElementById('mapa-svg');
-  svg.innerHTML = '';
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  if (!svg) return;
+  svg.setAttribute('viewBox', `0 0 ${MAP_NW} ${MAP_NH}`);
+
+  // Tamanho explícito em px (altura = área disponível; largura mantém proporção)
+  const scroll = document.getElementById('mapa-scroll');
+  const h = scroll ? scroll.clientHeight : 0;
+  if (h > 0) {
+    svg.style.height = h + 'px';
+    svg.style.width  = Math.round(h * MAP_NW / MAP_NH) + 'px';
+  }
 
   const localAtual = _state?.localAtual || 'mhoried_market';
   const alcancaveis = _nosAlcancaveis(localAtual);
 
+  // ── Caminhos ──
+  let caminhos = '';
   for (const c of CAMINHOS) {
     const na = NOS[c.de], nb = NOS[c.ate];
     if (!na || !nb) continue;
-    const x1 = na.x/100*W, y1 = na.y/100*H;
-    const x2 = nb.x/100*W, y2 = nb.y/100*H;
-    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-    line.setAttribute('x1',x1); line.setAttribute('y1',y1);
-    line.setAttribute('x2',x2); line.setAttribute('y2',y2);
-    line.className = 'caminho-linha' +
-      (c.perigo >= 4 ? ' perigo-alto' : '') +
-      ((alcancaveis.includes(c.de)||alcancaveis.includes(c.ate)) ? ' ativo' : '');
-    svg.appendChild(line);
+    const x1 = na.x/100*MAP_NW, y1 = na.y/100*MAP_NH;
+    const x2 = nb.x/100*MAP_NW, y2 = nb.y/100*MAP_NH;
+    const cls = 'caminho-linha'
+      + (c.perigo >= 4 ? ' perigo-alto' : '')
+      + ((alcancaveis.includes(c.de)||alcancaveis.includes(c.ate)) ? ' ativo' : '');
+    caminhos += `<line class="${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
   }
 
-  // Nós — posição em px (igual ao SVG) para evitar ambiguidade de %
-  const nosEl = document.getElementById('mapa-nos');
-  nosEl.style.cssText = `position:absolute;top:0;left:0;width:${W}px;height:${H}px;z-index:5;`;
-  nosEl.innerHTML = '';
-  if (W > 0 && H > 0) {
-    for (const [id, no] of Object.entries(NOS)) {
-      const estado = _estadoNo(id);
-      const px = Math.round(no.x / 100 * W);
-      const py = Math.round(no.y / 100 * H);
-      const div = document.createElement('div');
-      div.className = `no-mapa ${estado}${id===localAtual?' atual':''}${id===_noSelecionado?' selecionado':''}`;
-      div.style.cssText = `left:${px}px;top:${py}px;`;
-      const nomeExibido = estado === 'desconhecido' ? '???' : no.titulo;
-      div.innerHTML = `<div class="no-icone"><span>${estado==='desconhecido'?'🌫':no.icon}</span></div><div class="no-nome">${nomeExibido}</div>`;
-      div.onclick = (e) => { e.stopPropagation(); _clicarNo(id, div, e); };
-      nosEl.appendChild(div);
-    }
+  // ── Nós ──
+  let nos = '';
+  for (const [id, no] of Object.entries(NOS)) {
+    const estado = _estadoNo(id);
+    const cx = no.x/100*MAP_NW, cy = no.y/100*MAP_NH;
+    const cls = `no-g ${estado}${id===localAtual?' atual':''}${id===_noSelecionado?' selecionado':''}`;
+    const emoji = estado==='desconhecido' ? '🌫️' : no.icon;
+    const nome  = estado==='desconhecido' ? '???' : no.titulo;
+    nos += `<g class="${cls}" data-id="${id}">`
+      + `<circle class="no-circ" cx="${cx}" cy="${cy}" r="26"/>`
+      + `<text class="no-emoji" x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central">${emoji}</text>`
+      + `<text class="no-lbl" x="${cx}" y="${cy+46}" text-anchor="middle">${_esc(nome)}</text>`
+      + `</g>`;
   }
 
-  // Standees dos jogadores
-  _renderStandees(W, H);
+  // ── Standees ──
+  const standees = _standeesSVG();
+
+  // Montar SVG completo (imagem ao fundo)
+  svg.innerHTML =
+      `<image href="${MAPA_IMG}" xlink:href="${MAPA_IMG}" x="0" y="0" width="${MAP_NW}" height="${MAP_NH}" preserveAspectRatio="none"/>`
+    + caminhos + nos + standees;
+
+  // Cliques nos nós
+  svg.querySelectorAll('.no-g').forEach(g => {
+    g.addEventListener('click', (e) => { e.stopPropagation(); _clicarNo(g.dataset.id, e); });
+  });
 
   // Label local atual
-  document.getElementById('mapa-local-label').textContent =
-    `📍 ${NOS[localAtual]?.titulo || localAtual}`;
-
-  // ── DEBUG temporário ────────────────────────────────────
-  let dbg = document.getElementById('_dbg');
-  if (!dbg) {
-    dbg = document.createElement('div');
-    dbg.id = '_dbg';
-    dbg.style.cssText = 'position:fixed;top:60px;right:4px;z-index:9999;background:rgba(180,0,0,0.90);color:#fff;font-size:9px;line-height:1.5;padding:4px 6px;border-radius:5px;white-space:pre;font-family:monospace;pointer-events:none;';
-    document.body.appendChild(dbg);
-  }
-  dbg.textContent =
-    `scroll: ${scroll.clientWidth}×${scroll.clientHeight}\n` +
-    `nat:    ${img.naturalWidth}×${img.naturalHeight}\n` +
-    `offset: ${img.offsetWidth}×${img.offsetHeight}\n` +
-    `W×H:    ${W}×${H}\n` +
-    `nodes:  ${nosEl.children.length}\n` +
-    `nos.w:  ${nosEl.offsetWidth}×${nosEl.offsetHeight}`;
-  // ────────────────────────────────────────────────────────
+  const lbl = document.getElementById('mapa-local-label');
+  if (lbl) lbl.textContent = `📍 ${NOS[localAtual]?.titulo || localAtual}`;
 }
 
-function _renderStandees(W, H) {
-  const el = document.getElementById('mapa-standees');
-  el.innerHTML = '';
+function _standeesSVG() {
   const localAtual = _state?.localAtual || 'mhoried_market';
-  const players = _state?.players || {};
-  if (!Object.keys(players).length) {
-    // fallback: mostrar o jogador atual
-    players[_pid] = { nome: _nome, classId: _cls };
-  }
+  let players = _state?.players || {};
+  if (!Object.keys(players).length) players = { [_pid]: { nome:_nome, classId:_cls } };
   const total = Object.keys(players).length;
+  const no = NOS[localAtual];
+  if (!no) return '';
+  let out = '';
   Object.entries(players).forEach(([pid, p], i) => {
-    const no = NOS[localAtual];
-    if (!no) return;
-    const offset = (i - (total-1)/2) * 22;
-    const x = no.x/100*W + offset;
-    const y = no.y/100*H;
-    const div = document.createElement('div');
-    div.className = 'mapa-standee';
-    div.id = `standee-${pid}`;
-    div.style.cssText = `left:${x}px;top:${y}px;`;
+    const offset = (i - (total-1)/2) * 36;
+    const cx = no.x/100*MAP_NW + offset;
+    const cy = no.y/100*MAP_NH - 34;   // flutua acima do nó
     const icon = CLASS_ICON[p.classId||'guerreiro'] || '⚔️';
-    div.innerHTML = `<div class="mapa-standee-avatar">${icon}</div><div class="mapa-standee-nome">${(p.nome||'?').split(' ')[0]}</div>`;
-    el.appendChild(div);
+    out += `<g class="st-g" id="st-${pid}" transform="translate(${cx},${cy})">`
+      + `<circle class="st-circ" r="20"/>`
+      + `<text class="st-emoji" x="0" y="0" text-anchor="middle" dominant-baseline="central">${icon}</text>`
+      + `<text class="st-lbl" x="0" y="38" text-anchor="middle">${_esc((p.nome||'?').split(' ')[0])}</text>`
+      + `</g>`;
   });
+  return out;
 }
 
 // ── Tooltip ───────────────────────────────────────────────
-function _clicarNo(id, el, ev) {
+function _clicarNo(id, ev) {
   const estado = _estadoNo(id);
   _noSelecionado = id;
   window._tooltipNoId = id;
@@ -627,7 +565,7 @@ function _mostrarTooltip(id, estado, ev) {
 }
 
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.no-mapa') && !e.target.closest('#no-tooltip')) {
+  if (!e.target.closest('.no-g') && !e.target.closest('#no-tooltip')) {
     document.getElementById('no-tooltip').classList.remove('visivel');
     _noSelecionado = null;
     window._tooltipNoId = null;
@@ -781,20 +719,18 @@ async function _iniciarViagem(destino) {
 }
 
 function _animarStandeesParaNo(destino, duracao) {
-  const img = document.getElementById('mapa-img');
-  const W = img.offsetWidth;
-  const H = img.offsetHeight;
   const no = NOS[destino];
   if (!no) return;
   const players = _state?.players || { [_pid]: { nome: _nome, classId: _cls } };
   const total = Object.keys(players).length;
   Object.keys(players).forEach((pid, i) => {
-    const el = document.getElementById(`standee-${pid}`);
-    if (!el) return;
-    const offset = (i - (total-1)/2) * 22;
-    el.style.transitionDuration = duracao + 'ms';
-    el.style.left = (no.x/100*W + offset) + 'px';
-    el.style.top  = (no.y/100*H) + 'px';
+    const g = document.getElementById(`st-${pid}`);
+    if (!g) return;
+    const offset = (i - (total-1)/2) * 36;
+    const cx = no.x/100*MAP_NW + offset;
+    const cy = no.y/100*MAP_NH - 34;
+    g.style.transitionDuration = duracao + 'ms';
+    g.setAttribute('transform', `translate(${cx},${cy})`);
   });
 }
 
@@ -887,8 +823,8 @@ function _onState(data) {
 
 // ── Init ──────────────────────────────────────────────────
 async function init() {
-  // Carregar imagem
-  document.getElementById('mapa-img').src = MAPA_IMG;
+  // Render imediato — o SVG não depende do carregamento do raster
+  _renderMapa();
 
   // Estado inicial do Firebase
   const estadoInicial = {
@@ -911,15 +847,11 @@ async function init() {
   if (window._fbMapaReady) boot();
   else window.addEventListener('fbMapaReady', boot);
 
-  // Re-renderizar ao redimensionar e quando imagem carrega
+  // Re-render ao redimensionar + algumas passadas para pegar a altura final do layout
   window.addEventListener('resize', _renderMapa);
-  const _img = document.getElementById('mapa-img');
-  if (_img.complete && _img.naturalWidth > 0) {
-    // imagem em cache — agendar para próximo frame (garante que layout está pronto)
-    requestAnimationFrame(_renderMapa);
-  } else {
-    _img.onload = _renderMapa;
-  }
+  requestAnimationFrame(_renderMapa);
+  setTimeout(_renderMapa, 120);
+  setTimeout(_renderMapa, 500);
 }
 
 init();
