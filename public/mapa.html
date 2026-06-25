@@ -209,6 +209,11 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
   border-radius:20px;padding:8px 16px;color:#f0c83c;font-size:12px;font-weight:700;cursor:pointer;
 }
 #mapa-send:active{opacity:0.7;}
+#mapa-clear-chat{
+  flex-shrink:0;background:transparent;border:none;
+  color:rgba(160,130,60,0.50);font-size:16px;cursor:pointer;padding:4px 6px;
+}
+#mapa-clear-chat:active{color:rgba(200,80,60,0.80);}
 
 /* ── MODAL DE SELEÇÃO DE ROTA ── */
 #modal-rota{
@@ -354,6 +359,7 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
     <div id="mapa-input-row">
       <input id="mapa-input" placeholder="Diga algo ao grupo…" onkeydown="if(event.key==='Enter')window._enviarChat()">
       <button id="mapa-send" onclick="window._enviarChat()">Enviar</button>
+      <button id="mapa-clear-chat" onclick="window._limparChat()" title="Limpar chat">🗑</button>
     </div>
   </div>
 
@@ -757,6 +763,14 @@ function _mostrarEncontro(enc, caminho) {
 window._fecharEncontro = () => document.getElementById('encontro-overlay').classList.remove('ativo');
 
 // ── Chat ──────────────────────────────────────────────────
+window._limparChat = async function() {
+  if (!confirm('Limpar todo o chat?')) return;
+  if (!_state) _state = {};
+  _state.chat = [];
+  _renderChat();
+  if (window._fbUpdate) window._fbUpdate({ chat: [] });
+};
+
 window._enviarChat = async function() {
   const input = document.getElementById('mapa-input');
   const texto = (input?.value || '').trim();
