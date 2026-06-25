@@ -8,7 +8,7 @@
 
 O sistema funciona como um videogame retrô:
 
-- O **console** é o Oráculo — os quatro pilares, a engine, o motor que roda tudo
+- O **console** é o Oráculo — os cinco pilares, a engine, o motor que roda tudo
 - O **cartucho** é a campanha — o universo, os personagens, a história, as batalhas
 - **Instalar** significa: ler o PDF, entender o universo, gerar os arquivos, e o sistema passa a conhecer aquela campanha
 
@@ -16,7 +16,9 @@ Mhoried é a campanha de referência — o padrão técnico e visual que todas a
 
 ---
 
-## Os Quatro Pilares
+## Os Cinco Pilares
+
+> O sistema nasceu com quatro pilares (Construtor, Narrador, Catálogo, Arena). O **Mapa do Mundo** chegou como o quinto pilar — o "lobby" que amarra tudo: é de onde o grupo decide para onde ir, e é ele que dispara o Narrador na cena certa. Ele fecha o ciclo de jogo.
 
 ### 1. Construtor (Builder)
 **O roteirista da campanha.**
@@ -92,6 +94,29 @@ O resultado de cada ação vai para o Narrador, que transforma em texto na tela.
 
 ---
 
+### 5. Mapa do Mundo
+
+**O lobby e a bússola da campanha — o pilar que fecha o ciclo.**
+
+Uma imagem do mundo (estilo ilustração da campanha) com os locais marcados como nós. É a tela onde o grupo se reúne entre as cenas, conversa e decide para onde viajar. Quando a viagem termina, o Mapa **acorda o Narrador na cena de destino** — é a cola entre exploração e narração.
+
+O que o Mapa faz:
+- **Lobby + chat** — todos os jogadores entram no mapa e conversam (chat sincronizado via Firebase) para planejar a rota
+- **Standees no mapa** — cada jogador aparece como peça sobre o local atual; as peças **se deslocam** animadamente quando o grupo viaja
+- **Proposta de rota por votação** — qualquer jogador propõe um destino; surge um overlay de votação para **todos**; maioria vence (temporizador configurável)
+- **Névoa de guerra (fog of war)** — cada nó tem 3 estados: `desconhecido` (oculto/borrado), `ouviu_falar` (nome visível, info vaga), `descoberto` (info completa). Viajar revela locais
+- **Encontros aleatórios** — cada caminho tem `perigo`, `dist` e uma lista de `encontros` com chance; ao viajar, o sistema rola os encontros (combate, roubo, diálogo)
+- **Integração com o Narrador** — ao chegar num destino, o Mapa escreve `narration.cenaId = destino` no Firebase (multiplayer → todos mudam de cena em tempo real) ou salva `oraculo.soloNarrCena` no localStorage e redireciona para `narration.html` (solo)
+
+**Recebe do Construtor:** a configuração `mapa.js` (nós `NOS` + caminhos `CAMINHOS`) e a imagem do mundo.
+**Alimenta o Narrador:** o `cenaId` de destino — por isso os IDs dos nós **devem bater** com os IDs de cena do `campaign.js`.
+
+**Arquivos principais:** `public/mapa.html` (engine) · `public/catalogo/{id}/mapa.js` (config) · `public/catalogo/{id}/mapa/{id}_mapa.png` (imagem do mundo)
+
+**Funciona em solo e multiplayer:** sem Firebase, o mapa roda local (standee único, sem votação) e redireciona para a narração ao viajar.
+
+---
+
 ## Fluxo de Instalação de Campanha
 
 ```
@@ -106,13 +131,17 @@ O resultado de cada ação vai para o Narrador, que transforma em texto na tela.
 4. Modo Construtor ativado — gera:
    ├── Classes jogáveis (balanceadas para o sistema Oráculo)
    ├── NPCs com personalidade para o Narrador
+   ├── npcs_registry.js (auto-gerado de todos os npcs/*/dados.json)
    ├── Inimigos com habilidades para a Arena
-   ├── Roteiro por atos com ganchos emocionais
+   ├── Roteiro por atos com ganchos emocionais (cada cena com npcsPresentes)
    ├── Cenários com descrições de arte
+   ├── mapa.js — nós (NOS) + caminhos (CAMINHOS) do Mapa do Mundo
+   │    (IDs dos nós = IDs de cena do campaign.js)
    └── Checklist de assets a criar
         ↓
 5. Arquivos criados em public/catalogo/{campaign-id}/
    Campanha registrada no seletor do catalog.html
+   (menu + imports + paleta; ver "Registrar campanha no catalog.html")
         ↓
 6. Checklist entregue:
    "Faltam estas imagens para jogar: ..."
@@ -154,6 +183,9 @@ public/catalogo/{id}/
   data.js                       ← export { personagens, cenarios, regras especiais da campanha }
   narracao.js                   ← export { NARRACAO_NPCS, NARRACAO_CENAS, NARRACAO_FLUXO } (curado, opcional)
   npcs_registry.js              ← export { NPCS_REGISTRY } — auto-gerado de npcs/*/dados.json (todos os NPCs)
+  mapa.js                       ← export { MAPA_IMG, NOS, CAMINHOS } — config do Mapa do Mundo (Pilar 5)
+  mapa/
+    mapa_{id}.png               ← imagem do mundo (estilo da campanha, ~2:1, scroll horizontal)
   campanha/
     config_campanha.json        ← metadata da campanha
     roteiro/
@@ -314,6 +346,50 @@ export const CENAS = {
 };
 ```
 
+> **Importante para o Mapa:** os IDs das cenas que são locais visitáveis no mundo (`mhoried_market`, `blackwoods_entrada`, etc.) devem ser **os mesmos** usados como IDs de nó no `mapa.js`. É assim que viajar no mapa abre a cena certa no Narrador.
+
+---
+
+### `mapa.js` — Configuração do Mapa do Mundo (Pilar 5)
+
+Define a imagem do mundo, os locais (nós) e os caminhos entre eles. Os IDs dos nós **são IDs de cena do `campaign.js`** — viajar para um nó dispara a cena correspondente no Narrador.
+
+```javascript
+export const MAPA_IMG = 'catalogo/{id}/mapa/mapa_{id}.png';
+
+// x e y são % da imagem (0-100), medidos da esquerda e do topo
+export const NOS = {
+  mhoried_market: {                 // = ID de cena no campaign.js
+    titulo: 'Feira de Phanourios',
+    subtitulo: 'Cidade de Phanourios',
+    x: 20, y: 38,                   // posição sobre a imagem (%)
+    icon: '🏪',
+    estadoInicial: 'descoberto',    // 'descoberto' | 'ouviu_falar' | 'desconhecido'
+    desc: 'Texto mostrado no tooltip do local.',
+  },
+  // ... demais nós
+};
+
+// perigo: 0-5 | dist: 'curta'|'media'|'longa' | encontros: [{chance, tipo}]
+export const CAMINHOS = [
+  { de:'mhoried_market', ate:'castelo_mhoried', perigo:0, dist:'curta', encontros:[] },
+  { de:'mhoried_market', ate:'carroça_tombada', perigo:1, dist:'media',
+    encontros:[{chance:0.15, tipo:'roubo'}] },
+  // tipo do encontro: 'combate' | 'roubo' | 'dialogo'
+  // dist controla a duração da animação de viagem (curta=1.8s, media=3.2s, longa=5s)
+];
+```
+
+**Estados de descoberta (fog of war):**
+- `descoberto` — local totalmente visível e viajável
+- `ouviu_falar` — nome aparece, mas info vaga; o grupo "ouviu falar" mas não foi
+- `desconhecido` — oculto/borrado até ser revelado por uma viagem adjacente
+
+**Regras de design do mapa:**
+- Comece com poucos nós `descoberto` (os locais iniciais da campanha) e a maioria `desconhecido`
+- `perigo` alto → caminhos com mais/maiores chances de `encontros`
+- A imagem deve ter proporção ~2:1 (scroll **só horizontal**) e seguir o estilo de arte da campanha
+
 ---
 
 ## Paleta de Cores por Campanha
@@ -330,6 +406,27 @@ const CAMP_PALETTE = {
 ```
 
 Também adicionar overrides CSS `[data-camp="{id}"]` para elementos com cores hardcoded.
+
+---
+
+## Registrar Campanha no catalog.html
+
+As campanhas são **registradas manualmente** no `catalog.html` (não há descoberta automática de pastas). Ao instalar uma nova campanha, é preciso:
+
+1. **Item de menu** — adicionar no seletor de campanhas:
+   ```html
+   <div class="camp-menu-item" data-camp="{id}">{icon} {Nome}</div>
+   ```
+2. **Imports do módulo** — importar os dados da campanha no `<script>`:
+   ```javascript
+   import { CENAS, CENAS_ORDEM } from './catalogo/{id}/campanha/roteiro/campaign.js';
+   import { CLASSES_DATA } from './catalogo/{id}/classes.js';
+   import { NPCS, INIMIGOS_DATA } from './catalogo/{id}/loader.js';
+   ```
+3. **Paleta** — entrada em `CAMP_PALETTE` + overrides `[data-camp="{id}"]` (acima)
+4. **Branches dos builders** — as funções `buildClassesTab`, `buildNpcsTab`, `buildChecklistTab`, etc. selecionam o dataset por `campAtual`. Adicionar o ramo da nova campanha.
+
+> **Nota de integração (a melhorar):** hoje o **checklist de assets só está implementado para `mhoried`** — as demais campanhas mostram "em construção". E o **Mapa do Mundo (Pilar 5) ainda não tem link nem seção no catálogo**. Ao evoluir o catálogo, generalizar o checklist para qualquer campanha (hoje o botão 🗺 Mapa e a seção do mundo no checklist já existem; falta o checklist completo das demais campanhas).
 
 ---
 
@@ -356,6 +453,11 @@ Ao final de cada instalação, o Construtor entrega este checklist:
 **Para cada cenário:**
 - [ ] Imagem de conversa (`{nome}/imagem/{nome}.png`) — perspectiva de dentro, atmosfera
 - [ ] Imagem de batalha (`{nome}/imagem/{nome}_batalha.png`) — vista de cima ou diagonal
+
+**Para o Mapa do Mundo (Pilar 5):**
+- [ ] Imagem do mundo (`mapa/mapa_{id}.png`) — visão geral do mapa da campanha, proporção ~2:1, scroll horizontal, estilo de arte da campanha
+- [ ] `mapa.js` com `NOS` (nós = IDs de cena) e `CAMINHOS` posicionados sobre a imagem
+- [ ] Prompt de arte: `"{estilo do universo}, mapa-múndi ilustrado, visão panorâmica do território da campanha, locais reconhecíveis, formato horizontal panorâmico, sem texto/rótulos"`
 
 ---
 
@@ -520,7 +622,8 @@ Organizado por ato. Para cada cenário: tipo, inimigos se aplicável, e prompt d
 | Função | Tecnologia |
 |---|---|
 | Hosting | GitHub Pages (branch `main`) |
-| Banco de dados (multiplayer) | Firebase Firestore |
+| Banco de dados (multiplayer) | Firebase Firestore (`narration.*`, `mapa.*` em `rooms/{id}`) |
+| Lobby / chat / votação de rota | Firebase Firestore (Mapa do Mundo, Pilar 5) |
 | Narração / voz dos NPCs | Groq API (`oraculo.groqKey` no localStorage) |
 | Builder / Construtor | Claude (aqui, no Claude Code) |
 | Arte de personagens e cenários | IA de imagens (Midjourney, DALL·E, etc.) |

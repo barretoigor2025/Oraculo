@@ -794,6 +794,7 @@
       </div>
     </div>
     <h1 id="cat-titulo">Mhoried</h1>
+    <a class="btn-sim" href="mapa.html">🗺 Mapa</a>
     <a class="btn-sim" href="simulacao_entrada.html">🎮 Simulação</a>
     <span id="count-label"></span>
   </div>
@@ -1512,6 +1513,14 @@ function buildChecklistTab(){
   }));
 
   const sections = [
+    {
+      titulo: '🗺️ Mapa do Mundo (Pilar 5)',
+      dica: `mapa/mapa_${campAtual}.png  —  imagem do mundo (~2:1, scroll horizontal)`,
+      items: [{
+        nome: 'Mapa do Mundo', sub: `mapa_${campAtual}.png`,
+        path: `${CAT}mapa/mapa_${campAtual}.png`,
+      }],
+    },
     ...cenarioSections,
     {
       titulo: '🖼️ Retratos NPC',
