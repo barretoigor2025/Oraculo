@@ -541,6 +541,23 @@ function _renderMapa() {
   // Label local atual
   document.getElementById('mapa-local-label').textContent =
     `📍 ${NOS[localAtual]?.titulo || localAtual}`;
+
+  // ── DEBUG temporário ────────────────────────────────────
+  let dbg = document.getElementById('_dbg');
+  if (!dbg) {
+    dbg = document.createElement('div');
+    dbg.id = '_dbg';
+    dbg.style.cssText = 'position:fixed;top:60px;right:4px;z-index:9999;background:rgba(180,0,0,0.90);color:#fff;font-size:9px;line-height:1.5;padding:4px 6px;border-radius:5px;white-space:pre;font-family:monospace;pointer-events:none;';
+    document.body.appendChild(dbg);
+  }
+  dbg.textContent =
+    `scroll: ${scroll.clientWidth}×${scroll.clientHeight}\n` +
+    `nat:    ${img.naturalWidth}×${img.naturalHeight}\n` +
+    `offset: ${img.offsetWidth}×${img.offsetHeight}\n` +
+    `W×H:    ${W}×${H}\n` +
+    `nodes:  ${nosEl.children.length}\n` +
+    `nos.w:  ${nosEl.offsetWidth}×${nosEl.offsetHeight}`;
+  // ────────────────────────────────────────────────────────
 }
 
 function _renderStandees(W, H) {
