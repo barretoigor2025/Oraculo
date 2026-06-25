@@ -378,7 +378,7 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
   <div id="vot-ov-proponente">—</div>
   <div id="vot-ov-info">
     <div id="vot-ov-contagem">— votos</div>
-    <div id="vot-ov-timer">60</div>
+    <div id="vot-ov-timer">10</div>
   </div>
   <div id="vot-ov-btns">
     <button id="vot-ov-sim" onclick="window._votar(true)">✓ Vamos!</button>
@@ -626,7 +626,7 @@ window._proporRota = async function(destino) {
     proponente: _pid,
     proponenteNome: _nome,
     votos: { [_pid]: true },
-    expiresAt: Date.now() + 60000,
+    expiresAt: Date.now() + 10000,
     iniciouEm: Date.now(),
   };
   if (window._fbUpdate) await window._fbUpdate({ votacao });
