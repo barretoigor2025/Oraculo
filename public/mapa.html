@@ -268,6 +268,57 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
   font-size:12px;cursor:pointer;
 }
 
+/* ── VOTAÇÃO OVERLAY (aparece para todos quando há proposta ativa) ── */
+#votacao-overlay{
+  display:none;position:fixed;
+  bottom:0;left:0;right:0;z-index:250;
+  background:rgba(8,5,2,0.97);
+  border-top:2px solid rgba(190,140,35,0.60);
+  border-radius:16px 16px 0 0;
+  padding:16px 16px max(16px,env(safe-area-inset-bottom));
+  box-shadow:0 -8px 32px rgba(0,0,0,0.80);
+  animation:vot-subir 0.3s ease;
+}
+@keyframes vot-subir{from{transform:translateY(100%);}to{transform:translateY(0);}}
+#votacao-overlay.ativo{display:block;}
+
+#vot-ov-titulo{
+  font-size:10px;text-transform:uppercase;letter-spacing:1.4px;
+  color:rgba(190,140,35,0.60);margin-bottom:6px;
+}
+#vot-ov-destino{
+  font-size:17px;font-weight:700;color:#f0c83c;margin-bottom:4px;
+}
+#vot-ov-proponente{
+  font-size:11px;color:rgba(180,150,70,0.65);margin-bottom:14px;
+}
+#vot-ov-info{
+  font-size:11px;color:rgba(160,130,60,0.55);margin-bottom:14px;
+  display:flex;align-items:center;gap:12px;
+}
+#vot-ov-timer{
+  font-size:22px;font-weight:700;color:#f0c83c;
+  min-width:40px;text-align:center;
+}
+#vot-ov-contagem{flex:1;}
+#vot-ov-btns{display:flex;gap:10px;}
+#vot-ov-sim{
+  flex:2;padding:14px;border-radius:12px;
+  background:rgba(40,100,40,0.85);border:1px solid rgba(80,180,80,0.55);
+  color:#90e890;font-size:16px;font-weight:700;cursor:pointer;
+}
+#vot-ov-nao{
+  flex:1;padding:14px;border-radius:12px;
+  background:rgba(80,25,25,0.85);border:1px solid rgba(160,50,50,0.55);
+  color:#e08080;font-size:14px;font-weight:700;cursor:pointer;
+}
+#vot-ov-sim:active{opacity:0.75;}
+#vot-ov-nao:active{opacity:0.75;}
+#vot-ov-meu-voto{
+  text-align:center;margin-top:10px;
+  font-size:11px;color:rgba(150,130,70,0.55);font-style:italic;
+}
+
 /* ── ENCONTRO OVERLAY ── */
 #encontro-overlay{
   display:none;position:fixed;inset:0;z-index:300;
@@ -320,21 +371,10 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
   <!-- Painel inferior -->
   <div id="mapa-painel">
 
-    <!-- Botão propor rota — sempre visível -->
+    <!-- Botão propor rota — visível quando não há votação ativa -->
     <button id="propor-rota-btn" onclick="window._abrirModalRota()">
       <span>🗺</span> PROPOR ROTA
     </button>
-
-    <!-- Barra de votação (aparece quando há voto ativo) -->
-    <div id="votacao-bar">
-      <div id="vot-texto">—</div>
-      <div id="vot-acoes">
-        <button id="vot-sim" class="vot-btn" onclick="window._votar(true)">✓ Sim</button>
-        <button id="vot-nao" class="vot-btn" onclick="window._votar(false)">✕ Não</button>
-        <span></span>
-        <span id="vot-timer">60s</span>
-      </div>
-    </div>
 
     <!-- Chat -->
     <div id="mapa-chat">
@@ -348,6 +388,22 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
     </div>
   </div>
 
+</div>
+
+<!-- Overlay de votação — aparece para TODOS quando há proposta ativa -->
+<div id="votacao-overlay">
+  <div id="vot-ov-titulo">🗺 Proposta de rota</div>
+  <div id="vot-ov-destino">—</div>
+  <div id="vot-ov-proponente">—</div>
+  <div id="vot-ov-info">
+    <div id="vot-ov-contagem">— votos</div>
+    <div id="vot-ov-timer">60</div>
+  </div>
+  <div id="vot-ov-btns">
+    <button id="vot-ov-sim" onclick="window._votar(true)">✓ Vamos!</button>
+    <button id="vot-ov-nao" onclick="window._votar(false)">✕ Não</button>
+  </div>
+  <div id="vot-ov-meu-voto"></div>
 </div>
 
 <!-- Modal de seleção de rota -->
@@ -590,21 +646,43 @@ window._votar = async function(sim) {
 };
 
 function _renderVotacao() {
-  const bar = document.getElementById('votacao-bar');
+  const ov = document.getElementById('votacao-overlay');
+  const proporBtn = document.getElementById('propor-rota-btn');
   const v = _state?.votacao;
-  if (!v) { bar.classList.remove('ativa'); clearInterval(_votacaoTimer); return; }
-  bar.classList.add('ativa');
+
+  if (!v) {
+    ov.classList.remove('ativo');
+    if (proporBtn) proporBtn.style.display = '';
+    clearInterval(_votacaoTimer);
+    return;
+  }
+
+  ov.classList.add('ativo');
+  if (proporBtn) proporBtn.style.display = 'none';
+
   const no = NOS[v.destino];
   const votos = v.votos || {};
   const sim = Object.values(votos).filter(Boolean).length;
-  const nao = Object.values(votos).filter(x=>x===false).length;
-  document.getElementById('vot-texto').innerHTML =
-    `<b>${v.proponenteNome}</b> propõe ir para <b>${no?.titulo}</b> &nbsp;✓${sim} ✕${nao}`;
+  const nao = Object.values(votos).filter(x => x === false).length;
+  const meuVoto = votos[_pid];
+
+  document.getElementById('vot-ov-destino').textContent = no?.titulo || v.destino;
+  document.getElementById('vot-ov-proponente').textContent =
+    v.proponente === _pid ? 'Você propôs esta rota' : `Proposta por ${v.proponenteNome}`;
+  document.getElementById('vot-ov-contagem').textContent =
+    `✓ ${sim} a favor  ·  ✕ ${nao} contra`;
+  document.getElementById('vot-ov-meu-voto').textContent =
+    meuVoto === true ? '✓ Você votou a favor' :
+    meuVoto === false ? '✕ Você votou contra' : 'Aguardando seu voto…';
+
+  // Destacar botão já votado
+  document.getElementById('vot-ov-sim').style.opacity = meuVoto === true  ? '1' : (meuVoto === false ? '0.4' : '1');
+  document.getElementById('vot-ov-nao').style.opacity = meuVoto === false ? '1' : (meuVoto === true  ? '0.4' : '1');
 
   clearInterval(_votacaoTimer);
   _votacaoTimer = setInterval(() => {
     const restante = Math.max(0, Math.ceil((v.expiresAt - Date.now()) / 1000));
-    document.getElementById('vot-timer').textContent = restante + 's';
+    document.getElementById('vot-ov-timer').textContent = restante;
     if (restante <= 0) { clearInterval(_votacaoTimer); _resolverVotacao(); }
   }, 500);
 }
