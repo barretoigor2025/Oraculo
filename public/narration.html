@@ -1173,6 +1173,8 @@ function onRoomUpdate(room) {
   _lastRoom = room;
 
   if (room.status === 'battle') {
+    // Grava a cena da batalha para a Arena escolher o roster certo
+    localStorage.setItem('oraculo.battleCena', room.narration?.battleKey || room.narration?.cenaId || 'mhoried_market');
     window.location.href = 'arena.html';
     return;
   }
@@ -1482,7 +1484,8 @@ async function confirmarPronto() {
     // e dispara status='battle' para TODOS (sem race condition de cache local)
     await window._fbAddIntroConfirm(_pid);
   } else {
-    // Sem Firebase: vai direto
+    // Sem Firebase (solo): grava a cena da batalha e vai direto
+    localStorage.setItem('oraculo.battleCena', _cenaAtual || 'mhoried_market');
     window.location.href = 'arena.html';
   }
 }
@@ -2324,6 +2327,7 @@ async function iniciarBatalha() {
   if (window._fbSetStatus) {
     await window._fbSetStatus('battle', {
       'narration.cenaId': _cenaAtual,   // garante que o pós-batalha saiba a cena de origem p/ avançar à proximaCena
+      'narration.battleKey': null,      // batalha normal de cena usa o cenaId (limpa emboscada anterior)
       postBattleConfirmados: {},
       batalha: {},
       currentTurnPlayerId: null,
@@ -2331,6 +2335,7 @@ async function iniciarBatalha() {
       enemies: [],
     });
   } else {
+    localStorage.setItem('oraculo.battleCena', _cenaAtual || 'mhoried_market');
     window.location.href = 'arena.html';
   }
 }

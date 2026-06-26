@@ -8,9 +8,11 @@
 <script type="module">
 import { INIMIGOS_DATA, NPCS as _NPCS_DATA } from './catalogo/mhoried/loader.js';
 import { CENAS as _CENAS_DATA } from './catalogo/mhoried/campanha/roteiro/campaign.js';
+import { rosterDaKey } from './catalogo/mhoried/encontros.js';
 window.INIMIGOS_DATA = INIMIGOS_DATA;
 window._campanhaNPCs = _NPCS_DATA;
 window._CENAS_DATA = _CENAS_DATA;
+window._rosterDaKey = rosterDaKey;
 import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import{getFirestore,doc,onSnapshot,updateDoc,increment}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 const _cfg=JSON.parse(localStorage.getItem('oraculo.fbConfig')||'null');
@@ -1073,6 +1075,14 @@ const _hcd = _HERO_CLASS_DATA[_heroClassId] || _HERO_CLASS_DATA.mago;
 // ══════════════════════════════════════════
 //  UNIDADES
 // ══════════════════════════════════════════
+// Roster da cena: lê a key gravada antes da batalha (cenaId ou _emboscada:perigo)
+function _spawnRosterCena(){
+  const key = localStorage.getItem('oraculo.battleCena') || '';
+  let roster = (window._rosterDaKey && window._rosterDaKey(key)) || null;
+  if(!roster || !roster.length) roster = [{id:'espantalho_assombrado',col:6,row:3}]; // fallback
+  return roster.map(r=>criarInimigo(r.id, r.col, r.row)).filter(Boolean);
+}
+
 let unidades = [
   { nome:_hcd.nome, col:_fbIsHost?4:6, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
     imgSrc:`catalogo/mhoried/classes/${_heroClassId}/peca_tabuleiro/${_heroClassId}_peca.png`,
@@ -1081,7 +1091,7 @@ let unidades = [
     hp:_hcd.hp, maxHp:_hcd.hp, sp:_hcd.sp, maxSp:_hcd.sp,
     portrait:`catalogo/mhoried/classes/${_heroClassId}/retrato/${_heroClassId}_retrato.png`,
     itens:_hcd.itens, classId:_heroClassId },
-  criarInimigo('espantalho_assombrado', 6, 3),
+  ..._spawnRosterCena(),
 ];
 
 // ══════════════════════════════════════════
@@ -2249,6 +2259,34 @@ function _mostrarOverlayFimBatalha(vitoria){
   });
 }
 
+// ── Vitória genérica (qualquer cena que não seja a Feira) ────────
+function _vitoriaGenerica(){
+  unidades = unidades.filter(u => u.tipo !== 'inimigo');
+  render();
+  document.getElementById('overlay-fim-batalha')?.remove();
+  const div=document.createElement('div');
+  div.id='overlay-fim-batalha';
+  div.style.cssText='position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.72);z-index:900;gap:18px;pointer-events:all;';
+  div.innerHTML=`
+    <div style="color:#f5d878;font-size:clamp(16px,5vw,22px);font-weight:700;letter-spacing:2px;text-align:center;padding:0 20px;">A batalha terminou — vitória!</div>
+    <button id="btn-voltar-narracao" style="padding:13px 30px;font-size:15px;font-family:inherit;background:rgba(190,135,35,.25);color:#f5d878;border:1px solid rgba(190,135,35,.55);border-radius:8px;cursor:pointer;letter-spacing:1px;font-weight:600;-webkit-tap-highlight-color:transparent;">📖 Continuar</button>`;
+  document.body.appendChild(div);
+  document.getElementById('btn-voltar-narracao').addEventListener('click',()=>{
+    const btn=document.getElementById('btn-voltar-narracao'); btn.disabled=true; btn.textContent='⌛ Aguardando…';
+    if(window._fbAddPostBattleConfirm){
+      window._fbAddPostBattleConfirm();
+    } else {
+      // Solo: calcula a próxima cena (emboscada volta ao destino; batalha de cena avança)
+      const key = localStorage.getItem('oraculo.battleCena') || '';
+      let proxima;
+      if(key.startsWith('_emboscada')) proxima = localStorage.getItem('oraculo.soloNarrCena') || 'mhoried_market';
+      else proxima = window._CENAS_DATA?.[key]?.proximaCena ?? key ?? 'mhoried_market';
+      localStorage.setItem('oraculo.soloNarrCena', proxima);
+      window.location.href='narration.html';
+    }
+  });
+}
+
 // ── Cinematica pós-batalha (vitória) ─────────────────────────────
 let _cinematicaRodando = false;
 
@@ -2770,7 +2808,10 @@ function verificarVitoria(){
   if(inimigos.length===0){
     unidades=unidades.filter(u=>u.tipo!=='inimigo'); // remove inimigos mortos do array
     render();
-    mostrarLetreiro('VITÓRIA!','os inimigos foram derrotados','',1400, _cinematicaVitoria);
+    // Só a Feira usa a cinemática especial (Gregoras → castelo); o resto é genérico
+    const _bc = localStorage.getItem('oraculo.battleCena') || '';
+    const _cb = (_bc === 'mhoried_market') ? _cinematicaVitoria : _vitoriaGenerica;
+    mostrarLetreiro('VITÓRIA!','os inimigos foram derrotados','',1400, _cb);
     return true;
   }
   if(herois.length===0){
@@ -3727,13 +3768,15 @@ function onRoomUpdate(room){
     const pids=Object.keys(room.players||{});
     const confirmed=Object.keys(room.postBattleConfirmados||{});
     if(pids.length>0 && pids.every(p=>confirmed.includes(p))){
-      // Determine next scene from campaign data or stay on current
+      // Próxima cena: emboscada de viagem volta ao destino (cenaId); batalha de cena avança via proximaCena
       const cenaAtualId = room.narration?.cenaId;
+      const ehEmboscada = !!room.narration?.battleKey;
       const cenaAtual = window._CENAS_DATA?.[cenaAtualId];
-      const proximaCena = cenaAtual?.proximaCena ?? cenaAtualId ?? 'mhoried_market';
-      const gancho = cenaAtual?.ganchoPosBatalha ?? null;
+      const proximaCena = ehEmboscada ? cenaAtualId : (cenaAtual?.proximaCena ?? cenaAtualId ?? 'mhoried_market');
+      const gancho = ehEmboscada ? null : (cenaAtual?.ganchoPosBatalha ?? null);
       if(window._fbSetStatus) window._fbSetStatus('narration',{
         'narration.cenaId': proximaCena,
+        'narration.battleKey': null,
         'narration.modoImagem':'exterior',
         'narration.dialogo': gancho ? [{ tipo:'narrador', oradorId:'narrador', oradorNome:'Narrador', texto: gancho.texto, ts: Date.now() }] : [],
         'narration.introConfirmados':{},
@@ -3968,8 +4011,7 @@ function init(){
     // INIMIGOS_DATA now guaranteed (ES module ran before fbReady event)
     unidades = unidades.filter(Boolean);
     if(!unidades.some(u=>u.tipo==='inimigo')){
-      const e = criarInimigo('espantalho_assombrado',6,3);
-      if(e){ unidades.push(e); _loadSprite(e); }
+      for(const e of _spawnRosterCena()){ if(e){ unidades.push(e); _loadSprite(e); } }
     }
     if(window._fbListenRoom) window._fbListenRoom(onRoomUpdate);
     // Registra posição inicial do herói local no Firebase

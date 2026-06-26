@@ -116,6 +116,61 @@ export const NOS = {
     estadoInicial: 'desconhecido',
     desc: '',
   },
+  // ── Ato 2 — Exploração dos Blackwoods (posições aproximadas, calibrar sobre a imagem) ──
+  ruins_simithari: {
+    titulo: 'Ruínas de Simithari',
+    subtitulo: 'Blackwoods — Colina dos Corvos',
+    x: 60, y: 33, icon: '🪦',
+    estadoInicial: 'desconhecido', desc: 'Ruínas élficas brancas tomadas por corvos e hera escura.',
+  },
+  campo_aranhas: {
+    titulo: 'O Campo das Aranhas',
+    subtitulo: 'Blackwoods — Zona Central',
+    x: 67, y: 38, icon: '🕷',
+    estadoInicial: 'desconhecido', desc: 'Uma clareira coberta por teias colossais.',
+  },
+  twinfold_hollow: {
+    titulo: 'O Vale Dual',
+    subtitulo: 'Blackwoods — Coração Vivo',
+    x: 68, y: 58, icon: '🌸',
+    estadoInicial: 'desconhecido', desc: 'Árvores com faces esculpidas e flores luminescentes.',
+  },
+  kobolds_dissidentes: {
+    titulo: 'Os Três Kobolds',
+    subtitulo: 'Perímetro da Cidade Kobold',
+    x: 69, y: 30, icon: '🦎',
+    estadoInicial: 'desconhecido', desc: 'Kobolds dissidentes escondidos na orla da cidade.',
+  },
+  manticore_grounds: {
+    titulo: 'Território da Manticore',
+    subtitulo: 'Blackwoods — Zona de Caça',
+    x: 80, y: 42, icon: '🦁',
+    estadoInicial: 'desconhecido', desc: 'Ossos espalhados e tufos de pelo branco nos espinheiros.',
+  },
+  great_grub_carcass: {
+    titulo: 'A Carcaça do Grande Verme',
+    subtitulo: 'Blackwoods — Muralha Antiga',
+    x: 78, y: 50, icon: '🐛',
+    estadoInicial: 'desconhecido', desc: 'A carcaça enorme de uma larva gigante junto a um muro em ruínas.',
+  },
+  weepers_well: {
+    titulo: 'O Poço que Chora',
+    subtitulo: 'Blackwoods — Ruína Élfica',
+    x: 80, y: 74, icon: '🪣',
+    estadoInicial: 'desconhecido', desc: 'Um poço antigo de onde ecoa um pranto.',
+  },
+  sepultura_jariella: {
+    titulo: 'A Sepultura de Jariella',
+    subtitulo: 'Blackwoods — Margem do Rio',
+    x: 87, y: 67, icon: '⚔',
+    estadoInicial: 'desconhecido', desc: 'Uma cova esquecida à beira do rio.',
+  },
+  ysoria_revelacao: {
+    titulo: 'O Nome que a Floresta Guarda',
+    subtitulo: 'Blackwoods — Clareira da Memória',
+    x: 70, y: 82, icon: '👁',
+    estadoInicial: 'desconhecido', desc: 'Uma clareira onde a floresta sussurra um nome esquecido.',
+  },
 };
 
 // perigo: 0-5 | dist: 'curta'|'media'|'longa' | encontros: [{chance, tipo}]
@@ -136,4 +191,14 @@ export const CAMINHOS = [
   { de:'dominio_wulfram',   ate:'cnoc_na_rithe',      perigo:3, dist:'media', encontros:[{chance:0.25,tipo:'combate'}] },
   { de:'dominio_wulfram',   ate:'drowned_grove',      perigo:4, dist:'curta', encontros:[{chance:0.35,tipo:'combate'}] },
   { de:'choupana_mutter',   ate:'gloamreach',         perigo:4, dist:'media', encontros:[{chance:0.40,tipo:'combate'}] },
+  // ── Ato 2 — ligações das cenas de exploração ──
+  { de:'blackwoods_entrada',ate:'ruins_simithari',   perigo:3, dist:'media', encontros:[{chance:0.30,tipo:'combate'}] },
+  { de:'encruzilhada',      ate:'campo_aranhas',      perigo:3, dist:'curta', encontros:[{chance:0.35,tipo:'combate'}] },
+  { de:'encruzilhada',      ate:'twinfold_hollow',    perigo:3, dist:'media', encontros:[{chance:0.30,tipo:'combate'}] },
+  { de:'kobold_town',       ate:'kobolds_dissidentes',perigo:2, dist:'curta', encontros:[{chance:0.20,tipo:'dialogo'}] },
+  { de:'kobold_town',       ate:'manticore_grounds',  perigo:4, dist:'media', encontros:[{chance:0.40,tipo:'combate'}] },
+  { de:'choupana_mutter',   ate:'great_grub_carcass', perigo:4, dist:'curta', encontros:[{chance:0.35,tipo:'combate'}] },
+  { de:'drowned_grove',     ate:'weepers_well',       perigo:3, dist:'curta', encontros:[{chance:0.25,tipo:'combate'}] },
+  { de:'weepers_well',      ate:'sepultura_jariella', perigo:3, dist:'curta', encontros:[{chance:0.25,tipo:'combate'}] },
+  { de:'cnoc_na_rithe',     ate:'ysoria_revelacao',   perigo:4, dist:'media', encontros:[{chance:0.40,tipo:'combate'}] },
 ];

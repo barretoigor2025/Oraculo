@@ -26,6 +26,7 @@ public/
       narracao.js           ← NARRACAO_NPCS curado (poucos NPCs), NARRACAO_CENAS, NARRACAO_FLUXO
       npcs_registry.js      ← NPCS_REGISTRY auto-gerado (todos os NPCs da campanha via dados.json)
       mapa.js               ← MAPA_IMG, NOS, CAMINHOS (config do Mapa do Mundo, pilar 5)
+      encontros.js          ← ENCONTROS (roster de inimigos por cena) + EMBOSCADAS (viagem) — a Arena spawna
       mapa/mapa_{id}.png    ← imagem do mundo (~2:1, scroll horizontal)
     death-note/             ← Segunda campanha instalada
     fantasma/               ← Campanha placeholder (esqueleto vazio)

@@ -26,6 +26,10 @@ if(_cfg&&_rid){
       for(const[k,v]of Object.entries(fields)) u[`narration.${k}`]=v;
       await updateDoc(rd,u);
     };
+    // Define status da sala (ex.: 'battle') + campos extras em um único write atômico
+    window._fbSetStatus=async(status,extra={})=>{
+      await updateDoc(rd,{status,...extra});
+    };
     window._fbListen=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
     window._fbInit=async(estado)=>{
       const snap=await getDoc(rd);
@@ -715,33 +719,51 @@ async function _iniciarViagem(destino) {
 
   clearTimeout(_viagemTimeout);
   _viagemTimeout = setTimeout(async () => {
-    // Rolar encontros
     const encontro = _rolarEncontros(caminho);
-    // Marcar chegada
+    const combate = encontro && encontro.tipo === 'combate';
     const novoDesc = [...(_state?.descobertos || [])];
     if (!novoDesc.includes(destino)) novoDesc.push(destino);
+
+    if (combate) {
+      // ── Emboscada → batalha real. Todos vão à Arena; pós-batalha cai no destino. ──
+      const battleKey = '_emboscada:' + (caminho.perigo || 1);
+      _addChatSistema(`⚔️ Emboscada a caminho de ${NOS[destino]?.titulo}!`);
+      if (window._fbSetStatus) {
+        await window._fbSetStatus('battle', {
+          'mapa.localAtual': destino,
+          'mapa.descobertos': novoDesc,
+          'mapa.viagemEmAndamento': false,
+          'mapa.ts': Date.now(),
+          'narration.cenaId': destino,
+          'narration.battleKey': battleKey,
+          postBattleConfirmados: {}, batalha: {},
+          currentTurnPlayerId: null, turnOrder: [], enemies: [],
+        });
+        // _onState detecta status='battle' e redireciona todos
+      } else {
+        // Solo
+        localStorage.setItem('oraculo.battleCena', battleKey);
+        localStorage.setItem('oraculo.soloNarrCena', destino);
+        window.location.href = 'arena.html';
+      }
+      return;
+    }
+
+    // ── Chegada normal ──
     if (window._fbUpdate) await window._fbUpdate({
-      localAtual: destino,
-      descobertos: novoDesc,
-      viagemEmAndamento: false,
+      localAtual: destino, descobertos: novoDesc, viagemEmAndamento: false,
     });
-    // Sincronizar narração com o novo local — funciona para solo e multiplayer
     if (window._fbUpdateNarration) {
       await window._fbUpdateNarration({
-        cenaId: destino,
-        modoImagem: 'exterior',
-        introConfirmados: {},
-        introIdx: 0,
-        percepcao: { ativo: false },
-        dialogo: [],
+        cenaId: destino, modoImagem: 'exterior',
+        introConfirmados: {}, introIdx: 0, percepcao: { ativo: false }, dialogo: [],
       });
     } else {
-      // Solo sem Firebase: salvar no localStorage e redirecionar
       localStorage.setItem('oraculo.soloNarrCena', destino);
       setTimeout(() => { window.location.href = 'narration.html'; }, 1800);
     }
     _addChatSistema(`📍 Chegaram em ${NOS[destino]?.titulo}.${window._fbUpdateNarration ? ' Narração atualizada!' : ' Indo para narração…'}`);
-    if (encontro) _mostrarEncontro(encontro, caminho);
+    if (encontro) _mostrarEncontro(encontro, caminho); // roubo/diálogo = overlay narrativo
   }, duracao + 200);
 }
 
@@ -840,6 +862,13 @@ async function _addChatSistema(texto) {
 
 // ── Firebase sync ─────────────────────────────────────────
 function _onState(data) {
+  // Emboscada na viagem → todos os jogadores do mapa vão à Arena
+  if (data?.status === 'battle') {
+    localStorage.setItem('oraculo.battleCena', data.narration?.battleKey || data.narration?.cenaId || '');
+    window.location.href = 'arena.html';
+    return;
+  }
+
   const prev = _state;
   _state = data?.mapa || null;
 

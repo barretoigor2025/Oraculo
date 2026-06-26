@@ -184,6 +184,7 @@ public/catalogo/{id}/
   narracao.js                   ← export { NARRACAO_NPCS, NARRACAO_CENAS, NARRACAO_FLUXO } (curado, opcional)
   npcs_registry.js              ← export { NPCS_REGISTRY } — auto-gerado de npcs/*/dados.json (todos os NPCs)
   mapa.js                       ← export { MAPA_IMG, NOS, CAMINHOS } — config do Mapa do Mundo (Pilar 5)
+  encontros.js                  ← export { ENCONTROS, EMBOSCADAS } — roster de inimigos por cena (a Arena spawna)
   mapa/
     mapa_{id}.png               ← imagem do mundo (estilo da campanha, ~2:1, scroll horizontal)
   campanha/
