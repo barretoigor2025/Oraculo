@@ -781,7 +781,10 @@ function _mostrarEncontro(enc, caminho) {
   document.getElementById('encontro-overlay').classList.add('ativo');
 }
 
-window._fecharEncontro = () => document.getElementById('encontro-overlay').classList.remove('ativo');
+window._fecharEncontro = () => {
+  document.getElementById('encontro-overlay').classList.remove('ativo');
+  if (_redirectPendente) { _redirectPendente = false; window.location.href = 'narration.html'; }
+};
 
 // ── Chat ──────────────────────────────────────────────────
 window._limparChat = async function() {
@@ -850,10 +853,20 @@ function _onState(data) {
   _renderVotacao();
   _renderChat();
 
-  // Detecção de viagem concluída para animar standees imediatamente
+  // Detecção de viagem concluída — anima standees e leva TODOS à narração
   if (prev?.localAtual && _state?.localAtual && prev.localAtual !== _state.localAtual) {
     _animarStandeesParaNo(_state.localAtual, 1200);
+    _agendarRedirectNarracao();
   }
+}
+
+// Fecha o ciclo: ao chegar, todos os jogadores vão para a narração da cena.
+// Se houver overlay de encontro, espera o jogador fechar antes de navegar.
+let _redirectPendente = false;
+function _agendarRedirectNarracao() {
+  const encAberto = document.getElementById('encontro-overlay')?.classList.contains('ativo');
+  if (encAberto) { _redirectPendente = true; return; }
+  setTimeout(() => { window.location.href = 'narration.html'; }, 1600);
 }
 
 // ── Init ──────────────────────────────────────────────────

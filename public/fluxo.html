@@ -206,6 +206,7 @@ const DADOS = [
 const CHANGELOG = [
   { tag:'feat', txt:'<b>Pilar 5 — Mapa do Mundo</b>: lobby com chat, votação de rota, viagem animada de standees, névoa de guerra e encontros.' },
   { tag:'feat', txt:'<b>Integração Mapa → Narrador</b>: viajar grava narration.cenaId (multiplayer) ou soloNarrCena (solo) e abre a cena de destino.' },
+  { tag:'fix',  txt:'<b>Ciclo fechado no multiplayer</b>: ao chegar no destino, todos os jogadores do mapa são levados à narração automaticamente (antes só no solo).' },
   { tag:'fix',  txt:'Mapa reescrito como <b>SVG único</b> (imagem + caminhos + nós no mesmo viewBox) — marcadores sempre visíveis e na proporção certa.' },
   { tag:'feat', txt:'<b>Auto-descoberta de NPCs</b>: cada cena lista npcsPresentes; o Narrador acha o NPC em NARRACAO_NPCS → NPCS_REGISTRY.' },
   { tag:'feat', txt:'Botão de <b>limpar chat</b> e temporizador de votação ajustável no Mapa.' },
