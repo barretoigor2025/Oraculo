@@ -8,11 +8,13 @@
 <script type="module">
 import { INIMIGOS_DATA, NPCS as _NPCS_DATA } from './catalogo/mhoried/loader.js';
 import { CENAS as _CENAS_DATA } from './catalogo/mhoried/campanha/roteiro/campaign.js';
-import { rosterDaKey } from './catalogo/mhoried/encontros.js';
+import { rosterDaKey, mapaDaKey, MAPA_FALLBACK } from './catalogo/mhoried/encontros.js';
 window.INIMIGOS_DATA = INIMIGOS_DATA;
 window._campanhaNPCs = _NPCS_DATA;
 window._CENAS_DATA = _CENAS_DATA;
 window._rosterDaKey = rosterDaKey;
+window._mapaDaKey = mapaDaKey;
+window._MAPA_FALLBACK = MAPA_FALLBACK;
 import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import{getFirestore,doc,onSnapshot,updateDoc,increment}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 const _cfg=JSON.parse(localStorage.getItem('oraculo.fbConfig')||'null');
@@ -4003,10 +4005,13 @@ function init(){
   initScale();
   renderBottomPanel();
   renderActionRow();
-  fetch('catalogo/mhoried/cenarios/batalha_hex/feira_phanourios/imagem/feira-limpa-terreno.json')
-    .then(r=>r.ok?r.json():null)
-    .then(d=>{ if(d?.hexes) terrenoData=d.hexes; render(); })
-    .catch(()=>render());
+  // Terreno da cena (se houver json); sem terreno = tudo caminhável
+  const _terr = _mapaInfo?.terreno || null;
+  if(_terr){
+    fetch(_terr).then(r=>r.ok?r.json():null)
+      .then(d=>{ if(d?.hexes) terrenoData=d.hexes; render(); })
+      .catch(()=>render());
+  } else { render(); }
   function startFbListener(){
     // INIMIGOS_DATA now guaranteed (ES module ran before fbReady event)
     unidades = unidades.filter(Boolean);
@@ -4035,8 +4040,19 @@ for(const u of unidades){ _loadSprite(u); }
 const mapaEl=document.getElementById('mapa');
 let _initFired=false;
 function _initOnce(){ if(!_initFired){ _initFired=true; init(); } }
-mapaEl.onload=_initOnce; mapaEl.onerror=_initOnce;
-_initOnce();
+
+// Mapa de batalha por cena — fallback para a Feira se a arte ainda não existir
+const _battleKey = localStorage.getItem('oraculo.battleCena') || '';
+const _mapaInfo  = (window._mapaDaKey && window._mapaDaKey(_battleKey)) || window._MAPA_FALLBACK;
+mapaEl.onload = _initOnce;
+mapaEl.onerror = () => {
+  // arte da cena ainda não existe → cai no mapa da Feira (uma vez)
+  const fb = window._MAPA_FALLBACK?.mapa;
+  if (fb && mapaEl.src.indexOf('feira-limpa') < 0) { mapaEl.onerror = _initOnce; mapaEl.src = fb; }
+  else _initOnce();
+};
+if (_mapaInfo?.mapa && _mapaInfo.mapa !== mapaEl.getAttribute('src')) mapaEl.src = _mapaInfo.mapa;
+_initOnce(); // init roda imediatamente (não depende do load da imagem)
 let _resizeTimer;
 window.addEventListener('resize',()=>{ clearTimeout(_resizeTimer); _resizeTimer=setTimeout(initScale,80); });
 

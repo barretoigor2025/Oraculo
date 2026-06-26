@@ -847,6 +847,8 @@
 import { NPCS, INIMIGOS_DATA as INIMIGOS_COMPLETO } from './catalogo/mhoried/loader.js';
 import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js';
 import { CLASSES_DATA } from './catalogo/mhoried/classes.js';
+import { MAPAS_BATALHA } from './catalogo/mhoried/encontros.js';
+window._MAPAS_BATALHA = MAPAS_BATALHA;
 import { DN_CLASSES_DATA, DN_PERSONAGENS, DN_REGRAS, DN_CENARIOS } from './catalogo/death-note/data.js';
 import { FANTASMA_CLASSES, FANTASMA_NPCS, FANTASMA_INIMIGOS, FANTASMA_CENARIOS } from './catalogo/fantasma/data.js';
 
@@ -1500,10 +1502,12 @@ function buildChecklistTab(){
       path: `${CAT}cenarios/${c.id}/imagem/${c.id}.png`,
     });
     if(c.temBatalha){
+      const bm = (window._MAPAS_BATALHA && window._MAPAS_BATALHA[c.id]?.mapa)
+        || `${CAT}cenarios/batalha_hex/${c.id}/imagem/${c.id}.png`;
       atoMap[a].push({
         nome: `${c.titulo} — mapa batalha`,
-        sub: `${c.id}_mapa.png`,
-        path: `${CAT}cenarios/${c.id}/mapa/${c.id}_mapa.png`,
+        sub: bm.split('/').pop(),
+        path: bm,
       });
     }
   }

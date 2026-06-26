@@ -39,3 +39,34 @@ export function rosterDaKey(key){
   }
   return ENCONTROS[key]?.inimigos || null;
 }
+
+// ── Mapas de batalha por cena ──
+// Cada cena tem seu fundo + (opcional) terreno. Enquanto a arte não existir,
+// a Arena cai automaticamente no mapa da Feira (fallback visível e jogável).
+const _BH = 'catalogo/mhoried/cenarios/batalha_hex/';
+export const MAPA_FALLBACK = {
+  mapa:    _BH + 'feira_phanourios/imagem/feira-limpa.png',
+  terreno: _BH + 'feira_phanourios/imagem/feira-limpa-terreno.json',
+};
+// Arte a criar em cenarios/batalha_hex/{cena}/imagem/{cena}.png
+export const MAPAS_BATALHA = {
+  mhoried_market:     MAPA_FALLBACK,                                  // já existe (Feira)
+  encruzilhada:       { mapa: _BH + 'encruzilhada/imagem/encruzilhada.png' },
+  campo_aranhas:      { mapa: _BH + 'campo_aranhas/imagem/campo_aranhas.png' },
+  acampamento_elfico: { mapa: _BH + 'acampamento_elfico/imagem/acampamento_elfico.png' },
+  kobold_town:        { mapa: _BH + 'kobold_town/imagem/kobold_town.png' },
+  gloamreach:         { mapa: _BH + 'gloamreach/imagem/gloamreach.png' },
+  torre_limm:         { mapa: _BH + 'torre_limm/imagem/torre_limm.png' },
+  drowned_grove:      { mapa: _BH + 'drowned_grove/imagem/drowned_grove.png' },
+  manticore_grounds:  { mapa: _BH + 'manticore_grounds/imagem/manticore_grounds.png' },
+  great_grub_carcass: { mapa: _BH + 'great_grub_carcass/imagem/great_grub_carcass.png' },
+  ruins_simithari:    { mapa: _BH + 'ruins_simithari/imagem/ruins_simithari.png' },
+  ysoria_revelacao:   { mapa: _BH + 'ysoria_revelacao/imagem/ysoria_revelacao.png' },
+  twinfold_hollow:    { mapa: _BH + 'twinfold_hollow/imagem/twinfold_hollow.png' },
+};
+// Emboscadas de viagem: usam o mapa de floresta da encruzilhada (cai na Feira até existir)
+export function mapaDaKey(key){
+  if (!key) return MAPA_FALLBACK;
+  if (key.startsWith('_emboscada')) return MAPAS_BATALHA.encruzilhada || MAPA_FALLBACK;
+  return MAPAS_BATALHA[key] || MAPA_FALLBACK;
+}
