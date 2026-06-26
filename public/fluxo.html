@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Oráculo — Fluxo do Sistema</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#070504;color:#e8d5a8;font-family:Georgia,serif;min-height:100%;}
+body{padding-bottom:60px;}
+
+/* ── Header ── */
+#hdr{
+  position:sticky;top:0;z-index:50;
+  padding:max(12px,calc(8px+env(safe-area-inset-top))) 16px 11px;
+  background:linear-gradient(180deg,#0c0a07 0%,rgba(12,10,7,0.92) 100%);
+  border-bottom:1px solid rgba(190,140,35,0.20);
+  display:flex;align-items:center;gap:10px;
+}
+#hdr h1{flex:1;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(210,175,90,0.9);font-weight:700;}
+#hdr h1 small{display:block;font-size:9px;letter-spacing:1px;color:rgba(170,140,70,0.5);margin-top:2px;text-transform:none;font-style:italic;}
+.hbtn{
+  background:rgba(30,18,5,0.85);border:1px solid rgba(190,140,35,0.30);
+  border-radius:8px;padding:6px 11px;color:rgba(210,175,90,0.82);
+  font-family:Georgia,serif;font-size:11px;cursor:pointer;white-space:nowrap;text-decoration:none;
+}
+.hbtn:active{opacity:0.7;}
+
+#wrap{max-width:680px;margin:0 auto;padding:16px 14px;}
+.sec-tit{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(190,140,35,0.5);margin:22px 4px 12px;}
+.sec-tit:first-child{margin-top:4px;}
+
+/* ── Pilares ── */
+#pilares{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
+#pilares::-webkit-scrollbar{display:none;}
+.pilar{
+  flex:0 0 auto;min-width:118px;
+  background:rgba(10,7,3,0.8);border:1px solid var(--c);border-radius:12px;
+  padding:11px 12px;cursor:pointer;transition:transform .12s,box-shadow .12s;
+  border-left-width:3px;
+}
+.pilar:active{transform:scale(0.97);}
+.pilar.sel{box-shadow:0 0 0 1px var(--c),0 4px 16px rgba(0,0,0,0.5);background:rgba(20,14,6,0.95);}
+.pilar .pn{font-size:18px;}
+.pilar .pt{font-size:12px;font-weight:700;color:var(--c2);margin-top:5px;}
+.pilar .pr{font-size:9.5px;color:rgba(190,165,110,0.6);line-height:1.4;margin-top:3px;}
+.pilar .pf{font-size:8.5px;font-family:monospace;color:rgba(150,120,60,0.55);margin-top:5px;word-break:break-all;}
+
+.hint{font-size:10px;color:rgba(150,120,60,0.5);font-style:italic;text-align:center;margin:8px 0 2px;}
+
+/* ── Fluxograma ── */
+#fluxo{position:relative;}
+.passo{
+  position:relative;
+  background:rgba(10,7,3,0.78);border:1px solid rgba(190,140,35,0.16);
+  border-left:3px solid var(--c);border-radius:11px;
+  padding:12px 13px 12px 14px;margin-bottom:5px;
+  transition:opacity .2s;
+}
+.passo.dim{opacity:0.28;}
+.passo-top{display:flex;align-items:center;gap:8px;}
+.passo-num{
+  flex-shrink:0;width:22px;height:22px;border-radius:50%;
+  background:var(--c);color:#0a0705;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;font-family:monospace;
+}
+.passo-pilar{font-size:8.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--c2);font-weight:700;}
+.passo-tit{font-size:13px;color:#f0d68a;font-weight:700;margin-top:6px;}
+.passo-desc{font-size:11.5px;color:rgba(205,180,120,0.78);line-height:1.55;margin-top:4px;}
+.passo-dado{
+  display:inline-flex;align-items:center;gap:5px;margin-top:8px;
+  font-family:monospace;font-size:10px;color:rgba(210,180,100,0.85);
+  background:rgba(0,0,0,0.4);border:1px solid rgba(190,140,35,0.18);
+  border-radius:6px;padding:4px 8px;
+}
+.passo-dado .k{color:rgba(150,120,60,0.7);}
+.seta{text-align:center;color:rgba(190,140,35,0.4);font-size:15px;line-height:1;margin:1px 0;}
+.ciclo{
+  text-align:center;margin-top:10px;padding:10px;
+  border:1px dashed rgba(190,140,35,0.3);border-radius:10px;
+  font-size:11px;color:rgba(200,160,70,0.7);font-style:italic;
+}
+
+/* ── Camada de dados ── */
+.dado-card{
+  background:rgba(8,6,3,0.7);border:1px solid rgba(190,140,35,0.14);
+  border-radius:10px;padding:11px 13px;margin-bottom:7px;
+}
+.dado-card h3{font-size:12px;color:#e8c060;margin-bottom:3px;}
+.dado-card h3 code{font-family:monospace;font-size:11px;color:rgba(150,200,150,0.8);background:none;padding:0;}
+.dado-card p{font-size:11px;color:rgba(195,170,110,0.72);line-height:1.5;}
+.dado-card .campos{font-family:monospace;font-size:10px;color:rgba(170,145,80,0.7);margin-top:5px;word-break:break-all;}
+
+/* ── Log modal ── */
+#log-ov{
+  display:none;position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,0.78);align-items:flex-end;justify-content:center;
+}
+#log-ov.on{display:flex;}
+#log-inner{
+  background:#0c0a07;border:1px solid rgba(190,140,35,0.35);
+  border-radius:16px 16px 0 0;width:100%;max-width:680px;
+  max-height:78vh;overflow-y:auto;
+  padding:16px 16px max(18px,env(safe-area-inset-bottom));
+}
+#log-inner h2{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#f0c83c;margin-bottom:3px;}
+#log-inner .sub{font-size:10px;color:rgba(160,130,70,0.6);font-style:italic;margin-bottom:14px;}
+.log-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid rgba(190,140,35,0.08);}
+.log-tag{
+  flex-shrink:0;font-size:8.5px;letter-spacing:1px;text-transform:uppercase;font-weight:700;
+  padding:3px 7px;border-radius:5px;height:fit-content;margin-top:1px;min-width:62px;text-align:center;
+}
+.log-tag.feat{background:rgba(40,80,40,0.4);color:#90d090;border:1px solid rgba(80,160,80,0.3);}
+.log-tag.fix{background:rgba(80,40,15,0.4);color:#e0a060;border:1px solid rgba(180,110,40,0.3);}
+.log-tag.docs{background:rgba(40,55,90,0.4);color:#90b0e0;border:1px solid rgba(80,110,180,0.3);}
+.log-txt{flex:1;font-size:11.5px;color:rgba(205,180,120,0.82);line-height:1.5;}
+.log-txt b{color:#e8c878;}
+#log-close{width:100%;margin-top:14px;padding:11px;border:1px solid rgba(190,140,35,0.25);border-radius:10px;background:transparent;color:rgba(190,160,80,0.7);font-family:Georgia,serif;font-size:12px;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <h1>🔮 Oráculo — Fluxo<small>como as cenas circulam pelos cinco pilares</small></h1>
+  <a class="hbtn" href="mapa.html">🗺 Mapa</a>
+  <button class="hbtn" onclick="abrirLog()">📜</button>
+</div>
+
+<div id="wrap">
+
+  <div class="sec-tit">Os Cinco Pilares</div>
+  <div id="pilares"></div>
+  <div class="hint">toque num pilar para destacar onde ele atua no fluxo</div>
+
+  <div class="sec-tit">Ciclo de uma Cena</div>
+  <div id="fluxo"></div>
+
+  <div class="sec-tit">Camada de Dados — quem alimenta o quê</div>
+  <div id="dados"></div>
+
+</div>
+
+<!-- Log -->
+<div id="log-ov" onclick="if(event.target===this)fecharLog()">
+  <div id="log-inner">
+    <h2>📜 Registro de Mudanças</h2>
+    <div class="sub">o que o Oráculo aprendeu / mudou recentemente</div>
+    <div id="log-lista"></div>
+    <button id="log-close" onclick="fecharLog()">Fechar</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  PAINEL DE CONTROLE DO FLUXO — edite estes dados ao mudar o sistema
+//  e o diagrama reflete automaticamente.
+// ════════════════════════════════════════════════════════════════
+
+const PILARES = {
+  construtor: { nome:'Construtor', icon:'🛠️', cor:'#b8862a', cor2:'#e8c060',
+    papel:'Lê o PDF e gera a campanha (é o Claude).', arquivo:'campanha_builder.html + Claude' },
+  narrador:   { nome:'Narrador', icon:'🎭', cor:'#8a6abf', cor2:'#c0a8e8',
+    papel:'Voz viva dos NPCs; descobre NPCs por npcsPresentes.', arquivo:'narration.html' },
+  catalogo:   { nome:'Catálogo', icon:'📚', cor:'#3f8a4a', cor2:'#90d090',
+    papel:'Enciclopédia + checklist de assets.', arquivo:'catalog.html' },
+  arena:      { nome:'Arena', icon:'⚔️', cor:'#bf4a3a', cor2:'#e88070',
+    papel:'Motor de batalha em grid hexagonal.', arquivo:'arena.html' },
+  mapa:       { nome:'Mapa do Mundo', icon:'🗺️', cor:'#3a78bf', cor2:'#80b0e8',
+    papel:'Lobby/chat/votação; ao viajar, dispara o Narrador.', arquivo:'mapa.html' },
+};
+
+// Cada passo do ciclo de cena. dado = o que é escrito no Firebase/localStorage.
+const FLUXO = [
+  { pilar:'mapa', tit:'Lobby no Mapa', desc:'Os jogadores se reúnem sobre o local atual, conversam no chat e planejam para onde ir.',
+    dado:{k:'lê', v:'mapa.localAtual · mapa.chat'} },
+  { pilar:'mapa', tit:'Proposta de rota + votação', desc:'Alguém propõe um destino. Um overlay de votação aparece para todos; maioria vence (10s).',
+    dado:{k:'escreve', v:'mapa.votacao'} },
+  { pilar:'mapa', tit:'Viagem', desc:'Standees se deslocam pelo caminho; rola encontros aleatórios (combate/roubo/diálogo) conforme o perigo.',
+    dado:{k:'escreve', v:'mapa.localAtual · descobertos'} },
+  { pilar:'mapa', tit:'Dispara o Narrador', desc:'Ao chegar, o Mapa aponta o Narrador para a cena de destino. Multiplayer: via Firebase. Solo: localStorage + redireciona.',
+    dado:{k:'escreve', v:'narration.cenaId  /  oraculo.soloNarrCena'} },
+  { pilar:'narrador', tit:'Carrega a cena', desc:'O Narrador detecta o novo cenaId, busca CENAS[cenaId] no campaign.js e monta o cenário (background, intro cinemática).',
+    dado:{k:'lê', v:'campaign.js › CENAS[cenaId]'} },
+  { pilar:'narrador', tit:'Descobre os NPCs da cena', desc:'Lê cena.npcsPresentes. Para cada ID: tenta NARRACAO_NPCS (curado) e cai para NPCS_REGISTRY (auto). Cada NPC vira standee + chip clicável.',
+    dado:{k:'lê', v:'npcsPresentes → NARRACAO_NPCS / NPCS_REGISTRY'} },
+  { pilar:'narrador', tit:'Diálogo vivo', desc:'O jogador conversa com os NPCs. A IA (Groq) usa o promptSistema/personalidade de cada NPC para responder no personagem.',
+    dado:{k:'escreve', v:'narration.dialogo'} },
+  { pilar:'arena', tit:'Gatilho de batalha', desc:'Quando a cena tem combate, o host marca status=battle e carrega os inimigos. Todos são levados à Arena.',
+    dado:{k:'escreve', v:'status = "battle"'} },
+  { pilar:'arena', tit:'Combate hexagonal', desc:'Movimento, ataques, habilidades com SP, IA inimiga e Ação Livre. O resultado de cada evento volta como narração.',
+    dado:{k:'lê', v:'classes.js · loader.js (inimigos)'} },
+  { pilar:'arena', tit:'Fim da batalha → próxima cena', desc:'Ao vencer, a Arena aponta o Narrador para a proximaCena e devolve o controle.',
+    dado:{k:'escreve', v:'narration.cenaId = proximaCena · status = "narration"'} },
+  { pilar:'narrador', tit:'Continua a narração', desc:'O Narrador retoma na próxima cena. Quando o grupo decide explorar, volta ao Mapa — e o ciclo recomeça.',
+    dado:{k:'escreve', v:'cenasVisitadas'} },
+];
+
+const DADOS = [
+  { f:'campaign.js', d:'O roteiro. CENAS (cada uma com npcsPresentes, temBatalha, proximaCena) + CENAS_ORDEM. É a espinha do fluxo de cena.', campos:'CENAS · CENAS_ORDEM' },
+  { f:'mapa.js', d:'O mundo. NOS (locais — os IDs são IDs de cena) + CAMINHOS (ligações, perigo, encontros). Define o que vira nó no Mapa.', campos:'MAPA_IMG · NOS · CAMINHOS' },
+  { f:'npcs_registry.js', d:'Todos os NPCs (auto-gerado dos dados.json). Fonte automática do Narrador para qualquer ID em npcsPresentes.', campos:'NPCS_REGISTRY' },
+  { f:'narracao.js', d:'Curadoria opcional: NPCs com ajuste fino e cenas especiais de narração. Tem prioridade sobre o registry.', campos:'NARRACAO_NPCS · NARRACAO_CENAS · NARRACAO_FLUXO' },
+  { f:'Firebase rooms/{id}', d:'A cola em tempo real. status alterna narration↔battle; narration.* e mapa.* sincronizam todos os jogadores.', campos:'status · narration.* · mapa.* · cenasVisitadas' },
+];
+
+const CHANGELOG = [
+  { tag:'feat', txt:'<b>Pilar 5 — Mapa do Mundo</b>: lobby com chat, votação de rota, viagem animada de standees, névoa de guerra e encontros.' },
+  { tag:'feat', txt:'<b>Integração Mapa → Narrador</b>: viajar grava narration.cenaId (multiplayer) ou soloNarrCena (solo) e abre a cena de destino.' },
+  { tag:'fix',  txt:'Mapa reescrito como <b>SVG único</b> (imagem + caminhos + nós no mesmo viewBox) — marcadores sempre visíveis e na proporção certa.' },
+  { tag:'feat', txt:'<b>Auto-descoberta de NPCs</b>: cada cena lista npcsPresentes; o Narrador acha o NPC em NARRACAO_NPCS → NPCS_REGISTRY.' },
+  { tag:'feat', txt:'Botão de <b>limpar chat</b> e temporizador de votação ajustável no Mapa.' },
+  { tag:'docs', txt:'<b>o_oraculo.md + CLAUDE.md</b> atualizados: Cinco Pilares, schema do mapa.js e novo modelo de instalação.' },
+  { tag:'feat', txt:'<b>Construtor</b> atualizado: gera campaign.js (npcsPresentes), npcs_registry.js, dados.json e mapa.js.' },
+  { tag:'feat', txt:'<b>Catálogo</b>: botão 🗺 Mapa + seção do mapa-múndi no checklist de assets.' },
+];
+
+// ── Render ───────────────────────────────────────────────
+let pilarSel = null;
+
+function rPilares(){
+  document.getElementById('pilares').innerHTML = Object.entries(PILARES).map(([id,p])=>`
+    <div class="pilar${pilarSel===id?' sel':''}" style="--c:${p.cor};--c2:${p.cor2}" onclick="togglePilar('${id}')">
+      <div class="pn">${p.icon}</div>
+      <div class="pt">${p.nome}</div>
+      <div class="pr">${p.papel}</div>
+      <div class="pf">${p.arquivo}</div>
+    </div>`).join('');
+}
+
+function rFluxo(){
+  const el = document.getElementById('fluxo');
+  let h = '';
+  FLUXO.forEach((s,i)=>{
+    const p = PILARES[s.pilar];
+    const dim = pilarSel && pilarSel!==s.pilar ? ' dim' : '';
+    h += `<div class="passo${dim}" style="--c:${p.cor};--c2:${p.cor2}">
+      <div class="passo-top">
+        <div class="passo-num">${i+1}</div>
+        <div class="passo-pilar">${p.icon} ${p.nome}</div>
+      </div>
+      <div class="passo-tit">${s.tit}</div>
+      <div class="passo-desc">${s.desc}</div>
+      <div class="passo-dado"><span class="k">${s.dado.k}</span> ${s.dado.v}</div>
+    </div>`;
+    if(i<FLUXO.length-1) h += `<div class="seta">↓</div>`;
+  });
+  h += `<div class="ciclo">↺ o grupo volta ao Mapa para escolher o próximo destino — o ciclo recomeça</div>`;
+  el.innerHTML = h;
+}
+
+function rDados(){
+  document.getElementById('dados').innerHTML = DADOS.map(d=>`
+    <div class="dado-card">
+      <h3><code>${d.f}</code></h3>
+      <p>${d.d}</p>
+      <div class="campos">${d.campos}</div>
+    </div>`).join('');
+}
+
+function rLog(){
+  document.getElementById('log-lista').innerHTML = CHANGELOG.map(l=>`
+    <div class="log-item">
+      <div class="log-tag ${l.tag}">${l.tag}</div>
+      <div class="log-txt">${l.txt}</div>
+    </div>`).join('');
+}
+
+function togglePilar(id){
+  pilarSel = pilarSel===id ? null : id;
+  rPilares(); rFluxo();
+}
+function abrirLog(){ document.getElementById('log-ov').classList.add('on'); }
+function fecharLog(){ document.getElementById('log-ov').classList.remove('on'); }
+
+rPilares(); rFluxo(); rDados(); rLog();
+</script>
+</body>
+</html>
