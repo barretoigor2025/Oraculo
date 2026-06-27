@@ -2269,7 +2269,7 @@ function _mostrarOverlayFimBatalha(vitoria){
     if(window._fbAddPostBattleConfirm){
       window._fbAddPostBattleConfirm();
     } else {
-      window.location.href='narration.html';
+      window.location.href='narration.html?v=8';
     }
   });
 }
@@ -2295,11 +2295,11 @@ function _vitoriaGenerica(){
       const key = localStorage.getItem('oraculo.battleCena') || '';
       if(key.startsWith('_emboscada')){
         localStorage.setItem('oraculo.soloNarrCena', localStorage.getItem('oraculo.soloNarrCena') || 'mhoried_market');
-        window.location.href='narration.html';
+        window.location.href='narration.html?v=8';
       } else {
         const prox = window._CENAS_DATA?.[key]?.proximaCena;
-        if(prox){ localStorage.setItem('oraculo.soloNarrCena', prox); window.location.href='narration.html'; }
-        else { window.location.href='mapa.html'; } // cena de exploração → volta ao Mapa
+        if(prox){ localStorage.setItem('oraculo.soloNarrCena', prox); window.location.href='narration.html?v=8'; }
+        else { window.location.href='mapa.html?v=8'; } // cena de exploração → volta ao Mapa
       }
     }
   });
@@ -2522,7 +2522,7 @@ function _cinIrParaConversaFeira() {
         // A redirecção acontece via room listener (status === 'narration')
       } else {
         localStorage.setItem('oraculo.soloNarrCena', 'conversa_gregoras_feira');
-        window.location.href = 'narration.html';
+        window.location.href = 'narration.html?v=8';
       }
     }, 750);
   });
@@ -2814,7 +2814,7 @@ function _cinTransicaoCastelo() {
         img.style.opacity = '1';
         setTimeout(() => {
           if (window._fbAddPostBattleConfirm) window._fbAddPostBattleConfirm();
-          else window.location.href = 'narration.html';
+          else window.location.href = 'narration.html?v=8';
         }, 2400);
       });
     }, 680);
@@ -3778,12 +3778,12 @@ function onRoomUpdate(room){
 
   // Navigate to narration when battle is over
   if(room.status==='narration'){
-    window.location.href='narration.html';
+    window.location.href='narration.html?v=8';
     return;
   }
   // Cena de exploração sem continuação → volta ao Mapa do Mundo
   if(room.status==='map'){
-    window.location.href='mapa.html';
+    window.location.href='mapa.html?v=8';
     return;
   }
 
@@ -4177,5 +4177,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v8</div>
 </body>
 </html>

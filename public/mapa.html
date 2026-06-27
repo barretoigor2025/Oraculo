@@ -335,7 +335,7 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
       <div id="mapa-titulo">🗺 Mapa do Mundo</div>
       <div id="mapa-local-label">—</div>
     </div>
-    <button class="mapa-nav-btn" onclick="location.href='narration.html'">📖 Narrar</button>
+    <button class="mapa-nav-btn" onclick="location.href='narration.html?v=8'">📖 Narrar</button>
     <button class="mapa-nav-btn" onclick="location.href='catalog.html'">📚 Catálogo</button>
   </div>
 
@@ -747,7 +747,7 @@ async function _iniciarViagem(destino) {
         // Solo
         localStorage.setItem('oraculo.battleCena', battleKey);
         localStorage.setItem('oraculo.soloNarrCena', destino);
-        window.location.href = 'arena.html';
+        window.location.href = 'arena.html?v=8';
       }
       return;
     }
@@ -763,7 +763,7 @@ async function _iniciarViagem(destino) {
       });
     } else {
       localStorage.setItem('oraculo.soloNarrCena', destino);
-      setTimeout(() => { window.location.href = 'narration.html'; }, 1800);
+      setTimeout(() => { window.location.href = 'narration.html?v=8'; }, 1800);
     }
     _addChatSistema(`📍 Chegaram em ${NOS[destino]?.titulo}.${window._fbUpdateNarration ? ' Narração atualizada!' : ' Indo para narração…'}`);
     if (encontro) _mostrarEncontro(encontro, caminho); // roubo/diálogo = overlay narrativo
@@ -808,7 +808,7 @@ function _mostrarEncontro(enc, caminho) {
 
 window._fecharEncontro = () => {
   document.getElementById('encontro-overlay').classList.remove('ativo');
-  if (_redirectPendente) { _redirectPendente = false; window.location.href = 'narration.html'; }
+  if (_redirectPendente) { _redirectPendente = false; window.location.href = 'narration.html?v=8'; }
 };
 
 // ── Chat ──────────────────────────────────────────────────
@@ -868,7 +868,7 @@ function _onState(data) {
   // Emboscada na viagem → todos os jogadores do mapa vão à Arena
   if (data?.status === 'battle') {
     localStorage.setItem('oraculo.battleCena', data.narration?.battleKey || data.narration?.cenaId || '');
-    window.location.href = 'arena.html';
+    window.location.href = 'arena.html?v=8';
     return;
   }
 
@@ -898,7 +898,7 @@ let _redirectPendente = false;
 function _agendarRedirectNarracao() {
   const encAberto = document.getElementById('encontro-overlay')?.classList.contains('ativo');
   if (encAberto) { _redirectPendente = true; return; }
-  setTimeout(() => { window.location.href = 'narration.html'; }, 1600);
+  setTimeout(() => { window.location.href = 'narration.html?v=8'; }, 1600);
 }
 
 // ── Init ──────────────────────────────────────────────────
@@ -936,5 +936,6 @@ async function init() {
 
 init();
 </script>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v8</div>
 </body>
 </html>
