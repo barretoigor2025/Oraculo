@@ -1365,14 +1365,25 @@ let _introSlides = [];
 let _introIdx    = 0;
 
 function makeIntroSlides(cena) {
-  if (cena.introSlides?.length) return cena.introSlides;
-  // Fallback: auto-split textoIntro into pairs of sentences
-  const imgSrc = _modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior;
-  const partes = (cena.textoIntro || '').match(/[^.!?]+[.!?—]+\s*/g) || [cena.textoIntro || ''];
-  const paginas = [];
-  for (let i = 0; i < partes.length; i += 2)
-    paginas.push((partes[i] + (partes[i+1] || '')).trim());
-  return paginas.filter(Boolean).map(texto => ({ imagem: imgSrc, texto }));
+  // Base: slides curados, ou um único slide com todo o textoIntro
+  const raw = cena.introSlides?.length
+    ? cena.introSlides
+    : [{ imagem: (_modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior),
+         texto: (cena.textoIntro || '').trim() }];
+
+  // Mescla slides consecutivos "simples" (mesma imagem, sem gancho de batalha nem
+  // revealFirst) em UMA parte só — tela cheia, sem ficar passando vários slides.
+  const merged = [];
+  for (const s of raw) {
+    const simples = !s.ganchoBatalha && !s.revealFirst;
+    const ult = merged[merged.length - 1];
+    if (simples && ult && !ult.ganchoBatalha && !ult.revealFirst && ult.imagem === s.imagem) {
+      ult.texto = (ult.texto + '  ' + (s.texto || '')).trim();
+    } else {
+      merged.push({ ...s });
+    }
+  }
+  return merged.filter(s => s.texto || s.imagem);
 }
 
 function mostrarIntroCinemat(cena) {
@@ -1432,10 +1443,9 @@ function _aplicarSlide(bg, textoEl, btnEl, dotsEl) {
   _typewriter(textoEl, slide?.texto || '', _agendarAutoAvanco);
 }
 
-// ── Typewriter + auto-avanço + pular ──
+// ── Typewriter + pular ──
 let _typing = false, _typeTimer = null, _autoAdvTimer = null, _fullText = '';
-const _TYPE_MS = 16;        // velocidade da digitação (ms/char)
-const _AUTO_ADV_MS = 2400;  // pausa antes de auto-avançar (slides não-finais)
+const _TYPE_MS = 32;        // velocidade da digitação (ms/char) — metade da velocidade anterior
 
 function _typewriter(el, texto, onDone) {
   clearInterval(_typeTimer); clearTimeout(_autoAdvTimer);
@@ -1461,26 +1471,16 @@ function _finishTypewriter(el) {
   _typing = false;
   el.textContent = _fullText;
   el.classList.remove('typing');
-  _agendarAutoAvanco();
   return true;
 }
 
-function _agendarAutoAvanco() {
-  clearTimeout(_autoAdvTimer);
-  const ultimo = _introIdx >= _introSlides.length - 1;
-  if (_isHost && !ultimo) {
-    _autoAdvTimer = setTimeout(() => avancarIntro(), _AUTO_ADV_MS);
-  }
-}
+// Sem auto-avanço: o jogador lê no seu ritmo e clica em Continuar.
+function _agendarAutoAvanco() { /* desativado — avanço só pelo botão */ }
 
-// Toque na cena: 1º toque completa a digitação; depois avança (exceto no último slide)
+// Toque na cena: completa a digitação (não avança — avançar é só pelo botão Continuar)
 window._tapIntro = function(ev) {
   if (ev && ev.target && ev.target.closest('button')) return;
-  const el = document.getElementById('intro-texto-pag');
-  if (_finishTypewriter(el)) return; // ainda digitando → completa
-  // já completo: avança só se não for o último (último exige o botão: batalha/entrada)
-  const ultimo = _introIdx >= _introSlides.length - 1;
-  if (_isHost && !ultimo) { clearTimeout(_autoAdvTimer); avancarIntro(); }
+  _finishTypewriter(document.getElementById('intro-texto-pag'));
 };
 
 // Pular: vai direto ao último slide (mantém o botão final p/ batalha/entrada)
