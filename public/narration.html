@@ -1207,8 +1207,6 @@ function onRoomUpdate(room) {
   // Sincroniza cenas visitadas
   _cenasVisitadas = new Set(room.cenasVisitadas ?? []);
 
-  const novoIntroIdx = narr.introIdx ?? 0;
-
   let mudouCena = novaCena !== _cenaAtual;
   let mudouModo = novoModo !== _modoImagem;
 
@@ -1219,23 +1217,8 @@ function onRoomUpdate(room) {
   // atualizarCena() popula _introSlides via mostrarIntroCinemat()
   if (mudouCena || mudouModo) atualizarCena();
 
-  // Sincroniza slides do intro para guests — feito APÓS atualizarCena() para que
-  // _introSlides já esteja preenchido, mesmo na primeira carga da página
-  if (!_isHost && novoIntroIdx !== _introIdx) {
-    _introIdx = novoIntroIdx;
-    const bg      = document.getElementById('intro-bg');
-    const textoEl = document.getElementById('intro-texto-pag');
-    const btnEl   = document.getElementById('intro-btn-continuar');
-    const dotsEl  = document.getElementById('intro-dots');
-    const overlay = document.getElementById('intro-cinematico');
-    if (_introIdx >= _introSlides.length) {
-      clearInterval(_typeTimer); clearTimeout(_autoAdvTimer); _typing = false;
-      overlay?.classList.add('oculto');
-    } else if (_introSlides.length > 0 && bg && textoEl && btnEl && dotsEl) {
-      if (bg) bg.style.opacity = '';
-      _aplicarSlide(bg, textoEl, btnEl, dotsEl);
-    }
-  }
+  // (Leitura do intro é LOCAL — não há mais sync de slide entre dispositivos.
+  //  Cada jogador avança no seu ritmo; só o "Estou Pronto" final é coletivo.)
   if (mudouCena && _isHost) {
     preencherSelNpc();
     // Se a arena mandou um NPC de gancho pós-batalha, pré-selecionar ele
@@ -1496,14 +1479,12 @@ window._tapIntro = function(ev) {
   _finishTypewriter(document.getElementById('intro-texto-pag'));
 };
 
-// Pular: vai direto ao último slide (mantém o botão final p/ batalha/entrada)
+// Pular: vai direto ao último slide (local — cada jogador no seu ritmo)
 window.pularIntro = function() {
   const el = document.getElementById('intro-texto-pag');
-  if (!_isHost) { _finishTypewriter(el); return; }
   clearInterval(_typeTimer); clearTimeout(_autoAdvTimer); _typing = false;
   if (_introIdx >= _introSlides.length - 1) { _finishTypewriter(el); return; }
   _introIdx = _introSlides.length - 1;
-  if (window._fbUpdateNarration) window._fbUpdateNarration({ introIdx: _introIdx });
   _aplicarSlide(
     document.getElementById('intro-bg'), el,
     document.getElementById('intro-btn-continuar'),
@@ -1537,11 +1518,10 @@ function _preencherDotsBtn(dotsEl, btnEl, slide) {
 }
 
 function avancarIntro() {
-  if (!_isHost) return; // guests seguem o host via Firebase
+  // Leitura é LOCAL — cada jogador avança no seu ritmo (NÃO sincroniza introIdx).
+  // Só o "Estou Pronto" final (confirmarPronto) é coletivo.
   clearTimeout(_autoAdvTimer); clearInterval(_typeTimer); _typing = false;
   _introIdx++;
-  // Sincroniza índice para todos os guests
-  if (window._fbUpdateNarration) window._fbUpdateNarration({ introIdx: _introIdx });
 
   const overlay = document.getElementById('intro-cinematico');
   if (_introIdx >= _introSlides.length) {
