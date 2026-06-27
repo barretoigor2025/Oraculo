@@ -510,12 +510,16 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   z-index:450; pointer-events:none;
   display:flex; flex-direction:column; align-items:center; gap:4px;
   opacity:0; transition:opacity .4s;
+  padding:0 14px;
 }
 #turno-letreiro.visivel{ opacity:1; }
 #turno-nome{
-  font-size:clamp(26px,8vw,42px); font-weight:900;
-  color:#f5d878; text-transform:uppercase; letter-spacing:3px;
+  font-size:clamp(22px,7vw,40px); font-weight:900;
+  color:#f5d878; text-transform:uppercase; letter-spacing:2px;
   text-shadow:0 0 30px rgba(200,160,30,.9),0 2px 8px rgba(0,0,0,.95);
+  text-align:center; max-width:94vw; line-height:1.08;
+  padding-left:2px; /* compensa o letter-spacing final → centro real */
+  word-break:break-word;
 }
 #turno-sub{
   font-size:12px; color:rgba(220,190,100,.6);
@@ -1086,7 +1090,8 @@ function _spawnRosterCena(){
 }
 
 let unidades = [
-  { nome:_hcd.nome, col:_fbIsHost?4:6, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
+  { nome:_hcd.nome, nomeJogador:(localStorage.getItem('oraculo.playerName')||'').trim()||_hcd.nome,
+    col:_fbIsHost?4:6, row:11, emoji:_hcd.emoji, cor:_hcd.cor,
     imgSrc:`catalogo/mhoried/classes/${_heroClassId}/peca_tabuleiro/${_heroClassId}_peca.png`,
     imgSrcAtaque:`catalogo/mhoried/classes/${_heroClassId}/peca_tabuleiro/${_heroClassId}_peca.png`,
     img:null, tipo:'heroi', mov:_hcd.mov,
@@ -2125,9 +2130,12 @@ function iniciarTurno(unit){
   modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null;
   _broadcastIntent();
   faseDoTurno='planejar_mover';
-  const sub = unit.tipo==='heroi' ? 'escolha sua ação' : 'turno do inimigo';
-  mostrarLetreiro('TURNO DO '+unit.nome.toUpperCase(), sub, '', 2000, ()=>{
-    _updateLogStrip('Turno de '+unit.nome);
+  const ehHeroi = unit.tipo==='heroi';
+  const sub = ehHeroi ? 'escolha sua ação' : 'turno do inimigo';
+  // Herói: usa o NOME DO JOGADOR (não a classe); inimigo: nome da criatura
+  const displayNome = ehHeroi ? (unit.nomeJogador || unit.nome) : unit.nome;
+  mostrarLetreiro('TURNO DE '+displayNome.toUpperCase(), sub, '', 2000, ()=>{
+    _updateLogStrip('Turno de '+displayNome);
     render(); renderActionRow(); renderBottomPanel();
   });
 }
