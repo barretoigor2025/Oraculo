@@ -1278,22 +1278,6 @@ function onRoomUpdate(room) {
   } else if (!percepcao?.ativo && _percepcaoEmAndamento) {
     ocultarModalPercepcao();
   }
-
-  // ── DEBUG ao vivo (temporário) — estado da sala/confirmação ──
-  let _d = document.getElementById('_ndbg');
-  if (!_d) {
-    _d = document.createElement('div');
-    _d.id = '_ndbg';
-    _d.style.cssText = 'position:fixed;top:2px;left:2px;z-index:99999;background:rgba(140,0,0,.88);color:#fff;font:9px/1.35 monospace;padding:3px 6px;border-radius:4px;white-space:pre;pointer-events:none';
-    document.body.appendChild(_d);
-  }
-  const _pls = Object.keys(room.players || {});
-  const _cfm = Object.keys(narr.introConfirmados || {});
-  _d.textContent =
-    `cena:${_cenaAtual}  st:${room.status}\n` +
-    `players(${_pls.length}):${_pls.map(p=>p.slice(0,4)).join(',')}\n` +
-    `prontos(${_cfm.length}):${_cfm.map(p=>p.slice(0,4)).join(',')}\n` +
-    `meu:${(_pid||'').slice(0,4)} host:${_isHost} resolv:${narr.cenaBatalhaResolvida||'-'}`;
 }
 
 // ── Cena ─────────────────────────────────────────────────────────
