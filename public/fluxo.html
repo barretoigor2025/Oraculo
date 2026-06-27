@@ -212,6 +212,7 @@ const CHANGELOG = [
   { tag:'feat', txt:'<b>Mapa completo</b>: 9 nós do Ato 2 adicionados (campo das aranhas, manticore, twinfold, etc.) — o mapa cobre as 25 cenas.' },
   { tag:'feat', txt:'<b>Emboscadas viram batalha real</b>: encontros de combate na viagem mandam o grupo à Arena (roster por perigo) e voltam ao destino.' },
   { tag:'feat', txt:'<b>Mapa de batalha por cena</b>: a Arena carrega o fundo certo via encontros.js (MAPAS_BATALHA), com fallback para a Feira até a arte existir. Prompts em docs/mapas_batalha_prompts.md.' },
+  { tag:'fix',  txt:'<b>Batalha não repete mais</b>: Arena sincroniza a cena pelo Firebase (corrige battleCena stale) e cena de exploração sem proximaCena volta ao Mapa após vencer (antes re-disparava a mesma batalha).' },
   { tag:'fix',  txt:'Mapa reescrito como <b>SVG único</b> (imagem + caminhos + nós no mesmo viewBox) — marcadores sempre visíveis e na proporção certa.' },
   { tag:'feat', txt:'<b>Auto-descoberta de NPCs</b>: cada cena lista npcsPresentes; o Narrador acha o NPC em NARRACAO_NPCS → NPCS_REGISTRY.' },
   { tag:'feat', txt:'Botão de <b>limpar chat</b> e temporizador de votação ajustável no Mapa.' },
