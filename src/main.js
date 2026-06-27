@@ -123,16 +123,8 @@ function initLanding() {
     });
   });
 
-  document.getElementById('btn-solo')?.addEventListener('click', () => {
-    if (campSelecionada === 'death-note') {
-      window.location.href = 'simulacao_dialogo_dn.html';
-      return;
-    }
-    session.onlineMode = false;
-    showScreen('isc-slots');
-    renderSlots();
-  });
-
+  // Solo removido — todo jogo é por sala (multiplayer). Quem joga sozinho cria
+  // uma sala só pra si. Botão único "Jogar" sempre entra em modo online.
   document.getElementById('btn-online')?.addEventListener('click', () => {
     if (campSelecionada === 'death-note') {
       window.location.href = 'simulacao_dialogo_dn.html';
