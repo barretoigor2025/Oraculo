@@ -2,6 +2,9 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Arena v2</title>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
@@ -2508,6 +2511,7 @@ function _cinIrParaConversaFeira() {
       if (window._fbSetStatus) {
         window._fbSetStatus('narration', {
           'narration.cenaId':           'conversa_gregoras_feira',
+          'narration.cenaBatalhaResolvida': 'mhoried_market', // anti-loop: Feira já vencida
           'narration.dialogo':          [],
           'narration.introConfirmados': {},
           'narration.introIdx':         0,
@@ -3800,8 +3804,10 @@ function onRoomUpdate(room){
       const cenaAtualId = room.narration?.cenaId;
       const ehEmboscada = !!room.narration?.battleKey;
       const cenaAtual = window._CENAS_DATA?.[cenaAtualId];
+      // Marca a batalha desta cena como vencida (anti-loop: não re-dispara ao voltar)
+      const resolvida = ehEmboscada ? (room.narration?.cenaBatalhaResolvida ?? null) : cenaAtualId;
       if(!ehEmboscada && !cenaAtual?.proximaCena){
-        window._fbSetStatus?.('map',{ 'narration.battleKey': null, postBattleConfirmados:{}, batalha:{} });
+        window._fbSetStatus?.('map',{ 'narration.battleKey': null, 'narration.cenaBatalhaResolvida': resolvida, postBattleConfirmados:{}, batalha:{} });
         return;
       }
       const proximaCena = ehEmboscada ? cenaAtualId : cenaAtual.proximaCena;
@@ -3809,6 +3815,7 @@ function onRoomUpdate(room){
       if(window._fbSetStatus) window._fbSetStatus('narration',{
         'narration.cenaId': proximaCena,
         'narration.battleKey': null,
+        'narration.cenaBatalhaResolvida': resolvida,
         'narration.modoImagem':'exterior',
         'narration.dialogo': gancho ? [{ tipo:'narrador', oradorId:'narrador', oradorNome:'Narrador', texto: gancho.texto, ts: Date.now() }] : [],
         'narration.introConfirmados':{},

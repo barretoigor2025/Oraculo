@@ -2,6 +2,9 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,viewport-fit=cover">
 <title>Oráculo — Narração</title>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
@@ -1252,16 +1255,19 @@ function onRoomUpdate(room) {
   _dialVerificarCena();
   atualizarBotoesCena();
 
-  // Verificar se todos confirmaram o gancho de batalha
+  // Gancho de batalha: só entra na Arena com o OK de TODOS os jogadores (gate de grupo)
   const cena = CENAS[_cenaAtual];
   const temGancho = cena?.introSlides?.some(s => s.ganchoBatalha);
-  if (temGancho && narr.introConfirmados) {
+  // Guarda anti-loop: se a batalha desta cena já foi vencida, NÃO re-dispara
+  const jaResolvida = narr.cenaBatalhaResolvida === _cenaAtual;
+  if (temGancho && !jaResolvida && narr.introConfirmados) {
     const jogadores = Object.keys(room.players || {});
     const confirmados = narr.introConfirmados;
     // Solo (room.players vazio): basta este jogador ter confirmado
     const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : Object.keys(confirmados));
+    // TODOS precisam ter clicado em "Estou Pronto" — 199 de 200 não basta
     if (efetivos.length > 0 && efetivos.every(pid => confirmados[pid])) {
-      window._fbSetStatus?.('battle');
+      window._fbSetStatus?.('battle', { 'narration.cenaId': _cenaAtual, 'narration.battleKey': null });
       return;
     }
     // Atualizar botão de espera para quem já confirmou (multiplayer)
