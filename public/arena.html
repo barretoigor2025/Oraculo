@@ -1081,11 +1081,13 @@ const _hcd = _HERO_CLASS_DATA[_heroClassId] || _HERO_CLASS_DATA.mago;
 // ══════════════════════════════════════════
 //  UNIDADES
 // ══════════════════════════════════════════
-// Roster da cena: lê a key gravada antes da batalha (cenaId ou _emboscada:perigo)
+// Roster da cena: lê a key gravada antes da batalha (cenaId ou _emboscada:perigo).
+// Sem key (entrada direta / 1ª batalha) → assume a Feira (mhoried_market) — a única
+// batalha alcançável sem contexto. Elimina o fallback de 1 espantalho e a batalha dupla.
 function _spawnRosterCena(){
-  const key = localStorage.getItem('oraculo.battleCena') || '';
+  const key = localStorage.getItem('oraculo.battleCena') || 'mhoried_market';
   let roster = (window._rosterDaKey && window._rosterDaKey(key)) || null;
-  if(!roster || !roster.length) roster = [{id:'espantalho_assombrado',col:6,row:3}]; // fallback
+  if(!roster || !roster.length) roster = (window._rosterDaKey && window._rosterDaKey('mhoried_market')) || [];
   return roster.map(r=>criarInimigo(r.id, r.col, r.row)).filter(Boolean);
 }
 
@@ -2821,8 +2823,8 @@ function verificarVitoria(){
   if(inimigos.length===0){
     unidades=unidades.filter(u=>u.tipo!=='inimigo'); // remove inimigos mortos do array
     render();
-    // Só a Feira usa a cinemática especial (Gregoras → castelo); o resto é genérico
-    const _bc = localStorage.getItem('oraculo.battleCena') || '';
+    // Sem key → Feira (mesma regra do spawn). Só a Feira usa a cinemática do Gregoras.
+    const _bc = localStorage.getItem('oraculo.battleCena') || 'mhoried_market';
     const _cb = (_bc === 'mhoried_market') ? _cinematicaVitoria : _vitoriaGenerica;
     mostrarLetreiro('VITÓRIA!','os inimigos foram derrotados','',1400, _cb);
     return true;
