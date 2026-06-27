@@ -568,8 +568,23 @@ html,body{
   font-style:italic;line-height:1.85;
   max-width:580px;
   text-shadow:0 1px 6px rgba(0,0,0,.95);
-  animation:fadePag .55s ease;
+  min-height:1.85em;
 }
+#intro-texto-pag.typing::after{
+  content:'▋';color:#f5d878;opacity:.65;margin-left:1px;
+  animation:introCursor .8s steps(1) infinite;
+}
+@keyframes introCursor{50%{opacity:0;}}
+/* Botão Pular — discreto, canto superior */
+#intro-pular{
+  position:absolute;z-index:6;
+  top:max(12px,calc(8px + env(safe-area-inset-top)));right:14px;
+  background:rgba(20,14,6,.62);border:1px solid rgba(190,140,35,.32);
+  border-radius:18px;color:rgba(222,192,112,.82);font-family:inherit;
+  font-size:12px;letter-spacing:1px;padding:6px 14px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#intro-pular:active{background:rgba(40,26,8,.9);}
 @keyframes fadePag{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 #intro-dots{
   display:flex;gap:7px;justify-content:center;
@@ -997,8 +1012,9 @@ html,body{
 <!-- Intro cinematográfico de cena -->
 <div id="intro-cinematico" class="oculto">
   <div id="intro-bg"></div>
-  <div id="intro-grad"></div>
-  <div id="intro-content">
+  <div id="intro-grad" onclick="_tapIntro(event)"></div>
+  <button id="intro-pular" onclick="pularIntro()">⏩ Pular</button>
+  <div id="intro-content" onclick="_tapIntro(event)">
     <div id="intro-subtitulo-cena"></div>
     <div id="intro-titulo-cena"></div>
     <div id="intro-texto-pag"></div>
@@ -1209,6 +1225,7 @@ function onRoomUpdate(room) {
     const dotsEl  = document.getElementById('intro-dots');
     const overlay = document.getElementById('intro-cinematico');
     if (_introIdx >= _introSlides.length) {
+      clearInterval(_typeTimer); clearTimeout(_autoAdvTimer); _typing = false;
       overlay?.classList.add('oculto');
     } else if (_introSlides.length > 0 && bg && textoEl && btnEl && dotsEl) {
       if (bg) bg.style.opacity = '';
@@ -1394,11 +1411,11 @@ function _aplicarSlide(bg, textoEl, btnEl, dotsEl) {
       el.style.opacity      = '0';
       el.style.pointerEvents = 'none';
     });
-    textoEl.textContent = slide?.texto || '';
+    textoEl.textContent = '';
     dotsEl.innerHTML = _introSlides
       .map((_, i) => `<div class="intro-dot${i === _introIdx ? ' ativo' : ''}"></div>`)
       .join('');
-    // Após 1.8s restaura transições e revela gradiente + texto suavemente
+    // Após 1.8s restaura transições, revela e digita o texto
     setTimeout(() => {
       [grad, contentEl, btnEl].filter(Boolean).forEach(el => {
         el.style.transition   = '';
@@ -1406,13 +1423,80 @@ function _aplicarSlide(bg, textoEl, btnEl, dotsEl) {
         el.style.pointerEvents = '';
       });
       _preencherDotsBtn(dotsEl, btnEl, slide);
+      _typewriter(textoEl, slide?.texto || '', _agendarAutoAvanco);
     }, 1800);
     return;
   }
 
-  textoEl.textContent = slide?.texto || '';
   _preencherDotsBtn(dotsEl, btnEl, slide);
+  _typewriter(textoEl, slide?.texto || '', _agendarAutoAvanco);
 }
+
+// ── Typewriter + auto-avanço + pular ──
+let _typing = false, _typeTimer = null, _autoAdvTimer = null, _fullText = '';
+const _TYPE_MS = 16;        // velocidade da digitação (ms/char)
+const _AUTO_ADV_MS = 2400;  // pausa antes de auto-avançar (slides não-finais)
+
+function _typewriter(el, texto, onDone) {
+  clearInterval(_typeTimer); clearTimeout(_autoAdvTimer);
+  _fullText = texto || '';
+  _typing = true;
+  el.classList.add('typing');
+  el.textContent = '';
+  let i = 0;
+  _typeTimer = setInterval(() => {
+    el.textContent = _fullText.slice(0, ++i);
+    if (i >= _fullText.length) {
+      clearInterval(_typeTimer);
+      _typing = false;
+      el.classList.remove('typing');
+      onDone && onDone();
+    }
+  }, _TYPE_MS);
+}
+
+function _finishTypewriter(el) {
+  if (!_typing) return false;
+  clearInterval(_typeTimer);
+  _typing = false;
+  el.textContent = _fullText;
+  el.classList.remove('typing');
+  _agendarAutoAvanco();
+  return true;
+}
+
+function _agendarAutoAvanco() {
+  clearTimeout(_autoAdvTimer);
+  const ultimo = _introIdx >= _introSlides.length - 1;
+  if (_isHost && !ultimo) {
+    _autoAdvTimer = setTimeout(() => avancarIntro(), _AUTO_ADV_MS);
+  }
+}
+
+// Toque na cena: 1º toque completa a digitação; depois avança (exceto no último slide)
+window._tapIntro = function(ev) {
+  if (ev && ev.target && ev.target.closest('button')) return;
+  const el = document.getElementById('intro-texto-pag');
+  if (_finishTypewriter(el)) return; // ainda digitando → completa
+  // já completo: avança só se não for o último (último exige o botão: batalha/entrada)
+  const ultimo = _introIdx >= _introSlides.length - 1;
+  if (_isHost && !ultimo) { clearTimeout(_autoAdvTimer); avancarIntro(); }
+};
+
+// Pular: vai direto ao último slide (mantém o botão final p/ batalha/entrada)
+window.pularIntro = function() {
+  const el = document.getElementById('intro-texto-pag');
+  if (!_isHost) { _finishTypewriter(el); return; }
+  clearInterval(_typeTimer); clearTimeout(_autoAdvTimer); _typing = false;
+  if (_introIdx >= _introSlides.length - 1) { _finishTypewriter(el); return; }
+  _introIdx = _introSlides.length - 1;
+  if (window._fbUpdateNarration) window._fbUpdateNarration({ introIdx: _introIdx });
+  _aplicarSlide(
+    document.getElementById('intro-bg'), el,
+    document.getElementById('intro-btn-continuar'),
+    document.getElementById('intro-dots')
+  );
+};
 
 function _preencherDotsBtn(dotsEl, btnEl, slide) {
   // Dots
@@ -1441,6 +1525,7 @@ function _preencherDotsBtn(dotsEl, btnEl, slide) {
 
 function avancarIntro() {
   if (!_isHost) return; // guests seguem o host via Firebase
+  clearTimeout(_autoAdvTimer); clearInterval(_typeTimer); _typing = false;
   _introIdx++;
   // Sincroniza índice para todos os guests
   if (window._fbUpdateNarration) window._fbUpdateNarration({ introIdx: _introIdx });
