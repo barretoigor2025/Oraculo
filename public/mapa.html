@@ -427,11 +427,13 @@ localStorage.setItem('oraculo.playerId', _pid);
 
 const CLASS_ICON = {guerreiro:'⚔️',mago:'🔮',ladino:'🗡️',clerigo:'✝️',druida:'🌿',ranger:'🏹',paladino:'🛡️',bardo:'🎵'};
 
+const _isHost = localStorage.getItem('oraculo.isHost') !== '0';
 let _state = null;        // snapshot do Firebase mapa
 let _noSelecionado = null;
 let _votacaoTimer = null;
 let _viagemTimeout = null;
 let _viajando = false;    // true durante a animação local de viagem (evita re-render que reseta os bonecos)
+let _autoIniciado = false;// guard p/ a viagem automática (vinda do handoff da narração) só disparar 1x
 
 window._tooltipNoId = null;
 
@@ -918,6 +920,17 @@ function _onState(data) {
   _renderVotacao();
   _renderChat();
 
+  // Viagem AUTOMÁTICA (handoff da narração com destino vizinho): o anfitrião
+  // inicia a jornada sozinho, com uma pausinha para o grupo ver o mapa.
+  if (_isHost && !_autoIniciado && !_viajando && _state?.autoViagem
+      && _caminhoEntre(_state.localAtual, _state.autoViagem)) {
+    _autoIniciado = true;
+    const dest = _state.autoViagem;
+    if (window._fbUpdate) window._fbUpdate({ autoViagem: null });
+    _addChatSistema(`🧭 O grupo segue viagem para ${ _estadoNo(dest)!=='desconhecido' ? NOS[dest]?.titulo : 'o desconhecido' }…`);
+    setTimeout(() => _iniciarViagem(dest), 900);
+  }
+
   // Detecção de viagem concluída — anima standees e leva TODOS à narração
   if (prev?.localAtual && _state?.localAtual && prev.localAtual !== _state.localAtual) {
     _animarStandeesParaNo(_state.localAtual, 1200);
@@ -969,6 +982,6 @@ async function init() {
 
 init();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v12</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v13</div>
 </body>
 </html>

@@ -3171,28 +3171,13 @@ window._dialEnviar = async function () {
 };
 
 // ── Navegação e histórico ──────────────────────────────────
+// TODA viagem passa pelo Mapa do Mundo (bonequinhos andando, 5s, emboscadas).
+// Se o destino é um nó vizinho, a viagem começa sozinha; se é distante, o grupo
+// explora pulando de nó em nó no mapa.
 window._dialProximaCena = function () {
-  const fluxo = typeof NARRACAO_FLUXO !== 'undefined'
-    ? (NARRACAO_FLUXO?.find?.(f => f.id === _dialCampCenaAtiva) || NARRACAO_FLUXO?.find?.(f => f.id === _dialNarracaoCena))
-    : null;
-  const proximaId = fluxo?.proximo || CENAS[_cenaAtual]?.proximaCena;
-  if (!proximaId) return;
-  // Sentinela '_mapa': sai para o MAPA DO MUNDO (mapa.html) — o grupo vê a
-  // jornada (bonequinhos andando, 5s, emboscadas) e escolhe o caminho lá.
-  if (proximaId === '_mapa') {
-    _irParaMapaMundo();
-    return;
-  }
-  // Avanço narrativo EM GRUPO: cada jogador confirma; o grupo só viaja quando
-  // TODOS confirmarem (gate em _verificarViagemCompleta / onRoomUpdate).
-  if (window._fbConfirmarViagem) {
-    window._fbConfirmarViagem(_pid);
-    const btn = document.getElementById('dial-btn-proximo');
-    if (btn) { btn.disabled = true; btn.textContent = '⌛ Aguardando o grupo…'; }
-    if (_isHost) _verificarViagemCompleta(_lastRoom?.narration);
-  } else {
-    _executarNavegacao(proximaId);
-  }
+  const proximaId = _proximaIdDaCena(_cenaAtual);
+  if (!proximaId) { _irParaMapaMundo(); return; }
+  _irParaMapaMundo(proximaId === '_mapa' ? null : proximaId);
 };
 
 // Resolve o ID da próxima cena de uma cena de diálogo (fluxo narrativo ou proximaCena).
@@ -3202,23 +3187,38 @@ function _proximaIdDaCena(cenaId) {
   return fluxo?.proximo || CENAS[cenaId]?.proximaCena || null;
 }
 
+// Nó do mundo correspondente à cena atual (cena = nó; cenas auxiliares usam .nodeId).
+function _noDaCena(cenaId) {
+  if (MAPA_NOS[cenaId]) return cenaId;
+  return CENAS[cenaId]?.nodeId || 'mhoried_market';
+}
+function _saoAdjacentesNoMapa(a, b) {
+  return MAPA_CAMINHOS.some(c => (c.de === a && c.ate === b) || (c.de === b && c.ate === a));
+}
+
 // Handoff para o Mapa do Mundo (mapa.html): o grupo viaja a partir do nó atual.
-// Os IDs de cena = IDs de nó (mapa.js), então localAtual = a cena atual.
-function _irParaMapaMundo() {
+// destino (opcional): se for um nó VIZINHO, o mapa já inicia a viagem sozinho
+// (auto). Se for distante ou nulo, o grupo escolhe o caminho no mapa.
+function _irParaMapaMundo(destino) {
   if (!_isHost) return; // o anfitrião conduz a transição; todos seguem pelo status
   if (_cenaAtual && !_cenasVisitadas.has(_cenaAtual)) {
     _cenasVisitadas.add(_cenaAtual);
     window._fbMarcarVisitada?.(_cenaAtual);
   }
+  const node = _noDaCena(_cenaAtual);
+  const auto = (destino && destino !== '_mapa' && MAPA_NOS[destino] && _saoAdjacentesNoMapa(node, destino))
+    ? destino : null;
   if (window._fbSetStatus) {
     window._fbSetStatus('map', {
-      'mapa.localAtual': _cenaAtual,
+      'mapa.localAtual': node,
       'mapa.viagemEmAndamento': false,
       'mapa.votacao': null,
+      'mapa.autoViagem': auto,   // nó vizinho a viajar automaticamente (ou null)
       'narration.viagemConfirmados': {},
     });
   } else {
-    localStorage.setItem('oraculo.mapaLocal', _cenaAtual || 'mhoried_market');
+    localStorage.setItem('oraculo.mapaLocal', node);
+    if (auto) localStorage.setItem('oraculo.mapaAuto', auto);
     window.location.href = 'mapa.html?v=8';
   }
 }
@@ -3337,6 +3337,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v19</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v20</div>
 </body>
 </html>

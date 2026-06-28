@@ -89,6 +89,7 @@ export const CENAS = {
     subtitulo: 'Entre os escombros da batalha',
     tipo: 'dialogo',
     dialCena: 'conversa_feira',
+    nodeId: 'mhoried_market', // cena auxiliar da Feira → nó da Feira no Mapa do Mundo
     semIntro: true, // abre direto na cena com o Gregoras já falando (sem slide de intro)
     exigeAntes: ['mhoried_market'],
     npcEntrada: 'npc_gregoras_pellos',
