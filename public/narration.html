@@ -1239,20 +1239,29 @@ function onRoomUpdate(room) {
   _dialVerificarCena();
   atualizarBotoesCena();
 
-  // Gancho de batalha: só entra na Arena com o OK de TODOS os jogadores (gate de grupo)
+  // Gate de grupo: batalha (gancho) OU avanço de cena (intro puro em grupo).
+  // Só prossegue com o OK de TODOS os jogadores.
   const cena = CENAS[_cenaAtual];
   const temGancho = cena?.introSlides?.some(s => s.ganchoBatalha);
-  // Guarda anti-loop: se a batalha desta cena já foi vencida, NÃO re-dispara
-  const jaResolvida = narr.cenaBatalhaResolvida === _cenaAtual;
-  if (temGancho && !jaResolvida && narr.introConfirmados) {
+  const jaResolvida = narr.cenaBatalhaResolvida === _cenaAtual; // anti-loop: batalha já vencida
+  const ganchoAtivo = temGancho && !jaResolvida;
+  const avancoGrupo = !!cena?.avancarEmGrupo && !!cena?.proximaCena;
+  if ((ganchoAtivo || avancoGrupo) && narr.introConfirmados) {
     const jogadores = Object.keys(room.players || {});
     const confirmados = narr.introConfirmados;
-    // Solo (room.players vazio): basta este jogador ter confirmado
     const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : Object.keys(confirmados));
-    // TODOS precisam ter clicado em "Estou Pronto" — 199 de 200 não basta.
-    // NÃO reescreve cenaId aqui (um aparelho com cenaId stale resetaria o intro do outro).
+    // TODOS precisam ter confirmado — 199 de 200 não basta.
     if (efetivos.length > 0 && efetivos.every(pid => confirmados[pid])) {
-      window._fbSetStatus?.('battle', { 'narration.battleKey': null });
+      if (ganchoAtivo) {
+        // NÃO reescreve cenaId (um aparelho stale resetaria o intro do outro)
+        window._fbSetStatus?.('battle', { 'narration.battleKey': null });
+      } else if (avancoGrupo && _isHost && window._fbUpdateNarration) {
+        // Avança em grupo para a próxima cena (só o host escreve)
+        window._fbUpdateNarration({
+          cenaId: cena.proximaCena, introConfirmados: {}, introIdx: 0,
+          modoImagem: 'exterior', dialogo: [],
+        });
+      }
       return;
     }
     // Atualizar botão de espera para quem já confirmou (multiplayer)
@@ -1503,8 +1512,14 @@ function _preencherDotsBtn(dotsEl, btnEl, slide) {
   }
   // Button
   const ultimo = _introIdx >= _introSlides.length - 1;
+  const cenaAtualObj = CENAS[_cenaAtual];
   if (ultimo && slide?.ganchoBatalha) {
     btnEl.textContent = '⚔ Estou Pronto!';
+    btnEl.disabled = false;
+    btnEl.onclick = () => confirmarPronto();
+  } else if (ultimo && cenaAtualObj?.avancarEmGrupo && cenaAtualObj?.proximaCena) {
+    // Intro puro com avanço em grupo (ex.: prólogo → Feira): todos confirmam para seguir
+    btnEl.textContent = '→ Continuar (todos)';
     btnEl.disabled = false;
     btnEl.onclick = () => confirmarPronto();
   } else if (ultimo) {
@@ -2990,6 +3005,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v8</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v10</div>
 </body>
 </html>

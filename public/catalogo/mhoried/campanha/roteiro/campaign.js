@@ -21,6 +21,7 @@ export const CENAS = {
     falaEntrada: null,
     entradaBorda: null,
     proximaCena: 'mhoried_market',
+    avancarEmGrupo: true, // intro puro: lê no ritmo de cada um; todos confirmam → vai à Feira
     ato: 1,
     imgExterior: 'catalogo/mhoried/cenarios/conversacao/castelo_mhoried/imagem/castelo_ext.png',
     imgInterior: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_int.png',
@@ -38,13 +39,7 @@ export const CENAS = {
       },
       {
         imagem: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_ext.png',
-        texto: `A Feira da Colheita transborda de vida e cor. Vendedores proclamam especiarias e tecidos, crianças perseguem umas às outras entre as barracas, e o aroma de pão quente mistura-se ao de cerveja e incenso. Bardos tocam em cada esquina, malabaristas arrancam aplausos da multidão. Por um momento, é difícil imaginar que algo de errado pudesse rondar estas terras tão festivas.`,
-        revealFirst: true,
-      },
-      {
-        imagem: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_ext2.png',
-        texto: `No salão principal, a Duquesa Catherine aguarda aventureiros de confiança — seus olhos percorrem cada rosto com urgência disfarçada de cortesia. Antes que qualquer palavra seja dita, um grito perfura o burburinho lá fora. Depois outro. Cabeças se viram: os espantalhos decorativos das barracas estão... se movendo.`,
-        ganchoBatalha: true,
+        texto: `A Feira da Colheita transborda de vida e cor. Vendedores proclamam especiarias e tecidos, crianças perseguem umas às outras entre as barracas, e o aroma de pão quente mistura-se ao de cerveja e incenso. Bardos tocam em cada esquina, malabaristas arrancam aplausos da multidão. Por um momento, é difícil imaginar que algo de errado pudesse rondar estas terras tão festivas — mas o destino já se move entre as barracas.`,
         revealFirst: true,
       },
     ],

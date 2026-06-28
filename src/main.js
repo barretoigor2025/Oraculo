@@ -521,10 +521,9 @@ async function handleStartGame() {
 
 async function handleStartNarration() {
   try {
-    // Começa na Feira (mhoried_market): batalha com roster próprio (3 espantalhos) →
-    // cinemática do Gregoras → conversa. O prólogo tinha gancho de batalha e levava à
-    // Feira, causando batalha dupla — fica de fora até virar um intro puro.
-    await startNarration(session.roomId, 'mhoried_market');
+    // Prólogo (intro puro com avanço em grupo) → Feira. O gancho de batalha foi tirado
+    // do prólogo, então não há mais batalha dupla.
+    await startNarration(session.roomId, 'prologo');
   } catch (err) {
     alert(`Erro ao iniciar narração: ${err.message}`);
   }
