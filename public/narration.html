@@ -548,12 +548,17 @@ html,body{
 }
 #intro-content{
   position:relative;z-index:2;
-  flex:1;min-height:0;
+  flex:1;min-height:0;overflow-y:auto;
   display:flex;flex-direction:column;
-  align-items:center;justify-content:flex-end;
-  padding:max(60px,12vh) 24px 0;
+  align-items:center;justify-content:flex-start;
+  padding:max(46px,8vh) 22px 8px;
   text-align:center;
 }
+/* centra o bloco mas permite rolar texto longo sem cortar o topo */
+#intro-content::before{content:'';margin-top:auto;}
+#intro-content::after{content:'';margin-bottom:auto;}
+#intro-content::-webkit-scrollbar{width:3px;}
+#intro-content::-webkit-scrollbar-thumb{background:rgba(190,140,35,.3);border-radius:2px;}
 #intro-subtitulo-cena{
   font-size:11px;letter-spacing:3px;text-transform:uppercase;
   color:rgba(220,190,100,.5);margin-bottom:10px;
@@ -569,10 +574,11 @@ html,body{
 #intro-texto-pag{
   font-size:clamp(14px,3.8vw,18px);
   color:rgba(235,215,165,.92);
-  font-style:italic;line-height:1.85;
-  max-width:580px;
+  font-style:italic;line-height:1.8;
+  max-width:600px;margin:0 auto;
+  white-space:pre-line; /* respeita as quebras de parágrafo (\n\n) */
   text-shadow:0 1px 6px rgba(0,0,0,.95);
-  min-height:1.85em;
+  min-height:1.8em;
 }
 #intro-texto-pag.typing::after{
   content:'▋';color:#f5d878;opacity:.65;margin-left:1px;
@@ -1377,19 +1383,13 @@ function makeIntroSlides(cena) {
     : [{ imagem: (_modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior),
          texto: (cena.textoIntro || '').trim() }];
 
-  // Mescla slides consecutivos "simples" (mesma imagem, sem gancho de batalha nem
-  // revealFirst) em UMA parte só — tela cheia, sem ficar passando vários slides.
-  const merged = [];
-  for (const s of raw) {
-    const simples = !s.ganchoBatalha && !s.revealFirst;
-    const ult = merged[merged.length - 1];
-    if (simples && ult && !ult.ganchoBatalha && !ult.revealFirst && ult.imagem === s.imagem) {
-      ult.texto = (ult.texto + '  ' + (s.texto || '')).trim();
-    } else {
-      merged.push({ ...s });
-    }
-  }
-  return merged.filter(s => s.texto || s.imagem);
+  // UM slide só por cena: junta todos os textos num bloco (tela cheia, rolável).
+  // Sem ficar passando/voltando vários slides curtos. Mantém o gancho de batalha
+  // se algum slide tinha (vira o botão "Estou Pronto" no slide único).
+  const texto = raw.map(s => (s.texto || '').trim()).filter(Boolean).join('\n\n');
+  const imagem = raw[0]?.imagem || (_modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior);
+  const ganchoBatalha = raw.some(s => s.ganchoBatalha);
+  return [{ imagem, texto, ganchoBatalha }];
 }
 
 function mostrarIntroCinemat(cena) {
@@ -1459,9 +1459,11 @@ function _typewriter(el, texto, onDone) {
   _typing = true;
   el.classList.add('typing');
   el.textContent = '';
+  const cont = document.getElementById('intro-content');
   let i = 0;
   _typeTimer = setInterval(() => {
     el.textContent = _fullText.slice(0, ++i);
+    if (cont) cont.scrollTop = cont.scrollHeight; // acompanha o texto longo
     if (i >= _fullText.length) {
       clearInterval(_typeTimer);
       _typing = false;
@@ -1477,6 +1479,8 @@ function _finishTypewriter(el) {
   _typing = false;
   el.textContent = _fullText;
   el.classList.remove('typing');
+  const cont = document.getElementById('intro-content');
+  if (cont) cont.scrollTop = 0; // volta ao topo pra ler desde o começo
   return true;
 }
 
@@ -3005,6 +3009,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v10</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v11</div>
 </body>
 </html>
