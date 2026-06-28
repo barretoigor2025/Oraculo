@@ -616,6 +616,16 @@
     .cenario-tag.batalha { color:rgba(220,120,80,.9); border-color:rgba(220,120,80,.3); background:rgba(220,120,80,.1); }
     .cenario-tag.npc { color:rgba(140,200,140,.8); border-color:rgba(140,200,140,.25); background:rgba(140,200,140,.08); }
     .cenario-tag.ato { color:rgba(140,160,220,.8); border-color:rgba(140,160,220,.25); background:rgba(140,160,220,.08); }
+    /* ── Card de cenário horizontal (foto à esquerda, infos à direita) ── */
+    .cenario-grid-h { display:flex; flex-direction:column; gap:10px; }
+    .cenario-card-h { display:flex; background:rgba(20,16,8,.6); border:1px solid rgba(190,140,35,.2); border-radius:12px; overflow:hidden; min-height:122px; }
+    .cenario-card-h .cen-img { flex:0 0 40%; max-width:165px; align-self:stretch; object-fit:cover; background:#0c0a06; display:block; }
+    .cen-h-body { flex:1; min-width:0; padding:11px 13px; display:flex; flex-direction:column; gap:5px; }
+    .cen-h-nome { font-size:14px; font-weight:700; color:#d4a84b; line-height:1.2; }
+    .cen-h-sub { font-size:10px; color:rgba(190,165,110,.62); letter-spacing:.3px; }
+    .cen-h-tags { display:flex; gap:4px; flex-wrap:wrap; margin:1px 0 1px; }
+    .cen-h-row { font-size:11px; color:rgba(212,186,132,.82); line-height:1.4; }
+    .cen-h-row .lbl { color:rgba(200,150,40,.75); font-weight:700; font-size:9px; text-transform:uppercase; letter-spacing:.5px; margin-right:5px; }
 
     /* ── ROTEIRO TAB ── */
     .rot-ato { margin-bottom:24px; }
@@ -1375,19 +1385,27 @@ function buildCenariosTab(){
   if(campAtual==='mhoried'){
     const cenas = CENAS_ORDEM.map(id=>CENAS[id]).filter(Boolean);
     const header = `<div class="section-header"><h2>Cenários da Campanha</h2><span class="count-badge">${cenas.length} cenários</span></div>`;
-    let html = '<div class="cenario-grid">';
+    const tipoLabel = { dialogo:'Diálogo', batalha:'Batalha', emboscada:'Emboscada', transicao:'Transição', negociacao:'Negociação', aparicao:'Aparição', descoberta:'Descoberta', exploracao:'Exploração' };
+    const npcNome = id => (NPCS[id]?.nome) || id;
+    let html = '<div class="cenario-grid-h">';
     for(const c of cenas){
-      const imgSrc = `catalogo/mhoried/cenarios/${c.id}.png`;
-      html += `<div class="cenario-card">
-        <img class="cenario-img" src="${imgSrc}" alt="${c.titulo}" onerror="this.style.display='none'">
-        <div class="cenario-body">
-          <div class="cenario-nome">${c.titulo||c.id}</div>
-          <div class="cenario-sub">Ato ${c.ato||1}</div>
-          <div class="cenario-tags">
-            <span class="cenario-tag ato">Ato ${c.ato||1}</span>
+      const battleMap = `catalogo/mhoried/cenarios/batalha_hex/${c.id}/imagem/${c.id}.png`;
+      // foto: cena de batalha mostra o mapa; outras a imagem externa; com fallback cruzado
+      const primary  = c.temBatalha ? battleMap : (c.imgExterior || c.imgInterior || battleMap);
+      const fallback = c.temBatalha ? (c.imgExterior || c.imgInterior || '') : battleMap;
+      const npcs = (c.npcsPresentes||[]).map(npcNome).filter(Boolean);
+      html += `<div class="cenario-card-h">
+        <img class="cen-img" src="${primary}" alt="${c.titulo}"
+             onerror="if(!this.dataset.f&&'${fallback}'){this.dataset.f='1';this.src='${fallback}';}else{this.style.visibility='hidden';}">
+        <div class="cen-h-body">
+          <div class="cen-h-nome">${c.titulo||c.id}</div>
+          <div class="cen-h-sub">Ato ${c.ato||1} · ${tipoLabel[c.tipo]||c.tipo||'Cena'}</div>
+          <div class="cen-h-tags">
             ${c.temBatalha?'<span class="cenario-tag batalha">⚔️ Batalha</span>':''}
-            ${(c.npcsPresentes||[]).length>0?'<span class="cenario-tag npc">👥 NPCs</span>':''}
+            ${npcs.length?'<span class="cenario-tag npc">👥 NPCs</span>':''}
           </div>
+          ${c.inimigos?`<div class="cen-h-row"><span class="lbl">⚔️ Inimigos</span>${c.inimigos}</div>`:''}
+          ${npcs.length?`<div class="cen-h-row"><span class="lbl">👥 NPCs</span>${npcs.join(', ')}</div>`:''}
         </div>
       </div>`;
     }
