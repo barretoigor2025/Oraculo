@@ -808,8 +808,8 @@ html,body{
 /* Standees */
 #dial-personagens{
   position:absolute;bottom:122px;left:0;right:0;
-  height:clamp(280px,65vh,600px);
-  pointer-events:none;overflow:visible;z-index:5;
+  height:clamp(240px,56vh,520px);
+  pointer-events:none;overflow:visible;z-index:12; /* standees NA FRENTE do balão (z:8) */
 }
 .dial-npc{
   position:absolute;bottom:0;left:0;width:auto;height:100%;
@@ -823,18 +823,19 @@ html,body{
 
 /* Balão de fala NPC */
 #dial-balao{
-  position:absolute;top:60px;left:12px;right:12px;
-  background:rgba(7,3,1,.91);border:1px solid rgba(190,140,35,.44);
-  border-radius:16px;padding:13px 16px 14px;
-  backdrop-filter:blur(16px);box-shadow:0 4px 32px rgba(0,0,0,.82);
+  position:absolute;top:54px;left:12px;right:12px;
+  max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:rgba(7,3,1,.88);border:1px solid rgba(190,140,35,.42);
+  border-radius:14px;padding:10px 13px 11px;
+  backdrop-filter:blur(16px);box-shadow:0 4px 28px rgba(0,0,0,.78);
   opacity:0;transform:translateY(-6px) scale(.98);
   transition:opacity .28s ease,transform .28s ease;
-  pointer-events:none;z-index:10;
+  pointer-events:none;z-index:8;
 }
 #dial-balao.visivel{opacity:1;transform:none;pointer-events:all;}
-#dial-balao-nome{font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(190,140,35,.80);margin-bottom:6px;}
-#dial-balao-acao{font-size:11px;color:rgba(185,160,85,.58);font-style:italic;line-height:1.4;margin-bottom:5px;display:none;}
-#dial-balao-texto{font-size:clamp(13px,3.6vw,15.5px);color:rgba(240,218,162,.96);line-height:1.66;font-style:italic;}
+#dial-balao-nome{font-size:8.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(190,140,35,.80);margin-bottom:5px;}
+#dial-balao-acao{font-size:10px;color:rgba(185,160,85,.58);font-style:italic;line-height:1.35;margin-bottom:4px;display:none;}
+#dial-balao-texto{font-size:clamp(11px,2.9vw,13px);color:rgba(240,218,162,.96);line-height:1.5;font-style:italic;}
 
 /* Card do player */
 #dial-player-card{
@@ -842,7 +843,7 @@ html,body{
   display:flex;flex-direction:column;gap:8px;
   opacity:0;pointer-events:none;
   transform:translateY(-6px) scale(.98);
-  transition:opacity .28s ease,transform .28s ease;z-index:10;
+  transition:opacity .28s ease,transform .28s ease;z-index:8;
 }
 #dial-player-card.visivel{opacity:1;transform:none;pointer-events:all;}
 .dial-pc-fala{
@@ -2763,11 +2764,13 @@ function _dialActivar(campCenaId) {
       }).filter(Boolean)
     : narracaoCena ? _dialNpcs.filter(n => n.cenas.includes(narracaoCena)) : [];
 
-  const _ALTURA_REF_CM = 180, _ALTURA_REF_VH = 44;
+  // Escala proporcional à altura real do bicho (altura_cm). Reduzimos a referência
+  // e o teto para que os balões não fiquem cobertos — mantendo grandões maiores.
+  const _ALTURA_REF_CM = 180, _ALTURA_REF_VH = 37;
   npcsNaCena.forEach((npc, i) => {
     const div = document.createElement('div');
     div.className = 'dial-npc';
-    const npcVh = Math.min((npc.altura_cm || _ALTURA_REF_CM) / _ALTURA_REF_CM * _ALTURA_REF_VH, 62).toFixed(1);
+    const npcVh = Math.min((npc.altura_cm || _ALTURA_REF_CM) / _ALTURA_REF_CM * _ALTURA_REF_VH, 50).toFixed(1);
     div.style.cssText = `z-index:${npc.zBase || 5};left:${npc.offsetPx || 0}px;height:${npcVh}vh;`;
     if (i > 0) div.classList.add('inativo');
     const canvas = document.createElement('canvas');
@@ -3088,6 +3091,7 @@ window._dialEnviar = async function () {
   }
 
   input.value = '';
+  input.blur();   // fecha o teclado para o jogador ler a cena/resposta do NPC
   input.disabled = true;
   document.getElementById('dial-btn-enviar').disabled = true;
 
@@ -3107,7 +3111,8 @@ window._dialEnviar = async function () {
 
   input.disabled = false;
   document.getElementById('dial-btn-enviar').disabled = false;
-  input.focus();
+  // NÃO re-focar: re-focar reabria o teclado e cobria a resposta do NPC.
+  // O jogador toca no campo de novo quando quiser falar.
 
   if (!resposta) return;
 
@@ -3273,6 +3278,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v15</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v16</div>
 </body>
 </html>
