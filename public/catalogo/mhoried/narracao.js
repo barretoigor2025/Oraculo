@@ -63,8 +63,9 @@ export const NARRACAO_CENAS = {
 export const NARRACAO_FLUXO = [
   { id:'feira',          proximo:'castelo_mhoried',    btnLabel:'🏰 Ir ao Castelo →' },
   { id:'conversa_feira', proximo:'castelo_mhoried',    btnLabel:'🏰 Ir ao Castelo →' },
-  { id:'castelo',        proximo:'blackwoods_entrada', btnLabel:'🌲 Partir para os Blackwoods →' },
-  // Hub do Ato 2: depois de falar com Aelar, o grupo escolhe a rota pelos
-  // Blackwoods no mapa de exploração ('_mapa' = sentinela tratada na narração).
-  { id:'blackwoods_entrada', proximo:'_mapa', btnLabel:'🗺 Explorar os Blackwoods →' },
+  // Ao sair do Castelo o grupo pega a estrada — abre o MAPA DO MUNDO (mapa.html),
+  // onde viaja com os bonequinhos pela floresta ('_mapa' = handoff p/ mapa.html).
+  { id:'castelo',        proximo:'_mapa', btnLabel:'🌲 Partir para os Blackwoods →' },
+  // Hub do Ato 2: depois de falar com Aelar, o grupo viaja pelo mapa.
+  { id:'blackwoods_entrada', proximo:'_mapa', btnLabel:'🗺 Seguir pela floresta →' },
 ];

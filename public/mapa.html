@@ -38,10 +38,14 @@ if(_cfg&&_rid){
     window._fbInit=async(estado)=>{
       const snap=await getDoc(rd);
       if(!snap.exists())return;
-      const atual=snap.data().mapa;
-      if(!atual){
-        await updateDoc(rd,{'mapa':estado,'mapa.ts':Date.now()});
+      const atual=snap.data().mapa || {};
+      // Mescla apenas os campos ausentes — preserva localAtual já gravado pelo
+      // handoff da narração (status='map' + mapa.localAtual = cena atual).
+      const merged={};
+      for(const k of Object.keys(estado)){
+        if(atual[k]===undefined) merged[`mapa.${k}`]=estado[k];
       }
+      if(Object.keys(merged).length){ merged['mapa.ts']=Date.now(); await updateDoc(rd,merged); }
     };
   }catch(e){console.warn('Mapa Firebase:',e);}
 }
@@ -427,6 +431,7 @@ let _state = null;        // snapshot do Firebase mapa
 let _noSelecionado = null;
 let _votacaoTimer = null;
 let _viagemTimeout = null;
+let _viajando = false;    // true durante a animação local de viagem (evita re-render que reseta os bonecos)
 
 window._tooltipNoId = null;
 
@@ -573,7 +578,8 @@ function _mostrarTooltip(id, estado, ev) {
     caminho ? `⚠ ${PERIGO_LABEL[caminho.perigo]} · Distância: ${caminho.dist}` : '';
 
   const btn = document.getElementById('tt-btn');
-  btn.style.display = (alcancavel && estado !== 'desconhecido' && id !== localAtual) ? 'block' : 'none';
+  // Mostra "viajar" para qualquer nó ADJACENTE — inclusive desconhecido (fog of war).
+  btn.style.display = (alcancavel && id !== localAtual) ? 'block' : 'none';
 
   // Posicionar tooltip
   const rect = document.getElementById('mapa-scroll').getBoundingClientRect();
@@ -596,21 +602,25 @@ document.addEventListener('click', (e) => {
 // ── Modal de rota ─────────────────────────────────────────
 window._abrirModalRota = function() {
   const localAtual = _state?.localAtual || 'mhoried_market';
-  const destinos = _nosAlcancaveis(localAtual)
-    .filter(id => _estadoNo(id) !== 'desconhecido' && id !== localAtual);
+  // Inclui trilhas para nós DESCONHECIDOS (fog of war): você escolhe o caminho,
+  // descobre o lugar ao chegar.
+  const destinos = _nosAlcancaveis(localAtual).filter(id => id !== localAtual);
   const lista = document.getElementById('modal-rota-lista');
   lista.innerHTML = '';
   if (!destinos.length) {
-    lista.innerHTML = '<div class="chat-sistema">Nenhum destino alcançável conhecido a partir daqui.</div>';
+    lista.innerHTML = '<div class="chat-sistema">Nenhuma trilha parte daqui.</div>';
   }
   for (const id of destinos) {
     const no = NOS[id];
     const c  = _caminhoEntre(localAtual, id);
+    const conhecido = _estadoNo(id) !== 'desconhecido';
+    const icon = conhecido ? no.icon : '🧭';
+    const nome = conhecido ? no.titulo : 'Rumo desconhecido';
     const div = document.createElement('div');
     div.className = 'rota-opcao';
-    div.innerHTML = `<div class="rota-opcao-icon">${no.icon}</div>
+    div.innerHTML = `<div class="rota-opcao-icon">${icon}</div>
       <div class="rota-opcao-info">
-        <div class="rota-opcao-nome">${no.titulo}</div>
+        <div class="rota-opcao-nome">${nome}</div>
         <div class="rota-opcao-perigo">⚠ ${PERIGO_LABEL[c?.perigo||0]} · ${c?.dist||'?'}</div>
       </div>`;
     div.onclick = () => { window._proporRota(id); window._fecharModalRota(); };
@@ -624,10 +634,12 @@ window._fecharModalRota = () => document.getElementById('modal-rota').classList.
 window._proporRota = async function(destino) {
   document.getElementById('no-tooltip').classList.remove('visivel');
   if (!destino) return;
-  const estado = _estadoNo(destino);
-  if (estado === 'desconhecido') return;
   const localAtual = _state?.localAtual || 'mhoried_market';
   if (!_caminhoEntre(localAtual, destino)) return;
+
+  // Solo (1 jogador): viaja na hora, sem votação.
+  const nJogadores = Object.keys(_state?.players || {}).length;
+  if (nJogadores <= 1) { _addChatSistema(`🗺 Partindo para ${ _estadoNo(destino)!=='desconhecido' ? NOS[destino]?.titulo : 'o desconhecido' }…`); _iniciarViagem(destino); return; }
 
   const votacao = {
     destino,
@@ -714,8 +726,9 @@ async function _iniciarViagem(destino) {
   const localAtual = _state?.localAtual || 'mhoried_market';
   const caminho = _caminhoEntre(localAtual, destino);
   if (!caminho) return;
-  const duracao = DIST_MS[caminho.dist] || 2000;
+  const duracao = 5000;  // viagem dura sempre 5s, independente da distância (pedido do jogo)
 
+  _viajando = true;  // segura o re-render para a animação dos bonecos não ser resetada
   if (window._fbUpdate) await window._fbUpdate({ viagemEmAndamento: true });
 
   // Animar standees
@@ -753,20 +766,29 @@ async function _iniciarViagem(destino) {
       return;
     }
 
-    // ── Chegada normal ──
-    if (window._fbUpdate) await window._fbUpdate({
-      localAtual: destino, descobertos: novoDesc, viagemEmAndamento: false,
-    });
-    if (window._fbUpdateNarration) {
-      await window._fbUpdateNarration({
-        cenaId: destino, modoImagem: 'exterior',
-        introConfirmados: {}, introIdx: 0, percepcao: { ativo: false }, dialogo: [],
+    // ── Chegada normal ── status='narration' num único write: a narração
+    // abre a cena do destino e NÃO devolve o grupo ao mapa (sem bounce).
+    if (window._fbSetStatus) {
+      await window._fbSetStatus('narration', {
+        'mapa.localAtual': destino,
+        'mapa.descobertos': novoDesc,
+        'mapa.viagemEmAndamento': false,
+        'mapa.ts': Date.now(),
+        'narration.cenaId': destino,
+        'narration.modoImagem': 'exterior',
+        'narration.introConfirmados': {},
+        'narration.introIdx': 0,
+        'narration.percepcao': { ativo: false },
+        'narration.dialogo': [],
+        'narration.viagemConfirmados': {},
+        'narration.ts': Date.now(),
       });
+      // _onState detecta status='narration' e leva todos à narração (com pausa p/ ver a chegada)
     } else {
       localStorage.setItem('oraculo.soloNarrCena', destino);
       setTimeout(() => { window.location.href = 'narration.html?v=8'; }, 1800);
     }
-    _addChatSistema(`📍 Chegaram em ${NOS[destino]?.titulo}.${window._fbUpdateNarration ? ' Narração atualizada!' : ' Indo para narração…'}`);
+    _addChatSistema(`📍 Chegaram em ${NOS[destino]?.titulo}.`);
     if (encontro) _mostrarEncontro(encontro, caminho); // roubo/diálogo = overlay narrativo
   }, duracao + 200);
 }
@@ -872,6 +894,16 @@ function _onState(data) {
     window.location.href = 'arena.html?v=8';
     return;
   }
+  // Chegada concluída → narração da cena de destino (pausa p/ ver o grupo chegar)
+  if (data?.status === 'narration') {
+    _viajando = false;
+    _state = data?.mapa || _state;
+    _renderMapa();
+    _agendarRedirectNarracao();
+    return;
+  }
+  // Durante a viagem local: não re-renderiza (rebuild resetaria os bonecos em animação)
+  if (_viajando && data?.status === 'map') { _state = data?.mapa || _state; return; }
 
   const prev = _state;
   _state = data?.mapa || null;
@@ -937,6 +969,6 @@ async function init() {
 
 init();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v11</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v12</div>
 </body>
 </html>

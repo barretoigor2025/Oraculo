@@ -177,6 +177,8 @@ export const NOS = {
 export const CAMINHOS = [
   { de:'mhoried_market',    ate:'castelo_mhoried',    perigo:0, dist:'curta', encontros:[] },
   { de:'mhoried_market',    ate:'carroça_tombada',    perigo:1, dist:'media', encontros:[{chance:0.15,tipo:'roubo'}] },
+  // Estrada do castelo para a estrada norte (rumo à floresta — passa pela ponte/carroça)
+  { de:'castelo_mhoried',   ate:'carroça_tombada',    perigo:1, dist:'media', encontros:[{chance:0.15,tipo:'combate'}] },
   { de:'carroça_tombada',   ate:'blackwoods_entrada', perigo:1, dist:'curta', encontros:[{chance:0.20,tipo:'combate'}] },
   { de:'blackwoods_entrada',ate:'encruzilhada',       perigo:2, dist:'curta', encontros:[{chance:0.25,tipo:'combate'}] },
   { de:'encruzilhada',      ate:'dominio_wulfram',    perigo:3, dist:'media', encontros:[{chance:0.30,tipo:'combate'},{chance:0.15,tipo:'dialogo'}] },

@@ -1033,7 +1033,7 @@ html,body{
       <button class="btn-cena" id="btn-cfg-ia" onclick="abrirCfgIA()">⚙ IA</button>
       <button class="btn-cena" id="btn-cena-prox" onclick="navegarCena(1)">Próx. Cena →</button>
       <button class="btn-cena" id="btn-mapa-exp" onclick="abrirMapaExploracao()">🗺 Mapa</button>
-      <button id="btn-seguir-viagem" style="display:none" onclick="abrirEscolhaCaminho()">🧭 Seguir Viagem</button>
+      <button id="btn-seguir-viagem" style="display:none" onclick="_irParaMapaMundo()">🧭 Seguir Viagem</button>
       <button id="btn-iniciar-batalha" onclick="iniciarBatalha()">⚔ Batalha!</button>
     </div>
   </div>
@@ -1262,6 +1262,11 @@ function onRoomUpdate(room) {
     // Grava a cena da batalha para a Arena escolher o roster certo
     localStorage.setItem('oraculo.battleCena', room.narration?.battleKey || room.narration?.cenaId || 'mhoried_market');
     window.location.href = 'arena.html?v=8';
+    return;
+  }
+  if (room.status === 'map') {
+    // Viagem: todos vão para o Mapa do Mundo (mapa.html) ver a jornada.
+    window.location.href = 'mapa.html?v=8';
     return;
   }
 
@@ -3135,16 +3140,10 @@ window._dialProximaCena = function () {
     : null;
   const proximaId = fluxo?.proximo || CENAS[_cenaAtual]?.proximaCena;
   if (!proximaId) return;
-  // Sentinela '_mapa': cena-hub (ex.: blackwoods_entrada). Em vez de avançar para
-  // uma cena fixa, abre o mapa de exploração para o grupo escolher a rota.
+  // Sentinela '_mapa': sai para o MAPA DO MUNDO (mapa.html) — o grupo vê a
+  // jornada (bonequinhos andando, 5s, emboscadas) e escolhe o caminho lá.
   if (proximaId === '_mapa') {
-    // Marca o hub como visitado para que suas cenas-filhas deixem de ficar bloqueadas
-    if (_cenaAtual && !_cenasVisitadas.has(_cenaAtual)) {
-      _cenasVisitadas.add(_cenaAtual);
-      if (window._fbMarcarVisitada) window._fbMarcarVisitada(_cenaAtual);
-    }
-    window._dialFecharDialogo?.();
-    if (typeof abrirEscolhaCaminho === 'function') abrirEscolhaCaminho();
+    _irParaMapaMundo();
     return;
   }
   // Avanço narrativo EM GRUPO: cada jogador confirma; o grupo só viaja quando
@@ -3166,11 +3165,34 @@ function _proximaIdDaCena(cenaId) {
   return fluxo?.proximo || CENAS[cenaId]?.proximaCena || null;
 }
 
+// Handoff para o Mapa do Mundo (mapa.html): o grupo viaja a partir do nó atual.
+// Os IDs de cena = IDs de nó (mapa.js), então localAtual = a cena atual.
+function _irParaMapaMundo() {
+  if (!_isHost) return; // o anfitrião conduz a transição; todos seguem pelo status
+  if (_cenaAtual && !_cenasVisitadas.has(_cenaAtual)) {
+    _cenasVisitadas.add(_cenaAtual);
+    window._fbMarcarVisitada?.(_cenaAtual);
+  }
+  if (window._fbSetStatus) {
+    window._fbSetStatus('map', {
+      'mapa.localAtual': _cenaAtual,
+      'mapa.viagemEmAndamento': false,
+      'mapa.votacao': null,
+      'narration.viagemConfirmados': {},
+    });
+  } else {
+    localStorage.setItem('oraculo.mapaLocal', _cenaAtual || 'mhoried_market');
+    window.location.href = 'mapa.html?v=8';
+  }
+}
+window._irParaMapaMundo = _irParaMapaMundo;
+
 // Host: navega o grupo quando TODOS confirmaram a viagem.
 function _verificarViagemCompleta(narr) {
   if (!_isHost) return;
   const proximaId = _proximaIdDaCena(_cenaAtual);
-  if (!proximaId || proximaId === '_mapa') return;
+  if (proximaId === '_mapa') { _irParaMapaMundo(); return; }
+  if (!proximaId) return;
   const conf = narr?.viagemConfirmados || {};
   const jogadores = Object.keys(_lastRoom?.players || {});
   const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : Object.keys(conf));
@@ -3278,6 +3300,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v16</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v17</div>
 </body>
 </html>
