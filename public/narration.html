@@ -2937,6 +2937,18 @@ window._dialProximaCena = function () {
     : null;
   const proximaId = fluxo?.proximo || CENAS[_cenaAtual]?.proximaCena;
   if (!proximaId) return;
+  // Sentinela '_mapa': cena-hub (ex.: blackwoods_entrada). Em vez de avançar para
+  // uma cena fixa, abre o mapa de exploração para o grupo escolher a rota.
+  if (proximaId === '_mapa') {
+    // Marca o hub como visitado para que suas cenas-filhas deixem de ficar bloqueadas
+    if (_cenaAtual && !_cenasVisitadas.has(_cenaAtual)) {
+      _cenasVisitadas.add(_cenaAtual);
+      if (window._fbMarcarVisitada) window._fbMarcarVisitada(_cenaAtual);
+    }
+    window._dialFecharDialogo?.();
+    if (typeof abrirMapaExploracao === 'function') abrirMapaExploracao();
+    return;
+  }
   _executarNavegacao(proximaId);
 };
 
@@ -3009,6 +3021,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v11</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v12</div>
 </body>
 </html>
