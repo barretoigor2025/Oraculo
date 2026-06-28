@@ -126,6 +126,12 @@ export const CENAS = {
     npcsPresentes: ['npc_catherine_laskaris', 'npc_gregoras_pellos'],
     temBatalha: false,
     ordemNarrativa: 1.5,
+    // Teste de Percepção sob demanda (botão 🎲 na conversa) — gancho escondido na cena.
+    percepcao: {
+      dc: 12,
+      descricaoContexto: 'Ao falar de Choir e do irmão, os olhos de Catherine pousam por um instante num pequeno retrato emoldurado ao lado da janela — o rosto de um jovem (o Duque Oswald antes da transformação). Ela o observa com uma preocupação que a compostura política não consegue esconder. Atrás do retrato pode haver algo guardado: uma correspondência, um segredo.',
+      textoFallback: 'Você nota os olhos de Catherine pousarem por um breve momento num pequeno retrato ao lado da janela — o rosto de um jovem que ela observa com uma preocupação cuidadosamente contida.',
+    },
     introSlides: [
       {
         imagem: 'catalogo/mhoried/cenarios/conversacao/castelo_mhoried/imagem/castelo_ext.png',
@@ -156,6 +162,11 @@ export const CENAS = {
     npcsPresentes: ['npc_aelar_eisenli'],
     temBatalha: false,
     ordemNarrativa: 2,
+    percepcao: {
+      dc: 12,
+      descricaoContexto: 'Na forca velha à beira da floresta, a corda foi cortada por dentro — não arrebentada. Quem estava enforcado ali foi solto por alguém de dentro dos Blackwoods, recentemente. Há pegadas leves de pés descalços (Vhuureth) e, presa num espinho, uma tira de tecido com o brasão élfico do Príncipe Kalos.',
+      textoFallback: 'Você repara que a corda da forca foi cortada por dentro, não arrebentada — e há pegadas descalças frescas sumindo na linha das árvores.',
+    },
   },
 
 

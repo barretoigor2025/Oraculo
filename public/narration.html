@@ -46,6 +46,10 @@ if(_cfg&&_rid){
       try{await updateDoc(rd,{[`narration.introConfirmados.${playerId}`]:true,'narration.ts':Date.now()});}
       catch(e){console.warn('fbAddIntroConfirm:',e);}
     };
+    window._fbConfirmarViagem=async(playerId)=>{
+      try{await updateDoc(rd,{[`narration.viagemConfirmados.${playerId}`]:true,'narration.ts':Date.now()});}
+      catch(e){console.warn('fbConfirmarViagem:',e);}
+    };
     window._fbRespondPercepcao=async(pid,resposta)=>{
       try{await updateDoc(rd,{[`narration.percepcao.respostas.${pid}`]:resposta,'narration.ts':Date.now()});}
       catch(e){console.warn('fbRespondPercepcao:',e);}
@@ -897,6 +901,8 @@ html,body{
   font-size:11px;font-family:Georgia,serif;cursor:pointer;white-space:nowrap;
 }
 .dial-btn-sair{border-color:rgba(200,80,60,.40);background:rgba(200,80,60,.12);color:rgba(235,130,110,.90);}
+.dial-btn-perc{border-color:rgba(120,160,220,.45);background:rgba(80,120,200,.15);color:rgba(150,195,240,.95);}
+.dial-btn-acao:disabled{opacity:.5;cursor:default;}
 
 /* Turno bar (chips de jogadores) */
 #dial-turno-bar{
@@ -1130,6 +1136,7 @@ html,body{
   <div id="dial-npc-chips">
     <span class="dial-chip-label">Falar com:</span>
     <div class="dial-chip-spacer"></div>
+    <button id="dial-btn-perc" class="dial-btn-acao dial-btn-perc" style="display:none" onclick="pedirPercepcao()">🎲 Percepção</button>
     <button id="dial-btn-proximo" class="dial-btn-acao" style="display:none" onclick="window._dialProximaCena()">→ Continuar</button>
     <button class="dial-btn-acao dial-btn-sair" onclick="window._dialFecharDialogo()">← Sair</button>
   </div>
@@ -1312,6 +1319,10 @@ function onRoomUpdate(room) {
   _dialVerificarCena();
   atualizarBotoesCena();
   _atualizarAcaoCena(narr);
+  _atualizarBtnPercepcao();
+  // Gate de viagem em grupo: navega quando todos confirmaram o botão narrativo.
+  if (narr.viagemConfirmados && _isHost) _verificarViagemCompleta(narr);
+  if (_dialAtivo) _dialAtualizarChips(); // atualiza rótulo/contagem do botão de viagem
 
   // Gate de grupo: batalha (gancho) OU avanço de cena (intro puro em grupo).
   // Só prossegue com o OK de TODOS os jogadores.
@@ -2057,7 +2068,7 @@ function _executarNavegacao(novaCena) {
     if (window._fbMarcarVisitada) window._fbMarcarVisitada(_cenaAtual);
   }
   if (window._fbUpdateNarration) {
-    window._fbUpdateNarration({ cenaId: novaCena, modoImagem: 'exterior', introConfirmados: {}, introIdx: 0, percepcao: { ativo: false }, dialogo: [] });
+    window._fbUpdateNarration({ cenaId: novaCena, modoImagem: 'exterior', introConfirmados: {}, introIdx: 0, percepcao: { ativo: false }, dialogo: [], viagemConfirmados: {} });
   } else {
     _cenaAtual = novaCena; _modoImagem = 'exterior';
     atualizarCena(); atualizarBotoesModo(); atualizarBotoesCena();
@@ -2839,15 +2850,28 @@ function _dialAtualizarChips() {
     chip.onclick = () => _dialSelecionarNpc(i);
     bar.insertBefore(chip, spacer);
   });
-  // Botão "próxima cena" — mostra se a cena tem proximaCena
+  // Botão narrativo de avanço — rótulo específico da cena + progresso do grupo.
   const btnProximo = document.getElementById('dial-btn-proximo');
   if (btnProximo) {
     const cena = CENAS[_cenaAtual];
     const fluxo = NARRACAO_FLUXO?.find?.(f => f.id === _dialCampCenaAtiva) || NARRACAO_FLUXO?.find?.(f => f.id === _dialNarracaoCena);
-    const label = fluxo?.btnLabel || (cena?.proximaCena ? '→ Avançar' : null);
-    if (label) { btnProximo.textContent = label; btnProximo.style.display = 'block'; }
-    else btnProximo.style.display = 'none';
+    const proximaId = fluxo?.proximo || cena?.proximaCena;
+    const label = fluxo?.btnLabel || (proximaId ? '→ Avançar' : null);
+    if (label && proximaId) {
+      const conf = _lastRoom?.narration?.viagemConfirmados || {};
+      const jogadores = Object.keys(_lastRoom?.players || {});
+      const total = jogadores.length || 1;
+      const nConf = jogadores.length ? jogadores.filter(p => conf[p]).length : (conf[_pid] ? 1 : 0);
+      const euConfirmei = !!conf[_pid] && proximaId !== '_mapa';
+      btnProximo.style.display = 'block';
+      btnProximo.disabled = euConfirmei;
+      if (euConfirmei) btnProximo.textContent = `⌛ Aguardando o grupo… (${nConf}/${total})`;
+      else btnProximo.textContent = (total > 1 && nConf > 0) ? `${label}  (${nConf}/${total})` : label;
+    } else {
+      btnProximo.style.display = 'none';
+    }
   }
+  _atualizarBtnPercepcao();
   // Atualizar placeholder
   const npcAtivo = _dialNpcEls[_dialNpcAtivoIdx]?.npc;
   const input = document.getElementById('dial-msg-input');
@@ -3118,8 +3142,67 @@ window._dialProximaCena = function () {
     if (typeof abrirEscolhaCaminho === 'function') abrirEscolhaCaminho();
     return;
   }
-  _executarNavegacao(proximaId);
+  // Avanço narrativo EM GRUPO: cada jogador confirma; o grupo só viaja quando
+  // TODOS confirmarem (gate em _verificarViagemCompleta / onRoomUpdate).
+  if (window._fbConfirmarViagem) {
+    window._fbConfirmarViagem(_pid);
+    const btn = document.getElementById('dial-btn-proximo');
+    if (btn) { btn.disabled = true; btn.textContent = '⌛ Aguardando o grupo…'; }
+    if (_isHost) _verificarViagemCompleta(_lastRoom?.narration);
+  } else {
+    _executarNavegacao(proximaId);
+  }
 };
+
+// Resolve o ID da próxima cena de uma cena de diálogo (fluxo narrativo ou proximaCena).
+function _proximaIdDaCena(cenaId) {
+  const dial = CENAS[cenaId]?.dialCena;
+  const fluxo = NARRACAO_FLUXO?.find?.(f => f.id === cenaId) || (dial && NARRACAO_FLUXO?.find?.(f => f.id === dial));
+  return fluxo?.proximo || CENAS[cenaId]?.proximaCena || null;
+}
+
+// Host: navega o grupo quando TODOS confirmaram a viagem.
+function _verificarViagemCompleta(narr) {
+  if (!_isHost) return;
+  const proximaId = _proximaIdDaCena(_cenaAtual);
+  if (!proximaId || proximaId === '_mapa') return;
+  const conf = narr?.viagemConfirmados || {};
+  const jogadores = Object.keys(_lastRoom?.players || {});
+  const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : Object.keys(conf));
+  if (efetivos.length > 0 && efetivos.every(pid => conf[pid])) {
+    if (window._fbUpdateNarration) {
+      window._fbUpdateNarration({
+        cenaId: proximaId, modoImagem: 'exterior', introConfirmados: {}, introIdx: 0,
+        percepcao: { ativo: false }, dialogo: [], viagemConfirmados: {},
+      });
+    } else {
+      _executarNavegacao(proximaId);
+    }
+  }
+}
+
+// Teste de Percepção sob demanda (botão 🎲): o host convoca; o grupo rola.
+const _percUsadaCenas = new Set();
+function pedirPercepcao() {
+  if (!_isHost || _percepcaoEmAndamento) return;
+  const cena = CENAS[_cenaAtual];
+  const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
+  if (!hook || _percUsadaCenas.has(_cenaAtual)) return;
+  _percUsadaCenas.add(_cenaAtual);
+  _atualizarBtnPercepcao();
+  triggerTestePercepcao(hook, 'manual', null);
+}
+window.pedirPercepcao = pedirPercepcao;
+
+// Mostra/oculta o botão 🎲 Percepção conforme a cena tem gancho oculto e ainda não foi usado.
+function _atualizarBtnPercepcao() {
+  const btn = document.getElementById('dial-btn-perc');
+  if (!btn) return;
+  const cena = CENAS[_cenaAtual];
+  const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
+  const disponivel = _isHost && !!hook && !_percUsadaCenas.has(_cenaAtual);
+  btn.style.display = disponivel ? '' : 'none';
+}
 
 window._dialFecharDialogo = function () {
   _dialDesativar();
@@ -3190,6 +3273,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v14</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v15</div>
 </body>
 </html>

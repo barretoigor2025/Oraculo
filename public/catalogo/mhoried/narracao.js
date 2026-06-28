@@ -58,10 +58,12 @@ export const NARRACAO_CENAS = {
   },
 };
 
+// Cada cena de diálogo termina com um botão NARRATIVO de avanço (não "Sair").
+// O avanço é em GRUPO: todos clicam → o grupo viaja junto (ver viagemConfirmados).
 export const NARRACAO_FLUXO = [
-  { id:'feira',          proximo:'castelo_mhoried', btnLabel:'⚔️ Ir ao Castelo →' },
-  { id:'conversa_feira', proximo:'castelo_mhoried', btnLabel:'🏰 Ir ao Castelo →' },
-  { id:'castelo',        proximo:null },
+  { id:'feira',          proximo:'castelo_mhoried',    btnLabel:'🏰 Ir ao Castelo →' },
+  { id:'conversa_feira', proximo:'castelo_mhoried',    btnLabel:'🏰 Ir ao Castelo →' },
+  { id:'castelo',        proximo:'blackwoods_entrada', btnLabel:'🌲 Partir para os Blackwoods →' },
   // Hub do Ato 2: depois de falar com Aelar, o grupo escolhe a rota pelos
   // Blackwoods no mapa de exploração ('_mapa' = sentinela tratada na narração).
   { id:'blackwoods_entrada', proximo:'_mapa', btnLabel:'🗺 Explorar os Blackwoods →' },
