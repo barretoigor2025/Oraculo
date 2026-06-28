@@ -1133,6 +1133,7 @@ let animating   = false;
 let modoAtaque    = false;
 let habAtual      = null;   // habilidade selecionada
 let atkTargets    = [];     // hexes de alvos válidos
+let targetPreview = null;   // alvo único pré-selecionado {col,row} — re-clicável até confirmar
 
 // ── estado de turno ──
 let faseDoTurno          = 'idle';
@@ -1810,6 +1811,15 @@ function renderSel(){
         ctxS.fillStyle='rgba(255,60,0,0.18)'; ctxS.fill();
         ctxS.strokeStyle='rgba(255,100,0,0.55)'; ctxS.lineWidth=1.5; ctxS.stroke();
       }
+      // alvo pré-selecionado (re-clicável) — anel forte + seta, aguardando CONFIRMAR
+      if(targetPreview){
+        const{x,y}=hexCentro(targetPreview.col,targetPreview.row);
+        hexPath(ctxS,x,y); ctxS.fillStyle='rgba(255,80,0,0.40)'; ctxS.fill();
+        ctxS.save(); ctxS.shadowColor='#ff5a00'; ctxS.shadowBlur=16;
+        ctxS.strokeStyle='#ff9040'; ctxS.lineWidth=3; hexPath(ctxS,x,y); ctxS.stroke(); ctxS.restore();
+        const fp=posEfetiva(selUnit); const from=hexCentro(fp.col,fp.row);
+        drawArrow(ctxS,from.x,from.y,x,y);
+      }
     }
   } else {
     // range de movimento em azul
@@ -2053,7 +2063,7 @@ function _updateVerbBtns(){
 
 function cancelarAcaoPlano(){
   planoAtaque=null; modoAtaque=false; habAtual=null;
-  areaPreview=null; atkTargets=[];
+  areaPreview=null; atkTargets=[]; targetPreview=null;
   faseDoTurno='planejar_acao';
   _broadcastIntent();
   renderActionRow(); renderBottomPanel();
@@ -2062,14 +2072,14 @@ window.cancelarAcaoPlano = cancelarAcaoPlano;
 
 function confirmarAlvoUnico(){
   if(!habAtual||!selUnit) return;
-  // Usa primeiro atkTarget ou procura o único inimigo em alcance
-  const t = atkTargets[0];
+  // Confirma o alvo PRÉ-SELECIONADO (preview); se não houver, usa o único em alcance.
+  const t = targetPreview || atkTargets[0];
   const alvo = t
     ? unidades.find(u=>u.col===t.col&&u.row===t.row&&u.tipo==='inimigo'&&u.hp>0)
     : unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0)[0];
   if(!alvo){ cancelarAtaqueAtual(); return; }
   planoAtaque={hab:habAtual, atacante:selUnit, alvo};
-  modoAtaque=false; habAtual=null; atkTargets=[];
+  modoAtaque=false; habAtual=null; atkTargets=[]; targetPreview=null;
   faseDoTurno='acao_pronta';
   _broadcastIntent();
   renderActionRow(); renderSel(); renderBottomPanel();
@@ -2096,12 +2106,10 @@ function renderActionRow(){
     'acao_ativa': [
       {id:'btn-cancelar', icon:'✕', label:'CANCELAR', fn:'cancelarAtaqueAtual()', ativo:true},
       ...(habAtual?.areaRaio>0
-        // AoE: confirmação acontece no toque do hex, só CANCELAR aqui
-        ? []
-        // Alvo único: botão de confirmar direto
-        : atkTargets.length===1
-          ? [{id:'btn-confirmar', icon:'✓', label:'CONFIRMAR', fn:'confirmarAlvoUnico()', ativo:true}]
-          : []
+        // AoE: LANÇAR aparece quando há um centro de explosão escolhido (re-clicável)
+        ? (areaPreview ? [{id:'btn-lancar', icon:'💥', label:'LANÇAR', fn:'confirmarAoeAlvo()', ativo:true, extra:'destaque'}] : [])
+        // Alvo único: CONFIRMAR aparece quando há um alvo escolhido (re-clicável)
+        : (targetPreview ? [{id:'btn-confirmar', icon:'✓', label:'CONFIRMAR', fn:'confirmarAlvoUnico()', ativo:true, extra:'destaque'}] : [])
       ),
     ],
     'acao_pronta': [
@@ -2144,7 +2152,7 @@ function mostrarLetreiro(nome, sub, punicao, duracao, cb){
 function iniciarTurno(unit){
   planoMovimento=null; planoAtaque=null; movBloqueado=false;
   selUnit=unit; moveHexes=[]; targetHex=null; hexPreview=null;
-  modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null;
+  modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null; targetPreview=null;
   _broadcastIntent();
   faseDoTurno='planejar_mover';
   const ehHeroi = unit.tipo==='heroi';
@@ -2183,7 +2191,7 @@ function cancelarMover(){
 
 function cancelarAtaqueAtual(){
   faseDoTurno='planejar_acao';
-  modoAtaque=false; habAtual=null; atkTargets=[]; planoAtaque=null; areaPreview=null;
+  modoAtaque=false; habAtual=null; atkTargets=[]; planoAtaque=null; areaPreview=null; targetPreview=null;
   _broadcastIntent();
   fecharAtkPanel();
   ctxS.clearRect(0,0,MAP_W,MAP_H);
@@ -2202,7 +2210,7 @@ function confirmarAoeAlvo(){
     alvo:{col:areaPreview.col,row:areaPreview.row},
     areaAlvos
   };
-  modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null;
+  modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null; targetPreview=null;
   faseDoTurno='acao_pronta';
   _broadcastIntent();
   renderActionRow(); renderBottomPanel(); renderSel();
@@ -2212,7 +2220,7 @@ function voltarParaAlvo(){
   if(!planoAtaque) return;
   const hab=planoAtaque.hab;
   if(!hab||hab.alcance===0||hab.tipo==='buff') return;
-  planoAtaque=null; areaPreview=null;
+  planoAtaque=null; areaPreview=null; targetPreview=null;
   habAtual=hab; modoAtaque=true;
   const _pos=posEfetiva(selUnit);
   if(hab.areaRaio>0){
@@ -2224,6 +2232,7 @@ function voltarParaAlvo(){
   } else {
     atkTargets=unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0&&
       hexDist(_pos.col,_pos.row,u.col,u.row)<=hab.alcance).map(u=>({col:u.col,row:u.row}));
+    targetPreview = atkTargets.length===1 ? atkTargets[0] : null;
   }
   faseDoTurno='acao_ativa';
   _broadcastIntent();
@@ -3196,6 +3205,7 @@ function clicarAtacar(){
   habAtual=basicos[0];
   modoAtaque=true;
   atkTargets=inimigosAlvo.map(u=>({col:u.col,row:u.row}));
+  targetPreview = atkTargets.length===1 ? atkTargets[0] : null; // 1 alvo: já pré-seleciona
   faseDoTurno='acao_ativa';
   renderActionRow(); renderSel(); renderBottomPanel();
 }
@@ -3487,7 +3497,7 @@ function selecionarHabilidade(hab){
     return;
   }
 
-  habAtual=hab; modoAtaque=true; areaPreview=null;
+  habAtual=hab; modoAtaque=true; areaPreview=null; targetPreview=null;
   faseDoTurno='acao_ativa';
 
   const _pos=posEfetiva(selUnit);
@@ -3513,6 +3523,7 @@ function selecionarHabilidade(hab){
     return hexDist(_pos.col,_pos.row,u.col,u.row)<=hab.alcance;
   });
   atkTargets=inimigosAlvo.map(u=>({col:u.col,row:u.row}));
+  targetPreview = atkTargets.length===1 ? atkTargets[0] : null; // 1 alvo: já pré-seleciona
 
   if(!inimigosAlvo.length){
     modoAtaque=false; habAtual=null;
@@ -3577,28 +3588,27 @@ document.getElementById('world').addEventListener('pointerdown',e=>{
     if(inimigo){ clicarAtacar(); return; }
   }
 
-  // Fase ação_ativa: clique em alvo
+  // Fase ação_ativa: clique em alvo → PREVIEW (re-clicável). Só confirma no botão.
   if(faseDoTurno==='acao_ativa' && modoAtaque && habAtual && hex){
     if(habAtual.areaRaio>0){
-      // AoE: clique em qualquer hex do alcance seleciona o centro da explosão
-      if(atkTargets.some(h=>h.col===hex.col&&h.row===hex.row)){
-        areaPreview={col:hex.col,row:hex.row};
-        confirmarAoeAlvo();
-      } else {
-        cancelarAtaqueAtual();
-      }
+      // AoE: clicar dentro do alcance posiciona o centro da explosão (sem lançar).
+      // Clicar fora apenas limpa o preview — não cancela o ataque.
+      areaPreview = atkTargets.some(h=>h.col===hex.col&&h.row===hex.row)
+        ? {col:hex.col,row:hex.row} : null;
+      _broadcastIntent();
+      render(); renderActionRow(); renderBottomPanel();
       return;
     }
+    // Alvo único: clicar num inimigo válido vira preview; re-clicar troca de alvo.
     const alvo=unidades.find(u=>u.col===hex.col&&u.row===hex.row&&u.tipo==='inimigo');
     if(alvo && atkTargets.some(h=>h.col===hex.col&&h.row===hex.row)){
-      planoAtaque={hab:habAtual, atacante:selUnit, alvo};
-      modoAtaque=false; habAtual=null; atkTargets=[];
-      faseDoTurno='acao_pronta';
-      _broadcastIntent();
-      renderActionRow(); renderSel(); renderBottomPanel();
-      return;
+      targetPreview={col:hex.col,row:hex.row};
+    } else {
+      targetPreview=null; // clique fora dos alvos: limpa preview, mantém modo
     }
-    cancelarAtaqueAtual(); return;
+    _broadcastIntent();
+    render(); renderActionRow(); renderSel(); renderBottomPanel();
+    return;
   }
 
   // Fase mover_ativo: clique em hex → preview (verde), aguarda OK
