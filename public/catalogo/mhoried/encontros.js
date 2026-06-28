@@ -66,7 +66,12 @@ export const MAPAS_BATALHA = {
 };
 // Emboscadas de viagem: usam o mapa de floresta da encruzilhada (cai na Feira até existir)
 export function mapaDaKey(key){
-  if (!key) return MAPA_FALLBACK;
-  if (key.startsWith('_emboscada')) return MAPAS_BATALHA.encruzilhada || MAPA_FALLBACK;
-  return MAPAS_BATALHA[key] || MAPA_FALLBACK;
+  let info;
+  if (!key) info = MAPA_FALLBACK;
+  else if (key.startsWith('_emboscada')) info = MAPAS_BATALHA.encruzilhada || MAPA_FALLBACK;
+  else info = MAPAS_BATALHA[key] || MAPA_FALLBACK;
+  // Terreno: usa o definido, ou deriva do mapa ({cena}.png → {cena}-terreno.json).
+  // Se o JSON não existir, a Arena ignora (404 tratado). Crie pelo terreno_editor.html.
+  const terreno = info.terreno || (info.mapa ? info.mapa.replace(/\.png$/, '-terreno.json') : null);
+  return { mapa: info.mapa, terreno };
 }
