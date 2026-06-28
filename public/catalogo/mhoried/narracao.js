@@ -58,14 +58,25 @@ export const NARRACAO_CENAS = {
   },
 };
 
-// Cada cena de diálogo termina com um botão NARRATIVO de avanço (não "Sair").
-// O avanço é em GRUPO: todos clicam → o grupo viaja junto (ver viagemConfirmados).
+// Botão NARRATIVO de avanço por cena. Ele só aparece quando o destino fica
+// EVIDENTE na conversa:
+//   • revelarImediato:true → canônico, o NPC já demonstra a intenção logo (ex.: Gregoras
+//     quase na primeira fala já manda ir ao Castelo) → botão aparece de cara.
+//   • revelaSe:[palavras] → o botão só surge quando alguma fala de NPC/Narrador menciona
+//     uma dessas palavras (o NPC revelou onde fica o lugar). Ex.: a elfa dizendo onde
+//     está o piromante destrava o botão para as Ruínas.
+// O 🗺 Mapa fica sempre disponível na barra (viajar a qualquer momento).
+// Avanço é em GRUPO: todos clicam → o grupo viaja junto (ver viagemConfirmados).
 export const NARRACAO_FLUXO = [
-  { id:'feira',          proximo:'castelo_mhoried',    btnLabel:'🏰 Ir ao Castelo →' },
-  { id:'conversa_feira', proximo:'castelo_mhoried',    btnLabel:'🏰 Ir ao Castelo →' },
+  { id:'feira',          proximo:'castelo_mhoried',    btnLabel:'🏰 Ir ao Castelo →', revelarImediato:true },
+  { id:'conversa_feira', proximo:'castelo_mhoried',    btnLabel:'🏰 Ir ao Castelo →', revelarImediato:true },
   // Ao sair do Castelo o grupo pega a estrada — abre o MAPA DO MUNDO (mapa.html),
   // onde viaja com os bonequinhos pela floresta ('_mapa' = handoff p/ mapa.html).
-  { id:'castelo',        proximo:'_mapa', btnLabel:'🌲 Partir para os Blackwoods →' },
+  { id:'castelo',        proximo:'_mapa', btnLabel:'🌲 Partir para os Blackwoods →', revelarImediato:true },
   // Hub do Ato 2: depois de falar com Aelar, o grupo viaja pelo mapa.
-  { id:'blackwoods_entrada', proximo:'_mapa', btnLabel:'🗺 Seguir pela floresta →' },
+  { id:'blackwoods_entrada', proximo:'_mapa', btnLabel:'🗺 Seguir pela floresta →', revelarImediato:true },
+  // Exemplo de revelação contextual: Mac Rónán conta que o Duque Oswald está no
+  // Gloamreach → o botão para lá só aparece quando ele menciona isso.
+  { id:'cnoc_na_rithe',  proximo:'gloamreach', btnLabel:'💀 Rumo ao Gloamreach →',
+    revelaSe:['gloamreach','oswald está','portal','onde está oswald'] },
 ];

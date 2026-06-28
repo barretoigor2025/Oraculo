@@ -904,6 +904,7 @@ html,body{
 }
 .dial-btn-sair{border-color:rgba(200,80,60,.40);background:rgba(200,80,60,.12);color:rgba(235,130,110,.90);}
 .dial-btn-perc{border-color:rgba(120,160,220,.45);background:rgba(80,120,200,.15);color:rgba(150,195,240,.95);}
+.dial-btn-mapa{border-color:rgba(120,180,120,.45);background:rgba(60,140,80,.15);color:rgba(150,220,170,.95);}
 .dial-btn-acao:disabled{opacity:.5;cursor:default;}
 
 /* Turno bar (chips de jogadores) */
@@ -1140,6 +1141,7 @@ html,body{
     <span class="dial-chip-label">Falar com:</span>
     <div class="dial-chip-spacer"></div>
     <button id="dial-btn-perc" class="dial-btn-acao dial-btn-perc" style="display:none" onclick="pedirPercepcao()">🎲 Percepção</button>
+    <button id="dial-btn-mapa" class="dial-btn-acao dial-btn-mapa" style="display:none" onclick="_irParaMapaMundo()">🗺 Mapa</button>
     <button id="dial-btn-proximo" class="dial-btn-acao" style="display:none" onclick="window._dialProximaCena()">→ Continuar</button>
   </div>
 
@@ -2860,6 +2862,20 @@ function _dialDesativar() {
   elLog.style.display = '';
 }
 
+// Destino "evidente"? revelarImediato (canônico, NPC já diz logo) OU revelaSe
+// (alguma fala de NPC/Narrador na conversa contém uma das palavras-chave).
+function _dialDestinoRevelado(fluxo) {
+  if (!fluxo) return false;
+  if (fluxo.revelarImediato) return true;
+  if (Array.isArray(fluxo.revelaSe) && fluxo.revelaSe.length) {
+    const txt = (_dialogoLog || [])
+      .filter(b => b.tipo === 'npc' || b.tipo === 'narrador')
+      .map(b => (b.texto || '').toLowerCase()).join(' \n ');
+    return fluxo.revelaSe.some(k => txt.includes(String(k).toLowerCase()));
+  }
+  return false;
+}
+
 // ── NPC chips ─────────────────────────────────────────────
 function _dialAtualizarChips() {
   const bar = document.getElementById('dial-npc-chips');
@@ -2872,14 +2888,15 @@ function _dialAtualizarChips() {
     chip.onclick = () => _dialSelecionarNpc(i);
     bar.insertBefore(chip, spacer);
   });
-  // Botão narrativo de avanço — rótulo específico da cena + progresso do grupo.
+  // Botão narrativo de avanço — só aparece quando a conversa torna o destino
+  // EVIDENTE (revelarImediato: canônico, ex. Gregoras; ou revelaSe: NPC mencionou).
   const btnProximo = document.getElementById('dial-btn-proximo');
   if (btnProximo) {
     const cena = CENAS[_cenaAtual];
     const fluxo = NARRACAO_FLUXO?.find?.(f => f.id === _dialCampCenaAtiva) || NARRACAO_FLUXO?.find?.(f => f.id === _dialNarracaoCena);
     const proximaId = fluxo?.proximo || cena?.proximaCena;
     const label = fluxo?.btnLabel || (proximaId ? '→ Avançar' : null);
-    if (label && proximaId) {
+    if (label && proximaId && _dialDestinoRevelado(fluxo)) {
       const conf = _lastRoom?.narration?.viagemConfirmados || {};
       const jogadores = Object.keys(_lastRoom?.players || {});
       const total = jogadores.length || 1;
@@ -2892,6 +2909,12 @@ function _dialAtualizarChips() {
     } else {
       btnProximo.style.display = 'none';
     }
+  }
+  // Botão 🗺 Mapa — sempre disponível enquanto a cena for um nó do mundo,
+  // para o grupo poder viajar a qualquer momento.
+  const btnMapa = document.getElementById('dial-btn-mapa');
+  if (btnMapa) {
+    btnMapa.style.display = (_isHost && MAPA_NOS[_cenaAtual]) ? 'block' : 'none';
   }
   _atualizarBtnPercepcao();
   // Atualizar placeholder
@@ -3314,6 +3337,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v18</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v19</div>
 </body>
 </html>
