@@ -387,6 +387,17 @@ html,body{
   letter-spacing:.5px;
 }
 #btn-iniciar-batalha:hover{background:rgba(180,50,20,.5);}
+#btn-seguir-viagem{
+  flex:2;
+  background:rgba(40,90,60,.35);
+  border:1px solid rgba(80,180,120,.5);
+  border-radius:6px;color:#7fe0a8;
+  font-size:12px;font-family:inherit;font-weight:700;
+  padding:7px 10px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background .15s;
+  letter-spacing:.5px;
+}
+#btn-seguir-viagem:hover{background:rgba(40,120,80,.5);}
 
 /* ── CONFIG (chave de API) ── */
 #cfg-overlay{
@@ -1015,6 +1026,7 @@ html,body{
       <button class="btn-cena" id="btn-cfg-ia" onclick="abrirCfgIA()">⚙ IA</button>
       <button class="btn-cena" id="btn-cena-prox" onclick="navegarCena(1)">Próx. Cena →</button>
       <button class="btn-cena" id="btn-mapa-exp" onclick="abrirMapaExploracao()">🗺 Mapa</button>
+      <button id="btn-seguir-viagem" style="display:none" onclick="abrirEscolhaCaminho()">🧭 Seguir Viagem</button>
       <button id="btn-iniciar-batalha" onclick="iniciarBatalha()">⚔ Batalha!</button>
     </div>
   </div>
@@ -1299,6 +1311,7 @@ function onRoomUpdate(room) {
   if (mudouCena) _dialDesativar();
   _dialVerificarCena();
   atualizarBotoesCena();
+  _atualizarAcaoCena(narr);
 
   // Gate de grupo: batalha (gancho) OU avanço de cena (intro puro em grupo).
   // Só prossegue com o OK de TODOS os jogadores.
@@ -1663,6 +1676,21 @@ function atualizarBotoesCena() {
   const idx = CENAS_ORDEM.indexOf(_cenaAtual);
   if (elBtnGerAnt) elBtnGerAnt.disabled = idx <= 0;
   if (elBtnGerProx) elBtnGerProx.disabled = idx >= CENAS_ORDEM.length - 1;
+}
+
+// Alterna "⚔ Batalha!" ↔ "🧭 Seguir Viagem" conforme a cena.
+// Cena de exploração já vencida (cenaBatalhaResolvida) e com trilhas saindo →
+// oferece seguir viagem (seletor de caminho) em vez de re-iniciar a batalha.
+function _atualizarAcaoCena(narr) {
+  if (!_isHost) return;
+  const cena = CENAS[_cenaAtual];
+  const resolvida = narr?.cenaBatalhaResolvida === _cenaAtual;
+  const temCaminhos = _caminhosDe(_cenaAtual).length > 0;
+  const mostrarSeguir = resolvida && temCaminhos && !cena?.proximaCena;
+  const btnBat = document.getElementById('btn-iniciar-batalha');
+  const btnSeg = document.getElementById('btn-seguir-viagem');
+  if (btnSeg) btnSeg.style.display = mostrarSeguir ? '' : 'none';
+  if (btnBat) btnBat.style.display = mostrarSeguir ? 'none' : '';
 }
 
 function setModoImagem(modo) {
@@ -3162,6 +3190,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v13</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v14</div>
 </body>
 </html>

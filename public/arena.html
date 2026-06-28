@@ -3823,7 +3823,25 @@ function onRoomUpdate(room){
       // Marca a batalha desta cena como vencida (anti-loop: não re-dispara ao voltar)
       const resolvida = ehEmboscada ? (room.narration?.cenaBatalhaResolvida ?? null) : cenaAtualId;
       if(!ehEmboscada && !cenaAtual?.proximaCena){
-        window._fbSetStatus?.('map',{ 'narration.battleKey': null, 'narration.cenaBatalhaResolvida': resolvida, postBattleConfirmados:{}, batalha:{} });
+        const ganchoFim = cenaAtual?.ganchoPosBatalha ?? null;
+        if(ganchoFim){
+          // Cena de exploração sem continuação, mas COM gancho pós-batalha (ex.: a pista
+          // na prótese do javali da Encruzilhada). Volta à narração da MESMA cena, já
+          // marcada como resolvida (não re-embosca), mostra o gancho e o jogador segue
+          // viagem pelo seletor de caminho.
+          window._fbSetStatus?.('narration',{
+            'narration.cenaId': cenaAtualId,
+            'narration.battleKey': null,
+            'narration.cenaBatalhaResolvida': cenaAtualId,
+            'narration.modoImagem':'exterior',
+            'narration.dialogo': [{ tipo:'narrador', oradorId:'narrador', oradorNome:'Narrador', texto: ganchoFim.texto, ts: Date.now() }],
+            'narration.introConfirmados':{},
+            'narration.ganchoPosRenderizado': ganchoFim?.npc ?? null,
+            postBattleConfirmados:{}, batalha:{},
+          });
+        } else {
+          window._fbSetStatus?.('map',{ 'narration.battleKey': null, 'narration.cenaBatalhaResolvida': resolvida, postBattleConfirmados:{}, batalha:{} });
+        }
         return;
       }
       const proximaCena = ehEmboscada ? cenaAtualId : cenaAtual.proximaCena;
@@ -4222,6 +4240,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v13</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v14</div>
 </body>
 </html>
