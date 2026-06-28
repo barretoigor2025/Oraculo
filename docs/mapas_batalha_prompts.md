@@ -1,119 +1,97 @@
 # Mapas de Batalha — Caderno de Prompts (Mhoried)
 
-> Gere cada imagem e salve no caminho indicado. Proporção 16:9 (1920×1080), **sem personagens**.
-> Enquanto o arquivo não existir, a Arena usa o mapa da Feira como fallback (a batalha funciona normalmente).
+> **IMPORTANTE — jogo de celular:** todas as imagens são **VERTICAIS / retrato (9:16, 1080×1920)**.
+> O cenário é o **campo de jogo** (fundo funcional): legível, com **espaço aberto pra colocar
+> as peças por cima**, sem ser o protagonista — nada de drama/poluição visual excessiva.
+> **Sem personagens** (a engine põe os tokens). Gere **uma imagem por prompt** (um de cada vez).
+> Enquanto o arquivo não existir, a Arena usa o mapa da Feira como fallback.
 
-| Cena | Inimigos | Arquivo |
-|---|---|---|
-| mhoried_market | Espantalhos de Choir | ✅ já existe |
-| encruzilhada | Blackwoods Boar | catalogo/mhoried/cenarios/batalha_hex/encruzilhada/imagem/encruzilhada.png |
-| campo_aranhas | Aranhas Gigantes | catalogo/mhoried/cenarios/batalha_hex/campo_aranhas/imagem/campo_aranhas.png |
-| acampamento_elfico | Guerreiros Vhuureth | catalogo/mhoried/cenarios/batalha_hex/acampamento_elfico/imagem/acampamento_elfico.png |
-| kobold_town | Kobolds de Blunkin | catalogo/mhoried/cenarios/batalha_hex/kobold_town/imagem/kobold_town.png |
-| gloamreach | Thools e Alquimistas de Choir | catalogo/mhoried/cenarios/batalha_hex/gloamreach/imagem/gloamreach.png |
-| torre_limm | Rei Chutter + Golems de Pergaminho | catalogo/mhoried/cenarios/batalha_hex/torre_limm/imagem/torre_limm.png |
-| drowned_grove | Patrulha Vhuureth + Mudwallowers + Quay Grabber + Crab Zombies | catalogo/mhoried/cenarios/batalha_hex/drowned_grove/imagem/drowned_grove.png |
-| manticore_grounds | Albino Manticore | catalogo/mhoried/cenarios/batalha_hex/manticore_grounds/imagem/manticore_grounds.png |
-| great_grub_carcass | Log-Wife | catalogo/mhoried/cenarios/batalha_hex/great_grub_carcass/imagem/great_grub_carcass.png |
-| ruins_simithari | Marrowwithers | catalogo/mhoried/cenarios/batalha_hex/ruins_simithari/imagem/ruins_simithari.png |
-| ysoria_revelacao | Ysoria (espírito corrompido) | catalogo/mhoried/cenarios/batalha_hex/ysoria_revelacao/imagem/ysoria_revelacao.png |
-| twinfold_hollow | Barkthreshers | catalogo/mhoried/cenarios/batalha_hex/twinfold_hollow/imagem/twinfold_hollow.png |
+| # | Cena | Inimigos | Arquivo |
+|---|---|---|---|
+| – | mhoried_market | Espantalhos de Choir | ✅ já existe |
+| 1 | encruzilhada | Blackwoods Boar | catalogo/mhoried/cenarios/batalha_hex/encruzilhada/imagem/encruzilhada.png |
+| 2 | campo_aranhas | Aranhas Gigantes | catalogo/mhoried/cenarios/batalha_hex/campo_aranhas/imagem/campo_aranhas.png |
+| 3 | acampamento_elfico | Guerreiros Vhuureth | catalogo/mhoried/cenarios/batalha_hex/acampamento_elfico/imagem/acampamento_elfico.png |
+| 4 | kobold_town | Kobolds de Blunkin | catalogo/mhoried/cenarios/batalha_hex/kobold_town/imagem/kobold_town.png |
+| 5 | gloamreach | Thools e Alquimistas de Choir | catalogo/mhoried/cenarios/batalha_hex/gloamreach/imagem/gloamreach.png |
+| 6 | torre_limm | Rei Chutter + Golems de Pergaminho | catalogo/mhoried/cenarios/batalha_hex/torre_limm/imagem/torre_limm.png |
+| 7 | drowned_grove | Patrulha Vhuureth + Mudwallowers + Quay Grabber + Crab Zombies | catalogo/mhoried/cenarios/batalha_hex/drowned_grove/imagem/drowned_grove.png |
+| 8 | manticore_grounds | Albino Manticore | catalogo/mhoried/cenarios/batalha_hex/manticore_grounds/imagem/manticore_grounds.png |
+| 9 | great_grub_carcass | Log-Wife | catalogo/mhoried/cenarios/batalha_hex/great_grub_carcass/imagem/great_grub_carcass.png |
+| 10 | ruins_simithari | Marrowwithers | catalogo/mhoried/cenarios/batalha_hex/ruins_simithari/imagem/ruins_simithari.png |
+| 11 | ysoria_revelacao | Ysoria (espírito corrompido) | catalogo/mhoried/cenarios/batalha_hex/ysoria_revelacao/imagem/ysoria_revelacao.png |
+| 12 | twinfold_hollow | Barkthreshers | catalogo/mhoried/cenarios/batalha_hex/twinfold_hollow/imagem/twinfold_hollow.png |
 
 ---
 
-## encruzilhada — A Encruzilhada
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/encruzilhada/imagem/encruzilhada.png`  
-**Inimigos:** Blackwoods Boar
-
+## 1) encruzilhada — A Encruzilhada
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/encruzilhada/imagem/encruzilhada.png` · **Inimigos:** Blackwoods Boar
 ```
-Isometric tactical RPG battle map. Forest crossroads on a muddy dirt road, overcast midday light — diffuse, flat, no dramatic shadows. Four paths meeting in a rough clearing. Old rotting signpost at center, leaning. Dense undergrowth at each road edge — brambles and low shrubs. Large exposed tree roots and rocks as natural obstacles. Soft muddy ground with boar tracks churned into the earth approaching from one direction. Cart wheel ruts in the mud. Patches of tall grass. Muted autumn palette: brown mud, faded green, bark grey. Feels ordinary and open — the danger comes from outside the frame. No characters. Isometric battle map, Tactics Ogre style.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — clear, readable ground with plenty of open space to place character tokens on top; the terrain is a calm backdrop, not the focus, uncluttered and balanced. Forest crossroads on a muddy dirt road, soft overcast light, flat diffuse shadows. Four paths meeting in a clearing, old leaning signpost at center, brambles and low shrubs along the edges, exposed roots and rocks as scattered obstacles, boar tracks and cart ruts in the mud. Muted autumn palette: brown mud, faded green, bark grey. No characters. Painterly tactical map, Tactics Ogre style.
 ```
 
-## campo_aranhas — O Campo das Aranhas
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/campo_aranhas/imagem/campo_aranhas.png`  
-**Inimigos:** Aranhas Gigantes
-
+## 2) campo_aranhas — O Campo das Aranhas
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/campo_aranhas/imagem/campo_aranhas.png` · **Inimigos:** Aranhas Gigantes
 ```
-Isometric tactical RPG battle map. Open forest clearing overrun by massive spider webs. Web strands stretch between tree trunks and low branches creating a half-canopy that shadows the ground. Ground: dry leaves, white silk-wrapped cocoon bundles (animal prey), bare dark earth. Large tree stumps at irregular intervals — cover and elevation. Bright daylight above filtered through webs into pale white diffused light. Web anchors create natural grid subdivisions. Color: silver-white webs, pale brown earth, deep green forest. Striking, not claustrophobic. No characters. Isometric tactical view, Fire Emblem HD painterly style.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — clear readable ground with open space for character tokens; terrain is a backdrop, not the focus, uncluttered. Forest clearing webbed with spider silk: strands stretch between trunks along the edges, white silk cocoon bundles and dry leaves on the ground, a few tree stumps as cover. Pale diffuse daylight filtering through webs. Center stays open and walkable for gameplay. Palette: silver-white webs, pale brown earth, deep green forest. No characters. Painterly tactical map, Fire Emblem HD style.
 ```
 
-## acampamento_elfico — Acampamento dos Vhuureth
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/acampamento_elfico/imagem/acampamento_elfico.png`  
-**Inimigos:** Guerreiros Vhuureth
-
+## 3) acampamento_elfico — Acampamento dos Vhuureth
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/acampamento_elfico/imagem/acampamento_elfico.png` · **Inimigos:** Guerreiros Vhuureth
 ```
-Isometric tactical RPG battle map. Ancient elven forest encampment, late afternoon golden light. Semi-permanent camp: elegant pavilion tents of deep green and silver cloth between massive ancient trees. Glowing elven lanterns on branches — soft cyan light. Cold central fire pit. Training dummies and weapon racks at the edges. Low rope barriers marking perimeter. Carved stone dais with empty high-backed chair. Ground: thick moss and fallen silver leaves. Regal but militarized — a command post. Color: deep forest green, silver, amber wood, cyan light accents. No characters. Isometric RPG battle map, Tactics Ogre style.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — clear readable ground with open space for tokens; terrain is a calm backdrop, not the focus. Elven forest encampment in soft late-afternoon light. Pavilion tents of green and silver cloth around the edges, glowing cyan lanterns on branches, a cold central fire pit, weapon racks and low rope barriers at the perimeter, moss and silver leaves on the ground. Open central area kept walkable for gameplay. Palette: forest green, silver, amber wood, cyan accents. No characters. Painterly tactical map, Tactics Ogre style.
 ```
 
-## kobold_town — A Cidade Kobold
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/kobold_town/imagem/kobold_town.png`  
-**Inimigos:** Kobolds de Blunkin
-
+## 4) kobold_town — A Cidade Kobold
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/kobold_town/imagem/kobold_town.png` · **Inimigos:** Kobolds de Blunkin
 ```
-Isometric tactical RPG battle map. Underground kobold settlement carved into cave rock, torch-lit with warm orange-red glow. Low ceiling with stalactites. Structures from scrap wood, salvaged crates and barrels stacked as walls and towers. Narrow winding alleys between buildings. Central open plaza with wooden platform. Iron cage hanging from a stalactite — empty but significant. Cooking fires, tribal flags in orange and brown. Crude rope bridges over a small ravine crossing the map. Ground: packed dirt, loose gravel, puddles reflecting torchlight. Chaotic and cramped, full of tactical variety. Color: deep ochre, burnt orange, cave grey. No characters. Isometric battle map, Fire Emblem style.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — readable ground with clear walkable lanes for tokens; terrain is a backdrop, not the focus. Underground kobold settlement in cave rock, warm torch glow. Scrap-wood huts, stacked crates and barrels as low walls along the edges, narrow lanes and a central open plaza with a wooden platform, tribal flags, puddles reflecting torchlight. Keep paths and plaza open for gameplay, structures pushed to the sides. Palette: deep ochre, burnt orange, cave grey. No characters. Painterly tactical map, Fire Emblem style.
 ```
 
-## gloamreach — O Gloamreach
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/gloamreach/imagem/gloamreach.png`  
-**Inimigos:** Thools e Alquimistas de Choir
-
+## 5) gloamreach — O Gloamreach
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/gloamreach/imagem/gloamreach.png` · **Inimigos:** Thools e Alquimistas de Choir
 ```
-Isometric tactical RPG battle map. Underground temple entrance hall, ancient elven architecture corrupted by necromantic use. High carved stone arches with runes glowing sickly violet. Central chamber with raised ritual platform — altar with alchemical apparatus (glass tubes, dark liquid). Stone pillars creating cover corridors. Alcoves in the walls occupied by shadows. Floor: polished dark stone with runic diagrams etched in glowing lines. Flickering magical torches in wall sconces casting green-purple light. Door at the back sealed by a magical glyph. Color: deep stone grey, violet rune light, greenish shadow. Oppressive grandeur. No characters. Isometric tactical RPG map, painterly style.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — readable dark-stone floor with open walkable space for tokens; terrain is a backdrop, not the focus. Corrupted elven underground temple hall. Carved stone arches with faint violet runes along the edges, a raised ritual platform with alchemical apparatus toward one end, stone pillars as scattered cover, runic diagrams etched faintly in the floor. Central floor kept clear for gameplay. Palette: deep stone grey, violet rune light, greenish shadow. No characters. Painterly tactical map.
 ```
 
-## torre_limm — A Torre das Estrelas de Limm
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/torre_limm/imagem/torre_limm.png`  
-**Inimigos:** Rei Chutter + Golems de Pergaminho
-
+## 6) torre_limm — A Torre das Estrelas de Limm
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/torre_limm/imagem/torre_limm.png` · **Inimigos:** Rei Chutter + Golems de Pergaminho
 ```
-Isometric tactical RPG battle map. Circular throne room at the top of a dark stone tower — open to the sky above (starless, shadows pointing the wrong direction). Central raised dais with a twisted throne of black iron and yellowed parchment. Concentric floor rings of carved runes glowing deep red. Shattered stone columns around the edges — partial cover. Stacks of massive old tomes and rolled scrolls as terrain obstacles. Narrow walkway ringing the outer edge with a sheer drop implied. Wind-torn banners of black cloth. Color: dark stone, deep crimson runes, pale moonlight from above, yellow-ivory of old parchment. Dramatic and final. No characters. Isometric battle map, Fire Emblem HD style.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — readable circular floor with open walkable space for tokens; terrain is a backdrop, not the focus. Circular throne room atop a dark tower, open to a starless sky. A twisted iron-and-parchment throne on a raised dais at one end, concentric floor rings of dim red runes, shattered columns and stacks of old tomes as scattered cover at the edges. Center kept clear for gameplay. Palette: dark stone, deep crimson runes, pale moonlight, ivory parchment. No characters. Painterly tactical map, Fire Emblem HD style.
 ```
 
-## drowned_grove — O Bosque Afogado
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/drowned_grove/imagem/drowned_grove.png`  
-**Inimigos:** Patrulha Vhuureth + Mudwallowers + Quay Grabber + Crab Zombies
-
+## 7) drowned_grove — O Bosque Afogado
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/drowned_grove/imagem/drowned_grove.png` · **Inimigos:** Patrulha Vhuureth + Mudwallowers + Quay Grabber + Crab Zombies
 ```
-Isometric tactical RPG battle map. Flooded forest clearing with shallow dark water covering most of the ground (ankle to knee depth). Dead and twisted trees emerge from the water — bare black branches. Ruins of an ancient elven stone tower at center, partially submerged, mossy and crumbling. Stepping stones and exposed tree roots provide dry footing in a maze pattern. Submerged rubble creates uneven depth. Mist at water level. Murky green-black water with surface reflections. Atmosphere: grey overcast light, eerie stillness, slight luminescence from underwater ruins. Color: dark green, grey stone, black water, pale sky. Mixed terrain (dry/wet) tactical challenge. No characters. Isometric battle map, painterly fantasy style.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — readable ground with clear dry footing for tokens; terrain is a backdrop, not the focus. Flooded forest clearing with shallow dark water. Dead twisted trees emerge along the edges, a crumbling submerged elven tower ruin toward one side, stepping stones and exposed roots forming dry walkable paths across the water, mist at water level. Keep a clear dry route network for gameplay. Palette: dark green, grey stone, black water, pale sky. No characters. Painterly fantasy tactical map.
 ```
 
-## manticore_grounds — O Território da Manticore
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/manticore_grounds/imagem/manticore_grounds.png`  
-**Inimigos:** Albino Manticore
-
+## 8) manticore_grounds — O Território da Manticore
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/manticore_grounds/imagem/manticore_grounds.png` · **Inimigos:** Albino Manticore
 ```
-Isometric tactical RPG battle map. Open rocky hillside clearing within the Blackwoods, midday light — bright and exposed. Large flat rocks and boulders scattered for cover. Sparse dead trees with deep claw marks in the bark. Bones of large animals half-buried in dirt. White fur tufts snagged on thorny bushes. One corner: carcass of a large black stag on the ground — the bait. Natural rock formation creating elevated position on one side. High grass at the edges. Color: slate grey rocks, dry brown earth, white bone, sparse muted green. Bright and open — nowhere to hide from aerial attack. No characters. Isometric battle map, Fire Emblem HD style.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — open, readable ground for tokens; terrain is a backdrop, not the focus. Rocky hillside clearing in bright midday light, exposed and open. Scattered flat boulders for cover, sparse dead trees with claw marks, half-buried animal bones, a black stag carcass in one corner (bait), a low rock outcrop as elevation on one side. Mostly open ground for gameplay. Palette: slate grey rock, dry brown earth, white bone, muted green. No characters. Painterly tactical map, Fire Emblem HD style.
 ```
 
-## great_grub_carcass — A Carcaça do Grande Verme
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/great_grub_carcass/imagem/great_grub_carcass.png`  
-**Inimigos:** Log-Wife
-
+## 9) great_grub_carcass — A Carcaça do Grande Verme
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/great_grub_carcass/imagem/great_grub_carcass.png` · **Inimigos:** Log-Wife
 ```
-Isometric tactical RPG battle map. Ancient stone wall (partially collapsed) encircling a cursed clearing. At center: the enormous decomposing carcass of a giant larva — larger than a house, grey-green and deflated, crushing vegetation beneath it. Necrotic runes carved into surrounding stones glow faintly sick yellow-green. Ground around the carcass churned and disturbed — something has been pulling from below. Ground cracks radiate outward from the carcass center (danger zones). Luminescent mushrooms growing in a spiral on one dead tree stump (the ingredient). Stone wall sections of varying height create perimeter cover. Color: stone grey, rot-green, sick yellow runes, dark earth, glowing blue mushrooms. No characters. Isometric battle map, tactical RPG style.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — readable ground with walkable space around the center for tokens; terrain is a backdrop, not the focus. Cursed clearing ringed by a partially collapsed stone wall. The deflated grey-green carcass of a giant larva toward one end, faint sick-yellow necrotic runes on the surrounding stones, ground cracks radiating outward, a cluster of glowing blue mushrooms on a stump. Open walkable ground around the carcass for gameplay. Palette: stone grey, rot-green, sick yellow, dark earth, glowing blue. No characters. Painterly tactical map.
 ```
 
-## ruins_simithari — As Ruínas de Simithari
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/ruins_simithari/imagem/ruins_simithari.png`  
-**Inimigos:** Marrowwithers
-
+## 10) ruins_simithari — As Ruínas de Simithari
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/ruins_simithari/imagem/ruins_simithari.png` · **Inimigos:** Marrowwithers
 ```
-Isometric tactical RPG battle map. Hilltop ruins of a white elvish stone structure, early morning grey light. Cracked marble columns at irregular intervals — some fallen, some standing, all scorched with ancient fire damage. Stone floor tiles broken and uneven, with holes punched through to dark underground space below (spawn points). Crows perched on every horizontal surface. Overgrown with dark ivy and lichen. Stone lectern at center with open ash-dusted grimoire. Collapsed archway forming a low barrier. Slight elevation variation — raised central platform. Color: white/grey bleached stone, dark ivy, soot stains, pale morning sky. Unsettling cleanliness. No characters. Isometric battle map, painterly style.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — readable broken-stone floor with open walkable space for tokens; terrain is a backdrop, not the focus. Hilltop ruins of a white elvish structure in pale early-morning light. Cracked marble columns (some fallen) at the edges as cover, broken floor tiles with a few dark holes punched through to below, dark ivy and lichen, a stone lectern at center. Keep the floor mostly open for gameplay. Palette: bleached white-grey stone, dark ivy, soot, pale sky. No characters. Painterly tactical map.
 ```
 
-## ysoria_revelacao — O Nome que a Floresta Guarda
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/ysoria_revelacao/imagem/ysoria_revelacao.png`  
-**Inimigos:** Ysoria (espírito corrompido)
-
+## 11) ysoria_revelacao — O Nome que a Floresta Guarda
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/ysoria_revelacao/imagem/ysoria_revelacao.png` · **Inimigos:** Ysoria (espírito corrompido)
 ```
-Isometric tactical RPG battle map. Druidic stone circle in a forest clearing where the trees lean away from the center as if recoiling. Standing stones in a ring, some cracked from the inside out. Ground at center: bare dark earth with dead grass in radiating spiral. Outer ring: dense forest with trees warped at unnatural angles. Stone surfaces covered in carved symbols — some old and faded, some fresh and raw. Fallen stones as terrain obstacles. Ground cracks running outward from the inner circle. Desaturated greens, purple-grey sky, stones slightly phosphorescent. Danger radiates from the center. No characters. Isometric battle map, Fire Emblem HD painterly style.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — readable ground with an open center for tokens; terrain is a backdrop, not the focus. Druidic stone circle in a forest clearing, trees leaning away from the center. A ring of standing stones (some cracked) around the edges as cover, bare dark earth with dead grass spiraling at the center, faint carved symbols on the stones, ground cracks running outward. Open center kept clear for gameplay. Palette: desaturated green, purple-grey sky, faintly glowing stone. No characters. Painterly tactical map, Fire Emblem HD style.
 ```
 
-## twinfold_hollow — O Vale Dual
-**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/twinfold_hollow/imagem/twinfold_hollow.png`  
-**Inimigos:** Barkthreshers
-
+## 12) twinfold_hollow — O Vale Dual
+**Arquivo:** `catalogo/mhoried/cenarios/batalha_hex/twinfold_hollow/imagem/twinfold_hollow.png` · **Inimigos:** Barkthreshers
 ```
-Isometric tactical RPG battle map. Ancient forest hollow with massive trees whose bark is carved with humanoid faces — some serene, some in anguish. Central ground: field of white luminescent flowers (Starshade Blooms) in clusters among the roots — glowing soft white-blue even without sun. Tree roots above ground create natural barriers and elevated footing. Some trees dead and hollow — cover. Two sides of the map feel different: one lighter (warm bark, green moss), one darker (twisted roots, deep shadow). The flower glow creates a magical, alien combat space. Color: dark bark brown, glowing white-blue flowers, soft green, deep shadow. No characters. Isometric battle map, painterly fantasy, Studio Ghibli tactical RPG aesthetic.
+Vertical mobile tactical RPG battle map, portrait 9:16 (1080x1920), top-down 3/4 view. A functional game playing field — readable ground with open walkable space for tokens; terrain is a backdrop, not the focus. Forest hollow with great trees whose bark bears faint carved faces along the edges. A field of soft white-blue glowing flowers among raised roots in the center, hollow dead trunks as cover, the left side lighter (warm bark, moss) and the right darker (twisted roots, shadow). Keep the flowered center walkable for gameplay. Palette: dark bark brown, glowing white-blue, soft green, deep shadow. No characters. Painterly tactical map, Studio Ghibli aesthetic.
 ```
-
