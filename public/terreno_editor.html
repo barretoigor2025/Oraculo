@@ -8,136 +8,106 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:#0a0806;color:#e8d5a8;font-family:Georgia,serif;overflow:hidden;}
-#top{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0d0b08;border-bottom:1px solid rgba(190,140,35,.2);flex-wrap:wrap;}
+#top{display:flex;align-items:center;gap:7px;padding:8px 12px;background:#0d0b08;border-bottom:1px solid rgba(190,140,35,.2);flex-wrap:wrap;}
 #top select,#top button{font-family:Georgia,serif;font-size:12px;background:rgba(30,18,5,.9);border:1px solid rgba(190,140,35,.35);color:#f0c83c;border-radius:7px;padding:6px 10px;cursor:pointer;}
-#top .leg{font-size:10px;color:rgba(200,170,100,.7);letter-spacing:.3px;}
+#top button.on{background:rgba(190,140,35,.3);border-color:#f0c83c;}
+#btn-salvar{background:rgba(40,90,40,.5)!important;border-color:rgba(90,170,90,.6)!important;color:#9fe0b8!important;font-weight:700;margin-left:auto;}
+.leg{font-size:10px;color:rgba(200,170,100,.7);}
 .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:3px;}
+#status{font-size:11px;color:rgba(150,200,150,.9);min-width:60px;}
 #wrap{position:fixed;top:46px;bottom:0;left:0;right:0;overflow:auto;-webkit-overflow-scrolling:touch;background:#070504;}
 #stage{position:relative;transform-origin:top left;}
 #mapa{display:block;}
 #grid{position:absolute;top:0;left:0;}
-#out{position:fixed;left:0;right:0;bottom:0;max-height:40vh;overflow:auto;background:rgba(8,5,2,.97);border-top:1px solid rgba(190,140,35,.4);padding:10px 12px;display:none;}
-#out textarea{width:100%;height:120px;background:#120c04;border:1px solid rgba(190,140,35,.3);color:#cda;font-family:monospace;font-size:11px;padding:8px;border-radius:6px;}
-#out .row{display:flex;gap:8px;margin-top:6px;}
 </style>
 </head>
 <body>
 <div id="top">
   <select id="sel-cena"></select>
+  <button id="btn-abis" class="on">🕳 Abismo</button>
   <button id="btn-bloq">🧱 Parede</button>
-  <button id="btn-abis">🕳 Abismo</button>
-  <span class="leg"><span class="sw" style="background:rgba(120,120,120,.6)"></span>parede &nbsp; <span class="sw" style="background:rgba(180,40,40,.65)"></span>abismo</span>
-  <button id="btn-zoom">🔍 Zoom</button>
-  <button id="btn-export" style="margin-left:auto">📤 Exportar JSON</button>
+  <span class="leg"><span class="sw" style="background:rgba(180,40,40,.6)"></span>abismo <span class="sw" style="background:rgba(120,120,120,.55)"></span>parede</span>
+  <button id="btn-limpar">🗑 Limpar</button>
+  <span id="status"></span>
+  <button id="btn-salvar">💾 Salvar</button>
 </div>
-<div id="wrap">
-  <div id="stage">
-    <img id="mapa" alt="">
-    <canvas id="grid"></canvas>
-  </div>
-</div>
-<div id="out">
-  <div style="font-size:10px;color:rgba(190,140,35,.7);margin-bottom:4px">Salve em: <span id="out-path" style="font-family:monospace;color:#f0c83c"></span></div>
-  <textarea id="out-txt" readonly></textarea>
-  <div class="row">
-    <button id="btn-copy">📋 Copiar</button>
-    <button id="btn-close">Fechar</button>
-  </div>
-</div>
+<div id="wrap"><div id="stage"><img id="mapa" alt=""><canvas id="grid"></canvas></div></div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:9999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">ed-v2</div>
 
-<script>
+<script type="module">
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+const FB_CONFIG = {
+  apiKey:'AIzaSyDaMymxJBFo9zaPuflFwhh14fslaaeh324', authDomain:'oraculo-rpg-dadfe.firebaseapp.com',
+  projectId:'oraculo-rpg-dadfe', storageBucket:'oraculo-rpg-dadfe.firebasestorage.app',
+  messagingSenderId:'287997672755', appId:'1:287997672755:web:9094e22e975696dcdc9246',
+};
+const app = getApps().length ? getApp() : initializeApp(FB_CONFIG);
+const db = getFirestore(app);
+const CAMP = localStorage.getItem('oraculo.campaign') || 'mhoried';
+const terrenoRef = doc(db, 'terrenos', CAMP);
+
 // Geometria EXATA da Arena
 const MAP_W=1086, MAP_H=1448, COLS=13, ROWS=13;
-const CS=82, RS=95, OOFF=48, GX0=47, GY0=80, HS=55; // HS = "raio" do hex flat-top
+const CS=82, RS=95, OOFF=48, GX0=47, GY0=80, HS=55;
 const centro=(c,r)=>({x:GX0+c*CS, y:GY0+r*RS+(c%2?OOFF:0)});
-
 const BH='catalogo/mhoried/cenarios/batalha_hex';
 const CENAS=['encruzilhada','campo_aranhas','acampamento_elfico','kobold_town','gloamreach',
   'torre_limm','drowned_grove','manticore_grounds','great_grub_carcass','ruins_simithari',
   'ysoria_revelacao','twinfold_hollow','mhoried_market'];
 
-let cena=CENAS[0];
-let terreno={}; // "c,r" -> 'bloqueado' | 'abismo'
-let pincel='abismo';
-let zoom=false;
-
-const sel=document.getElementById('sel-cena');
-CENAS.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
-
-const img=document.getElementById('mapa');
-const grid=document.getElementById('grid');
-const stage=document.getElementById('stage');
-const ctx=grid.getContext('2d');
+let cena=CENAS[0], terreno={}, pincel='abismo', _allTerrenos={};
+const $=id=>document.getElementById(id);
+const sel=$('sel-cena'); CENAS.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+const img=$('mapa'), grid=$('grid'), stage=$('stage'), ctx=grid.getContext('2d');
 grid.width=MAP_W; grid.height=MAP_H;
 
-function hexPts(cx,cy){ const p=[]; for(let i=0;i<6;i++){ const a=Math.PI/180*(60*i); p.push([cx+HS*Math.cos(a), cy+HS*Math.sin(a)]); } return p; }
-
+function hexPts(cx,cy){const p=[];for(let i=0;i<6;i++){const a=Math.PI/180*60*i;p.push([cx+HS*Math.cos(a),cy+HS*Math.sin(a)]);}return p;}
 function draw(){
   ctx.clearRect(0,0,MAP_W,MAP_H);
   for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){
-    const {x,y}=centro(c,r); const pts=hexPts(x,y);
-    ctx.beginPath(); pts.forEach((p,i)=> i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath();
+    const {x,y}=centro(c,r), pts=hexPts(x,y);
+    ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.closePath();
     const t=terreno[`${c},${r}`];
-    if(t==='abismo') ctx.fillStyle='rgba(180,40,40,.5)';
-    else if(t==='bloqueado') ctx.fillStyle='rgba(120,120,120,.45)';
-    else ctx.fillStyle='rgba(0,0,0,0)';
-    ctx.fill();
-    ctx.lineWidth=1.5; ctx.strokeStyle='rgba(245,220,120,.35)'; ctx.stroke();
+    ctx.fillStyle = t==='abismo'?'rgba(180,40,40,.5)' : t==='bloqueado'?'rgba(120,120,120,.5)' : 'rgba(0,0,0,0)';
+    ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle='rgba(245,220,120,.32)'; ctx.stroke();
   }
 }
-
-function hexEm(px,py){ // hexágono mais próximo do ponto
-  let best=null, bd=1e9;
-  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){
-    const {x,y}=centro(c,r); const d=(x-px)**2+(y-py)**2;
-    if(d<bd){ bd=d; best=[c,r]; }
-  }
-  return best;
-}
-
-grid.addEventListener('click', e=>{
+function hexEm(px,py){let best,bd=1e9;for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){const {x,y}=centro(c,r),d=(x-px)**2+(y-py)**2;if(d<bd){bd=d;best=[c,r];}}return best;}
+grid.addEventListener('click',e=>{
   const rect=grid.getBoundingClientRect();
-  const px=(e.clientX-rect.left)*(MAP_W/rect.width);
-  const py=(e.clientY-rect.top)*(MAP_H/rect.height);
-  const [c,r]=hexEm(px,py); const k=`${c},${r}`;
-  if(terreno[k]===pincel) delete terreno[k]; else terreno[k]=pincel; // toca de novo = limpa
-  draw();
+  const px=(e.clientX-rect.left)*(MAP_W/rect.width), py=(e.clientY-rect.top)*(MAP_H/rect.height);
+  const [c,r]=hexEm(px,py), k=`${c},${r}`;
+  if(terreno[k]===pincel) delete terreno[k]; else terreno[k]=pincel;
+  draw(); $('status').textContent='● não salvo';
 });
+function escala(){const w=$('wrap');stage.style.transform=`scale(${Math.min(w.clientWidth/MAP_W,w.clientHeight/MAP_H)})`;}
 
-function ajustarEscala(){
-  const wrap=document.getElementById('wrap');
-  const fit=Math.min(wrap.clientWidth/MAP_W, wrap.clientHeight/MAP_H);
-  const s=zoom?Math.max(fit, wrap.clientWidth/MAP_W):fit;
-  stage.style.transform=`scale(${s})`;
+async function carregarTudo(){
+  try{ const s=await getDoc(terrenoRef); _allTerrenos = s.exists()? (s.data()||{}) : {}; }catch(e){ _allTerrenos={}; }
+  abrirCena();
 }
-
-function carregar(){
+function abrirCena(){
   cena=sel.value;
-  img.onload=()=>{ img.width=MAP_W; img.height=MAP_H; ajustarEscala(); };
+  terreno = JSON.parse(JSON.stringify(_allTerrenos[cena]?.hexes || _allTerrenos[cena] || {}));
+  img.onload=()=>{img.width=MAP_W;img.height=MAP_H;escala();draw();};
+  img.onerror=()=>{img.removeAttribute('src');draw();};
   img.src=`${BH}/${cena}/imagem/${cena}.png`;
-  img.onerror=()=>{ img.removeAttribute('src'); };
-  terreno={};
-  // tenta carregar terreno existente
-  fetch(`${BH}/${cena}/imagem/${cena}-terreno.json`).then(r=>r.ok?r.json():null)
-    .then(d=>{ if(d?.hexes) terreno=d.hexes; draw(); }).catch(()=>draw());
+  $('status').textContent='';
   draw();
 }
-
-sel.addEventListener('change', carregar);
-document.getElementById('btn-bloq').onclick=()=>pincel='bloqueado';
-document.getElementById('btn-abis').onclick=()=>pincel='abismo';
-document.getElementById('btn-zoom').onclick=()=>{ zoom=!zoom; ajustarEscala(); };
-document.getElementById('btn-export').onclick=()=>{
-  document.getElementById('out-path').textContent=`public/${BH}/${cena}/imagem/${cena}-terreno.json`;
-  document.getElementById('out-txt').value=JSON.stringify({hexes:terreno});
-  document.getElementById('out').style.display='block';
+sel.addEventListener('change', abrirCena);
+$('btn-abis').onclick=()=>{pincel='abismo';$('btn-abis').classList.add('on');$('btn-bloq').classList.remove('on');};
+$('btn-bloq').onclick=()=>{pincel='bloqueado';$('btn-bloq').classList.add('on');$('btn-abis').classList.remove('on');};
+$('btn-limpar').onclick=()=>{terreno={};draw();$('status').textContent='● não salvo';};
+$('btn-salvar').onclick=async()=>{
+  $('status').textContent='salvando…';
+  _allTerrenos[cena]={hexes:terreno};
+  try{ await setDoc(terrenoRef, { [cena]:{hexes:terreno} }, {merge:true}); $('status').textContent='✓ salvo!'; }
+  catch(e){ console.error(e); $('status').textContent='✗ erro: '+e.code; }
 };
-document.getElementById('btn-copy').onclick=()=>{
-  const ta=document.getElementById('out-txt'); ta.select(); navigator.clipboard?.writeText(ta.value);
-};
-document.getElementById('btn-close').onclick=()=>document.getElementById('out').style.display='none';
-window.addEventListener('resize', ajustarEscala);
-carregar();
+window.addEventListener('resize', escala);
+carregarTudo();
 </script>
 </body>
 </html>

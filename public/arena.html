@@ -20,7 +20,7 @@ window._rosterDaKey = rosterDaKey;
 window._mapaDaKey = mapaDaKey;
 window._MAPA_FALLBACK = MAPA_FALLBACK;
 import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import{getFirestore,doc,onSnapshot,updateDoc,increment}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import{getFirestore,doc,getDoc,onSnapshot,updateDoc,increment}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 const _cfg=JSON.parse(localStorage.getItem('oraculo.fbConfig')||'null');
 const _rid=localStorage.getItem('oraculo.roomId');
 const _pid=localStorage.getItem('oraculo.playerId');
@@ -63,6 +63,17 @@ if(_cfg&&_rid&&_pid){
     };
     window._fbBroadcastAcaoLivre=async(data)=>{
       try{await updateDoc(rd,{acaoLivre:{...data,pid:_pid,ts:Date.now()}});}catch{}
+    };
+    // Terreno editado ao vivo (terreno_editor.html) → doc 'terrenos/{campanha}'
+    const _camp=localStorage.getItem('oraculo.campaign')||'mhoried';
+    window._fbGetTerreno=async(cena)=>{
+      try{
+        const s=await getDoc(doc(db,'terrenos',_camp));
+        if(!s.exists())return null;
+        const d=s.data()||{};
+        const node=d[cena];
+        return node?(node.hexes||node):null;
+      }catch{return null;}
     };
   }catch(e){console.warn('Arena Firebase init:',e);}
 }
@@ -4043,13 +4054,21 @@ function init(){
   initScale();
   renderBottomPanel();
   renderActionRow();
-  // Terreno da cena (se houver json); sem terreno = tudo caminhável
+  // Terreno da cena: 1) JSON estático (se houver), 2) Firebase (terreno_editor.html, prioridade).
+  // Emboscadas (_emboscada:N) reutilizam o terreno da encruzilhada.
   const _terr = _mapaInfo?.terreno || null;
-  if(_terr){
-    fetch(_terr).then(r=>r.ok?r.json():null)
-      .then(d=>{ if(d?.hexes) terrenoData=d.hexes; render(); })
-      .catch(()=>render());
-  } else { render(); }
+  const _terrCena = (_battleKey && _battleKey.startsWith('_emboscada')) ? 'encruzilhada'
+                    : (_battleKey || 'mhoried_market');
+  (async()=>{
+    let base={};
+    if(_terr){
+      try{ const r=await fetch(_terr); if(r.ok){ const d=await r.json(); if(d?.hexes) base=d.hexes; } }catch{}
+    }
+    let live=null;
+    if(window._fbGetTerreno){ try{ live=await window._fbGetTerreno(_terrCena); }catch{} }
+    terrenoData = live ? { ...base, ...live } : base;
+    render();
+  })();
   function startFbListener(){
     // INIMIGOS_DATA now guaranteed (ES module ran before fbReady event)
     unidades = unidades.filter(Boolean);
@@ -4178,6 +4197,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v11</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v12</div>
 </body>
 </html>
