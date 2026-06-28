@@ -3803,7 +3803,11 @@ function onRoomUpdate(room){
   // (evita roster/vitória errados e o re-disparo da Feira após vencer)
   if(room.status==='battle' && room.narration){
     const bc = room.narration.battleKey || room.narration.cenaId;
-    if(bc) localStorage.setItem('oraculo.battleCena', bc);
+    if(bc){
+      localStorage.setItem('oraculo.battleCena', bc);
+      // Reaplica o mapa/terreno se a cena de batalha mudou (corrige feira stale do load)
+      if(window._aplicarMapaDaCena) window._aplicarMapaDaCena(bc);
+    }
   }
 
   // Host: when all players confirmed post-battle, transition everyone to narration
@@ -4056,19 +4060,8 @@ function init(){
   renderActionRow();
   // Terreno da cena: 1) JSON estático (se houver), 2) Firebase (terreno_editor.html, prioridade).
   // Emboscadas (_emboscada:N) reutilizam o terreno da encruzilhada.
-  const _terr = _mapaInfo?.terreno || null;
-  const _terrCena = (_battleKey && _battleKey.startsWith('_emboscada')) ? 'encruzilhada'
-                    : (_battleKey || 'mhoried_market');
-  (async()=>{
-    let base={};
-    if(_terr){
-      try{ const r=await fetch(_terr); if(r.ok){ const d=await r.json(); if(d?.hexes) base=d.hexes; } }catch{}
-    }
-    let live=null;
-    if(window._fbGetTerreno){ try{ live=await window._fbGetTerreno(_terrCena); }catch{} }
-    terrenoData = live ? { ...base, ...live } : base;
-    render();
-  })();
+  if (window._recarregarTerreno) window._recarregarTerreno(_battleKey);
+  else render();
   function startFbListener(){
     // INIMIGOS_DATA now guaranteed (ES module ran before fbReady event)
     unidades = unidades.filter(Boolean);
@@ -4098,9 +4091,12 @@ const mapaEl=document.getElementById('mapa');
 let _initFired=false;
 function _initOnce(){ if(!_initFired){ _initFired=true; init(); } }
 
-// Mapa de batalha por cena — fallback para a Feira se a arte ainda não existir
-const _battleKey = localStorage.getItem('oraculo.battleCena') || '';
-const _mapaInfo  = (window._mapaDaKey && window._mapaDaKey(_battleKey)) || window._MAPA_FALLBACK;
+// Mapa de batalha por cena — fallback para a Feira se a arte ainda não existir.
+// _battleKey pode estar stale no load; o Firebase (onRoomUpdate) corrige a cena e
+// reaplica o mapa via _aplicarMapaDaCena() — por isso o map é reativo, não fixo.
+let _battleKey = localStorage.getItem('oraculo.battleCena') || '';
+let _mapaInfo  = (window._mapaDaKey && window._mapaDaKey(_battleKey)) || window._MAPA_FALLBACK;
+let _mapaAplicado = null;   // último caminho de imagem aplicado (evita recarregar à toa)
 mapaEl.onload = _initOnce;
 mapaEl.onerror = () => {
   // arte da cena ainda não existe → cai no mapa da Feira (uma vez)
@@ -4108,7 +4104,36 @@ mapaEl.onerror = () => {
   if (fb && mapaEl.src.indexOf('feira-limpa') < 0) { mapaEl.onerror = _initOnce; mapaEl.src = fb; }
   else _initOnce();
 };
-if (_mapaInfo?.mapa && _mapaInfo.mapa !== mapaEl.getAttribute('src')) mapaEl.src = _mapaInfo.mapa;
+// (Re)carrega o terreno da cena: JSON estático + Firebase ao vivo (Firebase tem prioridade).
+window._recarregarTerreno = async function(battleKey){
+  const info = (window._mapaDaKey && window._mapaDaKey(battleKey)) || window._MAPA_FALLBACK;
+  const terrCena = (battleKey && battleKey.startsWith('_emboscada')) ? 'encruzilhada'
+                   : (battleKey || 'mhoried_market');
+  let base = {};
+  if (info?.terreno) {
+    try { const r = await fetch(info.terreno); if (r.ok) { const d = await r.json(); if (d?.hexes) base = d.hexes; } } catch {}
+  }
+  let live = null;
+  if (window._fbGetTerreno) { try { live = await window._fbGetTerreno(terrCena); } catch {} }
+  terrenoData = live ? { ...base, ...live } : base;
+  render();
+};
+// Aplica (ou reaplica) o mapa + terreno da cena de batalha informada.
+window._aplicarMapaDaCena = function(battleKey){
+  const info = (window._mapaDaKey && window._mapaDaKey(battleKey)) || window._MAPA_FALLBACK;
+  _battleKey = battleKey; _mapaInfo = info;
+  if (info?.mapa && info.mapa !== _mapaAplicado) {
+    _mapaAplicado = info.mapa;
+    mapaEl.onerror = () => {   // re-arma fallback para esta troca de cena
+      const fb = window._MAPA_FALLBACK?.mapa;
+      if (fb && mapaEl.src.indexOf('feira-limpa') < 0) mapaEl.src = fb;
+    };
+    mapaEl.src = info.mapa;
+    if (window._recarregarTerreno) window._recarregarTerreno(battleKey);
+  }
+};
+if (_mapaInfo?.mapa && _mapaInfo.mapa !== mapaEl.getAttribute('src')) { _mapaAplicado = _mapaInfo.mapa; mapaEl.src = _mapaInfo.mapa; }
+else { _mapaAplicado = mapaEl.getAttribute('src'); }
 _initOnce(); // init roda imediatamente (não depende do load da imagem)
 let _resizeTimer;
 window.addEventListener('resize',()=>{ clearTimeout(_resizeTimer); _resizeTimer=setTimeout(initScale,80); });
@@ -4197,6 +4222,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v12</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v13</div>
 </body>
 </html>

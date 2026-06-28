@@ -716,6 +716,43 @@ html,body{
   background:rgba(20,60,20,.8);color:rgba(100,200,100,.8);
   border-color:rgba(60,150,60,.3);
 }
+/* ── ESCOLHA DE CAMINHO (fog of war) ── */
+#caminho-intro{
+  font-size:12px;color:rgba(190,165,90,.8);font-style:italic;
+  line-height:1.5;margin-bottom:14px;
+}
+.caminho-card{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px;border-radius:12px;margin-bottom:10px;
+  border:1px solid rgba(190,135,35,.4);
+  background:rgba(28,19,7,.75);
+  cursor:pointer;transition:border-color .15s,background .15s,transform .1s;
+}
+.caminho-card:active{transform:scale(.985);}
+.caminho-card:hover{border-color:rgba(220,185,80,.85);background:rgba(45,30,9,.9);}
+.caminho-card.bloq{cursor:default;opacity:.55;}
+.caminho-card.bloq:hover{border-color:rgba(190,135,35,.4);background:rgba(28,19,7,.75);}
+.cam-seta{font-size:30px;flex-shrink:0;width:38px;text-align:center;}
+.cam-corpo{flex:1;min-width:0;}
+.cam-dir{
+  font-size:14px;font-weight:700;color:rgba(225,190,95,1);
+  margin-bottom:3px;
+}
+.cam-dest{
+  font-size:11px;color:rgba(150,200,120,.85);font-weight:700;margin-bottom:2px;
+}
+.cam-dest.incognito{color:rgba(160,135,75,.7);font-weight:400;font-style:italic;}
+.cam-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;}
+.cam-pill{
+  font-size:9px;letter-spacing:.5px;padding:2px 7px;border-radius:5px;
+  background:rgba(55,38,10,.8);color:rgba(195,160,75,.85);
+  border:1px solid rgba(190,135,35,.25);
+}
+.cam-pill.dist{background:rgba(20,40,55,.7);color:rgba(120,180,210,.85);border-color:rgba(60,120,160,.3);}
+.cam-pill.p0,.cam-pill.p1{background:rgba(20,55,20,.75);color:rgba(120,200,120,.9);border-color:rgba(60,150,60,.3);}
+.cam-pill.p2,.cam-pill.p3{background:rgba(70,55,10,.8);color:rgba(225,185,80,.9);border-color:rgba(190,150,40,.35);}
+.cam-pill.p4,.cam-pill.p5{background:rgba(80,20,20,.8);color:rgba(230,110,90,.95);border-color:rgba(180,60,40,.4);}
+.cam-nota{font-size:11px;color:rgba(170,140,80,.7);font-style:italic;text-align:center;margin-top:6px;}
 .mapa-tag.tag-atual{
   background:rgba(60,42,10,.9);color:rgba(220,185,80,1);
   border-color:rgba(190,135,35,.6);
@@ -1103,6 +1140,7 @@ import { NPCS } from './catalogo/mhoried/loader.js';
 import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js';
 import { NARRACAO_NPCS as _dialNpcs, NARRACAO_FLUXO } from './catalogo/mhoried/narracao.js';
 import { NPCS_REGISTRY } from './catalogo/mhoried/npcs_registry.js';
+import { NOS as MAPA_NOS, CAMINHOS as MAPA_CAMINHOS } from './catalogo/mhoried/mapa.js';
 
 // ── Estado local ─────────────────────────────────────────────────
 const _pid = localStorage.getItem('oraculo.playerId') || (() => {
@@ -1119,6 +1157,7 @@ let _dialogoLog = [];
 let _unsubRoom = null;
 let _percepcaoEmAndamento = false;
 let _cenasVisitadas = new Set();
+let _emboscadaTimer = null;   // dispara a batalha automática de cenas tipo 'emboscada'
 
 // ── Referências DOM ──────────────────────────────────────────────
 const elTitulo = document.getElementById('narr-titulo');
@@ -1150,6 +1189,7 @@ window.onKeydownInput = onKeydownInput;
 window.navegarCena = navegarCena;
 window.iniciarBatalha = iniciarBatalha;
 window.abrirMapaExploracao = abrirMapaExploracao;
+window.abrirEscolhaCaminho = abrirEscolhaCaminho;
 window.fecharMapaExploracao = fecharMapaExploracao;
 window.irParaCena = irParaCena;
 window.abrirCfgIA = abrirCfgIA;
@@ -1237,6 +1277,21 @@ function onRoomUpdate(room) {
       }, 200);
     } else {
       _dispararFalaEntrada(novaCena);
+    }
+  }
+
+  // Emboscada: cena de batalha pura (sem NPCs). O host dispara o combate
+  // automaticamente ao chegar — você É emboscado. Anti-loop via cenaBatalhaResolvida
+  // (após vencer, o pós-batalha leva ao Mapa, então não re-dispara).
+  if (mudouCena && _isHost) {
+    clearTimeout(_emboscadaTimer);
+    const cenaObj = CENAS[novaCena];
+    const jaResolvida = narr.cenaBatalhaResolvida === novaCena;
+    if (cenaObj?.tipo === 'emboscada' && cenaObj?.temBatalha && !jaResolvida) {
+      _emboscadaTimer = setTimeout(() => {
+        if (_cenaAtual === novaCena && _lastRoom?.status !== 'battle'
+            && typeof iniciarBatalha === 'function') iniciarBatalha();
+      }, 2600);
     }
   }
   atualizarBotoesModo();
@@ -1974,7 +2029,7 @@ function _executarNavegacao(novaCena) {
     if (window._fbMarcarVisitada) window._fbMarcarVisitada(_cenaAtual);
   }
   if (window._fbUpdateNarration) {
-    window._fbUpdateNarration({ cenaId: novaCena, modoImagem: 'exterior', introConfirmados: {}, introIdx: 0, percepcao: { ativo: false } });
+    window._fbUpdateNarration({ cenaId: novaCena, modoImagem: 'exterior', introConfirmados: {}, introIdx: 0, percepcao: { ativo: false }, dialogo: [] });
   } else {
     _cenaAtual = novaCena; _modoImagem = 'exterior';
     atualizarCena(); atualizarBotoesModo(); atualizarBotoesCena();
@@ -2114,6 +2169,92 @@ function abrirMapaExploracao() {
 
 function fecharMapaExploracao() {
   document.getElementById('mapa-overlay')?.classList.add('oculto');
+  document.getElementById('mapa-titulo').textContent = '🗺 Mapa dos Blackwoods';
+}
+
+// ── Escolha de CAMINHO (fog of war) ───────────────────────────────
+// Em vez de escolher um destino conhecido, o grupo escolhe uma trilha
+// (direção + perigo + distância). O destino só é revelado ao chegar.
+const _COMPASSO = [
+  { nome:'Leste',     emoji:'➡️' }, { nome:'Nordeste',  emoji:'↗️' },
+  { nome:'Norte',     emoji:'⬆️' }, { nome:'Noroeste',  emoji:'↖️' },
+  { nome:'Oeste',     emoji:'⬅️' }, { nome:'Sudoeste',  emoji:'↙️' },
+  { nome:'Sul',       emoji:'⬇️' }, { nome:'Sudeste',   emoji:'↘️' },
+];
+const _PERIGO_NOME = ['tranquilo','baixo risco','risco moderado','perigoso','muito perigoso','mortal'];
+const _DIST_NOME   = { curta:'trilha curta', media:'caminho médio', longa:'jornada longa' };
+function _direcaoEntre(deId, ateId) {
+  const a = MAPA_NOS[deId], b = MAPA_NOS[ateId];
+  if (!a || !b) return { nome:'Adiante', emoji:'🧭' };
+  const ang = Math.atan2(-(b.y - a.y), b.x - a.x);   // y cresce p/ baixo
+  let idx = Math.round(ang / (Math.PI / 4));
+  idx = ((idx % 8) + 8) % 8;
+  return _COMPASSO[idx];
+}
+function _caminhosDe(cur) {
+  const out = [];
+  for (const c of MAPA_CAMINHOS) {
+    if (c.de === cur)      out.push({ destino: c.ate, c });
+    else if (c.ate === cur) out.push({ destino: c.de,  c, volta:true });
+  }
+  return out;
+}
+function abrirEscolhaCaminho() {
+  const overlay = document.getElementById('mapa-overlay');
+  if (!overlay) return;
+  document.getElementById('mapa-titulo').textContent = '🧭 Que caminho seguir?';
+  const cont = document.getElementById('mapa-conteudo');
+  cont.innerHTML = '';
+
+  const intro = document.createElement('div');
+  intro.id = 'caminho-intro';
+  intro.textContent = 'Vocês não conhecem estas terras. Escolham por onde seguir — cada trilha leva a algum lugar que só descobrirão ao chegar.';
+  cont.appendChild(intro);
+
+  const opcoes = _caminhosDe(_cenaAtual).filter(o => CENAS[o.destino]);
+  if (!opcoes.length) {
+    const vazio = document.createElement('div');
+    vazio.className = 'cam-nota';
+    vazio.textContent = 'Não há trilhas partindo daqui.';
+    cont.appendChild(vazio);
+  }
+
+  for (const o of opcoes) {
+    const dir = _direcaoEntre(_cenaAtual, o.destino);
+    const conhecido = _cenasVisitadas.has(o.destino);
+    const perigo = o.c.perigo || 0;
+    const card = document.createElement('div');
+    card.className = 'caminho-card';
+
+    const seta = document.createElement('div');
+    seta.className = 'cam-seta'; seta.textContent = dir.emoji;
+    card.appendChild(seta);
+
+    const corpo = document.createElement('div');
+    corpo.className = 'cam-corpo';
+    corpo.innerHTML =
+      `<div class="cam-dir">Seguir para o ${dir.nome}</div>` +
+      (conhecido
+        ? `<div class="cam-dest">→ ${MAPA_NOS[o.destino]?.titulo || CENAS[o.destino]?.titulo || '???'}${o.volta ? ' (já visitado)' : ''}</div>`
+        : `<div class="cam-dest incognito">Destino desconhecido…</div>`) +
+      `<div class="cam-meta">
+         <span class="cam-pill p${perigo}">⚠ ${_PERIGO_NOME[perigo] || 'incerto'}</span>
+         <span class="cam-pill dist">🥾 ${_DIST_NOME[o.c.dist] || o.c.dist || '?'}</span>
+       </div>`;
+    card.appendChild(corpo);
+
+    if (_isHost) card.onclick = () => { fecharMapaExploracao(); irParaCena(o.destino); };
+    else card.classList.add('bloq');
+    cont.appendChild(card);
+  }
+
+  if (!_isHost) {
+    const nota = document.createElement('div');
+    nota.className = 'cam-nota';
+    nota.textContent = 'Aguardando o anfitrião escolher o caminho do grupo…';
+    cont.appendChild(nota);
+  }
+  overlay.classList.remove('oculto');
 }
 
 function irParaCena(cenaId) {
@@ -2946,7 +3087,7 @@ window._dialProximaCena = function () {
       if (window._fbMarcarVisitada) window._fbMarcarVisitada(_cenaAtual);
     }
     window._dialFecharDialogo?.();
-    if (typeof abrirMapaExploracao === 'function') abrirMapaExploracao();
+    if (typeof abrirEscolhaCaminho === 'function') abrirEscolhaCaminho();
     return;
   }
   _executarNavegacao(proximaId);
@@ -3021,6 +3162,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v12</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v13</div>
 </body>
 </html>
