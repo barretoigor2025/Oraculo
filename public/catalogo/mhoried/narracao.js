@@ -73,8 +73,12 @@ export const NARRACAO_FLUXO = [
   // Ao sair do Castelo o grupo pega a estrada — abre o MAPA DO MUNDO (mapa.html),
   // onde viaja com os bonequinhos pela floresta ('_mapa' = handoff p/ mapa.html).
   { id:'castelo',        proximo:'_mapa', btnLabel:'🌲 Partir para os Blackwoods →', revelarImediato:true },
-  // Hub do Ato 2: depois de falar com Aelar, o grupo viaja pelo mapa.
-  { id:'blackwoods_entrada', proximo:'_mapa', btnLabel:'🗺 Seguir pela floresta →', revelarImediato:true },
+  // Entrada dos Blackwoods (Aelar): NÃO mostra botão de cara. O 🗺 Mapa fica
+  // sempre disponível para explorar livremente. O botão direto para as Ruínas do
+  // Piromante só surge quando o Aelar revela o caminho / concorda em guiar a caça.
+  { id:'blackwoods_entrada', proximo:'ruinas_piromante', btnLabel:'🔥 Atrás do Piromante →',
+    revelaSe:['piromante está','onde está fariborz','ruína','sudoeste','enxofre','chamuscad',
+              'siga-me','sigam-me','me leve','levo voc','venham comigo','vou te levar','sei onde','caminhar em direção'] },
   // Exemplo de revelação contextual: Mac Rónán conta que o Duque Oswald está no
   // Gloamreach → o botão para lá só aparece quando ele menciona isso.
   { id:'cnoc_na_rithe',  proximo:'gloamreach', btnLabel:'💀 Rumo ao Gloamreach →',
