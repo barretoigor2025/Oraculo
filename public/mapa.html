@@ -342,7 +342,7 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
       <div id="mapa-titulo">🗺 Mapa do Mundo</div>
       <div id="mapa-local-label">—</div>
     </div>
-    <button class="mapa-nav-btn" onclick="location.href='narration.html?v=8'">📖 Narrar</button>
+    <button class="mapa-nav-btn" id="btn-voltar-narracao" onclick="window._voltarNarracao()">← Voltar à cena</button>
     <button class="mapa-nav-btn" onclick="location.href='catalog.html'">📚 Catálogo</button>
   </div>
 
@@ -846,6 +846,26 @@ window._fecharEncontro = () => {
   if (_redirectPendente) { _redirectPendente = false; window.location.href = 'narration.html?v=8'; }
 };
 
+// ← Voltar à cena: retorna o grupo à conversa de onde o mapa foi aberto, SEM viajar.
+// Define status='narration' (todos seguem) preservando o diálogo já trocado.
+window._voltarNarracao = async function() {
+  if (_viajando) return; // não interrompe uma viagem em andamento
+  const cena = _state?.cenaOrigem || _state?.localAtual || 'mhoried_market';
+  if (window._fbSetStatus) {
+    await window._fbSetStatus('narration', {
+      'narration.cenaId': cena,
+      'narration.modoImagem': 'exterior',
+      'narration.percepcao': { ativo: false },
+      'mapa.autoViagem': null,
+      'mapa.viagemEmAndamento': false,
+    });
+    // _onState (status='narration') leva todos de volta à narração
+  } else {
+    localStorage.setItem('oraculo.soloNarrCena', cena);
+    window.location.href = 'narration.html?v=8';
+  }
+};
+
 // ── Chat ──────────────────────────────────────────────────
 window._limparChat = async function() {
   if (!confirm('Limpar todo o chat?')) return;
@@ -992,6 +1012,6 @@ async function init() {
 
 init();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v15</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v16</div>
 </body>
 </html>

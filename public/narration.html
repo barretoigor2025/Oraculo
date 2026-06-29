@@ -3214,7 +3214,8 @@ function _irParaMapaMundo(destino) {
       'mapa.localAtual': node,
       'mapa.viagemEmAndamento': false,
       'mapa.votacao': null,
-      'mapa.autoViagem': auto,   // nó vizinho a viajar automaticamente (ou null)
+      'mapa.autoViagem': auto,        // nó vizinho a viajar automaticamente (ou null)
+      'mapa.cenaOrigem': _cenaAtual,  // cena exata p/ o botão "← Voltar" do mapa
       'narration.viagemConfirmados': {},
     });
   } else {
@@ -3338,6 +3339,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v21</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v22</div>
 </body>
 </html>
