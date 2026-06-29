@@ -1328,8 +1328,9 @@ function onRoomUpdate(room) {
   atualizarBotoesCena();
   _atualizarAcaoCena(narr);
   _atualizarBtnPercepcao();
-  // Gate de viagem em grupo: navega quando todos confirmaram o botão narrativo.
-  if (narr.viagemConfirmados && _isHost) _verificarViagemCompleta(narr);
+  // (Removido: o antigo gate viagemConfirmados disparava _irParaMapaMundo ao chegar
+  //  numa cena cujo fluxo é '_mapa' — causava o loop cena↔mapa. Viagem hoje só parte
+  //  por clique no botão, via _dialProximaCena.)
   if (_dialAtivo) _dialAtualizarChips(); // atualiza rótulo/contagem do botão de viagem
 
   // Gate de grupo: batalha (gancho) OU avanço de cena (intro puro em grupo).
@@ -3337,6 +3338,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v20</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v21</div>
 </body>
 </html>

@@ -124,7 +124,9 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
   stroke:rgba(240,200,60,0.9);stroke-width:3;
   filter:drop-shadow(0 2px 5px rgba(0,0,0,0.8));
 }
-.st-emoji{font-size:24px;}
+.st-base{ fill:rgba(0,0,0,0.45); }
+.st-img{ filter:drop-shadow(0 3px 5px rgba(0,0,0,0.85)); }
+.st-emoji{font-size:22px;}
 .st-lbl{
   font-family:Georgia,serif;font-size:14px;fill:rgba(230,200,110,0.92);
   paint-order:stroke;stroke:rgba(8,5,2,0.92);stroke-width:3.5;stroke-linejoin:round;
@@ -538,14 +540,19 @@ function _standeesSVG() {
   if (!no) return '';
   let out = '';
   Object.entries(players).forEach(([pid, p], i) => {
-    const offset = (i - (total-1)/2) * 36;
+    const offset = (i - (total-1)/2) * 42;
     const cx = no.x/100*MAP_NW + offset;
     const cy = no.y/100*MAP_NH - 34;   // flutua acima do nó
-    const icon = CLASS_ICON[p.classId||'guerreiro'] || '⚔️';
+    const cid = p.classId || 'guerreiro';
+    const peca = `catalogo/mhoried/classes/${cid}/peca_tabuleiro/${cid}_peca.png`;
+    const icon = CLASS_ICON[cid] || '⚔️';
+    // Peça real da classe (igual à Arena). Mantém um emoji por baixo como fallback
+    // se a imagem não carregar.
     out += `<g class="st-g" id="st-${pid}" transform="translate(${cx},${cy})">`
-      + `<circle class="st-circ" r="20"/>`
-      + `<text class="st-emoji" x="0" y="0" text-anchor="middle" dominant-baseline="central">${icon}</text>`
-      + `<text class="st-lbl" x="0" y="38" text-anchor="middle">${_esc((p.nome||'?').split(' ')[0])}</text>`
+      + `<ellipse class="st-base" cx="0" cy="14" rx="17" ry="5"/>`
+      + `<text class="st-emoji" x="0" y="2" text-anchor="middle" dominant-baseline="central">${icon}</text>`
+      + `<image class="st-img" href="${peca}" xlink:href="${peca}" x="-28" y="-44" width="56" height="56" preserveAspectRatio="xMidYMid meet"/>`
+      + `<text class="st-lbl" x="0" y="28" text-anchor="middle">${_esc((p.nome||'?').split(' ')[0])}</text>`
       + `</g>`;
   });
   return out;
@@ -985,6 +992,6 @@ async function init() {
 
 init();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v14</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v15</div>
 </body>
 </html>
