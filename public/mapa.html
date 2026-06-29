@@ -736,34 +736,33 @@ async function _iniciarViagem(destino) {
   const caminho = _caminhoEntre(localAtual, destino);
   if (!caminho) return;
   const duracao = 5000;  // viagem dura sempre 5s, independente da distância (pedido do jogo)
-  const pularEmboscada = !!_state?.semEmboscada;  // retomada pós-emboscada não re-rola
 
   _viajando = true;  // segura o re-render para a animação dos bonecos não ser resetada
-  if (window._fbUpdate) await window._fbUpdate({ viagemEmAndamento: true, semEmboscada: null });
+  if (window._fbUpdate) await window._fbUpdate({ viagemEmAndamento: true });
 
-  // Animar standees
+  // Animar standees — os bonecos caminham até o destino durante os 5s
   _animarStandeesParaNo(destino, duracao);
 
   clearTimeout(_viagemTimeout);
   _viagemTimeout = setTimeout(async () => {
-    const encontro = pularEmboscada ? null : _rolarEncontros(caminho);
+    const encontro = _rolarEncontros(caminho);
     const combate = encontro && encontro.tipo === 'combate';
     const novoDesc = [...(_state?.descobertos || [])];
     if (!novoDesc.includes(destino)) novoDesc.push(destino);
 
     if (combate) {
-      // ── Emboscada → batalha real. Pós-batalha VOLTA ao mapa e retoma a jornada. ──
-      // O grupo FICA na origem (localAtual) — ao voltar da Arena, os bonequinhos
-      // terminam o trajeto até o destino (sem re-emboscar).
+      // ── Emboscada → batalha real. O grupo JÁ chegou ao destino (os bonecos
+      // caminharam até lá nos 5s) — a emboscada estoura na chegada. Vencendo, a
+      // Arena abre direto a cena do destino. Sem voltar ao ponto de origem.
       const battleKey = '_emboscada:' + (caminho.perigo || 1);
-      _addChatSistema(`⚔️ Emboscada a caminho de ${NOS[destino]?.titulo}!`);
+      _addChatSistema(`⚔️ Emboscada na chegada a ${NOS[destino]?.titulo}!`);
       if (window._fbSetStatus) {
         await window._fbSetStatus('battle', {
-          'mapa.localAtual': localAtual,        // permanece na origem
+          'mapa.localAtual': destino,           // já chegou ao destino
           'mapa.descobertos': novoDesc,
           'mapa.viagemEmAndamento': false,
           'mapa.ts': Date.now(),
-          'narration.cenaId': destino,          // destino pendente (a Arena devolve via autoViagem)
+          'narration.cenaId': destino,
           'narration.battleKey': battleKey,
           postBattleConfirmados: {}, batalha: {},
           currentTurnPlayerId: null, turnOrder: [], enemies: [],
@@ -1013,6 +1012,6 @@ async function init() {
 
 init();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v17</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v18</div>
 </body>
 </html>

@@ -3833,14 +3833,16 @@ function onRoomUpdate(room){
       const cenaAtual = window._CENAS_DATA?.[cenaAtualId];
       // Marca a batalha desta cena como vencida (anti-loop: não re-dispara ao voltar)
       const resolvida = ehEmboscada ? (room.narration?.cenaBatalhaResolvida ?? null) : cenaAtualId;
-      // ── Emboscada de VIAGEM: volta ao Mapa e RETOMA a jornada até o destino ──
-      // (os bonequinhos terminam o trajeto no mapa; sem re-rolar emboscada).
+      // ── Emboscada de VIAGEM: o grupo JÁ tinha chegado ao destino quando a
+      // emboscada estourou — então, vencendo, abre direto a cena do destino
+      // (sem voltar ao mapa nem ao ponto de origem). cenaAtualId = destino.
       if(ehEmboscada){
-        window._fbSetStatus?.('map',{
-          'mapa.autoViagem': cenaAtualId,   // destino pendente da viagem
-          'mapa.semEmboscada': true,        // não re-embosca nesta retomada
-          'mapa.viagemEmAndamento': false,
+        window._fbSetStatus?.('narration',{
+          'narration.cenaId': cenaAtualId,
           'narration.battleKey': null,
+          'narration.modoImagem':'exterior',
+          'narration.introConfirmados':{},
+          'narration.dialogo':[],
           postBattleConfirmados:{}, batalha:{},
           currentTurnPlayerId:null, turnOrder:[], enemies:[],
         });
@@ -4264,6 +4266,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v20</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v21</div>
 </body>
 </html>
