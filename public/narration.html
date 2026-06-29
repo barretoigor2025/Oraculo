@@ -1310,7 +1310,9 @@ function onRoomUpdate(room) {
         if (sel) { sel.value = ganchoNpc; onSelNpc(); }
         _marcarChipAtivo(ganchoNpc);
       }, 200);
-    } else {
+    } else if (!_dialogoLog.length) {
+      // Só dispara a fala de ENTRADA se a conversa ainda não começou. Ao voltar
+      // do mapa, o log já tem a conversa → retoma na última fala (sem reiniciar).
       _dispararFalaEntrada(novaCena);
     }
   }
@@ -2765,7 +2767,13 @@ function _dialChroma(ctx, w, h) {
 
 // ── Activar / Desativar ────────────────────────────────────
 function _dialActivar(campCenaId) {
-  _dialReadIdx      = _dialogoLog.length; // só exibe beats novos a partir daqui
+  // Ao (re)abrir, retoma na ÚLTIMA fala de NPC/Narrador já registrada — assim,
+  // voltar do mapa cai exatamente onde a conversa parou (não em branco).
+  let _idxRetoma = _dialogoLog.length;
+  for (let i = _dialogoLog.length - 1; i >= 0; i--) {
+    if (_dialogoLog[i]?.tipo === 'npc' || _dialogoLog[i]?.tipo === 'narrador') { _idxRetoma = i; break; }
+  }
+  _dialReadIdx      = _idxRetoma; // exibe a última fala registrada + beats novos
   _dialAnimBeat     = false;
   _dialAwaitingCont = false;
   _dialNpcEls       = [];
@@ -3347,6 +3355,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v23</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v24</div>
 </body>
 </html>
