@@ -220,10 +220,10 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 
 /* ── Faixa 2: Detalhe contextual ── */
 #panel-detail{
-  flex-shrink:0;
+  flex:1 1 auto; min-height:0;          /* CEDE espaço — nunca empurra a faixa de botões p/ fora */
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
   display:flex; align-items:stretch;
   padding:5px 10px 4px; gap:0;
-  min-height:44px;
   border-bottom:1px solid rgba(190,140,35,0.08);
 }
 #pd-left{
@@ -270,17 +270,18 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 #action-row{
   display:grid; grid-template-columns:1fr 2fr; gap:8px;
   padding:5px 10px;
-  flex-shrink:0;
+  flex-shrink:0;   /* faixa de confirmação SEMPRE visível — nunca empurrada p/ fora */
+  background:rgba(20,14,8,0.6);
+  border-top:1px solid rgba(190,140,35,0.18);
 }
 
 /* ── Faixa 4: Log narrativo ── */
 #log-strip{
-  flex-shrink:0;
+  flex-shrink:1; min-height:0;          /* cede antes da faixa de botões, se faltar espaço */
   display:flex; align-items:center; gap:8px;
   padding:4px 12px 6px;
   background:rgba(0,0,0,0.35);
   border-top:1px solid rgba(190,140,35,0.12);
-  min-height:26px;
 }
 .log-icon{ font-size:13px; flex-shrink:0; }
 #log-text{
@@ -4263,6 +4264,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v19</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v20</div>
 </body>
 </html>
