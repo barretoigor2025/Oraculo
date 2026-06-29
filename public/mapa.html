@@ -856,6 +856,7 @@ window._voltarNarracao = async function() {
       'narration.cenaId': cena,
       'narration.modoImagem': 'exterior',
       'narration.percepcao': { ativo: false },
+      'narration.pularIntro': true,   // abre direto no diálogo (não reabre a introdução)
       'mapa.autoViagem': null,
       'mapa.viagemEmAndamento': false,
     });
@@ -1012,6 +1013,6 @@ async function init() {
 
 init();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v16</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v17</div>
 </body>
 </html>

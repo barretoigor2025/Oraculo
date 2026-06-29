@@ -1181,6 +1181,7 @@ let _unsubRoom = null;
 let _percepcaoEmAndamento = false;
 let _cenasVisitadas = new Set();
 let _emboscadaTimer = null;   // dispara a batalha automática de cenas tipo 'emboscada'
+let _pularIntroVez = false;   // true ao voltar do mapa → abre direto no diálogo
 
 // ── Referências DOM ──────────────────────────────────────────────
 const elTitulo = document.getElementById('narr-titulo');
@@ -1287,8 +1288,15 @@ function onRoomUpdate(room) {
   _modoImagem = novoModo;
   _dialogoLog = novoDialogo;
 
+  // Voltar do mapa → cair DIRETO no diálogo (sem reabrir a introdução da cena).
+  _pularIntroVez = !!narr.pularIntro;
+
   // atualizarCena() popula _introSlides via mostrarIntroCinemat()
   if (mudouCena || mudouModo) atualizarCena();
+
+  // Consome o flag de pular-intro (host limpa para não vazar p/ próximas cenas)
+  if (narr.pularIntro && _isHost && window._fbUpdateNarration) window._fbUpdateNarration({ pularIntro: false });
+  _pularIntroVez = false;
 
   // (Leitura do intro é LOCAL — não há mais sync de slide entre dispositivos.
   //  Cada jogador avança no seu ritmo; só o "Estou Pronto" final é coletivo.)
@@ -1447,9 +1455,9 @@ function atualizarCena() {
     }
   }
 
-  // Cenas com semIntro (ex.: pós-batalha do Gregoras) abrem direto na cena,
-  // sem slide de abertura — o NPC já entra falando.
-  if (cena.semIntro) {
+  // Cenas com semIntro (ex.: pós-batalha do Gregoras) — ou ao VOLTAR DO MAPA —
+  // abrem direto no diálogo, sem reabrir o slide de introdução.
+  if (cena.semIntro || _pularIntroVez) {
     document.getElementById('intro-cinematico')?.classList.add('oculto');
   } else {
     mostrarIntroCinemat(cena);
@@ -3339,6 +3347,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v22</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v23</div>
 </body>
 </html>
