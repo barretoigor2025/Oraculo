@@ -528,6 +528,22 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   opacity:0; transition:opacity .4s;
   padding:0 14px;
 }
+
+/* Banner de emboscada — entra escuro com texto vermelho, depois revela a batalha */
+#emboscada-banner{
+  position:fixed; inset:0; z-index:950;
+  background:rgba(0,0,0,0.92);
+  display:none; align-items:center; justify-content:center;
+  opacity:0; transition:opacity .5s ease; pointer-events:none;
+}
+#emboscada-banner.ativo{ display:flex; opacity:1; pointer-events:all; }
+#emboscada-banner-txt{
+  color:#ff3b30; font-family:'Segoe UI',system-ui,sans-serif;
+  font-weight:900; font-size:clamp(30px,11vw,64px); letter-spacing:4px;
+  text-shadow:0 0 24px rgba(255,40,30,0.8), 0 3px 8px rgba(0,0,0,0.9);
+  animation:emb-pulse 1s ease-in-out infinite;
+}
+@keyframes emb-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
 #turno-letreiro.visivel{ opacity:1; }
 #turno-nome{
   font-size:clamp(22px,7vw,40px); font-weight:900;
@@ -635,6 +651,9 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   <div id="turno-sub"></div>
   <div id="turno-punicao"></div>
 </div>
+
+<!-- Banner de emboscada (entrada de batalha de viagem) -->
+<div id="emboscada-banner"><div id="emboscada-banner-txt">⚔️ EMBOSCADA!</div></div>
 
 <div id="mov-confirm-modal">
   <div id="mov-confirm-msg"></div>
@@ -4140,6 +4159,18 @@ function _initOnce(){ if(!_initFired){ _initFired=true; init(); } }
 // reaplica o mapa via _aplicarMapaDaCena() — por isso o map é reativo, não fixo.
 let _battleKey = localStorage.getItem('oraculo.battleCena') || '';
 let _mapaInfo  = (window._mapaDaKey && window._mapaDaKey(_battleKey)) || window._MAPA_FALLBACK;
+// Banner de EMBOSCADA na entrada (batalha de viagem): vermelho, depois revela a luta.
+if (_battleKey.startsWith('_emboscada')) {
+  const _emb = document.getElementById('emboscada-banner');
+  if (_emb) {
+    _emb.style.transition = 'none';          // entra preto instantâneo (sem flash da arena)
+    _emb.classList.add('ativo');
+    void _emb.offsetHeight;                   // reflow
+    _emb.style.transition = '';
+    setTimeout(() => { _emb.style.opacity = '0'; }, 1600);   // depois revela a batalha (fade .5s)
+    setTimeout(() => { _emb.classList.remove('ativo'); _emb.style.opacity = ''; }, 2150);
+  }
+}
 let _mapaAplicado = null;   // último caminho de imagem aplicado (evita recarregar à toa)
 mapaEl.onload = _initOnce;
 mapaEl.onerror = () => {
@@ -4266,6 +4297,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v21</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v22</div>
 </body>
 </html>

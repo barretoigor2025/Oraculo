@@ -132,6 +132,20 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
   paint-order:stroke;stroke:rgba(8,5,2,0.92);stroke-width:3.5;stroke-linejoin:round;
 }
 
+/* ── Transição de emboscada ── */
+#mapa-fade{
+  position:fixed;inset:0;z-index:1000;
+  background:#000;opacity:0;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .55s ease;
+}
+#mapa-fade.ativo{opacity:1;pointer-events:all;}
+#mapa-fade-txt{
+  color:rgba(225,200,130,0.95);font-family:Georgia,serif;font-style:italic;
+  font-size:clamp(16px,5vw,22px);text-align:center;padding:0 30px;
+  letter-spacing:.5px;transition:opacity .5s ease;
+}
+
 /* ── TOOLTIP DO NÓ ── */
 #no-tooltip{
   position:fixed;z-index:100;
@@ -409,6 +423,9 @@ html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-fami
     <button id="modal-rota-cancelar" onclick="window._fecharModalRota()">Cancelar</button>
   </div>
 </div>
+
+<!-- Transição de emboscada (fade preto + texto datilografado) -->
+<div id="mapa-fade"><div id="mapa-fade-txt"></div></div>
 
 <!-- Encontro overlay -->
 <div id="encontro-overlay">
@@ -756,6 +773,7 @@ async function _iniciarViagem(destino) {
       // Arena abre direto a cena do destino. Sem voltar ao ponto de origem.
       const battleKey = '_emboscada:' + (caminho.perigo || 1);
       _addChatSistema(`⚔️ Emboscada na chegada a ${NOS[destino]?.titulo}!`);
+      await _transicaoEmboscada();   // fade preto + "Algo no caminho aconteceu…"
       if (window._fbSetStatus) {
         await window._fbSetStatus('battle', {
           'mapa.localAtual': destino,           // já chegou ao destino
@@ -802,6 +820,29 @@ async function _iniciarViagem(destino) {
     _addChatSistema(`📍 Chegaram em ${NOS[destino]?.titulo}.`);
     if (encontro) _mostrarEncontro(encontro, caminho); // roubo/diálogo = overlay narrativo
   }, duracao + 200);
+}
+
+// Fade pra preto + texto datilografado antes de cair na Arena (emboscada).
+function _transicaoEmboscada() {
+  return new Promise(resolve => {
+    const ov  = document.getElementById('mapa-fade');
+    const txt = document.getElementById('mapa-fade-txt');
+    if (!ov || !txt) { resolve(); return; }
+    txt.textContent = ''; txt.style.opacity = '1';
+    ov.classList.add('ativo');                 // fade-in pra preto (0.55s)
+    const full = 'Algo no caminho aconteceu…';
+    setTimeout(() => {
+      let i = 0;
+      const iv = setInterval(() => {
+        txt.textContent = full.slice(0, ++i);
+        if (i >= full.length) {
+          clearInterval(iv);
+          setTimeout(() => { txt.style.opacity = '0'; }, 950);   // segura, some o texto
+          setTimeout(resolve, 1500);                              // tela fica preta → vai p/ Arena
+        }
+      }, 48);
+    }, 600);
+  });
 }
 
 function _animarStandeesParaNo(destino, duracao) {
@@ -1012,6 +1053,6 @@ async function init() {
 
 init();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v18</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v19</div>
 </body>
 </html>
