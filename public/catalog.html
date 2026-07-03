@@ -422,6 +422,23 @@
       font-size: 10px; color: var(--text-dim);
     }
 
+    /* ── Botões de download de retrato ── */
+    .btn-dl {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid rgba(120,180,140,0.5);
+      background: rgba(40,90,60,0.28); color: #9fe0b8;
+      border-radius: 999px; padding: 7px 14px;
+      font-size: 12px; font-weight: 600; font-family: inherit;
+      cursor: pointer; white-space: nowrap;
+      transition: background .15s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-dl:hover { background: rgba(50,120,80,0.42); }
+    .btn-dl:active { transform: scale(.96); }
+    .btn-dl:disabled { opacity: .6; cursor: default; }
+    .btn-dl-todos { margin-left: auto; }   /* empurra p/ direita no header da aba */
+    .btn-dl-modal { margin-top: 10px; }     /* dentro do detalhe */
+
     /* ── SPRITE PAIRS (class m/f) ── */
     .sprite-pair {
       display: flex; gap: 0;
@@ -958,13 +975,77 @@ function npcSpriteUrl(id, costas){
 }
 function npcStandeeUrl(id){ return `catalogo/mhoried/npcs/${id}/peca_tabuleiro/${id}_peca.png`; }
 
+// ── Download de retratos (individual e em lote, sem zip) ─────────────
+async function baixarImagem(url, filename){
+  try{
+    const resp = await fetch(url, {cache:'no-store'});
+    if(!resp.ok) return false;
+    const blob = await resp.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    return true;
+  }catch(e){ console.warn('download falhou:', url, e); return false; }
+}
+// Baixa vários em SEQUÊNCIA (o navegador pede permissão 1x e baixa todos).
+async function baixarPack(itens, btn){
+  const txt0 = btn ? btn.innerHTML : '';
+  let ok = 0;
+  if(btn) btn.disabled = true;
+  for(let i=0;i<itens.length;i++){
+    if(btn) btn.textContent = `⏳ ${i+1}/${itens.length}…`;
+    if(await baixarImagem(itens[i].url, itens[i].filename)) ok++;
+    await new Promise(r=>setTimeout(r, 450));
+  }
+  if(btn){ btn.textContent = `✓ ${ok}/${itens.length}`; setTimeout(()=>{ btn.innerHTML = txt0; btn.disabled = false; }, 2600); }
+}
+window.baixarImagem = baixarImagem;
+window.baixarPack = baixarPack;
+// Baixa UM retrato, com feedback no botão.
+window.baixarUm = async function(url, filename, btn){
+  const t0 = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Baixando…'; }
+  const ok = await baixarImagem(url, filename);
+  if(btn){ btn.textContent = ok ? '✓ Baixado!' : '✕ Não encontrado'; setTimeout(()=>{ btn.innerHTML = t0; btn.disabled = false; }, 2400); }
+};
+
+// Listas de retratos por aba (usadas pelos botões "Baixar todos")
+function _retratosClasses(){
+  const data = campAtual==='mhoried' ? CLASSES_DATA : campAtual==='death-note' ? DN_CLASSES_DATA : FANTASMA_CLASSES;
+  const itens = [];
+  for(const id of Object.keys(data)){
+    if(data[id]?.placeholder) continue;
+    if(campAtual==='mhoried'){
+      itens.push({url:classSpriteUrl(id,'m'), filename:`${id}_m_retrato.png`});
+      itens.push({url:classSpriteUrl(id,'f'), filename:`${id}_f_retrato.png`});
+    } else {
+      const g = data[id].gender||'m';
+      itens.push({url:`catalogo/${campAtual}/classes/${id}/retrato/${id}_${g}_retrato.png`, filename:`${id}_${g}_retrato.png`});
+    }
+  }
+  return itens;
+}
+function _retratosNpcs(){
+  const npcList = campAtual==='mhoried' ? Object.values(NPCS) : campAtual==='death-note' ? DN_PERSONAGENS : FANTASMA_NPCS;
+  return npcList.filter(n=>!n.placeholder).map(n=>({url:npcRetratoUrl(n.id), filename:`${n.id}_retrato.png`}));
+}
+function _retratosInimigos(){
+  const lista = (typeof INIMIGOS_COMPLETO!=='undefined' && INIMIGOS_COMPLETO) || INIMIGOS_DATA || [];
+  return lista.map(e=>({url:inimRetratoUrl(e.id), filename:`${e.id}_retrato.png`}));
+}
+window.baixarTodasClasses  = btn => baixarPack(_retratosClasses(), btn);
+window.baixarTodosNpcs     = btn => baixarPack(_retratosNpcs(), btn);
+window.baixarTodosInimigos = btn => baixarPack(_retratosInimigos(), btn);
+
 // ── BUILD CLASSES TAB ─────────────────────────────────────────────────
 
 function buildClassesTab(){
   const tab = document.getElementById('classes-tab');
   const data = campAtual==='mhoried' ? CLASSES_DATA :
                campAtual==='death-note' ? DN_CLASSES_DATA : FANTASMA_CLASSES;
-  const header = `<div class="section-header"><h2>Classes de Jogadores</h2><span class="count-badge">${Object.keys(data).length} classes</span></div>`;
+  const header = `<div class="section-header"><h2>Classes de Jogadores</h2><span class="count-badge">${Object.keys(data).length} classes</span><button class="btn-dl btn-dl-todos" onclick="baixarTodasClasses(this)">⬇️ Baixar retratos (M/F)</button></div>`;
 
   let cards = '<div class="card-grid">';
   for(const [id, cls] of Object.entries(data)){
@@ -1018,7 +1099,7 @@ function buildNpcsTab(){
   const tab = document.getElementById('npcs-tab');
   const npcList = campAtual==='mhoried' ? Object.values(NPCS) :
                   campAtual==='death-note' ? DN_PERSONAGENS : FANTASMA_NPCS;
-  const header = `<div class="section-header"><h2>NPCs da Campanha</h2><span class="count-badge">${npcList.length} personagens</span></div>`;
+  const header = `<div class="section-header"><h2>NPCs da Campanha</h2><span class="count-badge">${npcList.length} personagens</span><button class="btn-dl btn-dl-todos" onclick="baixarTodosNpcs(this)">⬇️ Baixar todos os retratos</button></div>`;
 
   let cards = '<div class="card-grid" id="npc-grid">';
   for(const npc of npcList){
@@ -1066,7 +1147,7 @@ function buildInimigosTab(){
     return;
   }
 
-  const header = `<div class="section-header"><h2>Inimigos &amp; Criaturas</h2><span class="count-badge">${listaInimigos.length} tipos</span></div>`;
+  const header = `<div class="section-header"><h2>Inimigos &amp; Criaturas</h2><span class="count-badge">${listaInimigos.length} tipos</span><button class="btn-dl btn-dl-todos" onclick="baixarTodosInimigos(this)">⬇️ Baixar todos os retratos</button></div>`;
   let cards = '<div class="card-grid">';
   for(const en of listaInimigos){
     if(en.placeholder){
@@ -1168,6 +1249,7 @@ window.openClassModal = function(id, _idx){
           <div class="stat-box"><div class="sv">🎲 d${cls.atk+4}</div><div class="sk">Dado Atk</div></div>
         </div>
         <div class="attrs-grid">${attrsHtml}</div>
+        ${campAtual==='mhoried' ? `<button class="btn-dl btn-dl-modal" onclick="baixarPack([{url:'${classSpriteUrl(id,'m')}',filename:'${id}_m_retrato.png'},{url:'${classSpriteUrl(id,'f')}',filename:'${id}_f_retrato.png'}], this)">⬇️ Baixar retrato (M/F)</button>` : ''}
       </div>
     </div>
     <div class="modal-body">
@@ -1211,6 +1293,7 @@ window.openNpcModal = function(id, _idx){
         <div class="modal-name">${npc.nome}</div>
         <div class="modal-cat"><span class="cat-badge cat-${npc.categoria}">${catLabel(npc.categoria)}</span></div>
         <div class="modal-feat" style="margin-top:8px">${npc.personalidade ? npc.personalidade.slice(0,120)+'…' : ''}</div>
+        <button class="btn-dl btn-dl-modal" onclick="baixarUm('${npcRetratoUrl(npc.id)}','${npc.id}_retrato.png',this)">⬇️ Baixar foto</button>
       </div>
     </div>
     <div class="modal-body">${sections}</div>`;
@@ -1307,6 +1390,7 @@ window.openEnemyModal = function(id, _idx){
         <div class="modal-name">💀 ${en.nome}</div>
         <div class="modal-cat"><span class="cat-badge cat-inimigo">${en.tipo}</span></div>
         <div class="modal-feat" style="margin-top:12px">${en.historia ? en.historia.slice(0,120)+'…' : en.desc}</div>
+        <button class="btn-dl btn-dl-modal" onclick="baixarUm('${inimRetratoUrl(en.id)}','${en.id}_retrato.png',this)">⬇️ Baixar foto</button>
       </div>
     </div>
     <div class="modal-body">
