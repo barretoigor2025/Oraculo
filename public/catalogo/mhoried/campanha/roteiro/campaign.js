@@ -99,7 +99,8 @@ export const CENAS = {
     ato: 1,
     imgExterior: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_int.png',
     imgInterior: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_int.png',
-    npcsPresentes: ['npc_gregoras_pellos'],
+    npcsPresentes: ['npc_gregoras_pellos', 'npc_bishop_methodios'],
+    beatNarrativo: 'Gregoras conduz a conversa (recrutamento da Duquesa). O Bispo METHODIOS também está na feira, como representante eclesiástico do festival de St. Phanourios — NPC opcional: pode dar contexto religioso/político sobre Mhoried, os desaparecimentos e a Igreja, e uma bênção. Não atrapalha o gancho principal (ir ao Castelo).',
     introSlides: [
       {
         imagem: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_int.png',
@@ -370,7 +371,8 @@ export const CENAS = {
     ato: 3,
     imgExterior: 'catalogo/mhoried/cenarios/conversacao/gloamreach/imagem/gloamreach.png',
     imgInterior: 'catalogo/mhoried/cenarios/conversacao/gloamreach/imagem/gloamreach.png',
-    npcsPresentes: ['npc_duque_oswald_thool'],
+    npcsPresentes: ['npc_duque_oswald_thool', 'npc_choir_necromante'],
+    beatVilao: 'CHOIR, o Necromante, está presente aqui — foi ele quem transformou os homens em Thools e domina este lugar. Dê a ele uma fala fria e clínica antes/durante o confronto ("Que desperdício de carne"): é a chance de o jogador finalmente encarar o vilão que puxa os fios desde a Feira. Ele também luta (ver roster do gloamreach).',
     temBatalha: true,
     descBatalha: 'Os Thools e alquimistas de Choir defendem o Gloamreach',
     inimigos: 'Thools e Alquimistas de Choir',
@@ -420,7 +422,7 @@ export const CENAS = {
     textoIntro: `A estrada da floresta está bloqueada por uma carroça de mercadores tombada, eixo partido. Dois corpos de comerciantes jazem nos lados do caminho com flechas negras e finas nas costas — flechas que não são humanas. Os cavalos fugiram. Um das caixas de mercadoria foi aberta de dentro para fora. Algo brilha entre a madeira quebrada.`,
     tipo: 'descoberta',
     exigeAntes: ['blackwoods_entrada'],
-    ganchoChegada: 'A estrada para o interior dos Blackwoods passa por aqui — e algo está bloqueando o caminho.',
+    ganchoChegada: 'A estrada para o interior dos Blackwoods passa por aqui — e uma carroça de mercadores tombada, com corpos e flechas negras, bloqueia o caminho.',
     npcEntrada: null,
     falaEntrada: null,
     ganchoPosBatalha: null,
@@ -433,6 +435,17 @@ export const CENAS = {
     ordemNarrativa: 3,
     ato: 2,
     pistas: ['rastro_elfo_acampamento', 'machado_dvalinn', 'tesouro_carroça'],
+    itemChave: 'machado_dvalinn', // machado anão — devolver ao Dvalinn abre o coração dele
+    // Investigação (sem NPC): percepção ao chegar revela o que a estrada esconde.
+    gatilhos_entrada: [
+      {
+        dc: 12,
+        descricaoContexto: 'As flechas nos corpos são élficas — penas negras e finas dos Voornsworn (Vhuureth). Isto foi uma EMBOSCADA de patrulha élfica, não um assalto comum. Entre os destroços, um machado de guerra anão bem forjado com um brasão de clã no cabo — pertencia a um companheiro de DVALINN, o anão mercador. A caixa foi aberta de DENTRO para fora: algo saiu dela. Um rastro fresco parte para o norte — direção do acampamento dos Vhuureth.',
+        textoFallback: 'As flechas nos corpos têm penas negras e finas — não são de bandidos comuns. Entre a madeira quebrada, o brilho de um machado bem forjado que ninguém se deu ao trabalho de levar.',
+      },
+    ],
+    // ── BEAT DA CARROÇA (paga a pista do Dvalinn + planta o medo dos Vhuureth) ──
+    beatNarrativo: 'Cena de INVESTIGAÇÃO (sem batalha). Três descobertas: (1) flechas negras dos Voornsworn → foi uma patrulha Vhuureth; o rastro leva ao acampamento_elfico. (2) um MACHADO DE GUERRA ANÃO com brasão de clã → era de um companheiro de DVALINN (o anão mercador hoje preso na cidade kobold); guardar e devolver o machado a ele cria vínculo e o abre. (3) a CAIXA aberta de dentro para fora → algo escapou (tensão) + dilema moral com o que restou de valor (pegar ou deixar). O narrador deve fazer a estrada parecer o palco de uma emboscada élfica RECENTE — plantando o medo dos Vhuureth antes de encontrá-los.',
   },
 
   encruzilhada: {

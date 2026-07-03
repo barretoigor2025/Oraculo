@@ -139,17 +139,38 @@ Pode ser aliada eficaz — mas tem objetivos próprios e não abandona contratos
 
 ---
 
-### Cena 2.2 — A Carroça Tombada
+### Cena 2.2 — A Carroça Tombada  ·  INVESTIGAÇÃO (arco do Dvalinn)
 **Cena:** `carroça_tombada`
-**Tipo:** Investigação / Moral
+**Tipo:** Investigação / Moral (SEM batalha) — **percepção ao chegar** (`gatilhos_entrada`, DC 12)
 
-Mercadores mortos com flechas élficas negras. Pistas encontráveis:
-- **`rastro_elfo_acampamento`**: direção do acampamento dos Vhuureth
-- **`machado_dvalinn`**: pertence a um anão mercador — cria gancho para encontrá-lo
-- **`tesouro_carroça`**: tensão econômica — pegar ou deixar?
+Mercadores mortos com **flechas élficas negras** (Voornsworn). Não foi assalto —
+foi **emboscada de patrulha Vhuureth**. A percepção revela três descobertas:
+- **`rastro_elfo_acampamento`**: rastro fresco ao norte → acampamento dos Vhuureth
+- **`machado_dvalinn`** (item-chave): machado de guerra anão com brasão de clã →
+  era de um **companheiro de DVALINN**. **Guardar e devolver a ele** (na cidade
+  kobold) faz o anão baixar a guarda e virar aliado sincero. ← **paga o arco**
+- **`tesouro_carroça`**: a caixa foi aberta **de dentro para fora** (algo escapou) +
+  dilema moral com o que sobrou de valor.
 
-**Peso moral:** Dvalinn perdeu companheiros neste ataque. Encontrar estas pistas
-ANTES de encontrá-lo cria contexto emocional para o encontro.
+**Peso moral:** Dvalinn perdeu companheiros aqui. Achar isto ANTES de encontrá-lo
+(preso em `kobold_town`) dá contexto emocional — e o machado sela a aliança.
+
+> **NARRADOR:** a estrada deve parecer o palco de uma emboscada élfica recente —
+> planta o medo dos Vhuureth antes do primeiro encontro com eles.
+
+---
+
+### 🔎 Correções de auditoria (fios soltos fechados)
+- **Javali (encruzilhada):** arco do batedor **Naeryn** / irmão **Corvael** no lago →
+  paga em Aelar e Ruzalka. (cena 2.3)
+- **Carroça:** machado do companheiro → paga no **Dvalinn**. (cena 2.2)
+- **NPCs que estavam órfãos (existiam mas não apareciam):**
+  - **Choir, o Necromante** (vilão) → agora presente no **Gloamreach** (fala + luta) e
+    sentido nas **Ruínas de Simithari** (laboratório dele).
+  - **Bispo Methodios** → agora na **Feira** (conversa pós-batalha, NPC opcional).
+- **Arte de cenário pendente** (backlog, gerar depois): carroça, encruzilhada,
+  great_grub_carcass, kobolds_dissidentes, manticore_grounds, ruins_simithari,
+  sepultura_jariella, twinfold_hollow, weepers_well, ysoria_revelacao.
 
 ---
 
