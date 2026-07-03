@@ -778,6 +778,18 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
 'use strict';
 
 // ── Bestiary helper ──────────────────────────────────────────────────────────
+// Escala do standee do inimigo pelo porte (SM/GURPS). Robusto p/ unidades
+// sincronizadas (sem sm): deriva o bestiaryId do id "{id}_{col}_{row}".
+function _porteEsc(u){
+  let sm = u.sm;
+  if(sm==null){
+    const bid = u.bestiaryId || (u.id||'').replace(/_\d+_\d+$/,'');
+    const en = (window.INIMIGOS_DATA||[]).find(e=>e.id===bid);
+    sm = en?.gurps?.sm ?? 0;
+  }
+  return ({'-1':0.80, '0':1.05, '1':1.5, '2':2.0})[String(sm)] || 1.05;
+}
+
 function criarInimigo(bestiaryId, col, row, overrides){
   const en = (window.INIMIGOS_DATA||[]).find(e=>e.id===bestiaryId);
   if(!en){ console.warn('criarInimigo: id não encontrado →', bestiaryId); return null; }
@@ -800,6 +812,7 @@ function criarInimigo(bestiaryId, col, row, overrides){
     portrait:    en._retrato  || `catalogo/mhoried/inimigos/${bestiaryId}/retrato/${bestiaryId}_retrato.png`,
     ac:          g.dodge ?? 8,
     dr:          g.dr    ?? 0,
+    sm:          g.sm    ?? 0,   // porte (SM/GURPS) — controla o tamanho no tabuleiro
     bestiaryId,
     habs:        en.habs        || [],
     magias:      en.magias      || [],
@@ -1964,24 +1977,20 @@ function renderUnits(){
     if(u.tipo==='inimigo'&&u.hp<=0) continue; // inimigo morto some imediatamente
     const{x,y}=unitPos(u);
     if(u.img && u.tipo==='inimigo'){
-      // Portrait circular (medallion) para inimigos
-      const r = HR * 0.52;
-      const cx = x, cy = y;
-      const srcW = u.img.naturalWidth;
-      const srcH = u.img.naturalHeight;
-      const cropH = Math.round(srcH * 0.55);
+      // Standee de corpo inteiro, ancorado nos pés, com PORTE por criatura (SM/GURPS).
+      const esc  = _porteEsc(u);
+      const foot = y + OOFF * 0.30;
+      const drawH = HR * 2.3 * esc;
+      const sw = drawH * (u.img.naturalWidth / Math.max(1,u.img.naturalHeight));
+      if(u===selUnit){
+        ctxU.beginPath(); ctxU.ellipse(x, foot, HR*0.5*Math.max(1,esc*0.9), HR*0.17, 0, 0, Math.PI*2);
+        ctxU.fillStyle='rgba(255,208,40,0.18)'; ctxU.fill();
+        ctxU.strokeStyle='#ffd028'; ctxU.lineWidth=2.5; ctxU.stroke();
+      }
       ctxU.save();
-      ctxU.beginPath();
-      ctxU.arc(cx, cy - HR * 0.1, r, 0, Math.PI * 2);
-      ctxU.clip();
-      if(u===selUnit){ ctxU.shadowColor='#ffd028'; ctxU.shadowBlur=12; }
-      ctxU.drawImage(u.img, 0, 0, srcW, cropH, cx - r, cy - HR * 0.1 - r, r * 2, r * 2);
+      if(u===selUnit){ ctxU.shadowColor='#ffd028'; ctxU.shadowBlur=16; }
+      ctxU.drawImage(u.img, x - sw/2, foot - drawH, sw, drawH);
       ctxU.restore();
-      ctxU.beginPath();
-      ctxU.arc(cx, cy - HR * 0.1, r, 0, Math.PI * 2);
-      ctxU.strokeStyle = u===selUnit ? '#ffd028' : 'rgba(200,60,30,0.8)';
-      ctxU.lineWidth = u===selUnit ? 3 : 2;
-      ctxU.stroke();
     } else if(u.img){
       const foot = y + OOFF * .3;
       const clip = u.clipBottom || 0;
@@ -4297,6 +4306,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v22</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v23</div>
 </body>
 </html>
