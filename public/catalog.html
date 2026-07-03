@@ -1616,10 +1616,13 @@ function buildChecklistTab(){
   for(const c of cenasList){
     const a = c.ato || 1;
     if(!atoMap[a]) atoMap[a] = [];
+    const bgPath = c.imgExterior || c.imgInterior
+      || ((window._MAPAS_BATALHA && window._MAPAS_BATALHA[c.id]?.mapa)
+          || `${CAT}cenarios/batalha_hex/${c.id}/imagem/${c.id}.png`);
     atoMap[a].push({
       nome: c.titulo,
-      sub: `${c.id}.png`,
-      path: `${CAT}cenarios/${c.id}/imagem/${c.id}.png`,
+      sub: bgPath.split('/').pop(),
+      path: bgPath,
     });
     if(c.temBatalha){
       const bm = (window._MAPAS_BATALHA && window._MAPAS_BATALHA[c.id]?.mapa)
@@ -2352,6 +2355,6 @@ function updateCount(tab){
 _rebuildAllTabs();
 updateCount('classes');
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">cat-v3</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">cat-v4</div>
 </body>
 </html>

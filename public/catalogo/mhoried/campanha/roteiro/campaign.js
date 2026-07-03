@@ -493,6 +493,8 @@ export const CENAS = {
       texto: '"As criaturas descansam agora." [a névoa retorna] "O Gillshade ainda cresce nas pedras submersas — colem antes que as águas se lembrem de estar com fome." [pausa] "E quando quiser saber o que as águas me contaram sobre você — beba do poço. Eu estarei lá."',
     },
     entradaBorda: 'norte',
+    imgExterior: 'catalogo/mhoried/cenarios/conversacao/bosque_afogado/imagem/bosque_afogado.png',
+    imgInterior: 'catalogo/mhoried/cenarios/conversacao/bosque_afogado/imagem/bosque_afogado.png',
     temBatalha: true,
     descBatalha: 'Patrulha Vhuureth bloqueia a passagem, depois Mudwallowers, Quay Grabber e Crab Zombies protegem a ruína submersa',
     inimigos: 'Patrulha Vhuureth + Mudwallowers + Quay Grabber + Crab Zombies',
