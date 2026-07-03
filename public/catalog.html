@@ -941,15 +941,17 @@ function spriteUrl(path){
   return path;
 }
 
+// ?v=2 fura o cache de imagem do navegador (retratos restaurados com cenário)
+const _IMGVER = '2';
 function inimRetratoUrl(id){
-  return `catalogo/mhoried/inimigos/${id}/retrato/${id}_retrato.png`;
+  return `catalogo/mhoried/inimigos/${id}/retrato/${id}_retrato.png?v=${_IMGVER}`;
 }
 
 function inimSpriteUrl(id, costas){
   if(costas) return `catalogo/mhoried/inimigos/${id}/sprites/costas/${id}_costas.png`;
   return `catalogo/mhoried/inimigos/${id}/sprites/frente/${id}_frente.png`;
 }
-function inimStandeeUrl(id){ return `catalogo/mhoried/inimigos/${id}/peca_tabuleiro/${id}_peca.png`; }
+function inimStandeeUrl(id){ return `catalogo/mhoried/inimigos/${id}/peca_tabuleiro/${id}_peca.png?v=${_IMGVER}`; }
 
 function classSpriteUrl(id, gender){
   return `catalogo/mhoried/classes/${id}/retrato/${id}_${gender}_retrato.png`;
@@ -2350,6 +2352,6 @@ function updateCount(tab){
 _rebuildAllTabs();
 updateCount('classes');
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">cat-v2</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">cat-v3</div>
 </body>
 </html>
