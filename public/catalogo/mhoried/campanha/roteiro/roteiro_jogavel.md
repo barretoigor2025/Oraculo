@@ -153,18 +153,35 @@ ANTES de encontrá-lo cria contexto emocional para o encontro.
 
 ---
 
-### Cena 2.3 — A Encruzilhada
+### Cena 2.3 — A Encruzilhada  ·  ARCO DO BATEDOR VOORNSWORN
 **Cena:** `encruzilhada`
-**Inimigos:** `javali_ensandecido`
-**Tipo:** Batalha + investigação
+**Inimigos:** `javali_ensandecido` (ÚNICO — um só; o javali da prótese é uma criatura de arco, não descartável)
+**Tipo:** Batalha + investigação + **gancho de arco**
 
-Javali com **lança quebrada** e **prótese de mão metálica** nas costas.
-Alguém morreu aqui antes. Os itens podem pertencer a um NPC.
+Javali colossal com **lança quebrada** e **prótese de mão metálica** cravadas nas costas.
+A prótese traz o nome **NAERYN** e o **brasão dos Voornsworn** (elfos negros).
 
-Pistas que os jogadores podem encontrar no corpo do javali:
-- **`mapa_caçador`**: mapa parcial da floresta
+**A história por trás (o que o javali "começa"):**
+Naeryn era um **batedor Voornsworn solitário** que caçava pela floresta procurando o
+irmão, **Corvael**, tragado pelas **águas do Bosque Afogado**. O javali corrompido o
+matou antes que chegasse ao lago. A prótese é um **item-chave** (`protese_naeryn`) que
+os jogadores podem guardar.
+
+**Dois desfechos (paga o arco — não deixa o javali como "só um bicho"):**
+1. **Aelar / Vhuureth (acampamento élfico):** reconhecem o brasão e o nome de Naeryn →
+   respeito silencioso + informação (a resposta está nas águas).
+2. **Ruzalka (Bosque Afogado):** as águas guardam Corvael entre as raízes de Castellet
+   Malvoisin. Trazer a prótese e ouvir a história **fecha o fio** — os dois irmãos se
+   reencontram nas águas; Ruzalka pode devolver algo de Corvael, uma bênção ou pista.
+
+Pistas no corpo do javali:
+- **`protese_naeryn`**: a prótese com o brasão Voornsworn (item-chave do arco)
+- **`mapa_caçador`**: mapa parcial da floresta de Naeryn
 - **`localização_cabana_bruxa`**: direção da Choupana de Mutter
-- **`irmão_perdido_lago`**: menção a alguém perdido num lago — gancho para o Bosque Afogado
+- **`irmão_perdido_lago`** → **Corvael**, no Bosque Afogado (Ruzalka)
+
+> **NARRADOR:** o javali é uma CARGA MORTAL (SM+1, investida com knockback) — um único
+> inimigo, mas perigoso. Ao vencê-lo, faça o grupo SENTIR que começaram uma história.
 
 ---
 

@@ -447,7 +447,7 @@ export const CENAS = {
     falaEntrada: null,
     ganchoPosBatalha: {
       npc: null,
-      texto: 'O javali está morto. Na prótese metálica cravada em suas costas, gravado na madeira escurecida: um nome élfico e o símbolo de um clã. Alguém perdeu isso aqui — e não foi de boa vontade.',
+      texto: 'O javali cai e o silêncio volta à clareira. Cravada nas costas dele, a prótese de mão metálica traz um nome élfico gravado — NAERYN — e o brasão dos Voornsworn. Enrolado no cabo da lança quebrada há um pedaço de mapa de caçador e um bilhete rabiscado às pressas: "as águas levaram Corvael. Volto ao Bosque Afogado buscá-lo." Naeryn não voltou. O javali o encontrou primeiro. A prótese cabe na mão de um de vocês como um pedido silencioso.',
     },
     entradaBorda: null,
     imgExterior: 'catalogo/mhoried/cenarios/conversacao/encruzilhada/imagem/encruzilhada.png',
@@ -458,7 +458,10 @@ export const CENAS = {
     inimigos: 'Blackwoods Boar',
     ordemNarrativa: 4,
     ato: 2,
-    pistas: ['mapa_caçador', 'localização_cabana_bruxa', 'irmão_perdido_lago'],
+    pistas: ['mapa_caçador', 'localização_cabana_bruxa', 'irmão_perdido_lago', 'protese_naeryn'],
+    itemChave: 'protese_naeryn', // a prótese com o brasão Voornsworn — item que os jogadores podem guardar
+    // ── ARCO DO BATEDOR VOORNSWORN (paga o javali) ──
+    beatNarrativo: 'A prótese e a lança eram de NAERYN, um batedor Voornsworn (elfo negro) que caçava sozinho pela floresta procurando o irmão, CORVAEL, tragado pelas águas do Bosque Afogado (drowned_grove). O javali corrompido o matou antes que chegasse. A prótese com o brasão do clã é um ITEM SIGNIFICATIVO (não descartável) e abre dois desfechos: (1) mostrá-la à Aelar, ou aos Vhuureth no acampamento élfico — eles reconhecem o brasão e o nome de Naeryn, o que rende respeito e informação; (2) levá-la à Ruzalka no Bosque Afogado — as águas guardam Corvael, e ela revela o destino dos dois irmãos, fechando o fio. O narrador deve fazer o jogador SENTIR que matar o javali começou uma história, não que foi só um bicho no caminho.',
   },
 
   drowned_grove: {
