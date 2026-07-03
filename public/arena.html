@@ -800,8 +800,9 @@ function criarInimigo(bestiaryId, col, row, overrides){
     col, row,
     emoji:       en.emoji || '💀',
     cor:         en.cor   || '#4a0000',
-    imgSrc:      en._retrato  || `catalogo/mhoried/inimigos/${bestiaryId}/retrato/${bestiaryId}_retrato.png`,
-    imgSrcAtaque:en._retrato  || `catalogo/mhoried/inimigos/${bestiaryId}/retrato/${bestiaryId}_retrato.png`,
+    // Tabuleiro usa a PEÇA (standee sem fundo); o retrato com cenário fica p/ o catálogo.
+    imgSrc:      `catalogo/mhoried/inimigos/${bestiaryId}/peca_tabuleiro/${bestiaryId}_peca.png`,
+    imgSrcAtaque:`catalogo/mhoried/inimigos/${bestiaryId}/peca_tabuleiro/${bestiaryId}_peca.png`,
     img:         null,
     tipo:        'inimigo',
     mov:         g.move  ?? 4,
@@ -4306,6 +4307,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v23</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v24</div>
 </body>
 </html>

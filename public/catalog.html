@@ -3,9 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Oráculo — Catálogo de Personagens</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* nada estoura a largura da tela */
+    html, body { max-width: 100%; overflow-x: hidden; }
 
     :root {
       --bg:        #0e0c0a;
@@ -2345,5 +2350,6 @@ function updateCount(tab){
 _rebuildAllTabs();
 updateCount('classes');
 </script>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">cat-v2</div>
 </body>
 </html>
