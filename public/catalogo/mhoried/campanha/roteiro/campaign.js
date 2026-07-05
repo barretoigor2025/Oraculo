@@ -278,7 +278,7 @@ export const CENAS = {
     exigeAntes: ['blackwoods_entrada'],
     ganchoChegada: 'Pela floresta, menções a uma curandeira dos Blackwoods — alguém que conhece ingredientes raros e segredos que nenhum humano civilizado tem.',
     npcEntrada: 'npc_mutter_grimmhaar',
-    falaEntrada: '[Sem parar de mexer a panela] "Fechem a porta. Estão deixando entrar o frio." [pausa] "Não esperava visita. Sentem ou não — mas decidam logo."',
+    falaEntrada: '[Não para de mexer o caldeirão; ergue o nariz e fareja o ar — três cheiradas curtas, gulosas.] Ah... carne nova bate na minha porta. Entrem, entrem — o frio morde o osso de quem fica de fora. [prova o caldo com o dedo, sem olhar pra vocês] Sentem-se, minha criança. Mutter tem caldo de segredo e sopa de ninguém: quem senta e escuta, sai inteiro; quem mente pra Mutter... vira tempero. [risinho seco, quase carinhoso] Não faço mal a quem chega com fome de verdade. Quase nunca.',
     entradaBorda: 'sul',
     ato: 2,
     imgExterior: 'catalogo/mhoried/cenarios/conversacao/choupana_mutter/imagem/choupana_mutter.png',
@@ -544,7 +544,7 @@ export const CENAS = {
     tipo: 'dialogo',
     ganchoChegada: 'Mutter Grimmhaar mencionou um lugar amaldiçoado na muralha antiga — onde Choir fez algo horrível e não conseguiu terminar.',
     npcEntrada: 'npc_mutter_grimmhaar',
-    falaEntrada: '[Chega pela beira da muralha, capuz baixado] "Disse que não era seguro, mas achei que veriam por vocês mesmos." [aponta para os cogumelos luminescentes] "É aqui. Os cogumelos que precisam. Mas tem algo no solo que não gosta de visita."',
+    falaEntrada: '[Surge pela beira da muralha quebrada, capuz baixo, cheirando o ar com deleite.] Sente? Podridão doce, madura no ponto — a larva grande morreu e deixou banquete pra Mutter. [aponta os cogumelos luminescentes] Ali está o que sua gente pediu. Colham rápido, minha criança: o chão aqui tem fome velha, e fome velha não pede licença. [passa a língua nos dentes] Eu fico com as entranhas; vocês, com os cogumelos. Justo, justo.',
     ganchoPosBatalha: {
       npc: 'npc_mutter_grimmhaar',
       texto: '"Colham os cogumelos agora, enquanto o solo ainda está perturbado." [ajoelha ao lado da carcaça da larva] "Choir tentou fazer isso andar de novo. Falhou." [pausa longa] "Não deveria ser possível falhar assim. O que os assustou de terminar?"',
