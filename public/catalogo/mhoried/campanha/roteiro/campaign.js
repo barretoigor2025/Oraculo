@@ -50,7 +50,7 @@ export const CENAS = {
     titulo: 'A Feira de St. Phanourios',
     subtitulo: 'Cidade de Mhoried — Nordeste de Megalos',
     textoIntro: `A cidade de Mhoried pulsa com vida na véspera do dia de St. Phanourios. As ruas do mercado transbordam de cores, aromas e o som de cantores de rua. Mas sob a festa, há um nervosismo sutil — mercadores desapareceram nos bosques ao norte, e os soldados da Duquesa patrulham com uma frequência incomum. É neste cenário que vocês se encontram: aventureiros com reputação suficiente para que alguém importante queira vos contratar.`,
-    tipo: 'emboscada',
+    tipo: 'batalha',
     exigeAntes: ['prologo'],
     ganchoChegada: 'Catherine Laskaris convocou aventureiros de confiança para a Feira de St. Phanourios — algo urgente precisa de mãos que não sejam da guarda.',
     npcEntrada: 'npc_gregoras_pellos',

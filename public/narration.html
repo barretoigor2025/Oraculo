@@ -1160,7 +1160,7 @@ html,body{
 
 <script type="module">
 import { NPCS } from './catalogo/mhoried/loader.js';
-import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js?v=26';
+import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js?v=27';
 import { NARRACAO_NPCS as _dialNpcs, NARRACAO_FLUXO } from './catalogo/mhoried/narracao.js';
 import { NPCS_REGISTRY } from './catalogo/mhoried/npcs_registry.js';
 import { NOS as MAPA_NOS, CAMINHOS as MAPA_CAMINHOS } from './catalogo/mhoried/mapa.js';
@@ -1324,7 +1324,11 @@ function onRoomUpdate(room) {
     clearTimeout(_emboscadaTimer);
     const cenaObj = CENAS[novaCena];
     const jaResolvida = narr.cenaBatalhaResolvida === novaCena;
-    if (cenaObj?.tipo === 'emboscada' && cenaObj?.temBatalha && !jaResolvida) {
+    // Auto-disparo só para emboscada PURA (sem intro/gancho manual). Se a cena
+    // tem um slide de intro com ganchoBatalha, o combate parte do botão "Estou
+    // Pronto" — nunca sozinho (senão pula antes do OK / antes do texto terminar).
+    const temGanchoManual = (cenaObj?.introSlides || []).some(s => s.ganchoBatalha);
+    if (cenaObj?.tipo === 'emboscada' && cenaObj?.temBatalha && !jaResolvida && !temGanchoManual) {
       _emboscadaTimer = setTimeout(() => {
         if (_cenaAtual === novaCena && _lastRoom?.status !== 'battle'
             && typeof iniciarBatalha === 'function') iniciarBatalha();
@@ -3355,6 +3359,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v26</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v27</div>
 </body>
 </html>
