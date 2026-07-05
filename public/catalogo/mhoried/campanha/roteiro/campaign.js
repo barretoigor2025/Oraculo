@@ -93,7 +93,7 @@ export const CENAS = {
     semIntro: true, // abre direto na cena com o Gregoras já falando (sem slide de intro)
     exigeAntes: ['mhoried_market'],
     npcEntrada: 'npc_gregoras_pellos',
-    falaEntrada: '[ACAO: Para a alguns passos de distância, sem apressar. Olhos que avaliaram duzentos rostos antes do de vocês fazem uma leitura rápida do grupo.] Grégoras Pellos. Trabalho para a Duquesa Catherine de Mhoried. — Ela viu o que acabaram de fazer. Tem perguntas sobre quem criou esses espantalhos. E uma proposta que — dependendo de vocês — pode valer a pena ouvir.',
+    falaEntrada: '[ACAO: Aproxima-se sem pressa, mantendo uma distância respeitosa. Um aceno breve de cabeça — reconhecimento, não cerimônia.] Bom trabalho ali. Poucos encaram aquilo sem recuar. [pausa curta] Grégoras Pellos. Sirvo à Duquesa Catherine de Mhoried. Ela viu o que fizeram e gostaria de conversar — há algo acontecendo nos Blackwoods que pede gente competente. [mais baixo, sem pressão] Não é ordem nenhuma. Se quiserem ouvir, eu os levo até ela. A escolha é de vocês.',
     proximaCena: 'castelo_mhoried',
     ordemNarrativa: 1.2,
     ato: 1,
@@ -119,7 +119,7 @@ export const CENAS = {
     exigeAntes: ['mhoried_market'],
     ganchoChegada: 'Gregoras conduziu o grupo pelos corredores do castelo sem cerimônia — a Duquesa pediu para não haver anúncios formais.',
     npcEntrada: 'npc_catherine_laskaris',
-    falaEntrada: '[De pé junto à janela, olha para a praça ainda agitada] "Obrigada por virem." [vira-se] "Quero que encontrem meu irmão. O que voltou dos Blackwoods não é mais ele."',
+    falaEntrada: '[De pé junto à janela, observando a praça ainda agitada. Vira-se ao ouvir os passos; o olhar percorre cada rosto com atenção medida.] Então são vocês. [um aceno discreto para Grégoras] Ele raramente traz alguém sem bom motivo — e eu vi, daqui de cima, o que fizeram lá embaixo. [gesto para as cadeiras] Sentem-se, por favor. Antes de qualquer pedido, gostaria de saber com quem estou falando. [a compostura vacila por um instante] Há algo pesando sobre Mhoried, sim... mas a isso chegamos com calma.',
     proximaCena: 'blackwoods_entrada',
     entradaBorda: null,
     ato: 1,
