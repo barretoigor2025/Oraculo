@@ -999,6 +999,37 @@ html,body{
 /* host controls float above dial overlay */
 #controles-host{position:relative;z-index:85;}
 
+/* ── Painel de Investigação (cenas sem NPC) ── */
+#investig{ position:fixed; inset:0; z-index:90; display:flex; flex-direction:column; background:#0b0906; }
+#investig.oculto{ display:none; }
+#investig-bg{ position:absolute; inset:0; z-index:0; background-size:cover; background-position:top center; background-repeat:no-repeat; }
+#investig-bg::after{ content:''; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,.22) 0%, rgba(0,0,0,.70) 66%, rgba(8,6,4,.97) 100%); }
+#investig-topo{ position:relative; z-index:2; padding:calc(env(safe-area-inset-top) + 12px) 16px 8px; }
+#investig-titulo{ font-family:Georgia,serif; font-size:16px; letter-spacing:.5px; color:#e8c874; text-shadow:0 2px 10px #000; }
+#investig-sub{ font-size:8.5px; letter-spacing:2px; text-transform:uppercase; color:rgba(200,170,90,.55); margin-top:2px; }
+#investig-painel{ position:relative; z-index:2; margin-top:auto; display:flex; flex-direction:column; gap:8px;
+  background:linear-gradient(to bottom, rgba(14,11,7,.55), rgba(11,8,5,.95) 20%);
+  border-top:1px solid rgba(190,140,35,.22); padding:10px 12px calc(env(safe-area-inset-bottom) + 10px); max-height:66vh; }
+#investig-tabs{ display:flex; gap:6px; }
+.itab{ flex:1; background:rgba(0,0,0,.35); border:1px solid rgba(190,140,35,.2); color:rgba(210,185,110,.6); border-radius:9px; padding:9px; font-size:12px; font-weight:700; }
+.itab.ativo{ background:rgba(190,140,35,.16); color:#e8c874; border-color:rgba(190,140,35,.5); }
+.investig-log{ flex:1; min-height:130px; overflow-y:auto; display:flex; flex-direction:column; gap:7px; padding:4px 2px; }
+.investig-log.oculto{ display:none; }
+.ilog-item{ font-size:12px; line-height:1.5; padding:7px 10px; border-radius:9px; max-width:90%; }
+.ilog-player{ background:rgba(44,64,96,.30); color:rgba(216,226,240,.94); align-self:flex-end; }
+.ilog-narr{ background:rgba(30,22,10,.52); color:rgba(240,222,170,.95); border-left:2px solid rgba(190,140,35,.5); font-style:italic; align-self:flex-start; }
+.ilog-narr .dbt-acao{ color:#fff; }
+.ilog-nome{ font-size:8px; letter-spacing:1px; text-transform:uppercase; opacity:.55; display:block; margin-bottom:2px; }
+#investig-pensando{ font-size:11px; color:rgba(200,175,110,.75); font-style:italic; text-align:center; padding:2px; }
+#investig-input-row{ display:flex; gap:7px; align-items:flex-end; }
+#investig-input{ flex:1; resize:none; height:42px; max-height:96px; background:rgba(0,0,0,.4); border:1px solid rgba(190,140,35,.25); border-radius:10px; color:#e8dcb0; padding:11px 12px; font-size:13px; font-family:inherit; }
+#investig-input::placeholder{ color:rgba(190,165,90,.4); }
+#investig-enviar{ flex-shrink:0; width:48px; height:42px; border:none; border-radius:10px; background:linear-gradient(135deg,#caa23e,#9a7826); color:#20160a; font-size:17px; font-weight:700; }
+#investig-acoes-bar{ display:flex; gap:8px; }
+.inv-acao-btn{ flex:1; border:1px solid rgba(190,140,35,.3); background:rgba(0,0,0,.35); border-radius:10px; padding:11px; font-size:12px; font-weight:700; color:rgba(220,190,110,.9); }
+#investig-perc{ border-color:rgba(120,150,200,.4); color:rgba(180,200,235,.95); }
+#investig-sair{ border-color:rgba(200,90,70,.35); color:rgba(230,150,130,.95); }
+
 </style>
 </head>
 <body>
@@ -1066,6 +1097,32 @@ html,body{
     <button id="mapa-fechar" onclick="fecharMapaExploracao()">✕ Fechar</button>
   </div>
   <div id="mapa-conteudo"></div>
+</div>
+
+<!-- Painel de Investigação (cenas de investigação sem NPC) -->
+<div id="investig" class="oculto">
+  <div id="investig-bg"><div class="neblina-layer"></div></div>
+  <div id="investig-topo">
+    <div id="investig-titulo">—</div>
+    <div id="investig-sub">Investigação</div>
+  </div>
+  <div id="investig-painel">
+    <div id="investig-tabs">
+      <button class="itab ativo" id="itab-chat" onclick="_invTab('chat')">💬 Bate-papo</button>
+      <button class="itab" id="itab-acao" onclick="_invTab('acao')">🔍 Ação</button>
+    </div>
+    <div class="investig-log" id="investig-log-chat"></div>
+    <div class="investig-log oculto" id="investig-log-acao"></div>
+    <div id="investig-pensando" style="display:none">✨ O Narrador considera…</div>
+    <div id="investig-input-row">
+      <textarea id="investig-input" rows="1" placeholder="Fale com o grupo…" onkeydown="_invKey(event)"></textarea>
+      <button id="investig-enviar" onclick="_invEnviar()">➤</button>
+    </div>
+    <div id="investig-acoes-bar">
+      <button class="inv-acao-btn" id="investig-perc" onclick="_invPercepcao()">🎲 Percepção</button>
+      <button class="inv-acao-btn" id="investig-sair" onclick="_invSair()">🚪 Sair</button>
+    </div>
+  </div>
 </div>
 
 <!-- Modal de Teste de Percepção -->
@@ -1177,7 +1234,7 @@ html,body{
 
 <script type="module">
 import { NPCS } from './catalogo/mhoried/loader.js';
-import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js?v=30';
+import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js?v=31';
 import { NARRACAO_NPCS as _dialNpcs, NARRACAO_FLUXO } from './catalogo/mhoried/narracao.js';
 import { NPCS_REGISTRY } from './catalogo/mhoried/npcs_registry.js?v=2';
 import { NOS as MAPA_NOS, CAMINHOS as MAPA_CAMINHOS } from './catalogo/mhoried/mapa.js';
@@ -1363,6 +1420,7 @@ function onRoomUpdate(room) {
   renderDialogo();
   if (mudouCena) _dialDesativar();
   _dialVerificarCena();
+  _invVerificarCena();
   atualizarBotoesCena();
   _atualizarAcaoCena(narr);
   _atualizarBtnPercepcao();
@@ -1671,7 +1729,8 @@ function avancarIntro() {
     overlay.classList.add('oculto');
     const cena = CENAS[_cenaAtual];
     const gatilhosEntrada = cena?.gatilhos_entrada || [];
-    if (gatilhosEntrada.length > 0 && !_percepcaoEmAndamento) {
+    // Cenas de investigação NÃO auto-disparam percepção — o jogador usa o botão 🎲 no painel.
+    if (gatilhosEntrada.length > 0 && !_percepcaoEmAndamento && !_ehCenaInvestigacao(cena)) {
       setTimeout(() => triggerTestePercepcao(gatilhosEntrada[0], 'entrada', null), 900);
     }
     return;
@@ -2055,6 +2114,8 @@ async function _resolverPercepcao(percepcao) {
     tipo:'narrador', oradorId:'narrador', oradorNome:'Narrador',
     texto: sucesso ? `[👁 PERCEPÇÃO — SUCESSO (${rolls})] ${textoReveal}`
                    : `[👁 PERCEPÇÃO — FALHA (${rolls})] Nada de especial.`,
+    // Em cena de investigação, o resultado aparece no log de Ação do painel
+    canal: _ehCenaInvestigacao(CENAS[_cenaAtual]) ? 'inv-acao' : undefined,
     ts,
   });
 
@@ -3359,6 +3420,139 @@ function _dialVerificarCena() {
   }
 }
 
+// ── Painel de Investigação (cenas sem NPC) ──────────────────────
+let _invAtivo = false, _invCena = null, _invTabAtual = 'chat';
+let _invRendered = { chat: 0, acao: 0 };   // append-only: quantidade já renderizada
+
+function _ehCenaInvestigacao(cena){
+  if (!cena) return false;
+  if (cena.investigacao === true) return true;
+  const semNpc = !(cena.npcsPresentes && cena.npcsPresentes.length);
+  return semNpc && (cena.tipo === 'descoberta' || cena.tipo === 'exploracao');
+}
+
+function _invVerificarCena(){
+  const cena = CENAS[_cenaAtual];
+  if (_ehCenaInvestigacao(cena)) {
+    if (!_invAtivo || _invCena !== _cenaAtual) _invActivar(_cenaAtual);
+    else _invRender();
+  } else if (_invAtivo) {
+    _invDesativar();
+  }
+}
+
+function _invActivar(cenaId){
+  const cena = CENAS[cenaId];
+  _invAtivo = true; _invCena = cenaId; _invRendered = { chat: 0, acao: 0 };
+  document.getElementById('investig-log-chat').innerHTML = '';
+  document.getElementById('investig-log-acao').innerHTML = '';
+  document.getElementById('investig-titulo').textContent = cena?.titulo || 'Investigação';
+  document.getElementById('investig-sub').textContent = cena?.subtitulo || 'Local de investigação';
+  const src = cena?.imgExterior || cena?.imgInterior;
+  document.getElementById('investig-bg').style.backgroundImage = src ? `url(${_imgBust(src)})` : 'none';
+  document.getElementById('investig').classList.remove('oculto');
+  _invTab('acao');
+  _invRender();
+}
+
+function _invDesativar(){
+  _invAtivo = false; _invCena = null;
+  document.getElementById('investig').classList.add('oculto');
+}
+
+function _invTab(t){
+  _invTabAtual = t;
+  document.getElementById('itab-chat').classList.toggle('ativo', t === 'chat');
+  document.getElementById('itab-acao').classList.toggle('ativo', t === 'acao');
+  document.getElementById('investig-log-chat').classList.toggle('oculto', t !== 'chat');
+  document.getElementById('investig-log-acao').classList.toggle('oculto', t !== 'acao');
+  document.getElementById('investig-input').placeholder = t === 'chat' ? 'Fale com o grupo…' : 'O que você tenta fazer?';
+  document.getElementById('investig-perc').style.display = t === 'acao' ? '' : 'none';
+}
+
+// Append-only: adiciona só as linhas novas (sem re-render → sem tremedeira)
+function _invRender(){
+  if (!_invAtivo) return;
+  const todas = _lastRoom?.narration?.dialogo || [];
+  [['chat','inv-chat','investig-log-chat'], ['acao','inv-acao','investig-log-acao']].forEach(([canal, tag, elId]) => {
+    const itens = todas.filter(l => l.canal === tag);
+    const logEl = document.getElementById(elId);
+    if (itens.length < _invRendered[canal]) { logEl.innerHTML = ''; _invRendered[canal] = 0; } // entradas cortadas → rebuild
+    for (let i = _invRendered[canal]; i < itens.length; i++) logEl.appendChild(_invLinhaEl(itens[i]));
+    if (itens.length > _invRendered[canal]) { _invRendered[canal] = itens.length; logEl.scrollTop = logEl.scrollHeight; }
+  });
+}
+
+function _invLinhaEl(l){
+  const div = document.createElement('div');
+  const ehNarr = l.tipo === 'narrador';
+  div.className = 'ilog-item ' + (ehNarr ? 'ilog-narr' : 'ilog-player');
+  const nome = document.createElement('span');
+  nome.className = 'ilog-nome';
+  nome.textContent = ehNarr ? 'Narrador' : (l.oradorNome || 'Aventureiro');
+  div.appendChild(nome);
+  const txt = document.createElement('span');
+  txt.innerHTML = _hlAcoesInline(l.texto || '');
+  div.appendChild(txt);
+  return div;
+}
+
+function _invKey(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _invEnviar(); } }
+
+async function _invEnviar(){
+  const inp = document.getElementById('investig-input');
+  const texto = (inp.value || '').trim();
+  if (!texto) return;
+  inp.value = ''; inp.blur();
+  if (_invTabAtual === 'chat') {
+    await window._fbAddDialogue?.({ tipo:'player', oradorNome:_pname, texto, canal:'inv-chat', ts: Date.now() });
+  } else {
+    await window._fbAddDialogue?.({ tipo:'player', oradorNome:_pname, texto, canal:'inv-acao', ts: Date.now() });
+    await _invAdjudicarAcao(texto);
+  }
+}
+
+async function _invAdjudicarAcao(acaoTexto){
+  const cena = CENAS[_cenaAtual];
+  const pens = document.getElementById('investig-pensando');
+  pens.style.display = 'block';
+  let resultado = 'Você examina com cuidado, mas o lugar guarda seus segredos por ora. Talvez outra abordagem — ou um olhar mais atento (Percepção).';
+  const apiKey = localStorage.getItem('oraculo.groqKey');
+  const contexto = cena?.percepcao?.descricaoContexto || cena?.contextoInvestigacao || cena?.textoIntro || '';
+  if (apiKey) {
+    try {
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method:'POST',
+        headers:{ 'Authorization':`Bearer ${apiKey}`, 'content-type':'application/json' },
+        body: JSON.stringify({
+          model:'llama-3.3-70b-versatile', max_tokens:150, temperature:0.8,
+          messages:[
+            { role:'system', content:`Você é o Narrador de uma campanha de RPG de fantasia sombria. O grupo está num local de investigação e um aventureiro TENTA uma ação. Narre o RESULTADO plausível em 1-3 frases, em 2ª pessoa (você/vocês), in-world. NÃO decida ações futuras pelos jogadores nem invente conclusões prontas. Se a ação faz sentido para revelar uma pista do contexto oculto, revele-a parcialmente; caso contrário, descreva o que se vê/sente sem inventar itens novos. Contexto oculto do local (use com parcimônia): ${contexto}` },
+            { role:'user', content:`Local: "${cena?.titulo}". Ação tentada: "${acaoTexto}". Narre o resultado.` }
+          ]
+        })
+      });
+      const d = await resp.json();
+      resultado = d.choices?.[0]?.message?.content?.trim() || resultado;
+    } catch {}
+  }
+  pens.style.display = 'none';
+  await window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto: resultado, canal:'inv-acao', ts: Date.now() });
+}
+
+function _invPercepcao(){
+  if (_percepcaoEmAndamento) return;
+  const cena = CENAS[_cenaAtual];
+  const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
+  if (!hook) { window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto:'Nada em especial chama a atenção por aqui.', canal:'inv-acao', ts: Date.now() }); return; }
+  triggerTestePercepcao(hook, 'manual', null);
+}
+
+function _invSair(){ window._dialProximaCena?.(); }
+
+window._invTab = _invTab; window._invEnviar = _invEnviar; window._invPercepcao = _invPercepcao;
+window._invSair = _invSair; window._invKey = _invKey;
+
 // ── Boot ──────────────────────────────────────────────────────────
 init();
 
@@ -3387,6 +3581,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v31</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v32</div>
 </body>
 </html>
