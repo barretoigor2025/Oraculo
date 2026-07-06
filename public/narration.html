@@ -1043,8 +1043,10 @@ html,body{
   transition:opacity .35s ease, transform .35s cubic-bezier(.32,.72,0,1); }
 #investig-card.visivel{ opacity:1; transform:none; pointer-events:all; }
 #investig-card-nome{ font-size:8.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:rgba(190,140,35,.85); margin-bottom:5px; }
-#investig-card-texto{ font-size:clamp(12px,3vw,14px); color:rgba(240,222,170,.96); line-height:1.5; font-style:italic; }
+#investig-card-texto{ font-size:clamp(12px,3vw,14px); color:rgba(240,222,170,.96); line-height:1.5; font-style:italic; max-height:34vh; overflow-y:auto; padding-right:2px; }
 #investig-card-texto .dbt-acao{ color:#fff; font-style:normal; font-weight:700; }
+#investig-card-mais{ position:absolute; left:0; right:0; bottom:26px; text-align:center; font-size:15px; line-height:1; color:rgba(232,200,116,.95); text-shadow:0 0 8px #000, 0 2px 6px #000; pointer-events:none; opacity:0; transition:opacity .2s ease; animation:invMaisPulse 1.4s ease-in-out infinite; }
+@keyframes invMaisPulse{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(2px);} }
 #investig-card-dica{ font-size:8px; text-transform:uppercase; letter-spacing:1px; color:rgba(190,165,90,.4); text-align:right; margin-top:8px; }
 
 </style>
@@ -1126,7 +1128,8 @@ html,body{
   <!-- Card do Narrador sobre o cenário (como a fala dos NPCs) -->
   <div id="investig-card" onclick="window._invDismissCard()">
     <div id="investig-card-nome">NARRADOR</div>
-    <div id="investig-card-texto">…</div>
+    <div id="investig-card-texto" onclick="event.stopPropagation()" onscroll="window._invScrollCard&&window._invScrollCard()">…</div>
+    <div id="investig-card-mais">▾</div>
     <div id="investig-card-dica">toque para fechar</div>
   </div>
   <div id="investig-painel">
@@ -3563,11 +3566,22 @@ function _invLinhaEl(l){
 // Card sobre o cenário (como a fala dos NPCs)
 function _invMostrarCard(l){
   const card = document.getElementById('investig-card');
-  document.getElementById('investig-card-texto').innerHTML = _hlAcoesInline(l.texto || '');
+  const txt = document.getElementById('investig-card-texto');
+  txt.innerHTML = _hlAcoesInline(l.texto || '');
   card.classList.add('visivel');
+  txt.scrollTop = 0;
+  requestAnimationFrame(_invScrollCard);
+}
+function _invScrollCard(){
+  const txt = document.getElementById('investig-card-texto');
+  const mais = document.getElementById('investig-card-mais');
+  if (!txt || !mais) return;
+  const temMais = (txt.scrollHeight - txt.clientHeight - txt.scrollTop) > 6;
+  mais.style.opacity = temMais ? '1' : '0';
 }
 function _invDismissCard(){ document.getElementById('investig-card')?.classList.remove('visivel'); }
 window._invDismissCard = _invDismissCard;
+window._invScrollCard = _invScrollCard;
 
 function _invKey(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _invEnviar(); } }
 
@@ -3584,40 +3598,50 @@ async function _invEnviar(){
   if (!_invMinhaVez()) return;
   inp.value = ''; inp.blur();
   const roll = Math.floor(Math.random() * 20) + 1;
-  const sucesso = roll >= _INV_DC;
-  await _invAdjudicarAcao(texto, roll, sucesso);
+  await _invAdjudicarAcao(texto, roll);
   await window._fbUpdateNarration?.({ invVezPid: _invProximoPid() });   // passa a vez
 }
 
-async function _invAdjudicarAcao(acaoTexto, roll, sucesso){
+async function _invAdjudicarAcao(acaoTexto, roll){
   const cena = CENAS[_cenaAtual];
   const pens = document.getElementById('investig-pensando');
   pens.style.display = 'block';
-  const rotulo = `[🎲 ${roll} — ${sucesso ? 'SUCESSO' : 'FALHA'}]`;
-  let narr = sucesso
-    ? 'Sua tentativa surte efeito — algo cede ou se revela ao seu esforço.'
-    : 'A tentativa não vinga desta vez; o resultado escapa entre os dedos.';
-  const apiKey = localStorage.getItem('oraculo.groqKey');
+  const ator = _pname;
+  const outros = Object.entries(_lastRoom?.players || {})
+    .filter(([pid]) => pid !== _pid).map(([, p]) => p.nome).filter(Boolean);
   const contexto = cena?.percepcao?.descricaoContexto || cena?.contextoInvestigacao || cena?.textoIntro || '';
+  let verdito = roll >= 11 ? 'SUCESSO' : 'FALHA';   // fallback sem IA
+  let narr = verdito === 'SUCESSO'
+    ? 'Sua tentativa surte efeito — algo cede ou se revela ao seu esforço.'
+    : 'A tentativa não vinga desta vez.';
+  const apiKey = localStorage.getItem('oraculo.groqKey');
   if (apiKey) {
     try {
+      const outrosTxt = outros.length ? `Outros presentes: ${outros.join(', ')}.` : 'Ninguém mais está presente.';
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method:'POST',
         headers:{ 'Authorization':`Bearer ${apiKey}`, 'content-type':'application/json' },
         body: JSON.stringify({
-          model:'llama-3.3-70b-versatile', max_tokens:130, temperature:0.85,
+          model:'llama-3.3-70b-versatile', max_tokens:190, temperature:0.85,
           messages:[
-            { role:'system', content:`Você é o Narrador de uma campanha de RPG de fantasia sombria, num local de investigação. Um aventureiro tentou uma ação e rolou 1d20 (DC ${_INV_DC}): resultado ${roll} = ${sucesso ? 'SUCESSO' : 'FALHA'}. Narre APENAS o desfecho dessa tentativa em 1-2 frases, 2ª pessoa, in-world, coerente com o sucesso/falha. Em sucesso pode revelar parcialmente uma pista do contexto oculto; em falha descreva o obstáculo ou o nada encontrado — sem inventar itens novos nem decidir ações futuras pelos jogadores. Contexto oculto (parcimônia): ${contexto}` },
-            { role:'user', content:`Local: "${cena?.titulo}". Ação: "${acaoTexto}". Rolagem ${roll} (${sucesso?'sucesso':'falha'}). Narre o desfecho.` }
+            { role:'system', content:`Você é o Narrador de uma campanha de RPG de fantasia sombria, num local de investigação.
+${ator} tenta uma ação e rolou 1d20 = ${roll}. VOCÊ decide a dificuldade (DC) coerente com a ousadia/complexidade da ação (trivial ~6, comum ~10, difícil ~15, muito difícil ~18+) e compara com a rolagem para decidir SUCESSO ou FALHA.
+Responda começando LITERALMENTE com "SUCESSO" ou "FALHA" (uma palavra só), depois um traço e a narração do desfecho em 1-2 frases, 2ª pessoa, in-world.
+${outrosTxt} Quando for COERENTE, mencione de forma breve se os outros presentes percebem (ou não) o que aconteceu — sobretudo atos que alguém poderia querer ocultar: achar, pegar, carregar, guardar, esconder ou ouvir algo. Uma falha desastrada (tropeço, barulho) tende a ser notada; um movimento discreto e bem-sucedido pode passar despercebido. Não force isso quando não fizer sentido.
+Não invente itens novos nem decida ações futuras pelos jogadores. Contexto oculto do local (use com parcimônia): ${contexto}` },
+            { role:'user', content:`Local: "${cena?.titulo}". ${ator} tenta: "${acaoTexto}". Rolagem 1d20 = ${roll}. Decida a dificuldade, o resultado e narre.` }
           ]
         })
       });
       const d = await resp.json();
-      narr = d.choices?.[0]?.message?.content?.trim() || narr;
+      const raw = (d.choices?.[0]?.message?.content || '').trim();
+      const m = raw.match(/^\s*(SUCESSO|FALHA)\b[\s—:.-]*/i);
+      if (m) { verdito = m[1].toUpperCase(); narr = raw.slice(m[0].length).trim() || narr; }
+      else if (raw) { narr = raw; }
     } catch {}
   }
   pens.style.display = 'none';
-  await window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto: `${rotulo} ${narr}`, canal:'inv-acao', ts: Date.now() });
+  await window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto: `[🎲 ${roll} — ${verdito}] ${narr}`, canal:'inv-acao', ts: Date.now() });
 }
 
 function _invPercepcao(){
@@ -3661,6 +3685,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v33</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v34</div>
 </body>
 </html>
