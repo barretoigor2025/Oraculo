@@ -1029,6 +1029,23 @@ html,body{
 .inv-acao-btn{ flex:1; border:1px solid rgba(190,140,35,.3); background:rgba(0,0,0,.35); border-radius:10px; padding:11px; font-size:12px; font-weight:700; color:rgba(220,190,110,.9); }
 #investig-perc{ border-color:rgba(120,150,200,.4); color:rgba(180,200,235,.95); }
 #investig-sair{ border-color:rgba(200,90,70,.35); color:rgba(230,150,130,.95); }
+#investig-acao-area{ flex:1; min-height:64px; display:flex; align-items:center; justify-content:center; padding:6px; }
+#investig-acao-area.oculto{ display:none; }
+#investig-vez{ font-size:13px; font-weight:700; color:rgba(210,185,110,.65); text-align:center; padding:11px 14px; border:1px dashed rgba(190,140,35,.28); border-radius:12px; }
+#investig-vez.minha-vez{ color:#e8c874; border-color:rgba(190,140,35,.55); background:rgba(190,140,35,.10); border-style:solid; }
+#investig-input:disabled{ opacity:.45; }
+#investig-enviar:disabled{ opacity:.4; }
+/* Card do Narrador sobre o cenário (como a fala dos NPCs) */
+#investig-card{ position:absolute; z-index:3; left:14px; right:14px; top:17%;
+  background:rgba(14,11,7,.92); border:1px solid rgba(190,140,35,.4); border-radius:14px;
+  padding:14px 16px 9px; box-shadow:0 12px 44px rgba(0,0,0,.62);
+  opacity:0; transform:translateY(-10px) scale(.98); pointer-events:none;
+  transition:opacity .35s ease, transform .35s cubic-bezier(.32,.72,0,1); }
+#investig-card.visivel{ opacity:1; transform:none; pointer-events:all; }
+#investig-card-nome{ font-size:8.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:rgba(190,140,35,.85); margin-bottom:5px; }
+#investig-card-texto{ font-size:clamp(12px,3vw,14px); color:rgba(240,222,170,.96); line-height:1.5; font-style:italic; }
+#investig-card-texto .dbt-acao{ color:#fff; font-style:normal; font-weight:700; }
+#investig-card-dica{ font-size:8px; text-transform:uppercase; letter-spacing:1px; color:rgba(190,165,90,.4); text-align:right; margin-top:8px; }
 
 </style>
 </head>
@@ -1106,13 +1123,21 @@ html,body{
     <div id="investig-titulo">—</div>
     <div id="investig-sub">Investigação</div>
   </div>
+  <!-- Card do Narrador sobre o cenário (como a fala dos NPCs) -->
+  <div id="investig-card" onclick="window._invDismissCard()">
+    <div id="investig-card-nome">NARRADOR</div>
+    <div id="investig-card-texto">…</div>
+    <div id="investig-card-dica">toque para fechar</div>
+  </div>
   <div id="investig-painel">
     <div id="investig-tabs">
       <button class="itab ativo" id="itab-chat" onclick="_invTab('chat')">💬 Bate-papo</button>
       <button class="itab" id="itab-acao" onclick="_invTab('acao')">🔍 Ação</button>
     </div>
     <div class="investig-log" id="investig-log-chat"></div>
-    <div class="investig-log oculto" id="investig-log-acao"></div>
+    <div id="investig-acao-area" class="oculto">
+      <div id="investig-vez">🎲 Sua vez</div>
+    </div>
     <div id="investig-pensando" style="display:none">✨ O Narrador considera…</div>
     <div id="investig-input-row">
       <textarea id="investig-input" rows="1" placeholder="Fale com o grupo…" onkeydown="_invKey(event)"></textarea>
@@ -3422,13 +3447,33 @@ function _dialVerificarCena() {
 
 // ── Painel de Investigação (cenas sem NPC) ──────────────────────
 let _invAtivo = false, _invCena = null, _invTabAtual = 'chat';
-let _invRendered = { chat: 0, acao: 0 };   // append-only: quantidade já renderizada
+let _invRenderedChat = 0;   // append-only (chat)
+let _invCardTs = 0;         // último resultado de ação já mostrado no card
+const _INV_DC = 11;         // dificuldade base do teste de ação (1d20)
 
 function _ehCenaInvestigacao(cena){
   if (!cena) return false;
   if (cena.investigacao === true) return true;
   const semNpc = !(cena.npcsPresentes && cena.npcsPresentes.length);
   return semNpc && (cena.tipo === 'descoberta' || cena.tipo === 'exploracao');
+}
+
+// ── Turnos ──
+function _invOrdemJogadores(){
+  const ks = Object.keys(_lastRoom?.players || {});
+  return ks.length ? ks : (_pid ? [_pid] : []);
+}
+function _invVezPid(){
+  const v = _lastRoom?.narration?.invVezPid;
+  const ordem = _invOrdemJogadores();
+  return (v && ordem.includes(v)) ? v : (ordem[0] || _pid);
+}
+function _invMinhaVez(){ return _invVezPid() === _pid; }
+function _invProximoPid(){
+  const ordem = _invOrdemJogadores();
+  if (ordem.length <= 1) return ordem[0] || _pid;
+  const i = ordem.indexOf(_invVezPid());
+  return ordem[(i + 1) % ordem.length];
 }
 
 function _invVerificarCena(){
@@ -3443,14 +3488,18 @@ function _invVerificarCena(){
 
 function _invActivar(cenaId){
   const cena = CENAS[cenaId];
-  _invAtivo = true; _invCena = cenaId; _invRendered = { chat: 0, acao: 0 };
+  _invAtivo = true; _invCena = cenaId; _invRenderedChat = 0; _invCardTs = Date.now();
   document.getElementById('investig-log-chat').innerHTML = '';
-  document.getElementById('investig-log-acao').innerHTML = '';
   document.getElementById('investig-titulo').textContent = cena?.titulo || 'Investigação';
   document.getElementById('investig-sub').textContent = cena?.subtitulo || 'Local de investigação';
   const src = cena?.imgExterior || cena?.imgInterior;
   document.getElementById('investig-bg').style.backgroundImage = src ? `url(${_imgBust(src)})` : 'none';
+  _invDismissCard();
   document.getElementById('investig').classList.remove('oculto');
+  // host inicia a ordem de turnos se ainda não houver
+  if (_isHost && !_lastRoom?.narration?.invVezPid) {
+    window._fbUpdateNarration?.({ invVezPid: _invOrdemJogadores()[0] || _pid });
+  }
   _invTab('acao');
   _invRender();
 }
@@ -3465,37 +3514,60 @@ function _invTab(t){
   document.getElementById('itab-chat').classList.toggle('ativo', t === 'chat');
   document.getElementById('itab-acao').classList.toggle('ativo', t === 'acao');
   document.getElementById('investig-log-chat').classList.toggle('oculto', t !== 'chat');
-  document.getElementById('investig-log-acao').classList.toggle('oculto', t !== 'acao');
-  document.getElementById('investig-input').placeholder = t === 'chat' ? 'Fale com o grupo…' : 'O que você tenta fazer?';
+  document.getElementById('investig-acao-area').classList.toggle('oculto', t !== 'acao');
   document.getElementById('investig-perc').style.display = t === 'acao' ? '' : 'none';
+  document.getElementById('investig-enviar').textContent = t === 'acao' ? '🎲' : '➤';
+  _invAtualizarVez();
 }
 
-// Append-only: adiciona só as linhas novas (sem re-render → sem tremedeira)
+function _invAtualizarVez(){
+  const vezEl = document.getElementById('investig-vez');
+  const inp = document.getElementById('investig-input');
+  const btn = document.getElementById('investig-enviar');
+  if (_invTabAtual !== 'acao') { inp.placeholder = 'Fale com o grupo…'; inp.disabled = false; btn.disabled = false; return; }
+  const minha = _invMinhaVez();
+  const nome = _getNomeJogador(_invVezPid());
+  vezEl.textContent = minha ? '🎲 Sua vez — descreva sua ação' : `⏳ Vez de ${nome}…`;
+  vezEl.classList.toggle('minha-vez', minha);
+  inp.disabled = !minha; btn.disabled = !minha;
+  inp.placeholder = minha ? 'O que você tenta fazer?' : `Aguardando ${nome}…`;
+}
+
+// Append-only (chat) + card do último resultado de ação (sem re-render → sem tremedeira)
 function _invRender(){
   if (!_invAtivo) return;
   const todas = _lastRoom?.narration?.dialogo || [];
-  [['chat','inv-chat','investig-log-chat'], ['acao','inv-acao','investig-log-acao']].forEach(([canal, tag, elId]) => {
-    const itens = todas.filter(l => l.canal === tag);
-    const logEl = document.getElementById(elId);
-    if (itens.length < _invRendered[canal]) { logEl.innerHTML = ''; _invRendered[canal] = 0; } // entradas cortadas → rebuild
-    for (let i = _invRendered[canal]; i < itens.length; i++) logEl.appendChild(_invLinhaEl(itens[i]));
-    if (itens.length > _invRendered[canal]) { _invRendered[canal] = itens.length; logEl.scrollTop = logEl.scrollHeight; }
-  });
+  const chat = todas.filter(l => l.canal === 'inv-chat');
+  const chatEl = document.getElementById('investig-log-chat');
+  if (chat.length < _invRenderedChat) { chatEl.innerHTML = ''; _invRenderedChat = 0; }
+  for (let i = _invRenderedChat; i < chat.length; i++) chatEl.appendChild(_invLinhaEl(chat[i]));
+  if (chat.length > _invRenderedChat) { _invRenderedChat = chat.length; chatEl.scrollTop = chatEl.scrollHeight; }
+  // ação → card do último resultado do Narrador
+  const acao = todas.filter(l => l.canal === 'inv-acao' && l.tipo === 'narrador');
+  const ult = acao[acao.length - 1];
+  if (ult && (ult.ts || 0) > _invCardTs) { _invCardTs = ult.ts || Date.now(); _invMostrarCard(ult); }
+  _invAtualizarVez();
 }
 
 function _invLinhaEl(l){
   const div = document.createElement('div');
-  const ehNarr = l.tipo === 'narrador';
-  div.className = 'ilog-item ' + (ehNarr ? 'ilog-narr' : 'ilog-player');
-  const nome = document.createElement('span');
-  nome.className = 'ilog-nome';
-  nome.textContent = ehNarr ? 'Narrador' : (l.oradorNome || 'Aventureiro');
+  div.className = 'ilog-item ' + (l.tipo === 'narrador' ? 'ilog-narr' : 'ilog-player');
+  const nome = document.createElement('span'); nome.className = 'ilog-nome';
+  nome.textContent = l.tipo === 'narrador' ? 'Narrador' : (l.oradorNome || 'Aventureiro');
   div.appendChild(nome);
-  const txt = document.createElement('span');
-  txt.innerHTML = _hlAcoesInline(l.texto || '');
+  const txt = document.createElement('span'); txt.innerHTML = _hlAcoesInline(l.texto || '');
   div.appendChild(txt);
   return div;
 }
+
+// Card sobre o cenário (como a fala dos NPCs)
+function _invMostrarCard(l){
+  const card = document.getElementById('investig-card');
+  document.getElementById('investig-card-texto').innerHTML = _hlAcoesInline(l.texto || '');
+  card.classList.add('visivel');
+}
+function _invDismissCard(){ document.getElementById('investig-card')?.classList.remove('visivel'); }
+window._invDismissCard = _invDismissCard;
 
 function _invKey(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _invEnviar(); } }
 
@@ -3503,20 +3575,28 @@ async function _invEnviar(){
   const inp = document.getElementById('investig-input');
   const texto = (inp.value || '').trim();
   if (!texto) return;
-  inp.value = ''; inp.blur();
   if (_invTabAtual === 'chat') {
+    inp.value = '';
     await window._fbAddDialogue?.({ tipo:'player', oradorNome:_pname, texto, canal:'inv-chat', ts: Date.now() });
-  } else {
-    await window._fbAddDialogue?.({ tipo:'player', oradorNome:_pname, texto, canal:'inv-acao', ts: Date.now() });
-    await _invAdjudicarAcao(texto);
+    return;
   }
+  // aba Ação — só na sua vez
+  if (!_invMinhaVez()) return;
+  inp.value = ''; inp.blur();
+  const roll = Math.floor(Math.random() * 20) + 1;
+  const sucesso = roll >= _INV_DC;
+  await _invAdjudicarAcao(texto, roll, sucesso);
+  await window._fbUpdateNarration?.({ invVezPid: _invProximoPid() });   // passa a vez
 }
 
-async function _invAdjudicarAcao(acaoTexto){
+async function _invAdjudicarAcao(acaoTexto, roll, sucesso){
   const cena = CENAS[_cenaAtual];
   const pens = document.getElementById('investig-pensando');
   pens.style.display = 'block';
-  let resultado = 'Você examina com cuidado, mas o lugar guarda seus segredos por ora. Talvez outra abordagem — ou um olhar mais atento (Percepção).';
+  const rotulo = `[🎲 ${roll} — ${sucesso ? 'SUCESSO' : 'FALHA'}]`;
+  let narr = sucesso
+    ? 'Sua tentativa surte efeito — algo cede ou se revela ao seu esforço.'
+    : 'A tentativa não vinga desta vez; o resultado escapa entre os dedos.';
   const apiKey = localStorage.getItem('oraculo.groqKey');
   const contexto = cena?.percepcao?.descricaoContexto || cena?.contextoInvestigacao || cena?.textoIntro || '';
   if (apiKey) {
@@ -3525,19 +3605,19 @@ async function _invAdjudicarAcao(acaoTexto){
         method:'POST',
         headers:{ 'Authorization':`Bearer ${apiKey}`, 'content-type':'application/json' },
         body: JSON.stringify({
-          model:'llama-3.3-70b-versatile', max_tokens:150, temperature:0.8,
+          model:'llama-3.3-70b-versatile', max_tokens:130, temperature:0.85,
           messages:[
-            { role:'system', content:`Você é o Narrador de uma campanha de RPG de fantasia sombria. O grupo está num local de investigação e um aventureiro TENTA uma ação. Narre o RESULTADO plausível em 1-3 frases, em 2ª pessoa (você/vocês), in-world. NÃO decida ações futuras pelos jogadores nem invente conclusões prontas. Se a ação faz sentido para revelar uma pista do contexto oculto, revele-a parcialmente; caso contrário, descreva o que se vê/sente sem inventar itens novos. Contexto oculto do local (use com parcimônia): ${contexto}` },
-            { role:'user', content:`Local: "${cena?.titulo}". Ação tentada: "${acaoTexto}". Narre o resultado.` }
+            { role:'system', content:`Você é o Narrador de uma campanha de RPG de fantasia sombria, num local de investigação. Um aventureiro tentou uma ação e rolou 1d20 (DC ${_INV_DC}): resultado ${roll} = ${sucesso ? 'SUCESSO' : 'FALHA'}. Narre APENAS o desfecho dessa tentativa em 1-2 frases, 2ª pessoa, in-world, coerente com o sucesso/falha. Em sucesso pode revelar parcialmente uma pista do contexto oculto; em falha descreva o obstáculo ou o nada encontrado — sem inventar itens novos nem decidir ações futuras pelos jogadores. Contexto oculto (parcimônia): ${contexto}` },
+            { role:'user', content:`Local: "${cena?.titulo}". Ação: "${acaoTexto}". Rolagem ${roll} (${sucesso?'sucesso':'falha'}). Narre o desfecho.` }
           ]
         })
       });
       const d = await resp.json();
-      resultado = d.choices?.[0]?.message?.content?.trim() || resultado;
+      narr = d.choices?.[0]?.message?.content?.trim() || narr;
     } catch {}
   }
   pens.style.display = 'none';
-  await window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto: resultado, canal:'inv-acao', ts: Date.now() });
+  await window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto: `${rotulo} ${narr}`, canal:'inv-acao', ts: Date.now() });
 }
 
 function _invPercepcao(){
@@ -3581,6 +3661,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v32</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v33</div>
 </body>
 </html>
