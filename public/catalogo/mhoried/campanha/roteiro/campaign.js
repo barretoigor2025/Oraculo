@@ -427,6 +427,7 @@ export const CENAS = {
     falaEntrada: null,
     ganchoPosBatalha: null,
     entradaBorda: null,
+    investigacao: true,
     imgExterior: 'catalogo/mhoried/cenarios/conversacao/carroca_tombada/imagem/carroca_tombada.png',
     imgInterior: 'catalogo/mhoried/cenarios/conversacao/carroca_tombada/imagem/carroca_tombada.png',
     npcsPresentes: [],
