@@ -158,6 +158,21 @@ html,body{
   transition:opacity .4s;
 }
 #cena-imagem.oculto{opacity:0;}
+/* Neblina leve à deriva sobre o cenário (bem sutil) */
+.neblina-layer{
+  position:absolute; inset:-25%; pointer-events:none; z-index:3;
+  background:
+    radial-gradient(55% 40% at 22% 32%, rgba(224,228,238,.07), transparent 62%),
+    radial-gradient(48% 34% at 74% 58%, rgba(210,216,230,.055), transparent 62%),
+    radial-gradient(42% 30% at 52% 84%, rgba(200,210,226,.05), transparent 60%);
+  mix-blend-mode:screen;
+  animation:neblinaDrift 38s ease-in-out infinite alternate;
+}
+@keyframes neblinaDrift{
+  0%{ transform:translate3d(-4%,1%,0) scale(1.06); }
+  100%{ transform:translate3d(4%,-2%,0) scale(1.14); }
+}
+@media (prefers-reduced-motion: reduce){ .neblina-layer{ animation:none; } }
 #cena-placeholder{
   position:absolute;inset:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -835,7 +850,8 @@ html,body{
 }
 #dial-balao.visivel{opacity:1;transform:none;pointer-events:all;}
 #dial-balao-nome{font-size:8.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(190,140,35,.80);margin-bottom:5px;}
-#dial-balao-acao{font-size:10px;color:rgba(185,160,85,.58);font-style:italic;line-height:1.35;margin-bottom:4px;display:none;}
+#dial-balao-acao{font-size:10px;color:rgba(255,255,255,.90);font-style:italic;line-height:1.35;margin-bottom:4px;display:none;}
+#dial-balao-texto .dbt-acao{color:#ffffff;font-style:italic;}
 #dial-balao-texto{font-size:clamp(11px,2.9vw,13px);color:rgba(240,218,162,.96);line-height:1.5;font-style:italic;}
 
 /* Card do player */
@@ -1005,6 +1021,7 @@ html,body{
   <!-- Imagem da cena -->
   <div id="cena-imagem-wrap" class="sem-imagem">
     <img id="cena-imagem" src="" alt="" onload="onImagemCarregada()" onerror="onImagemErro()">
+    <div class="neblina-layer"></div>
     <div id="cena-placeholder">
       <div id="cena-placeholder-icone">🏰</div>
       <div id="cena-placeholder-texto">arte em breve</div>
@@ -1113,7 +1130,7 @@ html,body{
 
 <!-- DialEngine overlay — modo diálogo interativo -->
 <div id="dial-overlay">
-  <div id="dial-cena-bg"></div>
+  <div id="dial-cena-bg"><div class="neblina-layer"></div></div>
   <div id="dial-personagens"></div>
 
   <div id="dial-balao">
@@ -1179,6 +1196,13 @@ let _lastRoom   = null;
 let _dialogoLog = [];
 let _unsubRoom = null;
 let _percepcaoEmAndamento = false;
+let _percResolvendo = false;   // trava anti-loop: resolve o teste só uma vez
+const _IMGVER = '2';           // cache-bust das imagens de cenário (pós-compressão)
+function _imgBust(u){ return u ? (u.includes('?') ? u : u + '?v=' + _IMGVER) : u; }
+function _hlAcoesInline(t){
+  const esc = String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return esc.replace(/\[([^\]]+)\]/g, '<span class="dbt-acao">[$1]</span>');
+}
 let _cenasVisitadas = new Set();
 let _emboscadaTimer = null;   // dispara a batalha automática de cenas tipo 'emboscada'
 let _pularIntroVez = false;   // true ao voltar do mapa → abre direto no diálogo
@@ -1445,7 +1469,7 @@ function atualizarCena() {
     setTimeout(() => {
       if (imgSrc) {
         elImgWrap.classList.add('sem-imagem');
-        elImagem.src = imgSrc;
+        elImagem.src = _imgBust(imgSrc);
         // onImagemCarregada() faz o fade-in
       } else {
         elImgWrap.classList.add('sem-imagem');
@@ -1516,7 +1540,7 @@ function mostrarIntroCinemat(cena) {
 function _aplicarSlide(bg, textoEl, btnEl, dotsEl) {
   const slide = _introSlides[_introIdx];
 
-  bg.style.backgroundImage = slide?.imagem ? `url(${slide.imagem})` : 'none';
+  bg.style.backgroundImage = slide?.imagem ? `url(${_imgBust(slide.imagem)})` : 'none';
 
   if (slide?.revealFirst) {
     // Oculta conteúdo instantaneamente (sem transição) para mostrar imagem limpa
@@ -1821,6 +1845,7 @@ const PercDiceOverlay=(function(){
 
 async function triggerTestePercepcao(gatilho, tipoTrigger, cenaDestino) {
   if (!_isHost || _percepcaoEmAndamento) return;
+  _percResolvendo = false;   // novo teste: libera a trava de resolução
   const apiKey = localStorage.getItem('oraculo.groqKey');
   const cena = CENAS[_cenaAtual];
   let textoAtmosfera = gatilho.textoFallback || 'Algo neste lugar retém a atenção por um momento fugaz…';
@@ -1974,6 +1999,7 @@ function _renderChips(percepcao, efetivos) {
 
 function ocultarModalPercepcao() {
   _percepcaoEmAndamento = false;
+  _percResolvendo = false;
   clearInterval(_percTypeTimer);
   _percTypedTs = null;
   document.getElementById('percepcao-overlay').classList.add('oculto');
@@ -1997,12 +2023,14 @@ async function rolarPercepcao() {
 
 // Resolve quando TODOS rolaram o dado.
 async function _verificarRolamentosCompletos(percepcao) {
-  if (!_isHost) return;
+  if (!_isHost || _percResolvendo) return;
   const jogadores = Object.keys(_lastRoom?.players || {});
   const efetivos  = jogadores.length > 0 ? jogadores : [_pid];
   const respostas = percepcao.respostas || {};
   if (!efetivos.every(p => respostas[p]?.resultado != null)) return;
-  await _resolverPercepcao(percepcao);
+  _percResolvendo = true;   // trava ANTES do await — evita o loop de feedback do onRoomUpdate
+  try { await _resolverPercepcao(percepcao); }
+  finally { /* liberado ao iniciar/fechar um novo teste */ }
 }
 
 async function _resolverPercepcao(percepcao) {
@@ -2792,7 +2820,7 @@ function _dialActivar(campCenaId) {
   // Background da cena de diálogo — overlay de conversa usa sempre interior (é o close-up do encontro)
   const bg = document.getElementById('dial-cena-bg');
   const bgSrc = cena?.imgInterior || cena?.imgExterior;
-  if (bg && bgSrc) bg.style.backgroundImage = `url(${bgSrc})`;
+  if (bg && bgSrc) bg.style.backgroundImage = `url(${_imgBust(bgSrc)})`;
 
   // Standees
   const container = document.getElementById('dial-personagens');
@@ -2987,7 +3015,7 @@ function _dialMostrarBalaoNPC(nome, acao, texto, comContinuar) {
   document.getElementById('dial-balao-nome').textContent = (nome || 'NPC').toUpperCase();
   const acaoEl = document.getElementById('dial-balao-acao');
   if (acao) { acaoEl.textContent = acao; acaoEl.style.display = 'block'; } else { acaoEl.style.display = 'none'; }
-  document.getElementById('dial-balao-texto').textContent = texto || '';
+  document.getElementById('dial-balao-texto').innerHTML = _hlAcoesInline(texto || '');
   document.getElementById('dial-player-card').classList.remove('visivel');
   document.getElementById('dial-player-card').innerHTML = '';
   balao.classList.add('visivel');
@@ -3359,6 +3387,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v30</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v31</div>
 </body>
 </html>
