@@ -1262,7 +1262,7 @@ html,body{
 
 <script type="module">
 import { NPCS } from './catalogo/mhoried/loader.js';
-import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js?v=31';
+import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js?v=32';
 import { NARRACAO_NPCS as _dialNpcs, NARRACAO_FLUXO } from './catalogo/mhoried/narracao.js';
 import { NPCS_REGISTRY } from './catalogo/mhoried/npcs_registry.js?v=2';
 import { NOS as MAPA_NOS, CAMINHOS as MAPA_CAMINHOS } from './catalogo/mhoried/mapa.js';
@@ -3346,6 +3346,12 @@ function _irParaMapaMundo(destino) {
   const node = _noDaCena(_cenaAtual);
   const auto = (destino && destino !== '_mapa' && MAPA_NOS[destino] && _saoAdjacentesNoMapa(node, destino))
     ? destino : null;
+  // NPCs que acompanham o grupo nesta viagem → aparecem juntinhos no mapa.
+  const compIds = CENAS[_cenaAtual]?.companheirosViagem || [];
+  const companheiros = compIds.map(id => {
+    const n = NPCS_REGISTRY[id] || {};
+    return { id, nome: n.nome || id, img: n.img || `catalogo/mhoried/npcs/${id}/peca_tabuleiro/${id}_peca.png` };
+  });
   if (window._fbSetStatus) {
     window._fbSetStatus('map', {
       'mapa.localAtual': node,
@@ -3353,6 +3359,7 @@ function _irParaMapaMundo(destino) {
       'mapa.votacao': null,
       'mapa.autoViagem': auto,        // nó vizinho a viajar automaticamente (ou null)
       'mapa.cenaOrigem': _cenaAtual,  // cena exata p/ o botão "← Voltar" do mapa
+      'mapa.companheiros': companheiros,  // NPCs acompanhantes (ou [])
       'narration.viagemConfirmados': {},
     });
   } else {
@@ -3685,6 +3692,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v34</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v35</div>
 </body>
 </html>
