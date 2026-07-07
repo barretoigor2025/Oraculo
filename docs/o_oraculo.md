@@ -127,6 +127,8 @@ O que o Mapa faz:
 
 ## Fluxo de Instalação de Campanha
 
+> 📋 **Checklist operacional + matriz de auditoria:** ver **`docs/manual_instalacao.md`** — o passo-a-passo prático e os pontos de atenção (cada um nasceu de um bug real). Rode a matriz de auditoria antes de todo commit de campanha.
+
 ```
 1. Usuário encontra PDF de campanha (qualquer universo)
         ↓
