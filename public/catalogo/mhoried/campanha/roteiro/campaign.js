@@ -157,7 +157,7 @@ export const CENAS = {
     exigeAntes: ['castelo_mhoried'],
     ganchoChegada: 'Catherine enviou o grupo para os Grimhollow Blackwoods — a última pista sobre o Duque Oswald e a origem dos espantalhos de Choir.',
     npcEntrada: 'npc_aelar_eisenli',
-    falaEntrada: '[Emerge das sombras da linha de árvores, arco na mão, olhar avaliador] "Mais humanos." [pausa] "Ou são muito corajosos ou muito desinformados. Os Blackwoods estão perigosos — mesmo para nós, Vhuureth."',
+    falaEntrada: '[Emerge das sombras da linha de árvores, arco baixo mas pronto, o olhar medindo antes de saudar.] Parem aí. [avalia o grupo] Humanos entrando nos Blackwoods... ou muito corajosos, ou muito mal informados. [baixa a flecha] Aelar Eisenli. Caço um homem — Fariborz, o Piromante. Segui o rastro dele até esta floresta e o perdi aqui dentro. [tom seco, profissional] Se cruzarem com ele, ou souberem de algo, há 500 moedas de recompensa e uma parte pode ser de vocês. Sobre estas matas — os Vhuureth, as armadilhas — eu conheço, e isso eu troco. O que me interessa é ele.',
     entradaBorda: 'leste',
     ato: 2,
     imgExterior: 'catalogo/mhoried/cenarios/conversacao/blackwoods_entrada/imagem/blackwoods_entrada.png',
