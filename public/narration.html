@@ -1261,7 +1261,7 @@ html,body{
 </div>
 
 <script type="module">
-import { NPCS } from './catalogo/mhoried/loader.js';
+import { NPCS } from './catalogo/mhoried/loader.js?v=2';
 import { CENAS, CENAS_ORDEM } from './catalogo/mhoried/campanha/roteiro/campaign.js?v=33';
 import { NARRACAO_NPCS as _dialNpcs, NARRACAO_FLUXO } from './catalogo/mhoried/narracao.js';
 import { NPCS_REGISTRY } from './catalogo/mhoried/npcs_registry.js?v=4';
@@ -1282,7 +1282,7 @@ let _dialogoLog = [];
 let _unsubRoom = null;
 let _percepcaoEmAndamento = false;
 let _percResolvendo = false;   // trava anti-loop: resolve o teste só uma vez
-const _IMGVER = '2';           // cache-bust das imagens de cenário (pós-compressão)
+const _IMGVER = '3';           // cache-bust das imagens de cenário (pós-compressão)
 function _imgBust(u){ return u ? (u.includes('?') ? u : u + '?v=' + _IMGVER) : u; }
 function _hlAcoesInline(t){
   const esc = String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -3685,6 +3685,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v38</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v39</div>
 </body>
 </html>
