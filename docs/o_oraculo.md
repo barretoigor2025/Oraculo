@@ -51,6 +51,13 @@ Absorve o que o Construtor gerou e dá vida à história durante o jogo:
 **Quem executa:** Groq API (rápido, gratuito, recebe a personalidade do NPC como system prompt).  
 **Dados necessários:** `npcsPresentes` de cada cena em `campaign.js` define quais NPCs aparecem. O motor busca os dados em duas fontes por prioridade: (1) `narracao.js` → `NARRACAO_NPCS` (curado: offsetPx, avatar, cenas especiais); (2) `npcs_registry.js` → `NPCS_REGISTRY` (auto-gerado de todos os `npcs/{id}/dados.json`). Qualquer NPC listado em `npcsPresentes` aparece automaticamente com standee e chip de interação — sem precisar estar em `NARRACAO_NPCS`.
 
+> **Coerência de voz (regra de ouro do Narrador):** cada personagem precisa da **assinatura própria** — a `falaEntrada` roteirizada (primeira fala da cena) e a persona da IA (`personalidade` + `formaDeFalar` + `conhecimentos`) devem falar a MESMA língua. Cuidado com o bloco `ia` do `dados.json`: a narração ao vivo o usa com **prioridade** sobre os campos de topo — se os dois divergirem (ex.: topo "caçadora", `ia` "corretora"), a IA gera falas contraditórias. Ao ajustar uma voz, alinhe `dados.json` **e** `npcs_registry.js` (auto-gerado, mas com os dados inline).
+
+**Sistemas de cena que o Narrador executa:**
+- **Fala de entrada (`falaEntrada` + `npcEntrada`)** — primeira fala roteirizada, determinística, mostrada ao entrar na cena. É o que o jogador vê antes de qualquer IA; deve carregar a assinatura do personagem.
+- **Teste de Percepção (`percepcao` / `gatilhos_entrada`)** — botão 🎲 sob demanda: rola o dado, e o resultado (sucesso revela pista do `descricaoContexto`; falha = nada) entra no log. **Não** auto-dispara em cenas de investigação (o jogador escolhe). Resolve UMA vez por teste (trava anti-loop).
+- **Painel de Investigação** (cenas sem NPC marcadas `investigacao: true`, ou `tipo` descoberta/exploracao sem `npcsPresentes`): overlay com fundo da cena + neblina leve. Duas abas — **💬 Bate-papo** (livre entre players, sem IA) e **🔍 Ação** (por **turno**: o jogador da vez descreve a ação, rola 1d20, a IA/Narrador decide a dificuldade e narra sucesso/falha, e a vez passa ao próximo). A narração da ação considera, quando coerente, se os **outros presentes percebem** o ato (achar/pegar/guardar/ouvir algo). Resultado aparece como **card sobre o cenário** (como a fala dos NPCs). Botões 🎲 Percepção e 🚪 Sair.
+
 ---
 
 ### 3. Catálogo
@@ -102,7 +109,8 @@ Uma imagem do mundo (estilo ilustração da campanha) com os locais marcados com
 
 O que o Mapa faz:
 - **Lobby + chat** — todos os jogadores entram no mapa e conversam (chat sincronizado via Firebase) para planejar a rota
-- **Standees no mapa** — cada jogador aparece como peça sobre o local atual; as peças **se deslocam** animadamente quando o grupo viaja
+- **Standees no mapa** — cada jogador aparece como peça sobre o local atual; as peças **se deslocam** animadamente quando o grupo viaja. O grupo fica junto em **formação de pinos de boliche** (1 na frente; linhas de trás com 2, 3, 4… se afastando), com a frente por cima
+- **NPCs acompanhantes** — quando um NPC viaja com o grupo de um lugar a outro, ele aparece no mapa junto dos players. Marca-se na cena de origem com `companheirosViagem: ['npc_id']`; a narração passa `mapa.companheiros` (id/nome/peça) no handoff e o mapa renderiza na mesma formação. Ex.: `conversa_gregoras_feira` → Gregoras acompanha até o castelo
 - **Proposta de rota por votação** — qualquer jogador propõe um destino; surge um overlay de votação para **todos**; maioria vence (temporizador configurável)
 - **Névoa de guerra (fog of war)** — cada nó tem 3 estados: `desconhecido` (oculto/borrado), `ouviu_falar` (nome visível, info vaga), `descoberto` (info completa). Viajar revela locais
 - **Encontros aleatórios** — cada caminho tem `perigo`, `dist` e uma lista de `encontros` com chance; ao viajar, o sistema rola os encontros (combate, roubo, diálogo)
@@ -332,14 +340,29 @@ export const CENAS = {
   ato1_abertura: {
     ato: 1,
     titulo: 'Título da Cena',
-    local: 'Nome do Local',
-    tipo: 'dialogo',      // 'dialogo', 'batalha', 'exploracao', 'transicao'
-    desc: 'O que acontece nesta cena. Narrado em segunda pessoa.',
+    subtitulo: 'Subtítulo curto',
+    tipo: 'dialogo',      // 'dialogo','batalha','emboscada','descoberta','exploracao','negociacao','aparicao','transicao'
+    textoIntro: 'Texto do slide de introdução (2ª pessoa).',
     npcsPresentes: ['id_npc1', 'id_npc2'],  // NPCs que aparecem como standees interativos nesta cena
     dialCena: 'nome_cena_narracao',         // (opcional) override do background de diálogo — mapeia para NARRACAO_CENAS
-    gatilho: 'O que desencadeia esta cena — o evento que a inicia.',
-    tom: 'misterio',      // 'acao', 'emocional', 'misterio', 'investigacao', 'perseguicao', 'tragedia', 'alívio'
-    badges: ['npc'],      // 'batalha', 'npc', 'exploracao'
+    npcEntrada: 'id_npc1',                   // quem diz a falaEntrada
+    falaEntrada: '[ACAO: ...] Fala roteirizada de abertura, na assinatura do personagem.',
+    semIntro: true,                         // (opcional) abre direto no diálogo, sem slide de intro
+    avancarEmGrupo: true,                    // (opcional) intro coletivo: só avança quando TODOS confirmam
+    proximaCena: 'ato1_conflito',           // próxima cena (via botão de viagem / _dialProximaCena)
+    imgExterior: 'catalogo/{id}/cenarios/conversacao/{cena}/imagem/{cena}.png',  // fundo da cena
+    imgInterior: '...',                     // idem (modo interior)
+    // ── Investigação / Percepção ──
+    investigacao: true,                     // (opcional) ativa o Painel de Investigação (cena sem NPC)
+    percepcao: { dc: 12, descricaoContexto: 'pista oculta...', textoFallback: '...' },
+    gatilhos_entrada: [ /* {dc, descricaoContexto, textoFallback} */ ],
+    beatNarrativo: 'Beat/gancho que o Narrador deve semear nesta cena.',
+    // ── Batalha (quando aplicável) ──
+    temBatalha: true,
+    introSlides: [ { texto: '...', ganchoBatalha: true } ],  // último slide com gancho vira "Estou Pronto"
+    // ── Mapa (Pilar 5) ──
+    companheirosViagem: ['id_npc'],         // NPCs que acompanham o grupo ao sair desta cena → aparecem no mapa
+    nodeId: 'id_no_no_mapa',                // (cena auxiliar) nó do mundo correspondente
   },
   ato1_conflito: {
     // ... batalha que segue o diálogo
@@ -628,6 +651,11 @@ Organizado por ato. Para cada cenário: tipo, inimigos se aplicável, e prompt d
 | Narração / voz dos NPCs | Groq API (`oraculo.groqKey` no localStorage) |
 | Builder / Construtor | Claude (aqui, no Claude Code) |
 | Arte de personagens e cenários | IA de imagens (Midjourney, DALL·E, etc.) |
+
+**Convenções de assets (peso e cache):**
+- **Comprimir as imagens** para paleta de 256 cores (PNG, com dithering), mantendo nome/dimensão/extensão e a transparência das peças. O site inteiro deve ficar leve (o deploy do GitHub Pages **falha na sincronização** quando o total de imagens fica grande demais — centenas de MB). Retratos/fundos pesados (~3 MB cada) → ~0.3–1 MB.
+- **Cache-bust de módulos e imagens:** os HTMLs importam `campaign.js`/`npcs_registry.js` com `?v=N` e as imagens de cenário recebem `?v=N` — bumpar N quando o arquivo muda (senão o navegador serve a versão antiga/negativa em cache). Cada página tem um carimbo de versão visível no rodapé.
+- **Sem caracteres não-ASCII em caminhos de arquivo** (ex.: `ç`): o GitHub Pages ao vivo falha ao resolver a URL codificada. O **id** da cena pode ter acento; o **caminho do asset**, não (use `carroca_tombada`, não `carroça_tombada`).
 
 ---
 
