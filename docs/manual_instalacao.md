@@ -24,7 +24,7 @@ um bug real que enfrentamos — segui-lo evita repetir.
 
 ### 🎭 Voz e coerência dos personagens
 - [ ] **Bloco `ia` × campos de topo batem.** A narração ao vivo usa `ia.personalidade` / `ia.prompt_sistema` com **prioridade**. Se o topo diz "caçadora" e o `ia` diz "corretora", a IA gera falas contraditórias. *(bugs Ysoria e Aelar.)*
-- [ ] **`npcs_registry.js` reflete o `dados.json`.** O registry é auto-gerado mas tem os dados **inline** — ao editar um `dados.json`, atualize o bloco correspondente no registry (senão a correção não chega ao jogo).
+- [ ] **As TRÊS fontes de dados batem.** Um NPC/inimigo tem os dados repetidos **inline** em três lugares: `dados.json` (canon), `npcs_registry.js` (narração ao vivo, fallback) e `loader.js` (o que o **catálogo** mostra). Ao editar um, atualize os três — senão o jogo/catálogo mostra versão antiga. *(bug do Chutter: mudei dados.json + registry mas o catálogo continuava 'Troll' porque o loader.js não foi tocado.)*
 - [ ] **Espécie/raça consistente** entre topo, `ia` e bestiário. *(Blunkin: kobold ≠ goblin; Chutter: ettin ≠ troll.)*
 - [ ] **Papel/profissão consistente.** *(Finn: mercador ≠ sapateiro; Murznut: lojista ≠ "do trio".)*
 - [ ] **Cada `falaEntrada` carrega a assinatura do personagem** (a `formaDeFalar` dele). Nada de fala genérica. *(Mutter deve rimar/farejar; Gregoras direto mas cortês; a Duquesa não despeja a missão de cara.)*
@@ -32,7 +32,8 @@ um bug real que enfrentamos — segui-lo evita repetir.
 - [ ] **A arte bate com os dados.** A imagem (retrato + peça) reflete a **espécie, o número de cabeças/membros, o gênero e as características físicas** descritas nos dados. Não basta o texto ser coerente entre si — a imagem tem que refletir o lore. *(Rei Chutter: dados = ettin de 2 cabeças, mas a arte tinha só 1.)* Ao corrigir raça/aparência de um personagem, verifique se a **arte precisa ser refeita**; e ao trocar a arte, atualize também **raça, características, comportamento e lore** no bestiário/catálogo (`inimigos/{id}/dados.json`) e no `npcs/{id}/dados.json` — não só o retrato.
 
 ### 🎬 Cenas e roteiro (`campaign.js`)
-- [ ] **Toda cena tem `imgExterior`/`imgInterior`** apontando para arquivo existente (senão "arte em breve").
+- [ ] **Toda cena tem `imgExterior`/`imgInterior`** apontando para arquivo existente. **A narração usa ISSO — não o mapa de batalha.** Uma cena de batalha/emboscada com mapa de batalha mas SEM `imgExterior` mostra "arte em breve" na entrada. Audite o `imgExterior` real de cada cena, não "tem alguma imagem". *(bug: encruzilhada/emboscadas tinham mapa de batalha mas o fundo de conversação não estava ligado.)*
+- [ ] **Cena de imagem "arte em breve" mesmo com arquivo válido no `main`** = cache negativo do navegador. Bump do `_IMGVER` (narração) / `?v=N` da imagem força re-fetch.
 - [ ] **`npcsPresentes` preenchido** com IDs de NPCs que existem em `dados.json`.
 - [ ] **`proximaCena` / fluxo** sem becos sem saída (todo ato avança). Rodar a checagem de alcançabilidade.
 - [ ] **`tipo` correto.** `tipo:'emboscada'` **auto-dispara** o combate 2.6s após a chegada — só use em emboscada pura, sem intro/gancho manual. Cena com intro + "Estou Pronto" deve ser `tipo:'batalha'`. *(bug da Feira pulando pra batalha.)*
