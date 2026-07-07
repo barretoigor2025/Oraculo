@@ -29,6 +29,7 @@ um bug real que enfrentamos — segui-lo evita repetir.
 - [ ] **Papel/profissão consistente.** *(Finn: mercador ≠ sapateiro; Murznut: lojista ≠ "do trio".)*
 - [ ] **Cada `falaEntrada` carrega a assinatura do personagem** (a `formaDeFalar` dele). Nada de fala genérica. *(Mutter deve rimar/farejar; Gregoras direto mas cortês; a Duquesa não despeja a missão de cara.)*
 - [ ] **Lógica da cena fecha.** Ex.: um NPC não pode "vender a localização" de alguém que ele mesmo está caçando e não achou.
+- [ ] **A arte bate com os dados.** A imagem (retrato + peça) reflete a **espécie, o número de cabeças/membros, o gênero e as características físicas** descritas nos dados. Não basta o texto ser coerente entre si — a imagem tem que refletir o lore. *(Rei Chutter: dados = ettin de 2 cabeças, mas a arte tinha só 1.)* Ao corrigir raça/aparência de um personagem, verifique se a **arte precisa ser refeita**; e ao trocar a arte, atualize também **raça, características, comportamento e lore** no bestiário/catálogo (`inimigos/{id}/dados.json`) e no `npcs/{id}/dados.json` — não só o retrato.
 
 ### 🎬 Cenas e roteiro (`campaign.js`)
 - [ ] **Toda cena tem `imgExterior`/`imgInterior`** apontando para arquivo existente (senão "arte em breve").
