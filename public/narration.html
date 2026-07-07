@@ -1426,24 +1426,9 @@ function onRoomUpdate(room) {
     }
   }
 
-  // Emboscada: cena de batalha pura (sem NPCs). O host dispara o combate
-  // automaticamente ao chegar — você É emboscado. Anti-loop via cenaBatalhaResolvida
-  // (após vencer, o pós-batalha leva ao Mapa, então não re-dispara).
-  if (mudouCena && _isHost) {
-    clearTimeout(_emboscadaTimer);
-    const cenaObj = CENAS[novaCena];
-    const jaResolvida = narr.cenaBatalhaResolvida === novaCena;
-    // Auto-disparo só para emboscada PURA (sem intro/gancho manual). Se a cena
-    // tem um slide de intro com ganchoBatalha, o combate parte do botão "Estou
-    // Pronto" — nunca sozinho (senão pula antes do OK / antes do texto terminar).
-    const temGanchoManual = (cenaObj?.introSlides || []).some(s => s.ganchoBatalha);
-    if (cenaObj?.tipo === 'emboscada' && cenaObj?.temBatalha && !jaResolvida && !temGanchoManual) {
-      _emboscadaTimer = setTimeout(() => {
-        if (_cenaAtual === novaCena && _lastRoom?.status !== 'battle'
-            && typeof iniciarBatalha === 'function') iniciarBatalha();
-      }, 2600);
-    }
-  }
+  // Emboscada: NUNCA dispara sozinha por timer (atropelava a leitura do texto).
+  // O combate parte quando o jogador AVANÇA o intro (leu o texto) — ver avancarIntro().
+  if (mudouCena) clearTimeout(_emboscadaTimer);
   atualizarBotoesModo();
   renderDialogo();
   if (mudouCena) _dialDesativar();
@@ -1756,6 +1741,14 @@ function avancarIntro() {
   if (_introIdx >= _introSlides.length) {
     overlay.classList.add('oculto');
     const cena = CENAS[_cenaAtual];
+    // Emboscada pura: o combate começa AO AVANÇAR o intro (o jogador leu o texto),
+    // nunca por timer. A surpresa vem do banner "EMBOSCADA!" na Arena, não do atropelo.
+    const jaResolvida = _lastRoom?.narration?.cenaBatalhaResolvida === _cenaAtual;
+    const temGanchoManual = (cena?.introSlides || []).some(s => s.ganchoBatalha);
+    if (cena?.tipo === 'emboscada' && cena?.temBatalha && !jaResolvida && !temGanchoManual) {
+      if (_isHost && typeof iniciarBatalha === 'function') setTimeout(() => iniciarBatalha(), 250);
+      return;
+    }
     const gatilhosEntrada = cena?.gatilhos_entrada || [];
     // Cenas de investigação NÃO auto-disparam percepção — o jogador usa o botão 🎲 no painel.
     if (gatilhosEntrada.length > 0 && !_percepcaoEmAndamento && !_ehCenaInvestigacao(cena)) {
@@ -3692,6 +3685,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v37</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v38</div>
 </body>
 </html>
