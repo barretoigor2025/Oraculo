@@ -548,31 +548,53 @@ function _renderMapa() {
   if (lbl) lbl.textContent = `📍 ${NOS[localAtual]?.titulo || localAtual}`;
 }
 
-function _standeesSVG() {
-  const localAtual = _state?.localAtual || 'mhoried_market';
+// Grupo em viagem = jogadores + NPCs que acompanham (companheiros), todos juntinhos.
+function _partyList() {
   let players = _state?.players || {};
   if (!Object.keys(players).length) players = { [_pid]: { nome:_nome, classId:_cls } };
-  const total = Object.keys(players).length;
+  const list = Object.entries(players).map(([pid, p]) => {
+    const cid = p.classId || 'guerreiro';
+    return { key: pid, nome: p.nome || '?', icon: CLASS_ICON[cid] || '⚔️',
+      img: `catalogo/mhoried/classes/${cid}/peca_tabuleiro/${cid}_peca.png` };
+  });
+  (_state?.companheiros || []).forEach(c => {
+    if (!c || !c.id) return;
+    list.push({ key: 'npc-'+c.id, nome: c.nome || c.id, icon: '🤝',
+      img: c.img || `catalogo/mhoried/npcs/${c.id}/peca_tabuleiro/${c.id}_peca.png` });
+  });
+  return list;
+}
+
+// Formação de pinos de boliche: 1 na frente; linha de trás com r+1 unidades,
+// afastando-se para cima. Mantém o grupo compacto e organizado.
+function _formacaoBoliche(i) {
+  let r = 0, base = 0;
+  while (i >= base + r + 1) { base += r + 1; r++; }
+  const pos = i - base;              // 0..r dentro da linha
+  const DX = 30, DY = 26;
+  return { dx: (pos - r/2) * DX, dy: -r * DY };
+}
+
+function _standeeGrupoHTML(u, cx, cy) {
+  return `<g class="st-g" id="st-${u.key}" transform="translate(${cx},${cy})">`
+    + `<ellipse class="st-base" cx="0" cy="14" rx="17" ry="5"/>`
+    + `<text class="st-emoji" x="0" y="2" text-anchor="middle" dominant-baseline="central">${u.icon}</text>`
+    + `<image class="st-img" href="${u.img}" xlink:href="${u.img}" x="-28" y="-44" width="56" height="56" preserveAspectRatio="xMidYMid meet"/>`
+    + `<text class="st-lbl" x="0" y="28" text-anchor="middle">${_esc((u.nome||'?').split(' ')[0])}</text>`
+    + `</g>`;
+}
+
+function _standeesSVG() {
+  const localAtual = _state?.localAtual || 'mhoried_market';
   const no = NOS[localAtual];
   if (!no) return '';
-  let out = '';
-  Object.entries(players).forEach(([pid, p], i) => {
-    const offset = (i - (total-1)/2) * 42;
-    const cx = no.x/100*MAP_NW + offset;
-    const cy = no.y/100*MAP_NH - 34;   // flutua acima do nó
-    const cid = p.classId || 'guerreiro';
-    const peca = `catalogo/mhoried/classes/${cid}/peca_tabuleiro/${cid}_peca.png`;
-    const icon = CLASS_ICON[cid] || '⚔️';
-    // Peça real da classe (igual à Arena). Mantém um emoji por baixo como fallback
-    // se a imagem não carregar.
-    out += `<g class="st-g" id="st-${pid}" transform="translate(${cx},${cy})">`
-      + `<ellipse class="st-base" cx="0" cy="14" rx="17" ry="5"/>`
-      + `<text class="st-emoji" x="0" y="2" text-anchor="middle" dominant-baseline="central">${icon}</text>`
-      + `<image class="st-img" href="${peca}" xlink:href="${peca}" x="-28" y="-44" width="56" height="56" preserveAspectRatio="xMidYMid meet"/>`
-      + `<text class="st-lbl" x="0" y="28" text-anchor="middle">${_esc((p.nome||'?').split(' ')[0])}</text>`
-      + `</g>`;
+  const baseX = no.x/100*MAP_NW, baseY = no.y/100*MAP_NH - 34;   // flutua acima do nó
+  const itens = _partyList().map((u, i) => {
+    const { dx, dy } = _formacaoBoliche(i);
+    return { dy, html: _standeeGrupoHTML(u, baseX + dx, baseY + dy) };
   });
-  return out;
+  itens.sort((a, b) => a.dy - b.dy);   // linhas de trás primeiro (z: frente por cima)
+  return itens.map(it => it.html).join('');
 }
 
 // ── Tooltip ───────────────────────────────────────────────
@@ -848,16 +870,13 @@ function _transicaoEmboscada() {
 function _animarStandeesParaNo(destino, duracao) {
   const no = NOS[destino];
   if (!no) return;
-  const players = _state?.players || { [_pid]: { nome: _nome, classId: _cls } };
-  const total = Object.keys(players).length;
-  Object.keys(players).forEach((pid, i) => {
-    const g = document.getElementById(`st-${pid}`);
+  const baseX = no.x/100*MAP_NW, baseY = no.y/100*MAP_NH - 34;
+  _partyList().forEach((u, i) => {
+    const g = document.getElementById(`st-${u.key}`);
     if (!g) return;
-    const offset = (i - (total-1)/2) * 36;
-    const cx = no.x/100*MAP_NW + offset;
-    const cy = no.y/100*MAP_NH - 34;
+    const { dx, dy } = _formacaoBoliche(i);
     g.style.transitionDuration = duracao + 'ms';
-    g.setAttribute('transform', `translate(${cx},${cy})`);
+    g.setAttribute('transform', `translate(${baseX + dx},${baseY + dy})`);
   });
 }
 
@@ -1053,6 +1072,6 @@ async function init() {
 
 init();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v19</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v20</div>
 </body>
 </html>

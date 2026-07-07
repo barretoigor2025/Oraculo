@@ -95,6 +95,7 @@ export const CENAS = {
     npcEntrada: 'npc_gregoras_pellos',
     falaEntrada: '[ACAO: Aproxima-se sem pressa, mantendo uma distância respeitosa. Um aceno breve de cabeça — reconhecimento, não cerimônia.] Bom trabalho ali. Poucos encaram aquilo sem recuar. [pausa curta] Grégoras Pellos. Sirvo à Duquesa Catherine de Mhoried. Ela viu o que fizeram e gostaria de conversar — há algo acontecendo nos Blackwoods que pede gente competente. [mais baixo, sem pressão] Não é ordem nenhuma. Se quiserem ouvir, eu os levo até ela. A escolha é de vocês.',
     proximaCena: 'castelo_mhoried',
+    companheirosViagem: ['npc_gregoras_pellos'], // Gregoras conduz o grupo até o castelo → aparece no mapa
     ordemNarrativa: 1.2,
     ato: 1,
     imgExterior: 'catalogo/mhoried/cenarios/conversacao/feira_phanourios/imagem/market_int.png',
