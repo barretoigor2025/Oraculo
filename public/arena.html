@@ -1184,18 +1184,27 @@ let _roomTurnOrder       = [];
 let _arenaRoom           = null;   // última room do Firebase (para o setup de turnos)
 let _turnOrderIniciada   = false;  // host já montou a ordem de turnos?
 
-// Host monta a ORDEM DE TURNOS do multiplayer: [herói1, herói2, …, 'enemy'].
-// Sem isso, cada aparelho rodava o próprio turno local (todos agiam ao mesmo tempo).
-// Usa só jogadores que já estão no tabuleiro (têm x/y) — pruna fantasmas.
-function _hostSetupTurnOrder(){
-  if(_turnOrderIniciada || !_fbIsHost) return;
+// Pids dos heróis JÁ no tabuleiro (com x/y), ordenados. Pruna fantasmas.
+function _boardPids(){
   const room=_arenaRoom;
-  if(!room || room.turnOrder) return;
-  const heroPids=Object.entries(room.players||{})
-    .filter(([,p])=>p && p.x!=null && p.y!=null).map(([pid])=>pid);
+  return Object.entries(room?.players||{})
+    .filter(([,p])=>p && p.x!=null && p.y!=null).map(([pid])=>pid).sort();
+}
+// Coordenador determinístico = menor pid no tabuleiro (não depende do flag de host,
+// que pode estar errado). Exatamente um device é o coordenador.
+function _ehCoordenador(){
+  const pids=_boardPids();
+  return pids.length>0 && pids[0]===_pid;
+}
+// Monta/SOBRESCREVE a ordem de turnos: [herói1, herói2, …, 'enemy'] + define o 1º turno.
+// Sobrescreve qualquer turnOrder velha (sala reusada de batalha anterior). Uma vez por carga.
+function _hostSetupTurnOrder(){
+  if(_turnOrderIniciada) return;
+  const heroPids=_boardPids();
   if(!heroPids.length) return;
-  const order=[...heroPids,'enemy'];
+  if(!_ehCoordenador()) return;      // só o coordenador escreve
   _turnOrderIniciada=true;
+  const order=[...heroPids,'enemy'];
   window._fbSetTurnOrder?.(order);
   window._fbSetTurn?.(order[0]);
 }
@@ -3105,8 +3114,8 @@ function turnoInimigo(){
   faseDoTurno='turno_inimigo'; renderActionRow();
   const allEnemies=unidades.filter(u=>u.tipo==='inimigo'&&u.hp>0);
 
-  // Non-host: just show letreiro and wait for host to advance via Firebase
-  if(!_fbIsHost){
+  // Só o COORDENADOR roda a IA dos inimigos; os outros só mostram o letreiro e aguardam.
+  if(!_ehCoordenador()){
     const espName=allEnemies.length?allEnemies[0].nome:'Inimigo';
     mostrarLetreiro(espName.toUpperCase(),'turno do inimigo','',1800,()=>renderActionRow());
     return;
@@ -3850,9 +3859,9 @@ function onRoomUpdate(room){
   const myId=localStorage.getItem('oraculo.playerId');
   const wasFirst=_firstRoomUpdate;
 
-  // Host: monta a ordem de turnos ~2s após entrar (tempo dos jogadores registrarem
-  // posição no tabuleiro). Se ainda não veio do Firebase, agenda uma re-tentativa.
-  if(wasFirst && _fbIsHost && !room.turnOrder){
+  // Coordenador monta a ordem de turnos ~2s após entrar (tempo dos jogadores
+  // registrarem posição no tabuleiro). Todos agendam; só o coordenador escreve.
+  if(wasFirst){
     setTimeout(_hostSetupTurnOrder, 2000);
   }
 
@@ -4017,7 +4026,7 @@ function onRoomUpdate(room){
       else iniciarTurno(myHero);
     } else if(newTurnId==='enemy'){
       _currentTurnPlayerName='Inimigos';
-      if(_fbIsHost){
+      if(_ehCoordenador()){
         if(wasFirst) setTimeout(turnoInimigo,600);
         else turnoInimigo();
       } else {
@@ -4029,7 +4038,7 @@ function onRoomUpdate(room){
       }
     } else if(newTurnId){
       const op=room.players[newTurnId];
-      _currentTurnPlayerName=op?.name||'jogador';
+      _currentTurnPlayerName=op?.nome||op?.name||'jogador';
       faseDoTurno='aguardando'; renderActionRow(); renderBottomPanel();
       if(!wasFirst) mostrarLetreiro('TURNO DE '+_currentTurnPlayerName.toUpperCase(),'aguardando...','',2000,()=>renderActionRow());
     }
@@ -4342,6 +4351,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v25</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v26</div>
 </body>
 </html>
