@@ -47,6 +47,9 @@ if(_cfg&&_rid&&_pid){
     window._fbSetTurn=async(nextId)=>{
       try{await updateDoc(rd,{currentTurnPlayerId:nextId});}catch{}
     };
+    window._fbSetTurnOrder=async(order)=>{
+      try{await updateDoc(rd,{turnOrder:order});}catch{}
+    };
     window._fbSetEnemyIntent=async(intent)=>{
       try{await updateDoc(rd,{enemyIntent:intent??null});}catch{}
     };
@@ -1178,6 +1181,24 @@ let enemyIntent          = null;
 let _currentTurnPlayerId = null;
 let _currentTurnPlayerName = '';
 let _roomTurnOrder       = [];
+let _arenaRoom           = null;   // última room do Firebase (para o setup de turnos)
+let _turnOrderIniciada   = false;  // host já montou a ordem de turnos?
+
+// Host monta a ORDEM DE TURNOS do multiplayer: [herói1, herói2, …, 'enemy'].
+// Sem isso, cada aparelho rodava o próprio turno local (todos agiam ao mesmo tempo).
+// Usa só jogadores que já estão no tabuleiro (têm x/y) — pruna fantasmas.
+function _hostSetupTurnOrder(){
+  if(_turnOrderIniciada || !_fbIsHost) return;
+  const room=_arenaRoom;
+  if(!room || room.turnOrder) return;
+  const heroPids=Object.entries(room.players||{})
+    .filter(([,p])=>p && p.x!=null && p.y!=null).map(([pid])=>pid);
+  if(!heroPids.length) return;
+  const order=[...heroPids,'enemy'];
+  _turnOrderIniciada=true;
+  window._fbSetTurnOrder?.(order);
+  window._fbSetTurn?.(order[0]);
+}
 let turnoIdx             = 0;   // offline/solo fallback
 let planoMovimento       = null;
 let planoAtaque          = null;
@@ -3824,9 +3845,16 @@ function _mostrarAcaoLivreOverlay(al){
 
 function onRoomUpdate(room){
   if(!room||!room.players) return;
+  _arenaRoom=room;
 
   const myId=localStorage.getItem('oraculo.playerId');
   const wasFirst=_firstRoomUpdate;
+
+  // Host: monta a ordem de turnos ~2s após entrar (tempo dos jogadores registrarem
+  // posição no tabuleiro). Se ainda não veio do Firebase, agenda uma re-tentativa.
+  if(wasFirst && _fbIsHost && !room.turnOrder){
+    setTimeout(_hostSetupTurnOrder, 2000);
+  }
 
   // Navigate to narration when battle is over
   if(room.status==='narration'){
@@ -3983,7 +4011,9 @@ function onRoomUpdate(room){
     const myHero=unidades.find(u=>u.tipo==='heroi'&&!u._fbId);
     if(newTurnId===myId){
       _currentTurnPlayerName='';
-      if(wasFirst) setTimeout(()=>iniciarTurno(myHero),600);
+      if(!myHero || myHero.hp<=0){         // meu herói caiu → pula minha vez
+        setTimeout(()=>_advanceTurn(), 400);
+      } else if(wasFirst) setTimeout(()=>iniciarTurno(myHero),600);
       else iniciarTurno(myHero);
     } else if(newTurnId==='enemy'){
       _currentTurnPlayerName='Inimigos';
@@ -4150,13 +4180,18 @@ function init(){
   }
   if(window._fbReady) startFbListener();
   else window.addEventListener('fbReady',startFbListener,{once:true});
-  // Offline fallback: start turn only if Firebase hasn't delivered currentTurnPlayerId
+  // Fallback OFFLINE (sem Firebase): inicia o turno local. Em multiplayer/Firebase,
+  // quem inicia é o host via _hostSetupTurnOrder() — senão cada aparelho rodava sozinho.
   setTimeout(()=>{
-    if(faseDoTurno==='idle'&&!_currentTurnPlayerId){
+    if(faseDoTurno==='idle'&&!_currentTurnPlayerId&&!window._fbReady){
       const heroi=unidades.find(u=>u.tipo==='heroi'&&!u._fbId);
       if(heroi) iniciarTurno(heroi);
     }
   }, 1200);
+  // Rede de segurança: Firebase ativo mas nada iniciou (setup do host falhou) → tenta de novo.
+  setTimeout(()=>{
+    if(faseDoTurno==='idle'&&!_currentTurnPlayerId&&window._fbReady&&_fbIsHost) _hostSetupTurnOrder();
+  }, 3500);
 }
 
 for(const u of unidades){ _loadSprite(u); }
@@ -4307,6 +4342,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v24</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v25</div>
 </body>
 </html>
