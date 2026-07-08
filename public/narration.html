@@ -62,6 +62,10 @@ if(_cfg&&_rid){
       }catch(e){console.warn('fbAtualizarPercepcao:',e);}
     };
     window._fbListenRoom=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
+    window._fbHeartbeat=async(pid,nome)=>{
+      try{await updateDoc(rd,{[`players.${pid}.nome`]:nome,[`players.${pid}.ts`]:Date.now()});}
+      catch(e){console.warn('fbHeartbeat:',e);}
+    };
     window._fbMarcarVisitada=async(cenaId)=>{
       try{
         const snap=await getDoc(rd);
@@ -1291,6 +1295,19 @@ function _hlAcoesInline(t){
 let _cenasVisitadas = new Set();
 let _emboscadaTimer = null;   // dispara a batalha automática de cenas tipo 'emboscada'
 let _pularIntroVez = false;   // true ao voltar do mapa → abre direto no diálogo
+let _hbTimer = null;          // heartbeat de presença (multiplayer)
+
+// Jogadores ATIVOS: só quem bateu heartbeat nos últimos 45s. Pruna pids
+// fantasmas/defasados que travavam o gate de "todos prontos". Fallback: se
+// ninguém tem ts (dados antigos/solo), usa todos os pids (comportamento antigo).
+function _jogadoresAtivos(room) {
+  const players = room?.players || {};
+  const AGORA = Date.now(), VIVO = 45000;
+  const ativos = Object.entries(players).filter(([, p]) => p && p.ts && (AGORA - p.ts) < VIVO).map(([pid]) => pid);
+  if (ativos.length) return ativos;
+  const todos = Object.keys(players);
+  return todos.length ? todos : (_pid ? [_pid] : []);
+}
 
 // ── Referências DOM ──────────────────────────────────────────────
 const elTitulo = document.getElementById('narr-titulo');
@@ -1358,6 +1375,13 @@ function init() {
       return;
     }
     _unsubRoom = window._fbListenRoom(onRoomUpdate);
+    // Presença: marca este device como VIVO agora e a cada 15s. O gate de
+    // "todos prontos" só conta quem está ativo — pruna pids fantasmas (device
+    // que limpou dados/abriu anônima e deixou uma entrada velha na sala).
+    const bater = () => window._fbHeartbeat?.(_pid, _pname);
+    bater();
+    if (_hbTimer) clearInterval(_hbTimer);
+    _hbTimer = setInterval(bater, 15000);
   };
 
   const hasFbConfig = !!(localStorage.getItem('oraculo.fbConfig') && localStorage.getItem('oraculo.roomId'));
@@ -1450,11 +1474,10 @@ function onRoomUpdate(room) {
   const ganchoAtivo = temGancho && !jaResolvida;
   const avancoGrupo = !!cena?.avancarEmGrupo && !!cena?.proximaCena;
   if ((ganchoAtivo || avancoGrupo) && narr.introConfirmados) {
-    const jogadores = Object.keys(room.players || {});
+    const jogadores = _jogadoresAtivos(room);   // só quem está VIVO (pruna fantasmas)
     const confirmados = narr.introConfirmados;
-    const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : Object.keys(confirmados));
-    // TODOS precisam ter confirmado — 199 de 200 não basta.
-    if (efetivos.length > 0 && efetivos.every(pid => confirmados[pid])) {
+    // TODOS os ativos precisam ter confirmado.
+    if (jogadores.length > 0 && jogadores.every(pid => confirmados[pid])) {
       if (ganchoAtivo) {
         // NÃO reescreve cenaId (um aparelho stale resetaria o intro do outro)
         window._fbSetStatus?.('battle', { 'narration.battleKey': null });
@@ -1467,14 +1490,21 @@ function onRoomUpdate(room) {
       }
       return;
     }
-    // Atualizar botão de espera para quem já confirmou (multiplayer)
-    if (jogadores.length > 0 && confirmados[_pid]) {
+    // Progresso "X/Y prontos" nos DOIS dispositivos (não só no que já confirmou).
+    if (jogadores.length > 1) {
       const count = jogadores.filter(pid => confirmados[pid]).length;
       const btnEl = document.getElementById('intro-btn-continuar');
       if (btnEl) {
-        btnEl.textContent = `⌛ ${count}/${jogadores.length} prontos…`;
-        btnEl.disabled = true;
-        btnEl.onclick = null;
+        if (confirmados[_pid]) {
+          btnEl.textContent = `⌛ ${count}/${jogadores.length} prontos…`;
+          btnEl.disabled = true; btnEl.onclick = null;
+        } else {
+          // ainda não confirmou: continua clicável, mas mostra o progresso
+          const rotulo = ganchoAtivo ? '⚔ Estou Pronto!' : '→ Continuar';
+          btnEl.textContent = `${rotulo}  ·  ${count}/${jogadores.length}`;
+          btnEl.disabled = false;
+          btnEl.onclick = () => confirmarPronto();
+        }
       }
     }
   }
@@ -2002,7 +2032,7 @@ function mostrarModalPercepcao(percepcao) {
   const aguardDiv= document.getElementById('percepcao-aguardando');
   const resDiv   = document.getElementById('percepcao-resultado');
   const minha    = percepcao.respostas?.[_pid];
-  const jogadores= Object.keys(_lastRoom?.players || {});
+  const jogadores= _jogadoresAtivos(_lastRoom);
   const efetivos = jogadores.length > 0 ? jogadores : [_pid];
 
   // ── Fase RESULTADO: sucesso/falha + explicação + Continuar ──
@@ -2104,7 +2134,7 @@ async function rolarPercepcao() {
 // Resolve quando TODOS rolaram o dado.
 async function _verificarRolamentosCompletos(percepcao) {
   if (!_isHost || _percResolvendo) return;
-  const jogadores = Object.keys(_lastRoom?.players || {});
+  const jogadores = _jogadoresAtivos(_lastRoom);
   const efetivos  = jogadores.length > 0 ? jogadores : [_pid];
   const respostas = percepcao.respostas || {};
   if (!efetivos.every(p => respostas[p]?.resultado != null)) return;
@@ -2116,7 +2146,7 @@ async function _verificarRolamentosCompletos(percepcao) {
 async function _resolverPercepcao(percepcao) {
   if (!_isHost) return;
   const dc        = percepcao.dc || 12;
-  const jogadores = Object.keys(_lastRoom?.players || {});
+  const jogadores = _jogadoresAtivos(_lastRoom);
   const efetivos  = jogadores.length > 0 ? jogadores : [_pid];
   const respostas = percepcao.respostas || {};
   const passaram  = efetivos.filter(p => (respostas[p]?.resultado || 0) >= dc);
@@ -3029,7 +3059,7 @@ function _dialAtualizarChips() {
     const label = fluxo?.btnLabel || (proximaId ? '→ Avançar' : null);
     if (label && proximaId && _dialDestinoRevelado(fluxo)) {
       const conf = _lastRoom?.narration?.viagemConfirmados || {};
-      const jogadores = Object.keys(_lastRoom?.players || {});
+      const jogadores = _jogadoresAtivos(_lastRoom);
       const total = jogadores.length || 1;
       const nConf = jogadores.length ? jogadores.filter(p => conf[p]).length : (conf[_pid] ? 1 : 0);
       const euConfirmei = !!conf[_pid] && proximaId !== '_mapa';
@@ -3370,7 +3400,7 @@ function _verificarViagemCompleta(narr) {
   if (proximaId === '_mapa') { _irParaMapaMundo(); return; }
   if (!proximaId) return;
   const conf = narr?.viagemConfirmados || {};
-  const jogadores = Object.keys(_lastRoom?.players || {});
+  const jogadores = _jogadoresAtivos(_lastRoom);
   const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : Object.keys(conf));
   if (efetivos.length > 0 && efetivos.every(pid => conf[pid])) {
     if (window._fbUpdateNarration) {
@@ -3463,7 +3493,7 @@ function _ehCenaInvestigacao(cena){
 
 // ── Turnos ──
 function _invOrdemJogadores(){
-  const ks = Object.keys(_lastRoom?.players || {});
+  const ks = _jogadoresAtivos(_lastRoom);
   return ks.length ? ks : (_pid ? [_pid] : []);
 }
 function _invVezPid(){
@@ -3685,6 +3715,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v39</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v40</div>
 </body>
 </html>
