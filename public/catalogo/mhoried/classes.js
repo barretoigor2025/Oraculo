@@ -31,7 +31,7 @@ export const CLASSES_DATA = {
     feat:'Ágil e furtivo. Maior alcance de movimento por turno.',
     habs:[
       {icon:'🗡️',nome:'Facada',desc:'Golpe rápido',dano:'1d6+2',tipo:'melee',sp:0},
-      {icon:'🌑',nome:'Ataque Furtivo',desc:'Nas sombras — dano x2',dano:'2d6+2',tipo:'melee',sp:10},
+      {icon:'🌑',nome:'Ataque Furtivo',desc:'+4 de dano com aliado flanqueando',dano:'2d6+2',tipo:'melee',sp:10},
     ],
     cor:'#0f2448',
   },
@@ -42,7 +42,7 @@ export const CLASSES_DATA = {
     feat:'Guardião divino. Resistência elevada e suporte ao grupo.',
     habs:[
       {icon:'✨',nome:'Cajado',desc:'Golpe sagrado',dano:'1d6+1',tipo:'melee',sp:0},
-      {icon:'💚',nome:'Curar Ferimentos',desc:'Cura 1d8+2 HP',dano:'1d8+2',tipo:'cura',sp:20},
+      {icon:'💚',nome:'Curar Ferimentos',desc:'Cura 3d6+5 no aliado mais ferido (raio 4)',dano:'3d6+5',tipo:'cura',sp:20},
     ],
     cor:'#4a3a10',
   },
@@ -54,7 +54,7 @@ export const CLASSES_DATA = {
     habs:[
       {icon:'🪓',nome:'Golpe',desc:'Ataque corpo a corpo',dano:'1d8+3',tipo:'melee',sp:0},
       {icon:'💢',nome:'Golpe Devastador',desc:'Golpe pesado — dano duplo',dano:'2d6+4',tipo:'melee',sp:20},
-      {icon:'🔥',nome:'Fúria',desc:'Entra em fúria (+dano)',dano:'—',tipo:'buff',sp:0},
+      {icon:'🔥',nome:'Fúria',desc:'+3 de dano até o fim da batalha',dano:'—',tipo:'buff',sp:0},
     ],
     cor:'#6a1a1a',
   },
