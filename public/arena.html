@@ -797,6 +797,7 @@ function criarInimigo(bestiaryId, col, row, overrides){
   const en = (window.INIMIGOS_DATA||[]).find(e=>e.id===bestiaryId);
   if(!en){ console.warn('criarInimigo: id não encontrado →', bestiaryId); return null; }
   const g = en.gurps || {};
+  const ba = _INIMIGO_ARENA[bestiaryId] || {};   // combate na escala da arena
   return Object.assign({
     id:          `${bestiaryId}_${col}_${row}`,
     nome:        en.nome,
@@ -809,8 +810,10 @@ function criarInimigo(bestiaryId, col, row, overrides){
     img:         null,
     tipo:        'inimigo',
     mov:         g.move  ?? 4,
-    hp:          g.hp    ?? 10,
-    maxHp:       g.hp    ?? 10,
+    hp:          ba.hp ?? ((g.hp ?? 10) * 3),
+    maxHp:       ba.hp ?? ((g.hp ?? 10) * 3),
+    atkMod:      ba.atkMod ?? 2,
+    arenaAtk:    ba,   // dano/alcance/nome do ataque canônico (escala arena)
     sp:          (typeof g.fp === 'number' ? g.fp : 0),
     maxSp:       (typeof g.fp === 'number' ? g.fp : 0),
     portrait:    en._retrato  || `catalogo/mhoried/inimigos/${bestiaryId}/retrato/${bestiaryId}_retrato.png`,
@@ -1060,6 +1063,33 @@ const ATTR_MOD = {
 
 const MOV_DES_MOD = { 'Mago':2, 'Espantalho':0 };
 
+// ── Combate dos INIMIGOS na escala da arena ─────────────────────────
+// Derivado do bestiário GURPS: hp = g.hp×3 (boss ×4), dano Xd→Xd6 do ataque
+// canônico, atkMod ≈ perícia−10. Sem entrada → fallback conservador.
+// (Antes: todos os inimigos batiam 1d6 fixo e tinham HP GURPS 8–22 contra
+// heróis de 60–110 — zero desafio e nenhuma diferença entre kobold e boss.)
+const _INIMIGO_ARENA = {
+  alquimista_choir:     { hp:27, dano:'1d6+2',  alcance:6, atkMod:2, nomeAtq:'Alquimia Vil',     icone:'🧪', anim:'magic'   },
+  barkthresher:         { hp:54, dano:'2d6+1',  alcance:2, atkMod:1, nomeAtq:'Golpe de Galho',   icone:'🌳', anim:'melee'   },
+  caranguejo_gigante:   { hp:60, dano:'2d6+3',  alcance:1, atkMod:1, nomeAtq:'Garra Grande',     icone:'🦀', anim:'melee'   },
+  demonio_vulkrundshard:{ hp:48, dano:'2d6',    alcance:1, atkMod:4, nomeAtq:'Golpe Ígneo',      icone:'🔥', anim:'melee'   },
+  elfo_sombrio:         { hp:33, dano:'1d6+3',  alcance:1, atkMod:2, nomeAtq:'Espada Larga',     icone:'🗡️', anim:'melee'   },
+  espantalho_assombrado:{ hp:30, dano:'1d6+3',  alcance:1, atkMod:3, nomeAtq:'Foice',            icone:'🌾', anim:'melee'   },
+  esqueleto_lanceiro:   { hp:33, dano:'1d6+1',  alcance:2, atkMod:2, nomeAtq:'Lança',            icone:'💀', anim:'melee'   },
+  golem_de_pergaminho:  { hp:45, dano:'1d6+1',  alcance:1, atkMod:3, nomeAtq:'Apêndice',         icone:'📜', anim:'melee'   },
+  grimhollow_thool:     { hp:54, dano:'3d6',    alcance:1, atkMod:2, nomeAtq:'Grande Clava',     icone:'🏏', anim:'melee'   },
+  javali_ensandecido:   { hp:60, dano:'2d6+2',  alcance:1, atkMod:2, nomeAtq:'Presa',            icone:'🐗', anim:'melee'   },
+  kobold_azul:          { hp:24, dano:'1d6+1',  alcance:1, atkMod:1, nomeAtq:'Lança',            icone:'🔱', anim:'melee'   },
+  larva_gigante:        { hp:48, dano:'1d6+2',  alcance:1, atkMod:2, nomeAtq:'Mordida Ácida',    icone:'🐛', anim:'melee'   },
+  log_wife:             { hp:42, dano:'1d6+1',  alcance:1, atkMod:3, nomeAtq:'Raízes e Galhos',  icone:'🪵', anim:'melee'   },
+  manticora_albina:     { hp:54, dano:'2d6+3',  alcance:1, atkMod:4, nomeAtq:'Garras e Mordida', icone:'🦁', anim:'melee'   },
+  marrowwither:         { hp:42, dano:'1d6',    alcance:1, atkMod:2, nomeAtq:'Tentáculo',        icone:'🦑', anim:'melee'   },
+  mother_clutch:        { hp:48, dano:'2d6+2',  alcance:1, atkMod:5, nomeAtq:'Dez Braços',       icone:'🕷️', anim:'melee'   },
+  quay_grabber:         { hp:57, dano:'2d6',    alcance:2, atkMod:2, nomeAtq:'Gancho',           icone:'🪝', anim:'melee'   },
+  rei_chutter:          { hp:88, dano:'3d6+3',  alcance:2, atkMod:4, nomeAtq:'Clava Negra',      icone:'👑', anim:'melee'   },
+  wraithweaver_spider:  { hp:36, dano:'1d6+2',  alcance:1, atkMod:5, nomeAtq:'Mordida Terror',   icone:'🕸️', anim:'melee'   },
+};
+
 // ══════════════════════════════════════════
 //  HABILIDADES POR CLASSE
 // ══════════════════════════════════════════
@@ -1067,7 +1097,7 @@ const HABILIDADES = {
   'Bárbaro': [
     { id:'golpe',       nome:'Golpe',             icone:'🪓', tipo:'melee',    categoria:'basico', alcance:1,  anim:'melee',    cor:'#ff6633', desc:'Ataque corpo a corpo',        dano:'1d8+3',  custoSP:0  },
     { id:'devastador',  nome:'Golpe Devastador',   icone:'💢', tipo:'melee',    categoria:'skill',  alcance:1,  anim:'melee',    cor:'#ff3300', desc:'Golpe pesado — dano duplo',   dano:'2d6+4',  custoSP:20 },
-    { id:'furia',       nome:'Fúria',              icone:'🔥', tipo:'buff',     categoria:'buff',   alcance:0,  anim:'fury',     cor:'#ff4400', desc:'Entra em fúria (+dano)',      dano:null,     custoSP:0  },
+    { id:'furia',       nome:'Fúria',              icone:'🔥', tipo:'buff',     categoria:'buff',   alcance:0,  anim:'fury',     cor:'#ff4400', desc:'+3 de dano até o fim da batalha',      dano:null,     custoSP:0  },
   ],
   'Guerreiro': [
     { id:'espadada',    nome:'Espadada',           icone:'⚔️', tipo:'melee',    categoria:'basico', alcance:1,  anim:'melee',    cor:'#8899ee', desc:'Golpe com espada',            dano:'1d8+2',  custoSP:0  },
@@ -1081,16 +1111,16 @@ const HABILIDADES = {
     { id:'escudo',      nome:'Escudo Arcano',      icone:'🛡️', tipo:'buff',     categoria:'buff',   alcance:0,  anim:'shield',   cor:'#4488ff', desc:'Escudo mágico (self-cast)',   dano:null,     custoSP:10 },
   ],
   'Arqueiro': [
-    { id:'flecha',       nome:'Flecha',            icone:'🏹', tipo:'projétil', categoria:'basico', alcance:10, anim:'arrow',    cor:'#66cc44', desc:'Flecha rápida e precisa',     dano:'1d8+2',  custoSP:0  },
-    { id:'tiro_preciso', nome:'Tiro Preciso',      icone:'🎯', tipo:'projétil', categoria:'skill',  alcance:12, anim:'arrow',    cor:'#88ff44', desc:'Foco total — ignora cobertura',dano:'1d8+5', custoSP:15 },
+    { id:'flecha',       nome:'Flecha',            icone:'🏹', tipo:'projétil', categoria:'basico', alcance:7,  anim:'arrow',    cor:'#66cc44', desc:'Flecha rápida e precisa',     dano:'1d8+2',  custoSP:0  },
+    { id:'tiro_preciso', nome:'Tiro Preciso',      icone:'🎯', tipo:'projétil', categoria:'skill',  alcance:10, anim:'arrow',    cor:'#88ff44', desc:'Foco total — ignora cobertura',dano:'1d8+5', custoSP:15 },
   ],
   'Ladino': [
     { id:'facada',      nome:'Facada',             icone:'🗡️', tipo:'melee',    categoria:'basico', alcance:1,  anim:'melee',    cor:'#ddcc00', desc:'Golpe rápido',                dano:'1d6+2',  custoSP:0  },
-    { id:'furtivo',     nome:'Ataque Furtivo',     icone:'🌑', tipo:'melee',    categoria:'skill',  alcance:1,  anim:'melee',    cor:'#997700', desc:'Nas sombras — dano x2',       dano:'2d6+2',  custoSP:10 },
+    { id:'furtivo',     nome:'Ataque Furtivo',     icone:'🌑', tipo:'melee',    categoria:'skill',  alcance:1,  anim:'melee',    cor:'#997700', desc:'+4 de dano se um aliado flanqueia o alvo',       dano:'2d6+2',  custoSP:10 },
   ],
   'Clérigo': [
     { id:'cajado',      nome:'Cajado',             icone:'✨', tipo:'melee',    categoria:'basico', alcance:1,  anim:'melee',    cor:'#eecc44', desc:'Golpe sagrado',               dano:'1d6+1',  custoSP:0  },
-    { id:'curar',       nome:'Curar Ferimentos',   icone:'💚', tipo:'buff',     categoria:'buff',   alcance:0,  anim:'cure',     cor:'#22dd88', desc:'Cura 1d8+2 HP',               dano:null,     custoSP:20 },
+    { id:'curar',       nome:'Curar Ferimentos',   icone:'💚', tipo:'buff',     categoria:'buff',   alcance:0,  anim:'cure',     cor:'#22dd88', desc:'Cura 3d6+5 no aliado mais ferido (raio 4)',               dano:null,     custoSP:20 },
   ],
   'Espantalho': [
     { id:'garra',       nome:'Garra',              icone:'🌾', tipo:'melee',    categoria:'basico', alcance:1,  anim:'melee',    cor:'#8b4513', desc:'Garra cortante',              dano:'1d6',    custoSP:0  },
@@ -2210,6 +2240,8 @@ function mostrarLetreiro(nome, sub, punicao, duracao, cb){
 }
 
 function iniciarTurno(unit){
+  // Buffs de CA (Postura/Escudo) expiram por turnos do DONO
+  if(unit.caBonusTurnos>0){ unit.caBonusTurnos--; if(unit.caBonusTurnos<=0) unit.caBonus=0; }
   planoMovimento=null; planoAtaque=null; movBloqueado=false;
   selUnit=unit; moveHexes=[]; targetHex=null; hexPreview=null;
   modoAtaque=false; habAtual=null; atkTargets=[]; areaPreview=null; targetPreview=null;
@@ -3019,7 +3051,7 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
       // Projétil voa → explosão → só então rola o dano modulado
       lancarAtaque(hab,atacante,alvoHex,()=>{
         const dmgR=rollNotacao(hab.dano);
-        const finalDmg=Math.max(1, Math.round(dmgR.total*mult));
+        const finalDmg=Math.max(1, Math.round(dmgR.total*mult)+(atacante.danoBonus||0));
         const playlist=[{
           tipo:'rolar', label:`${hab.icone} Dano em Área`,
           nomeJog:atacante.nome,
@@ -3030,7 +3062,7 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
         if(window._fbBroadcastDice) window._fbBroadcastDice(playlist);
         DiceOverlay.mostrar(playlist,results=>{
           const dmg=results[0].resultado;
-          for(const e of areaAlvos) e.hp=Math.max(0,e.hp-dmg);
+          for(const e of areaAlvos) e.hp=Math.max(0,e.hp-Math.max(1,dmg-(e.dr||0)));
           unidades=unidades.filter(u=>u.tipo!=='inimigo'||u.hp>0);
           if(window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
           _updateLogStrip(atacante.nome+' causou '+dmg+' de dano em área');
@@ -3047,13 +3079,39 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
     renderBottomPanel();
   }
   if(hab.tipo==='buff'||hab.alcance===0){
-    lancarAtaque(hab,atacante,atacante,()=>{ cb(); });
+    // Efeitos MECÂNICOS dos buffs (antes eram só animação):
+    if(hab.id==='furia'){                       // Bárbaro: +3 de dano até o fim da batalha
+      atacante.danoBonus=3;
+      _updateLogStrip(atacante.nome+' entra em FÚRIA (+3 dano)');
+    } else if(hab.id==='defesa'){               // Guerreiro: CA +3 até o próximo turno dele
+      atacante.caBonus=3; atacante.caBonusTurnos=1;
+      _updateLogStrip(atacante.nome+' assume postura de defesa (CA +3)');
+    } else if(hab.id==='escudo'){               // Mago: CA +4 por 2 turnos
+      atacante.caBonus=4; atacante.caBonusTurnos=2;
+      _updateLogStrip(atacante.nome+' conjura Escudo Arcano (CA +4, 2 turnos)');
+    } else if(hab.id==='curar'){                // Clérigo: cura o aliado MAIS FERIDO em raio 4 (ou a si)
+      const feridos=unidades.filter(u=>u.tipo==='heroi'&&u.hp>0&&u.hp<u.maxHp
+        &&hexDist(atacante.col,atacante.row,u.col,u.row)<=4)
+        .sort((a,b)=>(a.hp/a.maxHp)-(b.hp/b.maxHp));
+      const pac=feridos[0]||atacante;
+      const curaR=rollNotacao('3d6+5');
+      const playlist=[{tipo:'rolar', label:'💚 Curar Ferimentos', nomeJog:atacante.nome,
+        alvo:pac.nome, resultado:curaR.total, notacao:'3d6+5', dados:6, condicionalDe:0}];
+      if(window._fbBroadcastDice) window._fbBroadcastDice(playlist);
+      DiceOverlay.mostrar(playlist,results=>{
+        pac.hp=Math.min(pac.maxHp,pac.hp+results[0].resultado);
+        _updateLogStrip(atacante.nome+' curou '+pac.nome+' em '+results[0].resultado+' HP');
+        lancarAtaque(hab,atacante,pac,()=>{ render(); renderBottomPanel(); cb(); });
+      });
+      return;
+    }
+    lancarAtaque(hab,atacante,atacante,()=>{ renderBottomPanel(); cb(); });
     return;
   }
 
   // Alvo único: 1) rola hit → 2) projétil voa → 3) explosão → 4) rola dano → 5) HP/morte
-  const atqMod=ATTR_MOD[atacante.nome]||2;
-  const alvoAC=alvo.ac||10;
+  const atqMod=atacante.tipo==='inimigo' ? (atacante.atkMod??2) : (ATTR_MOD[atacante.nome]||2);
+  const alvoAC=(alvo.ac||10)+((alvo.caBonusTurnos>0)?(alvo.caBonus||0):0);
   const d20v=Math.floor(Math.random()*20)+1;
   const total=d20v+atqMod;
   const critico=d20v===20, catastrofe=d20v===1;
@@ -3074,12 +3132,25 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
       lancarAtaque(hab,atacante,alvo,()=>{
         if(hab.dano){
           const dmgR=rollNotacao(hab.dano);
-          const finalDmg=critico?dmgR.total*2:dmgR.total;
+          // Fúria do Bárbaro (+3) e FLANCO do Ladino (Furtivo +4 se o alvo está
+          // adjacente a OUTRO herói): identidade de classe com efeito real.
+          let bonus=(atacante.danoBonus||0);
+          let flanco=false;
+          if(hab.id==='furtivo'){
+            flanco=unidades.some(u=>u.tipo==='heroi'&&u!==atacante&&u.hp>0
+              &&hexDist(u.col,u.row,alvo.col,alvo.row)<=1);
+            if(flanco) bonus+=4;
+          }
+          let finalDmg=(critico?dmgR.total*2:dmgR.total)+bonus;
+          // DR do alvo (armadura natural do bestiário): dano mínimo 1
+          const drAlvo=alvo.dr||0;
+          if(drAlvo>0) finalDmg=Math.max(1,finalDmg-drAlvo);
+          const sufixo=(flanco?' (FLANCO+4)':'')+(drAlvo>0?` (DR−${drAlvo})`:'');
           const dmgPlaylist=[{
             tipo:'rolar', label:`Dano ${hab.icone}`,
             nomeJog:atacante.nome, alvo:alvo.nome,
             resultado:finalDmg,
-            notacao:critico?`${hab.dano} (CRÍTICO×2)`:hab.dano,
+            notacao:(critico?`${hab.dano} (CRÍTICO×2)`:hab.dano)+sufixo,
             dados:parseNotacao(hab.dano)?.sides||6, condicionalDe:0
           }];
           if(window._fbBroadcastDice) window._fbBroadcastDice(dmgPlaylist);
@@ -3149,8 +3220,12 @@ function _executarProximoInimigo(enemies, idx){
   }
   const destCol=planoMovimento?planoMovimento.path[planoMovimento.path.length-1].col:esp.col;
   const destRow=planoMovimento?planoMovimento.path[planoMovimento.path.length-1].row:esp.row;
-  const habEsp=(HABILIDADES[esp.nome]||[]).find(h=>h.categoria==='basico')||
-    {icone:'🌾',nome:'Garra',alcance:1,tipo:'melee',anim:'melee',dano:'1d6',desc:'Garra cortante'};
+  // Ataque canônico do bestiário na escala da arena (antes: 1d6 fixo p/ todos)
+  const ba=esp.arenaAtk||{};
+  const habEsp=ba.dano
+    ? {icone:ba.icone||'💀',nome:ba.nomeAtq||'Ataque',alcance:ba.alcance||1,tipo:'melee',anim:ba.anim||'melee',dano:ba.dano,desc:ba.nomeAtq||''}
+    : ((HABILIDADES[esp.nome]||[]).find(h=>h.categoria==='basico')||
+       {icone:'🌾',nome:'Garra',alcance:1,tipo:'melee',anim:'melee',dano:'1d6',desc:'Garra cortante'});
 
   if(hexDist(destCol,destRow,alvo.col,alvo.row)<=habEsp.alcance){
     planoAtaque={hab:habEsp, atacante:esp, alvo};
@@ -4360,6 +4435,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v27dbg</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v28dbg</div>
 </body>
 </html>
