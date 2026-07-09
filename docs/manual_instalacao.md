@@ -54,6 +54,14 @@ um bug real que enfrentamos — segui-lo evita repetir.
 - [ ] Roster por **ID de cena**; mapa de batalha e terreno apontados.
 - [ ] **Criaturas únicas** no `Set UNICOS` — não podem aparecer em duplicata numa batalha.
 
+### ⚖️ Balanceamento de combate
+- [ ] **Toda criatura nova entra na tabela `_INIMIGO_ARENA`** (arena.html) com hp/dano/alcance/atkMod na **escala da arena** — heróis têm 60–110 HP e batem ~3,5–11 por golpe. Conversão a partir do bestiário GURPS: `hp = g.hp × 3` (boss ×4), dano `Xd` GURPS → `Xd6`, `atkMod ≈ perícia − 10`. Sem entrada na tabela, a criatura cai num fallback fraco. *(bug: todos os inimigos batiam 1d6 fixo e tinham HP GURPS 8–22 — kobold = boss, zero desafio.)*
+- [ ] **Habilidade sem efeito mecânico não entra.** Buff/cura precisa MUDAR estado (caBonus, danoBonus, hp) — animação sozinha não é habilidade. *(bug: Fúria, Postura, Escudo e a CURA do Clérigo eram só animação; o Clérigo pagava 20 SP por nada.)*
+- [ ] **Cada classe com uma assinatura que muda a decisão de jogo** (Bárbaro fúria, Guerreiro postura, Mago área+escudo, Clérigo cura em aliado, Ladino flanco, Arqueiro alcance). Se duas classes jogam igual, uma delas está mal desenhada.
+- [ ] **Sem estratégia degenerada**: alcance de ataque vs. mov dos inimigos não pode permitir kite infinito (atirar e recuar sem nunca ser alcançado).
+- [ ] **Aritmética de desafio**: estimar golpes-para-matar dos dois lados (dano médio × acerto vs. HP). Alvo: mob comum cai em 3–5 ações do grupo e ameaça de verdade um herói frágil exposto (~3 pancadas no mago); boss exige o kit inteiro do grupo.
+- [ ] **DR/CA aplicados de fato** no cálculo (DR subtrai do dano, mín. 1; buffs de CA entram no teste de acerto e expiram por turno).
+
 ### 🖼️ Assets (peso, cache, nomes)
 - [ ] **Imagens comprimidas** (paleta 256 + dithering; mantém nome/dimensão/transparência). Site leve — senão o **deploy do Pages falha na sincronização**.
 - [ ] **Sem caracteres não-ASCII em caminhos de arquivo** (`ç`, acentos). O **id** da cena pode ter acento; o **caminho do asset**, não (`carroca_tombada`).
