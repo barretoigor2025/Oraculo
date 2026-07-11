@@ -53,6 +53,9 @@ if(_cfg&&_rid&&_pid){
     window._fbBroadcastFx=async(data)=>{
       try{await updateDoc(rd,{fxEvent:{...data,pid:_pid,ts:Date.now()}});}catch{}
     };
+    window._fbSetHeroHp=async(pid,hp)=>{
+      try{await updateDoc(rd,{[`players.${pid}.hp`]:hp});}catch{}
+    };
     window._fbSetEnemyIntent=async(intent)=>{
       try{await updateDoc(rd,{enemyIntent:intent??null});}catch{}
     };
@@ -1229,6 +1232,40 @@ let _arenaRoom           = null;   // última room do Firebase (para o setup de 
 let _turnOrderIniciada   = false;  // host já montou a ordem de turnos?
 let _lastFxTs            = null;   // último fxEvent remoto já reproduzido
 let _fxRemoto            = false;  // true enquanto reproduz fx de outro device (não re-transmitir)
+let _fxFila              = [];     // fila local de efeitos remotos (evita atropelo)
+let _fxTocando           = false;
+
+// ID de rede de uma unidade: herói = pid do dono; inimigo = id determinístico do spawn.
+function _unitNetId(u){ return u.tipo==='heroi' ? (u._fbId||_pid) : u.id; }
+function _unitPorNetId(uid){
+  return unidades.find(u=> (u.tipo==='heroi' && (u._fbId||_pid)===uid) || (u.tipo==='inimigo' && u.id===uid));
+}
+// Transmite o CAMINHO do movimento p/ os outros animarem hex a hex (não teleportar).
+function _fxBroadcastMove(unit, path){
+  if(_fxRemoto || !window._fbBroadcastFx || !path || !path.length) return;
+  window._fbBroadcastFx({anim:'move', uid:_unitNetId(unit), oc:unit.col, or:unit.row,
+    path:path.map(p=>({c:p.col,r:p.row}))});
+}
+// Reprodução sequencial dos efeitos remotos: a HISTÓRIA acontece igual nos dois lados.
+function _fxEnfileirar(fe){ _fxFila.push(fe); _fxProcessar(); }
+function _fxProcessar(){
+  if(_fxTocando || !_fxFila.length) return;
+  _fxTocando=true;
+  const fe=_fxFila.shift();
+  const fim=()=>{ _fxTocando=false; render(); _fxProcessar(); };
+  if(fe.anim==='move'){
+    const u=_unitPorNetId(fe.uid);
+    if(u && fe.path && fe.path.length){
+      u.col=fe.oc; u.row=fe.or;      // volta à origem do trajeto (se snapshot adiantou)
+      u._animR=true;                 // sync de posição não interfere durante a animação
+      animarMovimento(u, fe.path.map(p=>({col:p.c,row:p.r})), ()=>{ u._animR=false; fim(); });
+    } else fim();
+  } else {
+    _fxRemoto=true;
+    lancarAtaque({anim:fe.anim,id:fe.habId,icone:fe.icone},{col:fe.fc,row:fe.fr},{col:fe.tc,row:fe.tr},fim);
+    _fxRemoto=false;
+  }
+}
 
 // Pids dos heróis JÁ no tabuleiro (com x/y), ordenados. Pruna fantasmas.
 function _boardPids(){
@@ -3002,8 +3039,10 @@ function resolverMovimento(cb){
       mostrarLetreiro('TROPEÇOU!','perdeu o ataque','💀 Catástrofe — sem ação neste turno',1800,()=>cb(false));
     } else if(!r.sucesso){
       const metade=path.slice(0,Math.max(1,Math.ceil(path.length/2)));
+      _fxBroadcastMove(unit,metade);
       animarMovimento(unit,metade,()=>{ _fbSyncUnit(unit); render(); _updateLogStrip(unit.nome+' moveu parcialmente'); cb(true); });
     } else {
+      _fxBroadcastMove(unit,path);
       animarMovimento(unit,path,()=>{ _fbSyncUnit(unit); render(); _updateLogStrip(unit.nome+' moveu para '+hexLabel(unit.col,unit.row)); cb(true); });
     }
   });
@@ -3185,6 +3224,8 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
             alvo.hp=Math.max(0,alvo.hp-dmg);
             if(alvo.tipo==='inimigo'&&alvo.hp<=0) unidades=unidades.filter(u=>u!==alvo);
             if(window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
+            // Dano em HERÓI (turno inimigo no coordenador): grava p/ o dono aplicar
+            if(alvo.tipo==='heroi' && window._fbSetHeroHp) window._fbSetHeroHp(alvo._fbId||_pid, alvo.hp);
             _updateLogStrip(atacante.nome+' atacou '+alvo.nome+' — '+dmg+' de dano');
             render(); renderBottomPanel(); cb();
           });
@@ -3808,7 +3849,7 @@ function toggleCoords(){
 // ══════════════════════════════════════════
 function _fbSyncUnit(unit){
   if(unit.tipo==='heroi'&&!unit._fbId&&window._fbUpdatePos) window._fbUpdatePos(unit.col,unit.row);
-  else if(unit.tipo==='inimigo'&&_fbIsHost&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
+  else if(unit.tipo==='inimigo'&&_ehCoordenador()&&window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
 }
 
 function _broadcastIntent(){
@@ -4072,7 +4113,8 @@ function onRoomUpdate(room){
   }
 
   // ── Sync outros jogadores ──
-  const others=Object.values(room.players).filter(p=>p.id!==myId&&p.x!=null&&p.y!=null);
+  const others=Object.entries(room.players).map(([pid,p])=>({...p,id:p.id||pid}))
+    .filter(p=>p.id!==myId&&p.x!=null&&p.y!=null);
   const otherIds=new Set(others.map(p=>p.id));
   for(let i=unidades.length-1;i>=0;i--){
     if(unidades[i]._fbId&&!otherIds.has(unidades[i]._fbId)) unidades.splice(i,1);
@@ -4083,20 +4125,28 @@ function onRoomUpdate(room){
       const cid=p.classId||'mago';
       const cd=_HERO_CLASS_DATA[cid]||_HERO_CLASS_DATA.mago;
       u={
-        nome:p.name||cd.nome, col:p.x, row:p.y,
+        nome:p.name||p.nome||cd.nome, col:p.x, row:p.y,
         emoji:cd.emoji, cor:cd.cor,
         imgSrc:`catalogo/mhoried/classes/${cid}/peca_tabuleiro/${cid}_peca.png`,
         img:null, tipo:'heroi', mov:cd.mov,
-        hp:p.hp||cd.hp, maxHp:p.maxHp||cd.hp,
-        sp:p.mana||cd.sp, maxSp:p.maxMana||cd.sp,
+        hp:p.hp!=null?p.hp:cd.hp, maxHp:p.maxHp||cd.hp,
+        sp:p.mana!=null?p.mana:cd.sp, maxSp:p.maxMana||cd.sp,
         portrait:`catalogo/mhoried/classes/${cid}/retrato/${cid}_retrato.png`,
         itens:[], _fbId:p.id, classId:cid,
       };
       _loadSprite(u);
       unidades.push(u);
-    } else if(u.col!==p.x||u.row!==p.y){
-      u.col=p.x; u.row=p.y; u._ax=null; u._ay=null;
+    } else {
+      // Posição: só quando NÃO está no meio de uma animação de trajeto remoto
+      if(!u._animR && (u.col!==p.x||u.row!==p.y)){ u.col=p.x; u.row=p.y; u._ax=null; u._ay=null; }
+      if(p.hp!=null && u.hp!==p.hp) u.hp=p.hp;   // dano recebido em outro device
     }
+  }
+  // ── MEU herói: HP autoritativo do executor do dano (turno inimigo roda alhures) ──
+  const meFb=room.players[myId];
+  if(meFb && meFb.hp!=null){
+    const myHero=unidades.find(u=>u.tipo==='heroi'&&!u._fbId);
+    if(myHero && myHero.hp!==meFb.hp){ myHero.hp=meFb.hp; renderBottomPanel(); }
   }
 
   // ── Sync inimigos ──
@@ -4105,25 +4155,34 @@ function onRoomUpdate(room){
   // Quem RODA o turno inimigo é a fonte da verdade das posições — snapshot velho
   // não pode sobrescrever o movimento em andamento ('espantalho voltava pro lugar').
   const _rodandoInimigos = (faseDoTurno==='turno_inimigo' && _ehCoordenador());
-  if(room.enemies && !(_fbIsHost && wasFirst) && !_rodandoInimigos){
-    for(const fbE of room.enemies){
-      const u=unidades.find(u=>u.tipo==='inimigo'&&(fbE.id?u.id===fbE.id:u.nome===fbE.nome));
-      if(u){
-        if(u.col!==fbE.x||u.row!==fbE.y){ u.col=fbE.x; u.row=fbE.y; u._ax=null; u._ay=null; }
-        if(fbE.hp!=null) u.hp=fbE.hp;
+  if(Array.isArray(room.enemies) && !(_fbIsHost && wasFirst) && !_rodandoInimigos){
+    // Só confia no snapshot se ele é DESTA batalha (algum id casa com o roster local)
+    const locIds=new Set(unidades.filter(u=>u.tipo==='inimigo').map(u=>u.id||u.nome));
+    const mesmoRoster=room.enemies.some(e=>locIds.has(e.id||e.nome));
+    if(mesmoRoster){
+      // MORTE SINCRONIZADA: inimigo ausente do snapshot morreu no executor —
+      // remove aqui também (antes ficava vivo, andando e atacando só neste device).
+      const vivos=new Set(room.enemies.map(e=>e.id||e.nome));
+      for(let i=unidades.length-1;i>=0;i--){
+        const u=unidades[i];
+        if(u.tipo==='inimigo' && !u._animR && !vivos.has(u.id||u.nome)) unidades.splice(i,1);
+      }
+      for(const fbE of room.enemies){
+        const u=unidades.find(u=>u.tipo==='inimigo'&&(fbE.id?u.id===fbE.id:u.nome===fbE.nome));
+        if(u && !u._animR){
+          if(u.col!==fbE.x||u.row!==fbE.y){ u.col=fbE.x; u.row=fbE.y; u._ax=null; u._ay=null; }
+          if(fbE.hp!=null) u.hp=fbE.hp;
+        }
       }
     }
   }
 
-  // ── Efeitos visuais de outros aparelhos (bola de fogo, flecha…) ──
+  // ── Efeitos de outros aparelhos (movimento hex a hex, bola de fogo, flecha…) ──
   if(room.fxEvent){
     if(wasFirst){ _lastFxTs=room.fxEvent.ts; }              // não reproduz fx antigo no load
     else if(room.fxEvent.ts!==_lastFxTs && room.fxEvent.pid!==myId){
       _lastFxTs=room.fxEvent.ts;
-      const fe=room.fxEvent;
-      _fxRemoto=true;
-      lancarAtaque({anim:fe.anim,id:fe.habId,icone:fe.icone},{col:fe.fc,row:fe.fr},{col:fe.tc,row:fe.tr},()=>{});
-      _fxRemoto=false;
+      _fxEnfileirar(room.fxEvent);
     }
   }
 
@@ -4479,6 +4538,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v30dbg</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v31dbg</div>
 </body>
 </html>
