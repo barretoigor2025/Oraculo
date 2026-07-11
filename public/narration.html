@@ -3235,7 +3235,7 @@ function _dialOcultarBalao() {
 }
 
 // ── Card Player ───────────────────────────────────────────
-function _dialMostrarCardPlayer(nome, avatar, texto) {
+function _dialMostrarCardPlayer(nome, avatar, texto, comOk) {
   document.getElementById('dial-balao').classList.remove('visivel');
   const card = document.getElementById('dial-player-card');
   card.innerHTML = '';
@@ -3250,6 +3250,18 @@ function _dialMostrarCardPlayer(nome, avatar, texto) {
   body.append(nm, tx);
   row.append(avatarEl, body);
   card.appendChild(row);
+  // OK embutido no card: o botão Continuar vive DENTRO do balão do NPC, que
+  // fica oculto quando o card do jogador está na tela — a fala de OUTRO
+  // jogador precisa do OK aqui dentro (senão o leitor fica preso no card).
+  if (comOk) {
+    const okBtn = document.createElement('button');
+    okBtn.textContent = '✔ OK';
+    okBtn.style.cssText = 'margin-top:9px;padding:8px 22px;font-family:inherit;'
+      + 'font-size:13px;font-weight:700;background:rgba(190,140,35,.2);color:#e8c874;'
+      + 'border:1px solid rgba(190,140,35,.5);border-radius:9px;cursor:pointer;display:block;margin-left:auto;';
+    okBtn.onclick = () => window._dialContinuar();
+    card.appendChild(okBtn);
+  }
   card.classList.add('visivel');
 }
 
@@ -3284,16 +3296,16 @@ async function _dialRenderBeat(beat) {
   } else if (tipo === 'jogador') {
     const CLASS_AVATAR = { mago:'🔮', guerreiro:'⚔️', ladino:'🗡️', clerigo:'✝️', arqueiro:'🏹', druida:'🌿', barbaro:'🪓' };
     const avatar = CLASS_AVATAR[beat.classId] || '⚔️';
-    _dialMostrarCardPlayer(oradorNome || 'Jogador', avatar, texto || '');
+    const ehMinha = beat.authorId === _pid;
+    _dialMostrarCardPlayer(oradorNome || 'Jogador', avatar, texto || '', !ehMinha);
     _dialHistoricoLocal.push({ tipo: 'jogador', quem: oradorNome || 'Jogador', texto: texto || '' });
-    // Se fui eu quem enviou → avança automaticamente; senão → Continuar
-    if (beat.authorId === _pid) {
+    // Se fui eu quem enviou → avança automaticamente; senão → ✔ OK no card
+    if (ehMinha) {
       _dialReadIdx++;
       _dialAnimBeat = false;
       await _dialDelay(600);
       _dialTickDisplay();
     } else {
-      document.getElementById('dial-btn-continuar').style.display = 'block';
       _dialAnimBeat = false;
       _dialAwaitingCont = true;
     }
@@ -3812,6 +3824,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v42</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v43</div>
 </body>
 </html>
