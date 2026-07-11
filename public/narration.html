@@ -50,6 +50,12 @@ if(_cfg&&_rid){
       try{await updateDoc(rd,{[`narration.viagemConfirmados.${playerId}`]:true,'narration.ts':Date.now()});}
       catch(e){console.warn('fbConfirmarViagem:',e);}
     };
+    window._fbDialLido=async(pid,n)=>{
+      try{await updateDoc(rd,{[`narration.dialLido.${pid}`]:n,'narration.ts':Date.now()});}catch(e){}
+    };
+    window._fbDialVez=async(pid)=>{
+      try{await updateDoc(rd,{'narration.dialVez':pid,'narration.ts':Date.now()});}catch(e){}
+    };
     window._fbRespondPercepcao=async(pid,resposta)=>{
       try{await updateDoc(rd,{[`narration.percepcao.respostas.${pid}`]:resposta,'narration.ts':Date.now()});}
       catch(e){console.warn('fbRespondPercepcao:',e);}
@@ -1465,6 +1471,7 @@ function onRoomUpdate(room) {
   //  numa cena cujo fluxo é '_mapa' — causava o loop cena↔mapa. Viagem hoje só parte
   //  por clique no botão, via _dialProximaCena.)
   if (_dialAtivo) _dialAtualizarChips(); // atualiza rótulo/contagem do botão de viagem
+  if (_dialAtivo) { _dialAtualizarVezUI(); _dialFluxoTurnos(); } // turnos de fala + IA p/ guests (host)
 
   // Gate de grupo: batalha (gancho) OU avanço de cena (intro puro em grupo).
   // Só prossegue com o OK de TODOS os jogadores.
@@ -2840,6 +2847,65 @@ let _dialCampCenaAtiva = null;  // ID de campanha da cena atual no overlay
 let _dialNpcAtivoIdx  = 0;       // índice no array de NPCs presentes na cena
 let _dialJogadorAtivo = null;    // {id, nome, classId} do jogador que fala
 let _dialHistoricoLocal = [];    // [{tipo:'npc'|'jogador', quem, texto}]
+let _dialLidoGravado  = 0;       // último tamanho de log confirmado como lido (este device)
+let _dialIaRespondTs  = null;    // ts do beat de guest que o host já está respondendo
+
+// ── Turnos de fala com confirmação de leitura ─────────────────────
+// A vez de falar (narration.dialVez) só passa quando TODOS confirmaram a
+// leitura (OK/Continuar) de todos os beats — inclusive a resposta do NPC.
+function _dialVezPid(){
+  const v=_lastRoom?.narration?.dialVez;
+  const ativos=_jogadoresAtivos(_lastRoom).sort();
+  return (v && ativos.includes(v)) ? v : null;   // null = rodada em curso / a definir
+}
+function _dialMinhaVez(){
+  if(!window._fbListenRoom) return true;         // solo/offline: sempre pode
+  return _dialVezPid()===_pid;
+}
+function _dialTodosLeram(){
+  if(!window._fbListenRoom) return true;
+  const len=_dialogoLog.length;
+  if(!len) return true;
+  const lido=_lastRoom?.narration?.dialLido||{};
+  return _jogadoresAtivos(_lastRoom).every(pid=>(lido[pid]||0)>=len);
+}
+// Read receipt: este device terminou de ler todos os beats
+function _dialGravarLido(){
+  const len=_dialogoLog.length;
+  if(len>_dialLidoGravado){ _dialLidoGravado=len; window._fbDialLido?.(_pid,len); }
+}
+// HOST conduz: responde IA à fala de guest e passa a vez quando todos leram.
+async function _dialFluxoTurnos(){
+  if(!_isHost || !_dialAtivo) return;
+  const log=_dialogoLog, ult=log[log.length-1];
+  const ativos=_jogadoresAtivos(_lastRoom).sort();
+  // 1) Fala de guest sem resposta → host chama a IA (a chave vive no host)
+  if(ult && ult.tipo==='jogador' && ult.authorId!==_pid && _dialIaRespondTs!==ult.ts){
+    _dialIaRespondTs=ult.ts;
+    document.getElementById('dial-ia-pensando').style.display='block';
+    const resposta=await _dialChamarIA(_dialNpcAtivoIdx, ult.texto);
+    document.getElementById('dial-ia-pensando').style.display='none';
+    const npc=_dialNpcEls[_dialNpcAtivoIdx]?.npc;
+    if(resposta && npc){
+      await window._fbAddDialogue?.({tipo:'npc',oradorId:npc.id,oradorNome:npc.nome,texto:resposta,ts:Date.now()});
+    }
+    return;
+  }
+  // 2) Rodada fechada (última fala é do NPC ou log vazio) + todos leram → passa a vez
+  const rodadaFechada=!ult || ult.tipo!=='jogador';
+  if(rodadaFechada && _dialTodosLeram() && !_dialVezPid()){
+    // próximo = seguinte ao autor da última fala de jogador (rotação); senão o 1º
+    let prox=ativos[0];
+    for(let i=log.length-1;i>=0;i--){
+      if(log[i].tipo==='jogador'){
+        const idx=ativos.indexOf(log[i].authorId);
+        prox=ativos[(idx+1)%ativos.length]||ativos[0];
+        break;
+      }
+    }
+    if(prox) window._fbDialVez?.(prox);
+  }
+}
 
 // ── Helpers ───────────────────────────────────────────────
 const _dialDelay = ms => new Promise(r => setTimeout(r, ms));
@@ -2922,6 +2988,10 @@ function _dialActivar(campCenaId) {
   _dialAwaitingCont = false;
   _dialNpcEls       = [];
   _dialHistoricoLocal = [];
+  _dialLidoGravado  = 0;   // re-confirma leitura na cena nova
+  _dialIaRespondTs  = null;
+  // Host zera os receipts/vez da cena anterior (leituras antigas não contam aqui)
+  if (_isHost) window._fbUpdateNarration?.({ dialLido: {}, dialVez: null });
 
   const narracaoCena = _dialGetNarracaoCena(campCenaId);
   _dialNarracaoCena  = narracaoCena;
@@ -3102,6 +3172,28 @@ function _dialFocarNpc(npcId) {
   if (idx >= 0) _dialSelecionarNpc(idx);
 }
 
+// UI da vez de falar: trava o input fora da vez e mostra o estado da rodada.
+function _dialAtualizarVezUI(){
+  const input=document.getElementById('dial-msg-input');
+  const btn=document.getElementById('dial-btn-enviar');
+  const vezEl=document.getElementById('dial-turno-vez');
+  if(!input||!btn) return;
+  const vez=_dialVezPid(), minha=_dialMinhaVez(), leram=_dialTodosLeram();
+  const pode=minha&&leram;
+  input.disabled=!pode; btn.disabled=!pode;
+  if(vezEl){
+    if(pode) vezEl.textContent='🗣 Sua vez';
+    else if(!leram){
+      const lido=_lastRoom?.narration?.dialLido||{};
+      const ativos=_jogadoresAtivos(_lastRoom);
+      const n=ativos.filter(p=>(lido[p]||0)>=_dialogoLog.length).length;
+      vezEl.textContent=`⌛ lendo… (${n}/${ativos.length})`;
+    }
+    else if(vez) vezEl.textContent='Vez de '+_getNomeJogador(vez).split(' ')[0];
+    else vezEl.textContent='⌛ …';
+  }
+}
+
 // ── Turno bar (players) ────────────────────────────────────
 function _dialAtualizarTurnoBar() {
   const bar = document.getElementById('dial-turno-players');
@@ -3164,7 +3256,7 @@ function _dialMostrarCardPlayer(nome, avatar, texto) {
 function _dialTickDisplay() {
   if (!_dialAtivo || _dialAnimBeat || _dialAwaitingCont) return;
   const log = _dialogoLog;
-  if (_dialReadIdx >= log.length) return;
+  if (_dialReadIdx >= log.length) { _dialGravarLido(); _dialAtualizarVezUI(); return; }
   const beat = log[_dialReadIdx];
   _dialAnimBeat = true;
   _dialRenderBeat(beat);
@@ -3281,14 +3373,16 @@ async function _dialVerificarReacao(npcQueRespondeuIdx) {
 }
 
 // ── Enviar fala do jogador ─────────────────────────────────
+// QUALQUER jogador fala — na SUA vez, e só quando todos leram a rodada anterior.
 window._dialEnviar = async function () {
-  if (!_isHost || !_dialAtivo) return;
+  if (!_dialAtivo) return;
+  if (!_dialMinhaVez() || !_dialTodosLeram()) { _dialAtualizarVezUI(); return; }
   const input = document.getElementById('dial-msg-input');
   const texto = (input?.value || '').trim();
   if (!texto) return;
 
   const key = localStorage.getItem('oraculo.groqKey');
-  if (!key) {
+  if (_isHost && !key) {   // só o host precisa da chave (é ele quem chama a IA)
     document.getElementById('cfg-overlay')?.classList.remove('oculto');
     return;
   }
@@ -3298,27 +3392,29 @@ window._dialEnviar = async function () {
   input.disabled = true;
   document.getElementById('dial-btn-enviar').disabled = true;
 
-  // Registrar fala do jogador
-  const jogador = _dialJogadorAtivo || { id: _pid, nome: _pname, classId: 'guerreiro' };
+  // Cada jogador fala por SI (não mais pelo seletor do host)
+  const jogador = { id: _pid, nome: _pname, classId: localStorage.getItem('oraculo.classId') || 'guerreiro' };
   const beatJogador = {
     tipo: 'jogador', oradorId: jogador.id, oradorNome: jogador.nome,
     texto, classId: jogador.classId, authorId: _pid, ts: Date.now(),
   };
+  // Trava a vez até a rodada fechar (resposta do NPC lida por todos)
+  if (window._fbDialVez) await window._fbDialVez(null);
   if (window._fbAddDialogue) await window._fbAddDialogue(beatJogador);
   else { _dialogoLog = [..._dialogoLog, beatJogador].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
 
-  // Chamar IA para o NPC ativo
+  input.disabled = false;
+  document.getElementById('dial-btn-enviar').disabled = false;
+
+  // Guest: para aqui — o HOST vê o beat e chama a IA (_dialFluxoTurnos)
+  if (!_isHost) { _dialAtualizarVezUI(); return; }
+
+  // Host falando: chama a IA direto
   document.getElementById('dial-ia-pensando').style.display = 'block';
   const resposta = await _dialChamarIA(_dialNpcAtivoIdx, texto);
   document.getElementById('dial-ia-pensando').style.display = 'none';
 
-  input.disabled = false;
-  document.getElementById('dial-btn-enviar').disabled = false;
-  // NÃO re-focar: re-focar reabria o teclado e cobria a resposta do NPC.
-  // O jogador toca no campo de novo quando quiser falar.
-
   if (!resposta) return;
-
   const npc = _dialNpcEls[_dialNpcAtivoIdx]?.npc;
   if (!npc) return;
 
@@ -3715,6 +3811,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v40</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v41</div>
 </body>
 </html>
