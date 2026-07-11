@@ -50,6 +50,9 @@ if(_cfg&&_rid&&_pid){
     window._fbSetTurnOrder=async(order)=>{
       try{await updateDoc(rd,{turnOrder:order});}catch{}
     };
+    window._fbBroadcastFx=async(data)=>{
+      try{await updateDoc(rd,{fxEvent:{...data,pid:_pid,ts:Date.now()}});}catch{}
+    };
     window._fbSetEnemyIntent=async(intent)=>{
       try{await updateDoc(rd,{enemyIntent:intent??null});}catch{}
     };
@@ -1066,6 +1069,14 @@ const ATTR_MOD = {
 
 const MOV_DES_MOD = { 'Mago':2, 'Espantalho':0 };
 
+// Classes femininas usam o MESMO kit da masculina (HABILIDADES/ATTR_MOD são
+// indexados pelo nome 'Mago' etc. — 'Maga' não achava NADA e não podia atacar).
+const _CLASS_HAB_KEY={barbaro:'Bárbaro',barbara:'Bárbaro',guerreiro:'Guerreiro',guerreira:'Guerreiro',
+  mago:'Mago',maga:'Mago',arqueiro:'Arqueiro',arqueira:'Arqueiro',ladino:'Ladino',ladina:'Ladino',
+  clerigo:'Clérigo',cleriga:'Clérigo'};
+function _habKey(u){ return _CLASS_HAB_KEY[u.classId]||u.nome; }
+function _habsDe(u){ return HABILIDADES[_habKey(u)]||HABILIDADES[u.nome]||[]; }
+
 // ── Combate dos INIMIGOS na escala da arena ─────────────────────────
 // Derivado do bestiário GURPS: hp = g.hp×3 (boss ×4), dano Xd→Xd6 do ataque
 // canônico, atkMod ≈ perícia−10. Sem entrada → fallback conservador.
@@ -1216,6 +1227,8 @@ let _currentTurnPlayerName = '';
 let _roomTurnOrder       = [];
 let _arenaRoom           = null;   // última room do Firebase (para o setup de turnos)
 let _turnOrderIniciada   = false;  // host já montou a ordem de turnos?
+let _lastFxTs            = null;   // último fxEvent remoto já reproduzido
+let _fxRemoto            = false;  // true enquanto reproduz fx de outro device (não re-transmitir)
 
 // Pids dos heróis JÁ no tabuleiro (com x/y), ordenados. Pruna fantasmas.
 function _boardPids(){
@@ -1745,6 +1758,11 @@ function spawnAura(cx,cy,kind){
 
 // ── Lança projétil do ataque ──
 function lancarAtaque(hab,atacante,alvoUnit,onDone){
+  // Transmite o efeito p/ os outros aparelhos verem (bola de fogo, flecha, golpe…)
+  if(!_fxRemoto && window._fbBroadcastFx){
+    window._fbBroadcastFx({anim:hab.anim||'melee',habId:hab.id||'',icone:hab.icone||'',
+      fc:atacante.col,fr:atacante.row,tc:alvoUnit.col,tr:alvoUnit.row});
+  }
   const from=hexCentro(atacante.col,atacante.row);
   const to=hexCentro(alvoUnit.col,alvoUnit.row);
 
@@ -3022,7 +3040,7 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
     const alvoHex=planoAtaque.alvoHex||alvo;
 
     // ── Teste de conjuração (a magia pode falhar) ──
-    const conjMod = ATTR_MOD[atacante.nome] || 2;
+    const conjMod = ATTR_MOD[_habKey(atacante)] || 2;
     const conjCD  = hab.cd || 11;
     const d20c    = Math.floor(Math.random()*20)+1;
     const totalC  = d20c + conjMod;
@@ -3118,7 +3136,7 @@ function executarAtaquePlano(hab, atacante, alvo, onDone){
   }
 
   // Alvo único: 1) rola hit → 2) projétil voa → 3) explosão → 4) rola dano → 5) HP/morte
-  const atqMod=atacante.tipo==='inimigo' ? (atacante.atkMod??2) : (ATTR_MOD[atacante.nome]||2);
+  const atqMod=atacante.tipo==='inimigo' ? (atacante.atkMod??2) : (ATTR_MOD[_habKey(atacante)]||2);
   const alvoAC=(alvo.ac||10)+((alvo.caBonusTurnos>0)?(alvo.caBonus||0):0);
   const d20v=Math.floor(Math.random()*20)+1;
   const total=d20v+atqMod;
@@ -3260,6 +3278,9 @@ function _executarAtaqueInimigo(enemies, idx){
   movBloqueado=false;
   resolverMovimento(movOk=>{
     render();
+    // Persiste a POSIÇÃO nova já no movimento (antes só gravava após dano —
+    // inimigo que só andava 'voltava pro lugar' no snapshot seguinte).
+    if(window._fbSetEnemies) window._fbSetEnemies(unidades.filter(u=>u.tipo==='inimigo'));
     if(planoAtaque&&!movBloqueado){
       setTimeout(()=>{
         const {hab,atacante,alvo}=planoAtaque;
@@ -3296,7 +3317,7 @@ function abrirSkillPanel(){
 function _abrirPainelHabilidades(filtro){
   const panel=document.getElementById('atk-panel');
   while(panel.children.length>1) panel.removeChild(panel.lastChild);
-  const habs=(HABILIDADES[selUnit.nome]||[]).filter(filtro);
+  const habs=_habsDe(selUnit).filter(filtro);
   if(!habs.length) return;
   for(const h of habs){
     const semSP = (h.custoSP||0) > 0 && selUnit.sp < h.custoSP;
@@ -3328,7 +3349,7 @@ function clicarAtacar(){
   if(faseDoTurno!=='planejar_acao') return;
   fecharAtkPanel();
 
-  const basicos=(HABILIDADES[selUnit.nome]||[]).filter(h=>h.categoria==='basico');
+  const basicos=_habsDe(selUnit).filter(h=>h.categoria==='basico');
   if(!basicos.length){
     mostrarLetreiro('SEM ATAQUE BÁSICO','Use 🪄 SKILL para magias','',1500);
     return;
@@ -4081,13 +4102,28 @@ function onRoomUpdate(room){
   // ── Sync inimigos ──
   // Host não sincroniza na primeira leitura: o estado canônico é o unidades[] local;
   // _fbSetEnemies() já foi chamado em startFbListener para gravar o estado fresco.
-  if(room.enemies && !(_fbIsHost && wasFirst)){
+  // Quem RODA o turno inimigo é a fonte da verdade das posições — snapshot velho
+  // não pode sobrescrever o movimento em andamento ('espantalho voltava pro lugar').
+  const _rodandoInimigos = (faseDoTurno==='turno_inimigo' && _ehCoordenador());
+  if(room.enemies && !(_fbIsHost && wasFirst) && !_rodandoInimigos){
     for(const fbE of room.enemies){
       const u=unidades.find(u=>u.tipo==='inimigo'&&(fbE.id?u.id===fbE.id:u.nome===fbE.nome));
       if(u){
         if(u.col!==fbE.x||u.row!==fbE.y){ u.col=fbE.x; u.row=fbE.y; u._ax=null; u._ay=null; }
         if(fbE.hp!=null) u.hp=fbE.hp;
       }
+    }
+  }
+
+  // ── Efeitos visuais de outros aparelhos (bola de fogo, flecha…) ──
+  if(room.fxEvent){
+    if(wasFirst){ _lastFxTs=room.fxEvent.ts; }              // não reproduz fx antigo no load
+    else if(room.fxEvent.ts!==_lastFxTs && room.fxEvent.pid!==myId){
+      _lastFxTs=room.fxEvent.ts;
+      const fe=room.fxEvent;
+      _fxRemoto=true;
+      lancarAtaque({anim:fe.anim,id:fe.habId,icone:fe.icone},{col:fe.fc,row:fe.fr},{col:fe.tc,row:fe.tr},()=>{});
+      _fxRemoto=false;
     }
   }
 
@@ -4443,6 +4479,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v29dbg</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v30dbg</div>
 </body>
 </html>
