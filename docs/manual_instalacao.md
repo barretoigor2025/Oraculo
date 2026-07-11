@@ -62,6 +62,15 @@ um bug real que enfrentamos — segui-lo evita repetir.
 - [ ] **Aritmética de desafio**: estimar golpes-para-matar dos dois lados (dano médio × acerto vs. HP). Alvo: mob comum cai em 3–5 ações do grupo e ameaça de verdade um herói frágil exposto (~3 pancadas no mago); boss exige o kit inteiro do grupo.
 - [ ] **DR/CA aplicados de fato** no cálculo (DR subtrai do dano, mín. 1; buffs de CA entram no teste de acerto e expiram por turno).
 
+### 🌐 Replicação multiplayer (a REGRA DE OURO do MP)
+> **Tudo que acontece em um aparelho tem de acontecer, IGUAL, em todos.** A história é uma só, redistribuída idêntica.
+- [ ] **Todo evento de jogo tem um write no Firebase e um replay nos outros devices** — movimento (com o CAMINHO, não só o destino final → senão teleporta), dano/HP (heróis inclusive), morte (REMOVER a unidade nos outros, não só atualizar), efeitos visuais (fx broadcast), fim de batalha (vitória/derrota/cinemática), viagem no mapa (transmitir o DESTINO no início pra todos animarem os 5s).
+- [ ] **Cuidado com gates `_isHost`/`_fbIsHost`:** legítimos só para *escrita única* (um grava, todos leem) e condução (o host guia a cena). ERRADOS quando bloqueiam *reprodução* (ex.: cinemática de vitória gravada só-host e reproduzida só-não-host = ninguém vê quando o guest vence) ou *ação de jogador* (ex.: input do diálogo era host-only; guest não falava).
+- [ ] **Estado compartilhado > estado gravado por evento:** quando possível, DERIVE o estado do log compartilhado (ex.: a vez de falar do diálogo = seguinte ao autor da última fala + todos leram) — determinístico e imune a corrida de escrita.
+- [ ] **Decisões de grupo exigem TODOS:** viagem de cena, "Estou Pronto", percepção — confirmação por jogador (com progresso X/Y visível em TODOS os aparelhos), usando só jogadores ATIVOS (heartbeat) para não travar com pid fantasma.
+- [ ] **Sync não-destrutivo:** snapshot não sobrescreve unidade em animação (`_animR`) nem o estado de quem está executando o turno (fonte da verdade momentânea).
+- [ ] **Dedupe por ts em todo replay** (fx, fim de batalha, viagens) e ignorar eventos antigos na primeira leitura (sala reusada).
+
 ### 🖼️ Assets (peso, cache, nomes)
 - [ ] **Imagens comprimidas** (paleta 256 + dithering; mantém nome/dimensão/transparência). Site leve — senão o **deploy do Pages falha na sincronização**.
 - [ ] **Sem caracteres não-ASCII em caminhos de arquivo** (`ç`, acentos). O **id** da cena pode ter acento; o **caminho do asset**, não (`carroca_tombada`).

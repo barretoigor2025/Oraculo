@@ -452,6 +452,7 @@ let _noSelecionado = null;
 let _votacaoTimer = null;
 let _viagemTimeout = null;
 let _viajando = false;    // true durante a animação local de viagem (evita re-render que reseta os bonecos)
+let _viagemRemotaTs = null; // ts da viagem iniciada por OUTRO aparelho já animada aqui
 let _autoIniciado = false;// guard p/ a viagem automática (vinda do handoff da narração) só disparar 1x
 
 window._tooltipNoId = null;
@@ -777,7 +778,9 @@ async function _iniciarViagem(destino) {
   const duracao = 5000;  // viagem dura sempre 5s, independente da distância (pedido do jogo)
 
   _viajando = true;  // segura o re-render para a animação dos bonecos não ser resetada
-  if (window._fbUpdate) await window._fbUpdate({ viagemEmAndamento: true });
+  // Transmite o DESTINO no início: os outros aparelhos animam a MESMA travessia
+  // de 5s (antes recebiam só o fim e viam um teleporte).
+  if (window._fbUpdate) await window._fbUpdate({ viagemEmAndamento: { destino, ts: Date.now() } });
 
   // Animar standees — os bonecos caminham até o destino durante os 5s
   _animarStandeesParaNo(destino, duracao);
@@ -1010,6 +1013,16 @@ function _onState(data) {
   _renderVotacao();
   _renderChat();
 
+  // VIAGEM REMOTA: outro aparelho iniciou a travessia — anima a MESMA jornada
+  // de 5s aqui (antes só o fim chegava e os bonecos teleportavam).
+  const vEA = _state?.viagemEmAndamento;
+  if (vEA && vEA.destino && vEA.ts !== _viagemRemotaTs && !_viajando) {
+    _viagemRemotaTs = vEA.ts;
+    _viajando = true;                       // segura o re-render durante a animação
+    _animarStandeesParaNo(vEA.destino, 5000);
+    setTimeout(() => { _viajando = false; }, 5200);
+  }
+
   // Viagem AUTOMÁTICA (handoff da narração com destino vizinho): o anfitrião
   // inicia a jornada sozinho, com uma pausinha para o grupo ver o mapa.
   if (_isHost && !_autoIniciado && !_viajando && _state?.autoViagem
@@ -1072,6 +1085,6 @@ async function init() {
 
 init();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v20</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v21</div>
 </body>
 </html>
