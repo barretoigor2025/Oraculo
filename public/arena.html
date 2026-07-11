@@ -1234,6 +1234,8 @@ let _lastFxTs            = null;   // último fxEvent remoto já reproduzido
 let _fxRemoto            = false;  // true enquanto reproduz fx de outro device (não re-transmitir)
 let _fxFila              = [];     // fila local de efeitos remotos (evita atropelo)
 let _fxTocando           = false;
+let _lastFimTs           = null;   // dedupe do fim de batalha (vitória/derrota) replicado
+let _fimRemoto           = false;  // true ao reproduzir fim vindo de outro device (não regravar)
 
 // ID de rede de uma unidade: herói = pid do dono; inimigo = id determinístico do spawn.
 function _unitNetId(u){ return u.tipo==='heroi' ? (u._fbId||_pid) : u.id; }
@@ -2142,9 +2144,23 @@ function renderUnits(){
       const srcH = u.img.naturalHeight * (1 - clip);
       ctxU.save();
       if(u===selUnit) ctxU.filter='drop-shadow(0 0 8px #ffd028) drop-shadow(0 0 14px #ffd02888)';
-      if(u.flipH){ ctxU.translate(2*x,0); ctxU.scale(-1,1); }
-      ctxU.drawImage(u.img, 0, 0, srcW, srcH, x - sw/2, foot - drawH, sw, drawH);
-      ctxU.restore();
+      if(u.tipo==='heroi' && u.hp<=0){
+        // INCONSCIENTE: caído de lado, acinzentado — visível em todos os aparelhos
+        ctxU.filter='grayscale(1) brightness(0.65)';
+        ctxU.globalAlpha=0.8;
+        ctxU.translate(x, foot-14);
+        ctxU.rotate(-Math.PI/2);
+        ctxU.drawImage(u.img, 0, 0, srcW, srcH, -sw/2, -drawH*0.35, sw*0.9, drawH*0.9);
+        ctxU.restore();
+        ctxU.save();
+        ctxU.font='16px serif'; ctxU.textAlign='center';
+        ctxU.fillText('💤', x, foot - drawH*0.55);
+        ctxU.restore();
+      } else {
+        if(u.flipH){ ctxU.translate(2*x,0); ctxU.scale(-1,1); }
+        ctxU.drawImage(u.img, 0, 0, srcW, srcH, x - sw/2, foot - drawH, sw, drawH);
+        ctxU.restore();
+      }
     } else {
       ctxU.beginPath(); ctxU.arc(x,y,HR*.45,0,Math.PI*2);
       ctxU.fillStyle=u.cor; ctxU.fill();
@@ -2490,9 +2506,10 @@ function _cinematicaVitoria() {
   faseDoTurno = 'resolvendo';
   document.getElementById('action-row').innerHTML = '';
 
-  // Sinaliza para não-hosts via Firebase
-  if (_fbIsHost) {
-    try { window._fbSetStatus?.('battle',{'batalha.cinematicaVitoria':Date.now()}); } catch(e){}
+  // QUALQUER executor sinaliza (antes era só o host: guest vencia e ninguém sabia)
+  if (!_fimRemoto) {
+    const ts=Date.now(); _lastFimTs=ts;
+    try { window._fbSetStatus?.('battle',{'batalha.cinematicaVitoria':ts}); } catch(e){}
   }
 
   // Garante que inimigos foram removidos
@@ -3005,11 +3022,20 @@ function verificarVitoria(){
     render();
     // Sem key → Feira (mesma regra do spawn). Só a Feira usa a cinemática do Gregoras.
     const _bc = localStorage.getItem('oraculo.battleCena') || 'mhoried_market';
+    // Sinaliza o FIM para TODOS os aparelhos (quem venceu pode ser qualquer um)
+    if(_bc !== 'mhoried_market' && !_fimRemoto){
+      const ts=Date.now(); _lastFimTs=ts;
+      try{ window._fbSetStatus?.('battle',{'batalha.fimGenerico':ts}); }catch(e){}
+    }
     const _cb = (_bc === 'mhoried_market') ? _cinematicaVitoria : _vitoriaGenerica;
     mostrarLetreiro('VITÓRIA!','os inimigos foram derrotados','',1400, _cb);
     return true;
   }
   if(herois.length===0){
+    if(!_fimRemoto){
+      const ts=Date.now(); _lastFimTs=ts;
+      try{ window._fbSetStatus?.('battle',{'batalha.derrota':ts}); }catch(e){}
+    }
     mostrarLetreiro('DERROTA','os heróis caíram...','',3000,()=>{_mostrarOverlayFimBatalha(false);});
     return true;
   }
@@ -4107,9 +4133,27 @@ function onRoomUpdate(room){
     }
   }
 
-  // Non-host: acionar cinematica de vitória quando host sinalizar (ignorar na primeira leitura para evitar estado stale)
-  if (!_fbIsHost && !wasFirst && room.batalha?.cinematicaVitoria && !_cinematicaRodando) {
-    _cinematicaVitoria();
+  // FIM DE BATALHA replicado para TODOS os aparelhos (quem vence/perde pode ser
+  // qualquer um; antes o write era só-host e o replay só-não-host → guest vencia
+  // e o host ficava parado sem ver o Gregoras entrar).
+  if (!wasFirst && room.batalha) {
+    const b=room.batalha;
+    if (b.cinematicaVitoria && b.cinematicaVitoria!==_lastFimTs && !_cinematicaRodando) {
+      _lastFimTs=b.cinematicaVitoria;
+      unidades=unidades.filter(u=>u.tipo!=='inimigo'); render();
+      mostrarLetreiro('VITÓRIA!','os inimigos foram derrotados','',1400,
+        ()=>{ _fimRemoto=true; _cinematicaVitoria(); _fimRemoto=false; });
+    } else if (b.fimGenerico && b.fimGenerico!==_lastFimTs) {
+      _lastFimTs=b.fimGenerico;
+      unidades=unidades.filter(u=>u.tipo!=='inimigo'); render();
+      mostrarLetreiro('VITÓRIA!','os inimigos foram derrotados','',1400,_vitoriaGenerica);
+    } else if (b.derrota && b.derrota!==_lastFimTs) {
+      _lastFimTs=b.derrota;
+      mostrarLetreiro('DERROTA','os heróis caíram...','',3000,()=>{_mostrarOverlayFimBatalha(false);});
+    }
+  } else if (wasFirst && room.batalha) {
+    // primeira leitura: não reproduz fim antigo (sala reusada)
+    _lastFimTs=room.batalha.cinematicaVitoria||room.batalha.fimGenerico||room.batalha.derrota||null;
   }
 
   // ── Sync outros jogadores ──
@@ -4146,7 +4190,11 @@ function onRoomUpdate(room){
   const meFb=room.players[myId];
   if(meFb && meFb.hp!=null){
     const myHero=unidades.find(u=>u.tipo==='heroi'&&!u._fbId);
-    if(myHero && myHero.hp!==meFb.hp){ myHero.hp=meFb.hp; renderBottomPanel(); }
+    if(myHero && myHero.hp!==meFb.hp){
+      const caiuAgora = meFb.hp<=0 && myHero.hp>0;
+      myHero.hp=meFb.hp; renderBottomPanel(); render();
+      if(caiuAgora) mostrarLetreiro('VOCÊ CAIU!','inconsciente — os aliados lutam por você','💤',2600,()=>renderActionRow());
+    }
   }
 
   // ── Sync inimigos ──
@@ -4538,6 +4586,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v31dbg</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v32dbg</div>
 </body>
 </html>
