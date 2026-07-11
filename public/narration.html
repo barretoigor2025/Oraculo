@@ -3053,11 +3053,13 @@ function _dialActivar(campCenaId) {
     : { id: _pid, nome: _pname, classId: localStorage.getItem('oraculo.classId') || 'guerreiro' };
   _dialAtualizarTurnoBar();
 
-  // Mostrar/esconder input (só host digita)
+  // Input p/ TODOS os jogadores — o controle é pela VEZ (input trava fora dela).
+  // (Antes era host-only: o guest nem via o campo de digitar.)
   const inputBar = document.getElementById('dial-input-bar');
   const turnoBar = document.getElementById('dial-turno-bar');
-  if (inputBar) inputBar.style.display = _isHost ? 'flex' : 'none';
-  if (turnoBar) turnoBar.style.display = _isHost ? 'flex' : 'none';
+  if (inputBar) inputBar.style.display = 'flex';
+  if (turnoBar) turnoBar.style.display = 'flex';
+  _dialAtualizarVezUI();
 
   // Limpar state do balão
   document.getElementById('dial-balao').classList.remove('visivel');
@@ -3192,6 +3194,7 @@ function _dialAtualizarVezUI(){
     else if(vez) vezEl.textContent='Vez de '+_getNomeJogador(vez).split(' ')[0];
     else vezEl.textContent='⌛ …';
   }
+  _dialAtualizarTurnoBar();   // chip ativo acompanha a vez
 }
 
 // ── Turno bar (players) ────────────────────────────────────
@@ -3201,14 +3204,12 @@ function _dialAtualizarTurnoBar() {
   bar.innerHTML = '';
   const jogadores = Object.entries(_lastRoom?.players || {});
   const lista = jogadores.length > 0 ? jogadores : [[_pid, { nome: _pname }]];
+  const vez = _dialVezPid();
   lista.forEach(([id, p]) => {
     const chip = document.createElement('button');
-    chip.className = 'dial-turno-chip' + (id === _dialJogadorAtivo?.id ? ' ativo' : '');
+    // O chip ATIVO é o jogador da VEZ (sincronizado) — não é mais seletor manual.
+    chip.className = 'dial-turno-chip' + (id === vez ? ' ativo' : '');
     chip.textContent = (p.nome || (id === _pid ? _pname : null) || 'Jog.').split(' ')[0];
-    chip.onclick = () => {
-      _dialJogadorAtivo = { id, nome: p.nome || id, classId: p.classId || 'guerreiro' };
-      document.querySelectorAll('.dial-turno-chip').forEach((c, i) => c.classList.toggle('ativo', lista[i]?.[0] === id));
-    };
     bar.appendChild(chip);
   });
 }
@@ -3811,6 +3812,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v41</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v42</div>
 </body>
 </html>
