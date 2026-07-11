@@ -3524,13 +3524,18 @@ function _verificarViagemCompleta(narr) {
 }
 
 // Teste de Percepção sob demanda (botão 🎲): o host convoca; o grupo rola.
-const _percUsadaCenas = new Set();
+// 'Uma vez por cenário' vive no FIREBASE (narration.percUsada.{cenaId}) — fonte
+// única da verdade: todos os aparelhos veem o mesmo estado e sobrevive a reload.
+// (Antes era um Set local: só quem clicava via o botão sumir.)
+function _percUsadaNaCena(cenaId){
+  return !!(_lastRoom?.narration?.percUsada?.[cenaId]);
+}
 function pedirPercepcao() {
   if (!_isHost || _percepcaoEmAndamento) return;
   const cena = CENAS[_cenaAtual];
   const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
-  if (!hook || _percUsadaCenas.has(_cenaAtual)) return;
-  _percUsadaCenas.add(_cenaAtual);
+  if (!hook || _percUsadaNaCena(_cenaAtual)) return;
+  window._fbUpdateNarration?.({ [`percUsada.${_cenaAtual}`]: true });
   _atualizarBtnPercepcao();
   triggerTestePercepcao(hook, 'manual', null);
 }
@@ -3542,7 +3547,7 @@ function _atualizarBtnPercepcao() {
   if (!btn) return;
   const cena = CENAS[_cenaAtual];
   const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
-  const disponivel = _isHost && !!hook && !_percUsadaCenas.has(_cenaAtual);
+  const disponivel = _isHost && !!hook && !_percUsadaNaCena(_cenaAtual);
   btn.style.display = disponivel ? '' : 'none';
 }
 
@@ -3787,7 +3792,11 @@ function _invPercepcao(){
   if (_percepcaoEmAndamento) return;
   const cena = CENAS[_cenaAtual];
   const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
-  if (!hook) { window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto:'Nada em especial chama a atenção por aqui.', canal:'inv-acao', ts: Date.now() }); return; }
+  if (!hook || _percUsadaNaCena(_cenaAtual)) {
+    window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto:'Nada em especial chama a atenção por aqui.', canal:'inv-acao', ts: Date.now() });
+    return;
+  }
+  window._fbUpdateNarration?.({ [`percUsada.${_cenaAtual}`]: true });   // uma vez por cenário — p/ TODOS
   triggerTestePercepcao(hook, 'manual', null);
 }
 
@@ -3824,6 +3833,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v44</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v45</div>
 </body>
 </html>
