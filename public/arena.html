@@ -846,6 +846,9 @@ function getPortraitAtaque(name){
 
 let _mapScale=1, _mapOffsetX=0, _zoom=1;
 const _fbIsHost = localStorage.getItem('oraculo.isHost') !== '0'; // true in solo/host, false for guest
+// _pid do JOGO (script clássico): o const do módulo Firebase não é visível aqui —
+// referenciá-lo dava ReferenceError silencioso e o setup de turnos nunca rodava.
+const _pid = localStorage.getItem('oraculo.playerId') || '';
 
 // ── DiceOverlay (Three.js) — dado vermelho sólido sobre o mapa ──
 const DiceOverlay=(function(){
@@ -1226,15 +1229,20 @@ function _ehCoordenador(){
   const pids=_boardPids();
   return pids.length>0 && pids[0]===_pid;
 }
-// Monta/SOBRESCREVE a ordem de turnos: [herói1, herói2, …, 'enemy'] + define o 1º turno.
-// Sobrescreve qualquer turnOrder velha (sala reusada de batalha anterior). Uma vez por carga.
+// Monta/SOBRESCREVE a ordem de turnos com JOGADA DE INICIATIVA (d20 por herói,
+// maior começa; inimigos por último) + define o 1º turno. Sobrescreve qualquer
+// turnOrder velha (sala reusada de batalha anterior). Uma vez por carga.
 function _hostSetupTurnOrder(){
   if(_turnOrderIniciada) return;
   const heroPids=_boardPids();
   if(!heroPids.length) return;
   if(!_ehCoordenador()) return;      // só o coordenador escreve
   _turnOrderIniciada=true;
-  const order=[...heroPids,'enemy'];
+  const rolls=heroPids.map(pid=>({pid, roll:Math.floor(Math.random()*20)+1}))
+    .sort((a,b)=>b.roll-a.roll);
+  const order=[...rolls.map(r=>r.pid),'enemy'];
+  const nomes=rolls.map(r=>`${(_arenaRoom?.players?.[r.pid]?.nome||_arenaRoom?.players?.[r.pid]?.name||'?')} (${r.roll})`).join(' → ');
+  _updateLogStrip('🎲 Iniciativa: '+nomes);
   window._fbSetTurnOrder?.(order);
   window._fbSetTurn?.(order[0]);
 }
@@ -4435,6 +4443,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v28dbg</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v29dbg</div>
 </body>
 </html>
