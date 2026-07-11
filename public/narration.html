@@ -1472,6 +1472,11 @@ function onRoomUpdate(room) {
   //  por clique no botão, via _dialProximaCena.)
   if (_dialAtivo) _dialAtualizarChips(); // atualiza rótulo/contagem do botão de viagem
   if (_dialAtivo) { _dialAtualizarVezUI(); _dialFluxoTurnos(); } // turnos de fala + IA p/ guests (host)
+  // Viagem em grupo: parte quando TODOS confirmaram. O some(Boolean) evita o
+  // loop antigo do {} truthy (chegada com viagemConfirmados vazio re-disparava).
+  if (_isHost && narr.viagemConfirmados && Object.values(narr.viagemConfirmados).some(Boolean)) {
+    _verificarViagemCompleta(narr);
+  }
 
   // Gate de grupo: batalha (gancho) OU avanço de cena (intro puro em grupo).
   // Só prossegue com o OK de TODOS os jogadores.
@@ -2851,12 +2856,22 @@ let _dialLidoGravado  = 0;       // último tamanho de log confirmado como lido 
 let _dialIaRespondTs  = null;    // ts do beat de guest que o host já está respondendo
 
 // ── Turnos de fala com confirmação de leitura ─────────────────────
-// A vez de falar (narration.dialVez) só passa quando TODOS confirmaram a
-// leitura (OK/Continuar) de todos os beats — inclusive a resposta do NPC.
+// A VEZ é DERIVADA (não gravada): seguinte ao autor da última fala de jogador,
+// liberada só quando o NPC respondeu e TODOS leram. Determinística e idêntica
+// em todos os aparelhos — sem corrida de escrita (que fazia a vez 'voltar').
 function _dialVezPid(){
-  const v=_lastRoom?.narration?.dialVez;
+  const log=_dialogoLog, ult=log[log.length-1];
+  if(ult && ult.tipo==='jogador') return null;   // rodada em curso: NPC vai responder
+  if(!_dialTodosLeram()) return null;            // grupo ainda lendo a rodada
   const ativos=_jogadoresAtivos(_lastRoom).sort();
-  return (v && ativos.includes(v)) ? v : null;   // null = rodada em curso / a definir
+  if(!ativos.length) return _pid;
+  for(let i=log.length-1;i>=0;i--){
+    if(log[i].tipo==='jogador'){
+      const idx=ativos.indexOf(log[i].authorId);
+      return ativos[(idx+1)%ativos.length]||ativos[0];   // Igor → Patrícia → Igor…
+    }
+  }
+  return ativos[0];   // ninguém falou ainda: começa o primeiro
 }
 function _dialMinhaVez(){
   if(!window._fbListenRoom) return true;         // solo/offline: sempre pode
@@ -2889,22 +2904,8 @@ async function _dialFluxoTurnos(){
     if(resposta && npc){
       await window._fbAddDialogue?.({tipo:'npc',oradorId:npc.id,oradorNome:npc.nome,texto:resposta,ts:Date.now()});
     }
-    return;
   }
-  // 2) Rodada fechada (última fala é do NPC ou log vazio) + todos leram → passa a vez
-  const rodadaFechada=!ult || ult.tipo!=='jogador';
-  if(rodadaFechada && _dialTodosLeram() && !_dialVezPid()){
-    // próximo = seguinte ao autor da última fala de jogador (rotação); senão o 1º
-    let prox=ativos[0];
-    for(let i=log.length-1;i>=0;i--){
-      if(log[i].tipo==='jogador'){
-        const idx=ativos.indexOf(log[i].authorId);
-        prox=ativos[(idx+1)%ativos.length]||ativos[0];
-        break;
-      }
-    }
-    if(prox) window._fbDialVez?.(prox);
-  }
+  // (Rotação da vez: DERIVADA em _dialVezPid() — nada a gravar aqui.)
 }
 
 // ── Helpers ───────────────────────────────────────────────
@@ -3134,7 +3135,7 @@ function _dialAtualizarChips() {
       const jogadores = _jogadoresAtivos(_lastRoom);
       const total = jogadores.length || 1;
       const nConf = jogadores.length ? jogadores.filter(p => conf[p]).length : (conf[_pid] ? 1 : 0);
-      const euConfirmei = !!conf[_pid] && proximaId !== '_mapa';
+      const euConfirmei = !!conf[_pid];
       btnProximo.style.display = 'block';
       btnProximo.disabled = euConfirmei;
       if (euConfirmei) btnProximo.textContent = `⌛ Aguardando o grupo… (${nConf}/${total})`;
@@ -3411,8 +3412,7 @@ window._dialEnviar = async function () {
     tipo: 'jogador', oradorId: jogador.id, oradorNome: jogador.nome,
     texto, classId: jogador.classId, authorId: _pid, ts: Date.now(),
   };
-  // Trava a vez até a rodada fechar (resposta do NPC lida por todos)
-  if (window._fbDialVez) await window._fbDialVez(null);
+  // (A vez trava sozinha: com fala de jogador no fim do log, _dialVezPid()=null)
   if (window._fbAddDialogue) await window._fbAddDialogue(beatJogador);
   else { _dialogoLog = [..._dialogoLog, beatJogador].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
 
@@ -3446,6 +3446,14 @@ window._dialEnviar = async function () {
 // explora pulando de nó em nó no mapa.
 window._dialProximaCena = function () {
   const proximaId = _proximaIdDaCena(_cenaAtual);
+  const ativos = _jogadoresAtivos(_lastRoom);
+  // MULTIPLAYER: o clique só CONFIRMA a vontade deste jogador. A partida
+  // acontece quando TODOS confirmarem — quem ainda quer conversar/investigar
+  // continua livre até clicar também. (Antes: 1 clique arrastava o grupo.)
+  if (ativos.length > 1 && window._fbConfirmarViagem) {
+    window._fbConfirmarViagem(_pid);
+    return;
+  }
   if (!proximaId) { _irParaMapaMundo(); return; }
   _irParaMapaMundo(proximaId === '_mapa' ? null : proximaId);
 };
@@ -3506,21 +3514,13 @@ window._irParaMapaMundo = _irParaMapaMundo;
 function _verificarViagemCompleta(narr) {
   if (!_isHost) return;
   const proximaId = _proximaIdDaCena(_cenaAtual);
-  if (proximaId === '_mapa') { _irParaMapaMundo(); return; }
   if (!proximaId) return;
   const conf = narr?.viagemConfirmados || {};
   const jogadores = _jogadoresAtivos(_lastRoom);
   const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : Object.keys(conf));
-  if (efetivos.length > 0 && efetivos.every(pid => conf[pid])) {
-    if (window._fbUpdateNarration) {
-      window._fbUpdateNarration({
-        cenaId: proximaId, modoImagem: 'exterior', introConfirmados: {}, introIdx: 0,
-        percepcao: { ativo: false }, dialogo: [], viagemConfirmados: {},
-      });
-    } else {
-      _executarNavegacao(proximaId);
-    }
-  }
+  if (!efetivos.length || !efetivos.every(pid => conf[pid])) return;
+  // TODOS confirmaram → o grupo parte junto, via Mapa do Mundo (com companheiros)
+  _irParaMapaMundo(proximaId === '_mapa' ? null : proximaId);
 }
 
 // Teste de Percepção sob demanda (botão 🎲): o host convoca; o grupo rola.
@@ -3824,6 +3824,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v43</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v44</div>
 </body>
 </html>

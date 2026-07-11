@@ -4432,9 +4432,10 @@ function init(){
       if(heroi) iniciarTurno(heroi);
     }
   }, 1200);
-  // Rede de segurança: Firebase ativo mas nada iniciou (setup do host falhou) → tenta de novo.
+  // Rede de segurança: Firebase ativo mas nada iniciou → re-tenta o setup.
+  // Sem gate de host: _hostSetupTurnOrder já elege o coordenador internamente.
   setTimeout(()=>{
-    if(faseDoTurno==='idle'&&!_currentTurnPlayerId&&window._fbReady&&_fbIsHost) _hostSetupTurnOrder();
+    if(faseDoTurno==='idle'&&!_currentTurnPlayerId&&window._fbReady) _hostSetupTurnOrder();
   }, 3500);
 }
 
@@ -4586,6 +4587,6 @@ if(new URLSearchParams(location.search).get('standeetest')==='1'){
   });
 }
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v32dbg</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v33dbg</div>
 </body>
 </html>
