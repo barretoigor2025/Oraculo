@@ -1,0 +1,33 @@
+{
+  "id": "inimigo_exemplo",
+  "nome": "Inimigo Exemplo",
+  "tipo": "inimigo",
+  "descricao_curta": "Modelo de inimigo para arena.",
+  "nivel": 1,
+  "status": {
+    "hp": 0,
+    "mp": 0,
+    "ataque": 0,
+    "defesa": 0,
+    "magia": 0,
+    "movimento": 0,
+    "iniciativa": 0
+  },
+  "combate": {
+    "alcance": 1,
+    "dano_base": "1d6",
+    "comportamento": "agressivo",
+    "prioridade_alvo": "heroi_mais_proximo"
+  },
+  "assets": {
+    "retrato": "retrato/inimigo_exemplo_retrato.png",
+    "sprite_frente": "sprites/frente/inimigo_exemplo_frente.png",
+    "sprite_costas": "sprites/costas/inimigo_exemplo_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/inimigo_exemplo_peca.png"
+  },
+  "mapa": {
+    "tamanho": "medio",
+    "ocupa_hex": 1,
+    "tipo_base": "redonda"
+  }
+}

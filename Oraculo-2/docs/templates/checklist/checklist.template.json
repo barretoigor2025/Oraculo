@@ -1,0 +1,28 @@
+{
+  "campanha_id": "id_da_campanha",
+  "status": "rascunho",
+  "estrutura": {
+    "campanhas": false,
+    "catalogo": false,
+    "classes": false,
+    "herois": false,
+    "npcs": false,
+    "inimigos": false,
+    "cenarios": false
+  },
+  "entidades": [],
+  "cenarios": [],
+  "pendencias": [],
+  "criterios_entidade_viva": [
+    "dados.json",
+    "retrato",
+    "sprites/frente",
+    "sprites/costas",
+    "peca_tabuleiro"
+  ],
+  "criterios_cenario": [
+    "dados.json",
+    "imagem",
+    "preview"
+  ]
+}
