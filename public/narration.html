@@ -46,8 +46,9 @@ if(_cfg&&_rid){
       try{await updateDoc(rd,{[`narration.introConfirmados.${playerId}`]:true,'narration.ts':Date.now()});}
       catch(e){console.warn('fbAddIntroConfirm:',e);}
     };
-    window._fbConfirmarViagem=async(playerId)=>{
-      try{await updateDoc(rd,{[`narration.viagemConfirmados.${playerId}`]:true,'narration.ts':Date.now()});}
+    window._fbConfirmarViagem=async(playerId,cenaId)=>{
+      // Grava a CENA da confirmação (não true): lixo de viagem anterior não conta.
+      try{await updateDoc(rd,{[`narration.viagemConfirmados.${playerId}`]:cenaId||true,'narration.ts':Date.now()});}
       catch(e){console.warn('fbConfirmarViagem:',e);}
     };
     window._fbDialLido=async(pid,n)=>{
@@ -1474,7 +1475,7 @@ function onRoomUpdate(room) {
   if (_dialAtivo) { _dialAtualizarVezUI(); _dialFluxoTurnos(); } // turnos de fala + IA p/ guests (host)
   // Viagem em grupo: parte quando TODOS confirmaram. O some(Boolean) evita o
   // loop antigo do {} truthy (chegada com viagemConfirmados vazio re-disparava).
-  if (_isHost && narr.viagemConfirmados && Object.values(narr.viagemConfirmados).some(Boolean)) {
+  if (_isHost && narr.viagemConfirmados && Object.values(narr.viagemConfirmados).some(v => v === _cenaAtual)) {
     _verificarViagemCompleta(narr);
   }
 
@@ -1523,11 +1524,14 @@ function onRoomUpdate(room) {
 
   // Verificar estado de percepção
   const percepcao = narr.percepcao;
-  if (percepcao?.ativo) {
-    mostrarModalPercepcao(percepcao);
-    if (_isHost && percepcao.fase === 'rolando') _verificarRolamentosCompletos(percepcao);
-  } else if (!percepcao?.ativo && _percepcaoEmAndamento) {
-    ocultarModalPercepcao();
+  // Percepção de GRUPO (gatilhos de cena) — não atropela um teste INDIVIDUAL em curso
+  if (!_percLocal) {
+    if (percepcao?.ativo) {
+      mostrarModalPercepcao(percepcao);
+      if (_isHost && percepcao.fase === 'rolando') _verificarRolamentosCompletos(percepcao);
+    } else if (!percepcao?.ativo && _percepcaoEmAndamento) {
+      ocultarModalPercepcao();
+    }
   }
 }
 
@@ -2045,7 +2049,8 @@ function mostrarModalPercepcao(percepcao) {
   const resDiv   = document.getElementById('percepcao-resultado');
   const minha    = percepcao.respostas?.[_pid];
   const jogadores= _jogadoresAtivos(_lastRoom);
-  const efetivos = jogadores.length > 0 ? jogadores : [_pid];
+  // Teste INDIVIDUAL: só este jogador rola (sem aguardar o grupo)
+  const efetivos = percepcao.local ? [_pid] : (jogadores.length > 0 ? jogadores : [_pid]);
 
   // ── Fase RESULTADO: sucesso/falha + explicação + Continuar ──
   if (percepcao.fase === 'resultado') {
@@ -2058,7 +2063,7 @@ function mostrarModalPercepcao(percepcao) {
     st.className = sucesso ? 'sucesso' : 'falha';
     resDiv.classList.remove('oculto');
     const okBtn = document.getElementById('perc-res-ok');
-    okBtn.style.display = _isHost ? '' : 'none';
+    okBtn.style.display = (percepcao.local || _isHost) ? '' : 'none';
     const txtEl = document.getElementById('perc-res-texto');
     if (_percTypedTs !== 'res:' + percepcao.ts) {
       _percTypedTs = 'res:' + percepcao.ts;
@@ -2134,6 +2139,16 @@ async function rolarPercepcao() {
   PercDiceOverlay.rolar(async (roll) => {
     document.getElementById('percepcao-dado-result').textContent = String(roll);
     const resposta = { aceito: true, resultado: roll };
+    // Teste INDIVIDUAL: resolve aqui mesmo — o resultado é privado deste jogador.
+    if (_percLocal) {
+      const sucesso = roll >= (_percLocal.dc || 12);
+      const texto = sucesso
+        ? (_percLocal.textoContexto || 'Você percebe um detalhe que escapa a olhos comuns.')
+        : 'Você vasculha o ambiente com cuidado, mas nada de especial chama sua atenção desta vez.';
+      _percLocal = { ..._percLocal, fase: 'resultado', resultado: { sucesso, texto } };
+      mostrarModalPercepcao(_percLocal);
+      return;
+    }
     if (window._fbRespondPercepcao) {
       await window._fbRespondPercepcao(_pid, resposta);
     } else {
@@ -2190,6 +2205,8 @@ async function _resolverPercepcao(percepcao) {
 
 // "Continuar" no resultado → fecha o teste e, se for gatilho de saída, navega.
 async function confirmarPercepcao() {
+  // Teste INDIVIDUAL: fecha só aqui (o resultado era privado deste jogador)
+  if (_percLocal) { _percLocal = null; ocultarModalPercepcao(); return; }
   if (!_isHost) return;
   const percepcao = _lastRoom?.narration?.percepcao || {};
   const updatePerc = { percepcao: { ativo: false, fase: 'resolvido' } };
@@ -3134,8 +3151,8 @@ function _dialAtualizarChips() {
       const conf = _lastRoom?.narration?.viagemConfirmados || {};
       const jogadores = _jogadoresAtivos(_lastRoom);
       const total = jogadores.length || 1;
-      const nConf = jogadores.length ? jogadores.filter(p => conf[p]).length : (conf[_pid] ? 1 : 0);
-      const euConfirmei = !!conf[_pid];
+      const nConf = jogadores.length ? jogadores.filter(p => conf[p] === _cenaAtual).length : (conf[_pid] === _cenaAtual ? 1 : 0);
+      const euConfirmei = conf[_pid] === _cenaAtual;
       btnProximo.style.display = 'block';
       btnProximo.disabled = euConfirmei;
       if (euConfirmei) btnProximo.textContent = `⌛ Aguardando o grupo… (${nConf}/${total})`;
@@ -3451,7 +3468,7 @@ window._dialProximaCena = function () {
   // acontece quando TODOS confirmarem — quem ainda quer conversar/investigar
   // continua livre até clicar também. (Antes: 1 clique arrastava o grupo.)
   if (ativos.length > 1 && window._fbConfirmarViagem) {
-    window._fbConfirmarViagem(_pid);
+    window._fbConfirmarViagem(_pid, _cenaAtual);
     return;
   }
   if (!proximaId) { _irParaMapaMundo(); return; }
@@ -3518,36 +3535,45 @@ function _verificarViagemCompleta(narr) {
   const conf = narr?.viagemConfirmados || {};
   const jogadores = _jogadoresAtivos(_lastRoom);
   const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : Object.keys(conf));
-  if (!efetivos.length || !efetivos.every(pid => conf[pid])) return;
+  if (!efetivos.length || !efetivos.every(pid => conf[pid] === _cenaAtual)) return;
   // TODOS confirmaram → o grupo parte junto, via Mapa do Mundo (com companheiros)
   _irParaMapaMundo(proximaId === '_mapa' ? null : proximaId);
 }
 
 // Teste de Percepção sob demanda (botão 🎲): o host convoca; o grupo rola.
-// 'Uma vez por cenário' vive no FIREBASE (narration.percUsada.{cenaId}) — fonte
-// única da verdade: todos os aparelhos veem o mesmo estado e sobrevive a reload.
-// (Antes era um Set local: só quem clicava via o botão sumir.)
-function _percUsadaNaCena(cenaId){
-  return !!(_lastRoom?.narration?.percUsada?.[cenaId]);
+// Percepção INDIVIDUAL: cada jogador decide a hora de rolar e o resultado é
+// SÓ DELE — quem passou sabe de algo que os outros não sabem. Limite de 1 uso
+// por cenário POR JOGADOR no Firebase (narration.percUsadaPor.{cena}.{pid}).
+let _percLocal = null;                    // teste individual em andamento (só neste aparelho)
+const _percUsadaLocalSet = new Set();     // fallback solo/offline
+function _percUseiNaCena(){
+  if (!window._fbListenRoom) return _percUsadaLocalSet.has(_cenaAtual);
+  return !!(_lastRoom?.narration?.percUsadaPor?.[_cenaAtual]?.[_pid]);
 }
 function pedirPercepcao() {
-  if (!_isHost || _percepcaoEmAndamento) return;
+  if (_percepcaoEmAndamento) return;
   const cena = CENAS[_cenaAtual];
   const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
-  if (!hook || _percUsadaNaCena(_cenaAtual)) return;
-  window._fbUpdateNarration?.({ [`percUsada.${_cenaAtual}`]: true });
+  if (!hook || _percUseiNaCena()) return;
+  _percUsadaLocalSet.add(_cenaAtual);
+  window._fbUpdateNarration?.({ [`percUsadaPor.${_cenaAtual}.${_pid}`]: true });
   _atualizarBtnPercepcao();
-  triggerTestePercepcao(hook, 'manual', null);
+  _percLocal = {
+    ativo: true, fase: 'rolando', dc: hook.dc || 12, ts: Date.now(), local: true,
+    textoAtmosfera: hook.textoFallback || 'Algo neste lugar retém a atenção por um momento fugaz…',
+    textoContexto: hook.descricaoContexto, respostas: {},
+  };
+  mostrarModalPercepcao(_percLocal);
 }
 window.pedirPercepcao = pedirPercepcao;
 
-// Mostra/oculta o botão 🎲 Percepção conforme a cena tem gancho oculto e ainda não foi usado.
+// Botão 🎲 disponível p/ QUALQUER jogador que ainda não usou nesta cena.
 function _atualizarBtnPercepcao() {
   const btn = document.getElementById('dial-btn-perc');
   if (!btn) return;
   const cena = CENAS[_cenaAtual];
   const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
-  const disponivel = _isHost && !!hook && !_percUsadaNaCena(_cenaAtual);
+  const disponivel = !!hook && !_percUseiNaCena();
   btn.style.display = disponivel ? '' : 'none';
 }
 
@@ -3607,21 +3633,27 @@ function _ehCenaInvestigacao(cena){
 
 // ── Turnos ──
 function _invOrdemJogadores(){
-  const ks = _jogadoresAtivos(_lastRoom);
+  // .sort() é ESSENCIAL: Object.keys do Firestore pode vir em ordem diferente
+  // em cada aparelho — sem ordenação, cada um achava que era sua vez (2 jogadas).
+  const ks = _jogadoresAtivos(_lastRoom).slice().sort();
   return ks.length ? ks : (_pid ? [_pid] : []);
 }
+// Vez DERIVADA do log (como no diálogo): seguinte ao autor da última ação.
+// Determinística e idêntica em todos os aparelhos — sem estado gravado.
 function _invVezPid(){
-  const v = _lastRoom?.narration?.invVezPid;
   const ordem = _invOrdemJogadores();
-  return (v && ordem.includes(v)) ? v : (ordem[0] || _pid);
+  if (!ordem.length) return _pid;
+  const todas = _lastRoom?.narration?.dialogo || [];
+  for (let i = todas.length - 1; i >= 0; i--) {
+    const b = todas[i];
+    if (b.canal === 'inv-acao' && b.authorId) {
+      const idx = ordem.indexOf(b.authorId);
+      return ordem[(idx + 1) % ordem.length] || ordem[0];
+    }
+  }
+  return ordem[0];
 }
-function _invMinhaVez(){ return _invVezPid() === _pid; }
-function _invProximoPid(){
-  const ordem = _invOrdemJogadores();
-  if (ordem.length <= 1) return ordem[0] || _pid;
-  const i = ordem.indexOf(_invVezPid());
-  return ordem[(i + 1) % ordem.length];
-}
+function _invMinhaVez(){ if(!window._fbListenRoom) return true; return _invVezPid() === _pid; }
 
 function _invVerificarCena(){
   const cena = CENAS[_cenaAtual];
@@ -3643,10 +3675,7 @@ function _invActivar(cenaId){
   document.getElementById('investig-bg').style.backgroundImage = src ? `url(${_imgBust(src)})` : 'none';
   _invDismissCard();
   document.getElementById('investig').classList.remove('oculto');
-  // host inicia a ordem de turnos se ainda não houver
-  if (_isHost && !_lastRoom?.narration?.invVezPid) {
-    window._fbUpdateNarration?.({ invVezPid: _invOrdemJogadores()[0] || _pid });
-  }
+  // (vez DERIVADA do log — nada a inicializar)
   _invTab('acao');
   _invRender();
 }
@@ -3742,8 +3771,7 @@ async function _invEnviar(){
   if (!_invMinhaVez()) return;
   inp.value = ''; inp.blur();
   const roll = Math.floor(Math.random() * 20) + 1;
-  await _invAdjudicarAcao(texto, roll);
-  await window._fbUpdateNarration?.({ invVezPid: _invProximoPid() });   // passa a vez
+  await _invAdjudicarAcao(texto, roll);   // a vez passa sozinha: o beat carrega o authorId
 }
 
 async function _invAdjudicarAcao(acaoTexto, roll){
@@ -3785,19 +3813,15 @@ Não invente itens novos nem decida ações futuras pelos jogadores. Contexto oc
     } catch {}
   }
   pens.style.display = 'none';
-  await window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto: `[🎲 ${roll} — ${verdito}] ${narr}`, canal:'inv-acao', ts: Date.now() });
+  await window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto: `[🎲 ${roll} — ${verdito}] ${narr}`, canal:'inv-acao', authorId:_pid, ts: Date.now() });
 }
 
 function _invPercepcao(){
   if (_percepcaoEmAndamento) return;
   const cena = CENAS[_cenaAtual];
   const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
-  if (!hook || _percUsadaNaCena(_cenaAtual)) {
-    window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto:'Nada em especial chama a atenção por aqui.', canal:'inv-acao', ts: Date.now() });
-    return;
-  }
-  window._fbUpdateNarration?.({ [`percUsada.${_cenaAtual}`]: true });   // uma vez por cenário — p/ TODOS
-  triggerTestePercepcao(hook, 'manual', null);
+  if (!hook || _percUseiNaCena()) return;   // sem hook ou já usei: nada acontece (privado)
+  pedirPercepcao();                          // teste INDIVIDUAL — resultado só deste jogador
 }
 
 function _invSair(){ window._dialProximaCena?.(); }
@@ -3833,6 +3857,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v45</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v46</div>
 </body>
 </html>
