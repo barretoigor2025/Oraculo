@@ -1,3 +1,5 @@
+import { KAGEHAMA_CAMPAIGN } from './kagehamaCampaign.js';
+
 export const CAMPAIGN_SECTIONS = [
   { id: 'story', label: 'Roteiro', description: 'Premissa, cenas e acontecimentos.' },
   { id: 'classes', label: 'Classes e regras', description: 'Arquétipos e regras próprias desta campanha.' },
@@ -37,6 +39,6 @@ export function createDemoCampaigns() {
   return [
     createEmptyCampaign('demo-campanha-1', 'Campanha 1'),
     createEmptyCampaign('demo-campanha-2', 'Campanha 2'),
-    createEmptyCampaign('demo-campanha-3', 'Campanha 3'),
+    createEmptyCampaign('demo-campanha-3', 'Campanha 3'),\n    structuredClone(KAGEHAMA_CAMPAIGN),
   ];
 }
