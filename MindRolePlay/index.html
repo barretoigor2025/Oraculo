@@ -50,8 +50,13 @@
         <p class="lead">Cada campanha mantém roteiro, personagens, locais e checklist no seu próprio espaço padronizado.</p>
         <div id="campaign-grid" class="campaign-grid"></div>
         <form id="new-campaign-form" class="new-campaign panel">
-          <div><small>NOVA CAMPANHA</small><h2>Instalar ou começar outra história</h2></div>
-          <div class="new-fields"><input id="new-title" class="input" maxlength="60" placeholder="Nome da campanha" required><input id="new-genre" class="input" maxlength="40" placeholder="Gênero (opcional)"><button class="button primary">＋ Criar pacote</button></div>
+          <div><small>INSTALAR CAMPANHA</small><h2>Cole o roteiro. O pacote começa a se organizar.</h2><p>Classes iniciais, cenas e checklist recebem uma primeira estrutura para revisão do narrador.</p></div>
+          <div class="new-fields install-fields">
+            <input id="new-title" class="input" maxlength="60" placeholder="Nome da campanha" required>
+            <div class="form-grid"><input id="new-genre" class="input" maxlength="40" placeholder="Gênero (opcional)"><input id="new-source" class="input" placeholder="Fonte / link (opcional)"></div>
+            <textarea id="new-story" class="input textarea" rows="5" placeholder="Cole aqui o roteiro da campanha..." required></textarea>
+            <button class="button primary">✦ Analisar roteiro e instalar</button>
+          </div>
         </form>
       </section>
 
