@@ -7,6 +7,7 @@ import {
   installDemoCampaignsIfEmpty,
   joinRoom as joinRoomRemote,
   loadCampaigns,
+  listenRoom,
   saveCampaign,
 } from './firebaseRepository.js';
 
@@ -20,6 +21,7 @@ let currentCampaignId = '';
 let currentSectionId = '';
 let activeCharacterId = '';
 let firebaseMode = true;
+let roomUnsubscribe = null;
 let toastTimer;
 
 function notice(message) {
