@@ -1,0 +1,41 @@
+export const CAMPAIGN_SECTIONS = [
+  { id: 'story', label: 'Roteiro', description: 'Premissa, cenas e acontecimentos.' },
+  { id: 'classes', label: 'Classes e regras', description: 'Arquétipos e regras próprias desta campanha.' },
+  { id: 'characters', label: 'Personagens', description: 'Fichas dos jogadores e condições persistentes.' },
+  { id: 'npcs', label: 'NPCs', description: 'Personagens controlados pelo narrador.' },
+  { id: 'scenes', label: 'Cenários', description: 'Locais e cenas da campanha.' },
+  { id: 'maps', label: 'Mapa geral', description: 'Mapas e referências de localização.' },
+  { id: 'art', label: 'Arte e recursos', description: 'Imagens e recursos visuais da campanha.' },
+  { id: 'checklist', label: 'Checklist', description: 'Itens que ainda precisam ser preparados.' },
+];
+
+export function createEmptyCampaign(id, title, genre = '') {
+  return {
+    id,
+    schemaVersion: 1,
+    title,
+    genre,
+    status: 'installed',
+    source: '',
+    premise: '',
+    story: '',
+    classes: [],
+    characters: [],
+    npcs: [],
+    scenes: [],
+    maps: [],
+    art: [],
+    checklist: [],
+    testLog: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+export function createDemoCampaigns() {
+  return [
+    createEmptyCampaign('demo-campanha-1', 'Campanha 1'),
+    createEmptyCampaign('demo-campanha-2', 'Campanha 2'),
+    createEmptyCampaign('demo-campanha-3', 'Campanha 3'),
+  ];
+}
