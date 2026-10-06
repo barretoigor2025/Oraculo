@@ -165,7 +165,7 @@ function makeStarterClasses(text, genre) {
 }
 
 function analyzeCampaignText(text, genre) {
-  const lines=String(text||'').split(/\n+/).map(line=>line.replace(/^#{1,6}\\s*/,'').trim()).filter(Boolean);
+  const lines=String(text||'').split(/\n+/).map(line=>line.replace(/^#{1,6}\s*/,'').trim()).filter(Boolean);
   const headings=lines.filter(line=>/^(?:capítulo|cena|local|npc|personagem|monstro|missão|ato)\b/i.test(line));
   const threats=/monstro|inimigo|perigo|combate|ameaça|boss|vilão/i.test(text);
   const social=/negoci|convenc|persuad|mentir|diálogo|polític/i.test(text);
