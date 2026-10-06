@@ -57,9 +57,9 @@ export async function createCampaign(title, genre = '') {
   assertReady();
   const id = 'campaign-' + crypto.randomUUID();
   const campaign = {
-    id, schemaVersion: 1, title, genre, status: 'installed',
+    id, schemaVersion: 2, title, genre, status: 'installed',
     source: '', premise: '', story: '', classes: [], characters: [],
-    npcs: [], scenes: [], maps: [], art: [], checklist: [], testLog: [],
+    npcs: [], scenes: [], maps: [], travel: [], travelRules: {\n      principle: 'A jornada é uma sequência de cenas com escolhas e consequências.',\n      track: ['tempo', 'condição', 'recursos', 'exposição', 'vínculos'],\n      guidance: 'Apresente rotas e custos; sinalize perigos; pergunte como cada personagem contribui; atualize o mundo na chegada.',\n    }, art: [], checklist: [], testLog: [],
     createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
   };
   await setDoc(doc(db, CAMPAIGNS, id), campaign);
