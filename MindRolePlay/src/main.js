@@ -45,8 +45,18 @@ function localCampaigns() {
     const stored = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
     if (Array.isArray(stored) && stored.length) {
       const sample = createDemoCampaigns().find(item => item.id === 'demo-kagehama');
-      if (sample && !stored.some(item => item.id === sample.id)) {
-        stored.push(sample);
+      if (sample) {
+        const index = stored.findIndex(item => item.id === sample.id);
+        if (index < 0) stored.push(sample);
+        else if (Number(stored[index].schemaVersion || 1) < 3) {
+          const old = stored[index];
+          stored[index] = {
+            ...sample, ...old, schemaVersion: 3,
+            classes: sample.classes, art: sample.art, progression: sample.progression,
+            progressionLog: old.progressionLog || [],
+            checklist: [...sample.checklist, ...(old.checklist || []).filter(item => !sample.checklist.some(seed => seed.id === item.id))],
+          };
+        }
         localStorage.setItem(STORE_KEY, JSON.stringify(stored));
       }
       return stored;
@@ -163,6 +173,18 @@ function makeStarterClasses(text, genre) {
   ];
   return profile.map((p,index)=>({id:'class-'+(index+1),name:p[0],icon:p[1],portrait:'',description:p[2],attributes:p[3],skills:p[4].map(([name,level])=>({name,level})),fixedAbilities:[p[2]],startingLevel:1}));
 }
+function prepareClassArt(campaign) {
+  const portraits = (campaign.classes || []).filter(cls => cls.artBrief && cls.portrait);
+  campaign.art ||= [];
+  campaign.checklist ||= [];
+  for (const cls of portraits) {
+    const id = 'art-' + cls.id;
+    if (!campaign.art.some(item => item.id === id)) campaign.art.push({id,title:'Retrato · '+cls.name,description:cls.artBrief,assetPath:cls.portrait,kind:'portrait',status:'brief-ready',done:false});
+    const checkId = 'artcheck-' + cls.id;
+    if (!campaign.checklist.some(item => item.id === checkId)) campaign.checklist.unshift({id:checkId,title:'Criar retrato: '+cls.name,description:'Arte padronizada de personagem · arquivo-alvo '+cls.portrait,done:false,category:'Arte das classes',createdAt:Date.now()});
+  }
+}
+
 function analyzeCampaignText(text, genre) {
   const lines=String(text||'').split(/\n+/).map(line=>line.replace(/^#{1,6}\s*/,'').trim()).filter(Boolean);
   const headings=lines.filter(line=>/^(?:capítulo|cena|local|npc|personagem|monstro|missão|ato)\b/i.test(line));
@@ -197,6 +219,7 @@ function renderSectionBody() {
       campaign.analysis=analyzeCampaignText(campaign.story||'',campaign.genre||'');
       campaign.classes=makeStarterClasses(campaign.story||'',campaign.genre||'');
       campaign.checklist=campaign.analysis.checklist;
+      campaign.art=[]; prepareClassArt(campaign);
       campaign.npcs=campaign.analysis.sceneHeadings.filter(name=>/^npc|personagem/i.test(name)).map((title,index)=>({id:'npc-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
       campaign.scenes=campaign.analysis.sceneHeadings.filter(name=>/cena|capítulo|ato|local/i.test(name)).map((title,index)=>({id:'scene-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
       await persistCampaign(campaign);openCampaign(campaign.id);notice('Estrutura inicial preparada para revisão.');
@@ -506,7 +529,7 @@ document.querySelector('#new-campaign-form').addEventListener('submit',async eve
   let campaign;
   if(firebaseMode){try{campaign=await createCampaignRemote(title,genre);}catch(error){firebaseMode=false;storageLabel.textContent='Prévia local';notice('Firebase sem permissão para o Mind; criando pacote local neste navegador.');}}
   if(!campaign){campaign=createEmptyCampaign('campaign-'+crypto.randomUUID(),title,genre);campaigns.push(campaign);saveLocalCampaigns();}else campaigns.push(campaign);
-  campaign.story=script;campaign.source=source;campaign.analysis=analyzeCampaignText(script,genre);campaign.classes=makeStarterClasses(script,genre);campaign.checklist=campaign.analysis.checklist;
+  campaign.story=script;campaign.source=source;campaign.analysis=analyzeCampaignText(script,genre);campaign.classes=makeStarterClasses(script,genre);campaign.checklist=campaign.analysis.checklist;campaign.art=[];prepareClassArt(campaign);
   campaign.npcs=campaign.analysis.sceneHeadings.filter(name=>/^npc|personagem/i.test(name)).map((title,index)=>({id:'npc-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
   campaign.scenes=campaign.analysis.sceneHeadings.filter(name=>/cena|capítulo|ato|local/i.test(name)).map((title,index)=>({id:'scene-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
   await persistCampaign(campaign);currentCampaignId=campaign.id;event.currentTarget.reset();renderCampaigns();openCampaign(campaign.id);notice('Pacote preparado: classes, cenas e checklist aguardam revisão.');
