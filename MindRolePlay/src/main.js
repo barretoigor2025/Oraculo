@@ -232,13 +232,16 @@ function renderSectionBody() {
   if(currentSectionId==='classes'){
     const classes=campaign.classes||[];
     body.innerHTML=`<div class="class-grid">${classes.length?classes.map(cls=>`
-      <article class="class-template"><div class="class-portrait">${cls.portrait?`<img src="${escapeAttr(cls.portrait)}" alt="Retrato de ${escapeAttr(cls.name)}">`:`<span>${escapeHtml(cls.icon||'✦')}</span>`}</div>
-        <div class="class-template-copy"><small>${escapeHtml(cls.archetype||'ARQUÉTIPO')} · CLASSE · NÍVEL ${cls.startingLevel||1}</small><h2>${escapeHtml(cls.name)}</h2><p>${escapeHtml(cls.description||'')}</p>
-          <div class="class-stats">${Object.entries(cls.attributes||{}).map(([key,value])=>`<span>${key} <b>${value}</b></span>`).join('')}</div>
-          <small>Perícias fixas: ${(cls.skills||[]).map(skill=>escapeHtml(skill.name)+' '+skill.level).join(' · ')}</small>
-          <small>Habilidade: ${(cls.fixedAbilities||[]).map(escapeHtml).join(' · ')}</small>
-          ${cls.artBrief?`<details class="art-brief"><summary>Direção da arte</summary><p>${escapeHtml(cls.artBrief)}</p><small>ARQUIVO-ALVO · ${escapeHtml(cls.assetPath||cls.portrait||'definir')}</small></details>`:''}</div></article>`).join(''):'<div class="empty-state">Analise o roteiro para preparar as classes desta campanha.</div>'}</div>
-      <div class="prototype-note">Atributos, perícias e habilidade são fixos na criação. Retratos padronizados estão prontos para receber a arte final.</div>`;
+      <article class="class-template manga-class">
+        <div class="class-gender-art">${['male','female'].map(gender=>`<figure><div class="class-portrait">${cls.portraits?.[gender]?`<img src="${escapeAttr(cls.portraits[gender])}" alt="">`:'<span>影</span>'}</div><figcaption>${gender==='male'?'MASCULINO':'FEMININO'}</figcaption></figure>`).join('')}</div>
+        <div class="class-template-copy"><small>${escapeHtml(cls.archetype||cls.role||'ARQUÉTIPO')} · CLASSE · NÍVEL ${cls.startingLevel||1}</small><h2>${escapeHtml(cls.name)}</h2><p>${escapeHtml(cls.description||'')}</p>
+          <div class="class-stats">${Object.entries(cls.attributes||{}).map(([key,value])=>`<span>${escapeHtml(key)} <b>${escapeHtml(value)}</b></span>`).join('')}</div>
+          <h3>Perícias e testes</h3><div class="class-skill-list">${(cls.skills||[]).map(skill=>`<div><b>${escapeHtml(skill.name)}</b><span>3d6 ≤ ${escapeHtml(skill.level)}</span><small>${escapeHtml(skill.description||skill.attribute||'Teste quando houver risco relevante.')}</small></div>`).join('')}</div>
+          <div class="fixed-ability"><b>Habilidade fixa</b><p>${escapeHtml((cls.fixedAbilities||[]).join(' · '))}</p></div>
+          ${cls.roleplayProfile?`<details><summary>Guia para a IA narradora</summary><p><b>Voz:</b> ${escapeHtml(cls.roleplayProfile.voice||'')}</p><p><b>Objetivo:</b> ${escapeHtml(cls.roleplayProfile.want||'')}</p><p><b>Receio:</b> ${escapeHtml(cls.roleplayProfile.fear||'')}</p><p>${escapeHtml(cls.roleplayProfile.narratorGuidance||'')}</p></details>`:''}
+          ${cls.artBrief?`<details class="art-brief"><summary>Direção de arte</summary><p>${escapeHtml(cls.artBrief)}</p></details>`:''}
+        </div></article>`).join(''):'<div class="empty-state">Analise o roteiro para preparar as classes desta campanha.</div>'}</div>
+      <div class="prototype-note">A classe mantém atributos e perícias iniciais fixos. A escolha de gênero altera o retrato, não restringe o arquétipo.</div>`;
     return;
   }
   if(currentSectionId==='characters'){
@@ -257,6 +260,17 @@ function renderSectionBody() {
       campaign.characters.push({id:crypto.randomUUID(),name:String(form.get('name')).trim(),classId:cls.id,className:cls.name,archetype:cls.archetype||'',portrait:cls.portrait||'',icon:cls.icon||'✦',level:cls.startingLevel||1,attributes:{...cls.attributes},skills:structuredClone(cls.skills||[]),fixedAbilities:structuredClone(cls.fixedAbilities||[]),advantages:'',disadvantages:'',conditions:[],evolutionPoints:0,createdAt:Date.now()});
       await persistCampaign(campaign);renderSectionBody();notice('Ficha criada. A classe definiu retrato, perícias e habilidades iniciais.');
     });
+    return;
+  }
+  if(currentSectionId==='npcs'){
+    const npcs=campaign.npcs||[];
+    body.innerHTML=npcs.length?`<div class="npc-database">${npcs.map(npc=>{const p=npc.behaviorProfile||{};return `
+      <article class="npc-dossier panel">
+        <header><div class="npc-portrait-placeholder" aria-hidden="true">人</div><div><small>ARQUIVO DE NPC · ${escapeHtml(npc.faction||'FACÇÃO A DEFINIR')}</small><h2>${escapeHtml(npc.title||npc.name||'NPC')}</h2><p>${escapeHtml(npc.description||'')}</p></div></header>
+        <div class="npc-profile-grid"><p><b>Voz</b><span>${escapeHtml(p.voice||'A definir')}</span></p><p><b>Objetivo</b><span>${escapeHtml(p.goal||'A definir')}</span></p><p><b>Medo</b><span>${escapeHtml(p.fear||'A definir')}</span></p><p><b>Métodos</b><span>${escapeHtml(p.methods||'A definir')}</span></p><p><b>Sinal observável</b><span>${escapeHtml(p.tell||'A definir')}</span></p><p><b>Se pressionado</b><span>${escapeHtml(p.ifPressured||'A definir')}</span></p></div>
+        <details class="narrator-only"><summary>Segredo e limites do narrador</summary><p><b>Segredo:</b> ${escapeHtml(p.secret||'Ainda não definido.')}</p><p><b>Regra de interpretação:</b> ${escapeHtml(p.narratorGuardrail||'Interprete apenas o que o NPC sabe e revele informações conforme as evidências e ações em cena.')}</p></details>
+        <details class="art-brief"><summary>Brief de retrato</summary><p>${escapeHtml(npc.artBrief||'Retrato individual em mangá preto e branco; fundo transparente.')}</p><small>ARQUIVO-ALVO · assets/campaigns/${escapeHtml(campaign.id)}/npcs/${escapeHtml(npc.id)}.png</small></details>
+      </article>`;}).join('')}</div><p class="prototype-note">Fichas preparadas para consulta do narrador. Cada NPC tem comportamento, gatilhos, segredo e direção de arte separados.</p>`:'<div class="panel empty-state">Esta campanha ainda não tem NPCs catalogados.</div>';
     return;
   }
   if(currentSectionId==='art'){
