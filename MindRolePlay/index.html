@@ -16,36 +16,71 @@
     </header>
     <main>
       <section class="screen active" id="screen-home">
-        <div class="home">
-          <div class="title">Mind</div><div class="title-sub">RolePlay</div>
-          <p class="tagline">RPG narrativo <span>·</span> Multiplayer</p>
-          <div class="active-campaign">
-            <label>Campanha selecionada</label>
-            <strong id="active-campaign-name">Nenhuma campanha</strong>
-            <p>Campanhas diferentes, cada uma com seu próprio pacote e preparação.</p>
-          </div>
-          <div class="home-buttons">
-            <button class="button primary" data-nav="lobby">✦ <span>Jogar Online</span></button>
-            <button class="button" data-nav="campaigns">▤ <span>Mind Database</span></button>
-          </div>
-          <p class="home-note">Descreva o que seu personagem tenta fazer. A história responde.</p>
+        <div class="home manga-cover">
+          <div class="home-kicker">UM RPG DE HISTÓRIAS COMPARTILHADAS</div>
+          <h1 class="title">Mind <span>RolePlay</span></h1>
+          <p class="tagline">Escolha uma campanha e entre na história.</p>
+          <div id="home-campaign-grid" class="campaign-grid home-campaign-grid"></div>
+          <button class="button database-link" data-nav="campaigns">Abrir Mind Database →</button>
         </div>
       </section>
 
+      <section class="screen" id="screen-character">
+        <div class="screen-heading"><button class="back" data-nav="home">←</button><div><small>ESCOLHA SEU PAPEL NA HISTÓRIA</small><h1 id="character-campaign-title">Personagem</h1></div></div>
+        <p id="character-campaign-premise" class="lead"></p>
+        <div class="character-builder panel">
+          <div class="character-art-frame"><img id="class-portrait" alt="Retrato de classe"><span class="art-caption">RETRATO DE CLASSE · ARTE SUBSTITUÍVEL</span></div>
+          <div class="character-controls">
+            <label class="field">Nome do personagem<input id="character-name" class="input" maxlength="24" placeholder="Como chamam você?"></label>
+            <div class="field"><span>Gênero do avatar</span><div class="gender-choice"><button class="gender-button active" data-gender="male">Masculino</button><button class="gender-button" data-gender="female">Feminino</button></div></div>
+            <label class="field">Arquétipo<select id="class-select" class="input"></select></label>
+            <div id="class-details" class="class-details"></div>
+            <button id="save-character" class="button primary wide">Salvar personagem e ir ao lobby →</button>
+          </div>
+        </div>
+        <div id="saved-characters" class="saved-character-list"></div>
+      </section>
       <section class="screen" id="screen-lobby">
-        <div class="screen-heading"><button class="back" data-nav="home">←</button><div><small>SESSÃO MULTIPLAYER</small><h1>Jogar Online</h1></div></div>
+        <div class="screen-heading"><button class="back" data-nav="home">←</button><div><small>ANTES DA NARRAÇÃO</small><h1>Lobby da sala</h1></div></div>
         <div class="panel narrow">
-          <label class="field">Campanha<select id="lobby-campaign" class="input"></select></label>
-          <label class="field">Seu nome<input id="player-name" class="input" maxlength="24" placeholder="Nome do jogador"></label>
-          <label class="field">Ficha do personagem<select id="lobby-character" class="input"></select></label>
-          <button id="create-room" class="button primary wide">✦ Criar uma sala</button>
-          <div class="divider">ou entre numa sala existente</div>
+          <div class="lobby-character-summary"><img id="lobby-avatar" alt=""><div><small>SEU PERSONAGEM</small><strong id="lobby-character-name">Escolha uma campanha</strong><span id="lobby-character-class"></span></div></div>
+          <label class="field">Nome do jogador<input id="player-name" class="input" maxlength="24" placeholder="Seu nome"></label>
+          <button id="create-room" class="button primary wide">Criar sala e convidar →</button>
+          <div class="divider">ou entrar com um convite</div>
           <label class="field">Código da sala<input id="room-code" class="input code" maxlength="6" placeholder="ABC123" autocomplete="off"></label>
           <button id="join-room" class="button wide">Entrar na sala →</button>
-          <div id="room-result" class="result-box hidden"><div class="room-code-label">Código da sala <strong id="room-code-value"></strong></div><p id="room-message"></p><div id="room-player-list"></div><button id="copy-room-code" class="mini-button">Copiar código</button></div>
+          <div id="room-result" class="result-box hidden">
+            <div class="room-code-label">CÓDIGO / LINK DA SALA <strong id="room-code-value"></strong></div>
+            <p id="room-message"></p>
+            <div id="room-player-list"></div>
+            <button id="copy-room-code" class="mini-button">Copiar convite</button>
+            <div class="lobby-actions"><button id="ready-button" class="button">Marcar como pronto</button><button id="start-narration" class="button primary" disabled>Iniciar narração</button></div>
+            <small id="ready-status" class="ready-status">Aguardando jogadores.</small>
+          </div>
         </div>
       </section>
 
+      <section class="screen" id="screen-game">
+        <div class="game-topline"><button class="back" data-nav="home">← Sair</button><span id="game-room-code"></span><span id="game-player-count"></span></div>
+        <div class="game-layout">
+          <section class="scene-frame manga-frame">
+            <div class="scene-background" id="scene-background"></div>
+            <div class="scene-overlay"></div>
+            <img class="scene-avatar" id="scene-avatar" alt="">
+            <div class="scene-caption"><small id="scene-chapter">CENA 01</small><h1 id="scene-title">O começo</h1><p id="scene-description">A história aguarda o primeiro movimento.</p></div>
+          </section>
+          <section class="story-panel panel">
+            <div class="story-panel-heading"><div><small>DIÁRIO DA SESSÃO</small><h2 id="game-campaign-title">Campanha</h2></div><span class="ink-seal">M</span></div>
+            <div id="game-messages" class="game-messages" aria-live="polite"></div>
+            <form id="message-form" class="message-form">
+              <label for="message-input">O que você tenta fazer?</label>
+              <textarea id="message-input" class="input textarea" rows="3" maxlength="800" placeholder="Descreva sua ação, fala ou intenção…"></textarea>
+              <button class="button primary wide">Registrar ação →</button>
+            </form>
+            <p class="narrator-pending">O perfil do narrador e o teste 3d6 estão preparados. A resposta automática por IA será conectada na próxima etapa.</p>
+          </section>
+        </div>
+      </section>
       <section class="screen" id="screen-campaigns">
         <div class="screen-heading"><button class="back" data-nav="home">←</button><div><small>SEUS PACOTES DE CAMPANHA</small><h1>Mind Database</h1></div></div>
         <p class="lead">Cada campanha mantém roteiro, personagens, locais e checklist no seu próprio espaço padronizado.</p>
