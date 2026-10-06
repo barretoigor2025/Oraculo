@@ -1,3 +1,16 @@
+import roninMalePortrait from '../assets/campaigns/kagehama/classes/ronin/male.svg';
+import roninFemalePortrait from '../assets/campaigns/kagehama/classes/ronin/female.svg';
+import samuraiMalePortrait from '../assets/campaigns/kagehama/classes/samurai/male.svg';
+import samuraiFemalePortrait from '../assets/campaigns/kagehama/classes/samurai/female.svg';
+import kyudokaMalePortrait from '../assets/campaigns/kagehama/classes/kyudoka/male.svg';
+import kyudokaFemalePortrait from '../assets/campaigns/kagehama/classes/kyudoka/female.svg';
+import shinobiMalePortrait from '../assets/campaigns/kagehama/classes/shinobi/male.svg';
+import shinobiFemalePortrait from '../assets/campaigns/kagehama/classes/shinobi/female.svg';
+import onmyojiMalePortrait from '../assets/campaigns/kagehama/classes/onmyoji/male.svg';
+import onmyojiFemalePortrait from '../assets/campaigns/kagehama/classes/onmyoji/female.svg';
+import mikoMalePortrait from '../assets/campaigns/kagehama/classes/miko/male.svg';
+import mikoFemalePortrait from '../assets/campaigns/kagehama/classes/miko/female.svg';
+
 export const KAGEHAMA_CAMPAIGN = {
   "id": "demo-kagehama",
   "schemaVersion": 3,
@@ -10,11 +23,11 @@ export const KAGEHAMA_CAMPAIGN = {
   "classes": [
     {
       "id": "ronin",
-      "name": "Rōnin da Fronteira",
-      "archetype": "Bárbaro",
+      "name": "Combatente de resistência",
+      "archetype": "Combatente de resistência",
       "icon": "⚔",
       "portrait": "assets/campaigns/kagehama/classes/ronin/avatar.svg",
-      "description": "Combatente errante, forte e resistente. Protege viajantes, conhece estradas secundárias e desconfia das promessas dos senhores.",
+      "description": "Errante de fronteira que resiste ao cansaço, abre passagem e protege quem não pode se defender.",
       "attributes": {
         "ST": 14,
         "DX": 11,
@@ -24,30 +37,51 @@ export const KAGEHAMA_CAMPAIGN = {
       "skills": [
         {
           "name": "Lâmina pesada",
-          "level": 13
+          "attribute": "ST",
+          "level": 13,
+          "description": "Ataques fortes, abrir passagem e controlar espaço próximo."
         },
         {
           "name": "Sobrevivência",
-          "level": 12
+          "attribute": "HT",
+          "level": 12,
+          "description": "Achar abrigo, reconhecer recursos e manter a viagem."
         },
         {
           "name": "Intimidação",
-          "level": 12
+          "attribute": "Will",
+          "level": 12,
+          "description": "Impor limite com presença ou ameaça; pode piorar relações."
         }
       ],
       "fixedAbilities": [
         "Fúria contida: uma vez por cena, transforma um ferimento ou provocação em foco para uma ação física; o narrador registra o custo emocional ou social."
       ],
       "startingLevel": 1,
-      "artBrief": "Retrato vertical de corpo inteiro, rōnin japonês de fantasia histórica, haori gasto em vermelho escuro e cinza, nodachi embainhada, postura robusta e cansada, cicatriz discreta, fundo de estrada de montanha com lanternas distantes, pintura editorial realista, luz cinematográfica, sem texto."
+      "artBrief": "Retrato vertical de corpo inteiro, rōnin japonês de fantasia histórica, haori gasto em vermelho escuro e cinza, nodachi embainhada, postura robusta e cansada, cicatriz discreta, fundo de estrada de montanha com lanternas distantes, pintura editorial realista, luz cinematográfica, sem texto.",
+      "genderOptions": [
+        "male",
+        "female"
+      ],
+      "roleplayProfile": {
+        "voice": "Fala direta, econômica; evita ostentar bravura.",
+        "want": "Proteger viajantes e recuperar um nome que perdeu.",
+        "fear": "Voltar a depender de um senhor que trate pessoas como peças.",
+        "narratorGuidance": "Não ataca por orgulho vazio: exige causa concreta, sinaliza o risco e para quando a proteção deixa de fazer sentido."
+      },
+      "visualCore": "Rōnin viajante de fantasia histórica, armadura leve remendada, haori curto gasto, nodachi embainhada, postura de guarda inclinada e olhar cansado. Silhueta larga, cicatriz pequena, cordão de viagem e sandálias enlameadas.",
+      "assetPaths": {
+        "male": "assets/campaigns/kagehama/classes/ronin/male.png",
+        "female": "assets/campaigns/kagehama/classes/ronin/female.png"
+      }
     },
     {
       "id": "samurai",
-      "name": "Samurai Juramentado",
-      "archetype": "Guerreiro",
+      "name": "Samurai juramentado",
+      "archetype": "Samurai juramentado",
       "icon": "⛨",
       "portrait": "assets/campaigns/kagehama/classes/samurai/avatar.svg",
-      "description": "Defensor treinado e disciplinado. A armadura e o brasão declaram a quem serve, mas cada juramento traz um preço.",
+      "description": "Defensor treinado, cuja armadura e brasão anunciam uma lealdade que pode entrar em conflito com a consciência.",
       "attributes": {
         "ST": 12,
         "DX": 12,
@@ -57,30 +91,51 @@ export const KAGEHAMA_CAMPAIGN = {
       "skills": [
         {
           "name": "Katana",
-          "level": 13
+          "attribute": "DX",
+          "level": 13,
+          "description": "Atacar, aparar e reconhecer técnica de espada."
         },
         {
           "name": "Etiqueta",
-          "level": 12
+          "attribute": "IQ",
+          "level": 12,
+          "description": "Ler hierarquia, protocolo, insultos e obrigações formais."
         },
         {
           "name": "Tática",
-          "level": 12
+          "attribute": "IQ",
+          "level": 12,
+          "description": "Avaliar terreno, proteger aliados e antecipar manobras."
         }
       ],
       "fixedAbilities": [
         "Guarda do estandarte: uma vez por cena, pode interpor-se para proteger alguém próximo; o narrador define o risco ou custo."
       ],
       "startingLevel": 1,
-      "artBrief": "Retrato vertical de corpo inteiro, samurai de fantasia histórica com yoroi azul petróleo e detalhes dourados, katana embainhada, postura serena e alerta, brasão de clã simples sem letras, pátio de castelo chuvoso, pintura editorial realista, luz cinematográfica, sem texto."
+      "artBrief": "Retrato vertical de corpo inteiro, samurai de fantasia histórica com yoroi azul petróleo e detalhes dourados, katana embainhada, postura serena e alerta, brasão de clã simples sem letras, pátio de castelo chuvoso, pintura editorial realista, luz cinematográfica, sem texto.",
+      "genderOptions": [
+        "male",
+        "female"
+      ],
+      "roleplayProfile": {
+        "voice": "Frases formais, respostas medidas; chama as pessoas pelo título até ganhar confiança.",
+        "want": "Cumprir um juramento sem permitir que ele vire desculpa para crueldade.",
+        "fear": "Descobrir que seu próprio clã fabricou a ordem que deve obedecer.",
+        "narratorGuidance": "Diante de conflito, procura protocolo e testemunhas primeiro; se a violência começar, prioriza cobertura e evacuação."
+      },
+      "visualCore": "Samurai viajante com yoroi simples, cordão de brasão sem símbolos escritos, katana na bainha e mão próxima ao punho sem sacar. Postura disciplinada, ombros alinhados, rosto sereno e atento.",
+      "assetPaths": {
+        "male": "assets/campaigns/kagehama/classes/samurai/male.png",
+        "female": "assets/campaigns/kagehama/classes/samurai/female.png"
+      }
     },
     {
       "id": "kyudoka",
       "name": "Kyūdōka",
-      "archetype": "Arqueiro",
+      "archetype": "Kyūdōka",
       "icon": "弓",
       "portrait": "assets/campaigns/kagehama/classes/kyudoka/avatar.svg",
-      "description": "Arqueiro paciente que lê vento, terreno e movimento. É caçador, batedor e sentinela das estradas entre os domínios.",
+      "description": "Arqueiro e sentinela que lê vento, terreno, pegadas e movimentos distantes antes de agir.",
       "attributes": {
         "ST": 11,
         "DX": 14,
@@ -90,30 +145,51 @@ export const KAGEHAMA_CAMPAIGN = {
       "skills": [
         {
           "name": "Arco longo",
-          "level": 14
+          "attribute": "DX",
+          "level": 14,
+          "description": "Atirar com arco, ajustar distância e considerar vento."
         },
         {
           "name": "Rastreamento",
-          "level": 13
+          "attribute": "IQ",
+          "level": 13,
+          "description": "Seguir rastros e estimar direção, tamanho e tempo."
         },
         {
           "name": "Percepção",
-          "level": 13
+          "attribute": "Per",
+          "level": 13,
+          "description": "Notar movimento, detalhes ou sinais de perigo."
         }
       ],
       "fixedAbilities": [
         "Disparo calculado: com tempo para observar, identifica uma linha de tiro segura ou um detalhe distante antes de agir."
       ],
       "startingLevel": 1,
-      "artBrief": "Retrato vertical de corpo inteiro, arqueira kyūdōka de fantasia histórica com roupas de viagem verde musgo, arco longo yumi e aljava, postura de mira elegante, mata de bambu e neblina ao fundo, pintura editorial realista, luz cinematográfica, sem texto."
+      "artBrief": "Retrato vertical de corpo inteiro, arqueira kyūdōka de fantasia histórica com roupas de viagem verde musgo, arco longo yumi e aljava, postura de mira elegante, mata de bambu e neblina ao fundo, pintura editorial realista, luz cinematográfica, sem texto.",
+      "genderOptions": [
+        "male",
+        "female"
+      ],
+      "roleplayProfile": {
+        "voice": "Observações curtas sobre vento, terreno e distância; fala depois de observar.",
+        "want": "Manter a rota segura e provar que consegue agir sem desperdiçar uma flecha.",
+        "fear": "Disparar contra uma pessoa cuja intenção não compreendeu.",
+        "narratorGuidance": "Pede posição e linha de visão antes de agir; mede risco a aliados e não resolve todo obstáculo com ataque."
+      },
+      "visualCore": "Arqueiro kyūdōka com yumi alto e aljava, roupa de viagem ajustada para movimento, dedos protegidos, olhar de foco lateral. Corpo esguio e postura de mira relaxada, não disparando.",
+      "assetPaths": {
+        "male": "assets/campaigns/kagehama/classes/kyudoka/male.png",
+        "female": "assets/campaigns/kagehama/classes/kyudoka/female.png"
+      }
     },
     {
       "id": "shinobi",
       "name": "Shinobi",
-      "archetype": "Ladino",
+      "archetype": "Shinobi",
       "icon": "忍",
       "portrait": "assets/campaigns/kagehama/classes/shinobi/avatar.svg",
-      "description": "Infiltrador, observador e agente de rotas secretas. Prefere informação, disfarce e preparação ao confronto aberto.",
+      "description": "Infiltrador que vence com preparo, observação, disfarce e rotas discretas, evitando confronto desnecessário.",
       "attributes": {
         "ST": 9,
         "DX": 14,
@@ -123,30 +199,51 @@ export const KAGEHAMA_CAMPAIGN = {
       "skills": [
         {
           "name": "Furtividade",
-          "level": 14
+          "attribute": "DX",
+          "level": 14,
+          "description": "Mover-se sem ser visto ou ouvido; falhas podem deixar vestígios."
         },
         {
           "name": "Disfarce",
-          "level": 13
+          "attribute": "IQ",
+          "level": 13,
+          "description": "Adotar aparência, papel e comportamento plausíveis."
         },
         {
           "name": "Investigação",
-          "level": 12
+          "attribute": "IQ",
+          "level": 12,
+          "description": "Observar contradições, cruzar pistas e procurar entradas."
         }
       ],
       "fixedAbilities": [
         "Passo sem testemunha: com preparação e cobertura, pode cruzar uma área observada sem chamar atenção; uma falha ainda pode deixar uma pista."
       ],
       "startingLevel": 1,
-      "artBrief": "Retrato vertical de corpo inteiro, shinobi de fantasia histórica em roupas de viagem índigo e carvão, lenço baixo no pescoço sem cobrir o rosto, pequenas ferramentas discretas, telhados de Kagehama à noite, pintura editorial realista, luz cinematográfica, sem texto."
+      "artBrief": "Retrato vertical de corpo inteiro, shinobi de fantasia histórica em roupas de viagem índigo e carvão, lenço baixo no pescoço sem cobrir o rosto, pequenas ferramentas discretas, telhados de Kagehama à noite, pintura editorial realista, luz cinematográfica, sem texto.",
+      "genderOptions": [
+        "male",
+        "female"
+      ],
+      "roleplayProfile": {
+        "voice": "Perguntas discretas, humor seco; evita responder tudo de imediato.",
+        "want": "Descobrir quem move as peças e deixar uma saída para o grupo.",
+        "fear": "Ser reconhecido por uma antiga operação que sacrificou inocentes.",
+        "narratorGuidance": "Prepara cobertura e rota de fuga, testa versões e relata o que é observado separando fato de suspeita."
+      },
+      "visualCore": "Shinobi com roupa prática em camadas, faixa facial abaixada no pescoço, pequenas ferramentas presas ao cinto e uma mão oculta na manga. Silhueta compacta e postura que observa uma saída.",
+      "assetPaths": {
+        "male": "assets/campaigns/kagehama/classes/shinobi/male.png",
+        "female": "assets/campaigns/kagehama/classes/shinobi/female.png"
+      }
     },
     {
       "id": "onmyoji",
       "name": "Onmyōji",
-      "archetype": "Mago",
+      "archetype": "Onmyōji",
       "icon": "☯",
       "portrait": "assets/campaigns/kagehama/classes/onmyoji/avatar.svg",
-      "description": "Erudito de rituais, presságios e fenômenos espirituais. A magia existe, mas exige preparo, interpretação e consequências.",
+      "description": "Ritualista erudito que interpreta presságios, espíritos, arquivos e sinais da natureza; magia exige tempo e tem consequências.",
       "attributes": {
         "ST": 9,
         "DX": 10,
@@ -156,30 +253,51 @@ export const KAGEHAMA_CAMPAIGN = {
       "skills": [
         {
           "name": "Ocultismo",
-          "level": 14
+          "attribute": "IQ",
+          "level": 14,
+          "description": "Interpretar fenômenos, rituais e crenças; não garante respostas certas."
         },
         {
           "name": "Pesquisa",
-          "level": 14
+          "attribute": "IQ",
+          "level": 14,
+          "description": "Localizar registros e comparar relatos, símbolos e datas."
         },
         {
           "name": "Empatia",
-          "level": 12
+          "attribute": "Per",
+          "level": 12,
+          "description": "Perceber desconforto, intenção ou mudança de comportamento."
         }
       ],
       "fixedAbilities": [
         "Leitura de presságio: após estudar um local ou objeto, formula uma pergunta objetiva; a resposta do narrador pode ser incompleta ou simbólica."
       ],
       "startingLevel": 1,
-      "artBrief": "Retrato vertical de corpo inteiro, onmyōji de fantasia histórica em vestes brancas e azul noturno, ofuda e estojo de pincéis, uma pequena luz espiritual dourada paira na mão, santuário enevoado, pintura editorial realista, magia sutil, sem texto."
+      "artBrief": "Retrato vertical de corpo inteiro, onmyōji de fantasia histórica em vestes brancas e azul noturno, ofuda e estojo de pincéis, uma pequena luz espiritual dourada paira na mão, santuário enevoado, pintura editorial realista, magia sutil, sem texto.",
+      "genderOptions": [
+        "male",
+        "female"
+      ],
+      "roleplayProfile": {
+        "voice": "Vocabulário de sinais e correspondências; explica incerteza sem fingir certeza.",
+        "want": "Entender o que os presságios escondem e proteger os vivos dos mortos.",
+        "fear": "O ritual que o tornou aprendiz pode ter convocado a presença que agora o segue.",
+        "narratorGuidance": "Pede tempo, materiais e consentimento quando possível; magia tem custo, alcance e efeitos claros, não é solução universal."
+      },
+      "visualCore": "Onmyōji com vestes em camadas, chapéu eboshi simples, estojo de pincéis, pequenos ofuda sem caracteres legíveis e cordão ritual. Uma das mãos segura sino ou compasso; aura sugerida por retículas, sem efeitos coloridos.",
+      "assetPaths": {
+        "male": "assets/campaigns/kagehama/classes/onmyoji/male.png",
+        "female": "assets/campaigns/kagehama/classes/onmyoji/female.png"
+      }
     },
     {
       "id": "miko",
-      "name": "Miko Yamabushi",
-      "archetype": "Clérigo",
+      "name": "Miko yamabushi",
+      "archetype": "Miko yamabushi",
       "icon": "✧",
       "portrait": "assets/campaigns/kagehama/classes/miko/avatar.svg",
-      "description": "Curandeira e guia espiritual que cruza montanhas e campos de batalha. Sua fé consola, mas não apaga o custo dos ferimentos.",
+      "description": "Curandeira e guia de montanha que estabiliza feridos e sustenta o grupo; não substitui repouso e recursos.",
       "attributes": {
         "ST": 10,
         "DX": 11,
@@ -189,22 +307,43 @@ export const KAGEHAMA_CAMPAIGN = {
       "skills": [
         {
           "name": "Primeiros socorros",
-          "level": 14
+          "attribute": "IQ",
+          "level": 14,
+          "description": "Estancar, estabilizar e orientar cuidados imediatos."
         },
         {
           "name": "Empatia",
-          "level": 13
+          "attribute": "Per",
+          "level": 13,
+          "description": "Escutar, ler necessidades e apoiar negociações delicadas."
         },
         {
           "name": "Sobrevivência",
-          "level": 12
+          "attribute": "HT",
+          "level": 12,
+          "description": "Orientar-se em trilhas, identificar plantas úteis e montar abrigo."
         }
       ],
       "fixedAbilities": [
         "Mãos firmes: uma vez por cena, estabiliza alguém ferido com recursos simples; recuperar-se por completo ainda exige tempo e cuidado."
       ],
       "startingLevel": 1,
-      "artBrief": "Retrato vertical de corpo inteiro, miko yamabushi de fantasia histórica com hakama vermelho escuro, manto de viagem claro, cajado de peregrinação e bolsa médica, trilha de montanha ao amanhecer, pintura editorial realista, expressão acolhedora e firme, sem texto."
+      "artBrief": "Retrato vertical de corpo inteiro, miko yamabushi de fantasia histórica com hakama vermelho escuro, manto de viagem claro, cajado de peregrinação e bolsa médica, trilha de montanha ao amanhecer, pintura editorial realista, expressão acolhedora e firme, sem texto.",
+      "genderOptions": [
+        "male",
+        "female"
+      ],
+      "roleplayProfile": {
+        "voice": "Tom calmo e prático; pergunta onde dói e quem ficou para trás.",
+        "want": "Manter vivos os feridos de todos os lados e preservar o santuário de Aokiri.",
+        "fear": "Um paciente salvo pode ser o responsável por uma atrocidade que ela presenciou.",
+        "narratorGuidance": "Trata primeiro o que ameaça a vida, explica limites do cuidado e depois pergunta sobre causas e responsabilidade."
+      },
+      "visualCore": "Miko yamabushi viajante com hakama e manto de proteção, cajado de peregrina, bolsa médica e tiras de tecido. Postura firme e acolhedora, mãos preparadas para tratar um ferimento, sem pose de combate.",
+      "assetPaths": {
+        "male": "assets/campaigns/kagehama/classes/miko/male.png",
+        "female": "assets/campaigns/kagehama/classes/miko/female.png"
+      }
     }
   ],
   "characters": [],
@@ -213,67 +352,188 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "kagehama-npc-0",
       "title": "NPC — Lady Akiho Senda",
       "description": "Mediadora do shogun. Quimono azul-acinzentado, leque rachado; escuta sem interromper. Quer impedir a guerra sem entregar o governo a Kuroda. Guarda uma cópia não oficial do tratado.",
-      "createdAt": 0
+      "createdAt": 0,
+      "behaviorProfile": {
+        "voice": "Calma, formal e observadora. Faz uma pergunta por vez e espera a resposta inteira.",
+        "goal": "Preservar a paz e a autoridade civil sem deixar que Kuroda controle o conselho.",
+        "fear": "Que a paz dependa de uma falsificação que ela ajudou a esconder.",
+        "secret": "Tem uma cópia não oficial do tratado e suspeita que a tinta foi substituída.",
+        "methods": "Oferece assento e chá, organiza versões conflitantes em perguntas concretas e raramente ameaça.",
+        "tell": "Leque rachado; toca a emenda quando ouve uma meia verdade.",
+        "ifPressured": "Trata uma acusação pública como risco político. Em privado, revela parte do segredo se os personagens protegerem as testemunhas.",
+        "narratorGuardrail": "Interprete só o que este NPC sabe. Separe fato, suspeita e mentira; não revele o segredo sem gatilho ou evidência na cena."
+      },
+      "artBrief": "Retrato vertical de mediadora samurai, leque rachado, mangas formais e olhar atento; sala de audiência sugerida em retículas. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos."
     },
     {
       "id": "kagehama-npc-1",
       "title": "NPC — Ren Kuroda",
       "description": "Regente do conselho, roupa negra formal, bengala de prata. Educado ao ameaçar; mede lealdades. Autorizou o roubo do estojo, mas não o assassinato do mensageiro.",
-      "createdAt": 0
+      "createdAt": 0,
+      "behaviorProfile": {
+        "voice": "Polidez controlada, elogios com condição e perguntas que parecem convites.",
+        "goal": "Tomar controle do conselho e manter a crise abaixo do limiar da guerra aberta.",
+        "fear": "Perder o controle dos aliados e ser lembrado como usurpador vulgar.",
+        "secret": "Autorizou roubar o estojo, mas não ordenou o assassinato de Jiro.",
+        "methods": "Nunca diz não diretamente; oferece uma alternativa que cobra lealdade ou silêncio.",
+        "tell": "Bengala de prata; pausa antes de pronunciar sobrenomes.",
+        "ifPressured": "Se confrontado com prova, tenta separar seu crime do assassinato e oferece informação para conter a guerra.",
+        "narratorGuardrail": "Interprete só o que este NPC sabe. Separe fato, suspeita e mentira; não revele o segredo sem gatilho ou evidência na cena."
+      },
+      "artBrief": "Regente em roupa formal escura, bengala metálica, mãos impecáveis, postura cordial que ocupa espaço; fundo de painel shoji. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos."
     },
     {
       "id": "kagehama-npc-2",
       "title": "NPC — Tomoe Arashi",
       "description": "Herdeira desaparecida, disfarçada como a escriba Nao. Analisa saídas e testa promessas. Quer revelar a falsificação; oculta que matou um capitão em legítima defesa.",
-      "createdAt": 0
+      "createdAt": 0,
+      "behaviorProfile": {
+        "voice": "Voz baixa, vocabulário preciso, responde com perguntas e verifica quem está perto.",
+        "goal": "Expor a falsificação do tratado sem transformar o caso em uma disputa de sucessão.",
+        "fear": "Ser obrigada a voltar ao papel de herdeira e perder controle da própria vida.",
+        "secret": "Está disfarçada como Nao e matou um capitão para sobreviver; teme que isso seja usado para invalidar sua denúncia.",
+        "methods": "Observa portas, mãos e testemunhas antes de falar; só entrega fatos que pode sustentar.",
+        "tell": "Conta saídas com os olhos e muda de posição quando chega gente armada.",
+        "ifPressured": "Se reconhecida, não admite tudo sem garantia de retirada segura para testemunhas.",
+        "narratorGuardrail": "Interprete só o que este NPC sabe. Separe fato, suspeita e mentira; não revele o segredo sem gatilho ou evidência na cena."
+      },
+      "artBrief": "Escriba viajante de aparência discreta, rolos de papel e tinta nos dedos, olhar atento para a saída; sem roupa nobre ostensiva. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos."
     },
     {
       "id": "kagehama-npc-3",
       "title": "NPC — Jiro “Três Chuvas”",
       "description": "Mensageiro imperial ferido, capa de palha e três sinos escondidos na gola. Conta passos quando nervoso. Sobreviveu e se esconde nos Arquivos Afogados.",
-      "createdAt": 0
+      "createdAt": 0,
+      "behaviorProfile": {
+        "voice": "Fala entrecortada até se sentir seguro; conta passos para organizar a memória.",
+        "goal": "Entregar a prova do tratado sem expor quem o escondeu.",
+        "fear": "Que o agressor tenha sido enviado por alguém que ele ainda respeita.",
+        "secret": "Sobreviveu e se esconde nos Arquivos Afogados; sabe como o estojo foi trocado.",
+        "methods": "Conta o que lembra em sequência física: som, cheiro, direção e intervalo.",
+        "tell": "Conta passos e segura a gola onde guarda os sinos.",
+        "ifPressured": "Se pressionado, trava e se cala; se recebe cuidados sem interrogatório, revela um detalhe sensorial.",
+        "narratorGuardrail": "Interprete só o que este NPC sabe. Separe fato, suspeita e mentira; não revele o segredo sem gatilho ou evidência na cena."
+      },
+      "artBrief": "Mensageiro ferido sob capa de palha, sino escondido na gola e marcas de água; retrato vertical austero. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos."
     },
     {
       "id": "kagehama-npc-4",
       "title": "NPC — Sayo",
       "description": "Agente da Casa Sen, aparência comum e contas de madeira. Observa reflexos, muda sotaque. Transportou o estojo e reteve uma página que compromete o irmão.",
-      "createdAt": 0
+      "createdAt": 0,
+      "behaviorProfile": {
+        "voice": "Sotaque e formalidade mudam conforme o interlocutor; não sustenta contato visual por muito tempo.",
+        "goal": "Proteger o irmão e impedir que a Casa Sen seja responsabilizada por uma guerra que não planejou.",
+        "fear": "Que a prova entregue revele que ela própria transportou o estojo.",
+        "secret": "Retém uma página que liga o irmão ao lote de documentos.",
+        "methods": "Prefere combinar local, hora e saída; nunca aceita encontro sem uma rota alternativa.",
+        "tell": "Passa contas de madeira e observa a cena por superfícies refletoras.",
+        "ifPressured": "Se os personagens mencionam o irmão, tenta encerrar o encontro; prova de proteção a faz negociar.",
+        "narratorGuardrail": "Interprete só o que este NPC sabe. Separe fato, suspeita e mentira; não revele o segredo sem gatilho ou evidência na cena."
+      },
+      "artBrief": "Agente de aparência comum, contas de madeira no pulso, reflexo de uma janela revelando que observa todos; traje cotidiano. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos."
     },
     {
       "id": "kagehama-npc-5",
       "title": "NPC — Monge Genzō",
       "description": "Guardião de Aokiri, bengala marcada e cão Nuvem. Serve chá depois que a pessoa para de mentir. Protege refugiados e conhece a entrada dos Arquivos.",
-      "createdAt": 0
+      "createdAt": 0,
+      "behaviorProfile": {
+        "voice": "Pausas longas, perguntas simples e humor sereno; não confirma acusações sem evidência.",
+        "goal": "Manter o santuário neutro e dar passagem segura aos refugiados.",
+        "fear": "Que o abrigo seja usado para planejar uma vingança contra pessoas inocentes.",
+        "secret": "Conhece uma entrada para os Arquivos Afogados e ouviu refugiados citarem Daichi.",
+        "methods": "Oferece chá e abrigo antes de pedir nomes; protege qualquer pessoa sob seu teto.",
+        "tell": "Marca a bengala em três pontos da mesa para pensar.",
+        "ifPressured": "Se os personagens trouxerem armas ao santuário, pede que as deixem na entrada; não os expulsa antes de ouvir a razão.",
+        "narratorGuardrail": "Interprete só o que este NPC sabe. Separe fato, suspeita e mentira; não revele o segredo sem gatilho ou evidência na cena."
+      },
+      "artBrief": "Monge idoso com bengala entalhada, chaleira e cão branco; santuário vertical entre cedros, rosto paciente. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos."
     },
     {
       "id": "kagehama-npc-6",
       "title": "NPC — Lady Chiyo Arashi",
       "description": "Senhora do norte, armadura verde-musgo e queimadura antiga. Faz perguntas sobre custos pessoais. Quer autonomia e sabe que o sobrinho compra armas.",
-      "createdAt": 0
+      "createdAt": 0,
+      "behaviorProfile": {
+        "voice": "Cortesia firme, perguntas diretas sobre quem pagará a consequência.",
+        "goal": "Garantir autonomia para Arashi sem iniciar uma guerra que destrua as aldeias.",
+        "fear": "Que a autonomia seja alcançada por um pacto que apenas mude o nome do opressor.",
+        "secret": "Sabe que o sobrinho compra armas por fora e esconde a extensão da rede.",
+        "methods": "Pede planos verificáveis e pergunta primeiro quem ficará exposto.",
+        "tell": "Observa a reação antes de responder, especialmente de seu sobrinho.",
+        "ifPressured": "Se o grupo mostrar como proteger civis, compartilha informação sobre a compra de armas.",
+        "narratorGuardrail": "Interprete só o que este NPC sabe. Separe fato, suspeita e mentira; não revele o segredo sem gatilho ou evidência na cena."
+      },
+      "artBrief": "Líder de fronteira com armadura funcional, queimadura antiga e mapa de montanhas; figura imponente sem luxo. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos."
     },
     {
       "id": "kagehama-npc-7",
       "title": "NPC — Daichi Arashi",
       "description": "Capitão de fronteira de armadura vermelha. Provoca antes de atacar, mas poupa quem não humilha seus soldados. Quer independência e não sabe que os fornecedores o traem.",
-      "createdAt": 0
+      "createdAt": 0,
+      "behaviorProfile": {
+        "voice": "Bravata pública e conversa concreta em privado; usa insultos para medir reação.",
+        "goal": "Construir uma força própria e impedir que Arashi volte a depender do conselho central.",
+        "fear": "Ser usado pelos fornecedores e perder seus soldados por uma causa fabricada.",
+        "secret": "Não sabe que os fornecedores desviam recursos para provocar guerra.",
+        "methods": "Desafia os personagens de modo controlado; aceita recuar se eles preservarem a dignidade de seus soldados.",
+        "tell": "Ajusta a correia do ombro antes de dar uma ordem difícil.",
+        "ifPressured": "Se os personagens revelarem a traição com evidência, primeiro nega e depois exige prova direta.",
+        "narratorGuardrail": "Interprete só o que este NPC sabe. Separe fato, suspeita e mentira; não revele o segredo sem gatilho ou evidência na cena."
+      },
+      "artBrief": "Capitão em armadura de placas simples, correia gasta no ombro, estandarte sem letras e soldados ao fundo em chuva. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos."
     },
     {
       "id": "kagehama-npc-8",
       "title": "NPC — Akane",
       "description": "Curandeira da Irmandade do Junco Branco, mãos manchadas de ervas. Trabalha enquanto conversa e protege pacientes. Trata um agente que testemunhou o assassinato.",
-      "createdAt": 0
+      "createdAt": 0,
+      "behaviorProfile": {
+        "voice": "Conversa em tom prático enquanto prepara remédios; corta discussões que atrapalham o cuidado.",
+        "goal": "Manter o paciente vivo e impedir que a Irmandade vire ferramenta de interrogatório.",
+        "fear": "Que o paciente morra por uma decisão que ela tomou ao escolher quem tratar primeiro.",
+        "secret": "Trata uma testemunha do assassinato, mas não cede informação sem consentimento do paciente.",
+        "methods": "Define prioridades médicas e limites claros; escuta enquanto trabalha, sem prometer segredo absoluto.",
+        "tell": "Esfrega ervas entre os dedos antes de responder.",
+        "ifPressured": "Se alguém ameaçar o paciente, chama ajuda e fecha o acesso; não tenta vencer uma batalha sozinha.",
+        "narratorGuardrail": "Interprete só o que este NPC sabe. Separe fato, suspeita e mentira; não revele o segredo sem gatilho ou evidência na cena."
+      },
+      "artBrief": "Curandeira em abrigo simples, mangas arregaçadas, ervas, tigelas e gaze; expressão concentrada, não idealizada. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos."
     },
     {
       "id": "kagehama-npc-9",
       "title": "NPC — Mestre Tetsuo",
       "description": "Armeiro de Kagehama, avental queimado e dois dedos ausentes. Conversa com as ferramentas. Reconhece o lote oficial usado no disparo.",
-      "createdAt": 0
+      "createdAt": 0,
+      "behaviorProfile": {
+        "voice": "Frases curtas dirigidas às ferramentas; responde melhor a perguntas específicas que a intimidação.",
+        "goal": "Provar que seu trabalho não foi usado para matar o mensageiro.",
+        "fear": "Que o selo de seu ofício seja associado a uma execução política.",
+        "secret": "Reconhece a marca do lote oficial na flecha, mas teme perder o negócio e a oficina.",
+        "methods": "Compara peso, encaixe e marcas, oferecendo fatos materiais em vez de teorias.",
+        "tell": "Alinha as ferramentas por tamanho enquanto conversa.",
+        "ifPressured": "Diante de autoridade, pede registro formal; diante de uma prova física, aceita colaborar em segredo.",
+        "narratorGuardrail": "Interprete só o que este NPC sabe. Separe fato, suspeita e mentira; não revele o segredo sem gatilho ou evidência na cena."
+      },
+      "artBrief": "Armeiro de avental queimado, dois dedos ausentes, bancada com lâminas e peças da flecha; mãos como foco do quadro. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos."
     },
     {
       "id": "kagehama-npc-10",
       "title": "NPC — Nuvem",
       "description": "Cão branco idoso do santuário, uma orelha caída. Rosna para sangue fresco e busca quem está de luto; pode farejar, nunca substitui uma pista.",
-      "createdAt": 0
+      "createdAt": 0,
+      "behaviorProfile": {
+        "voice": "Não fala; reage por postura, ouvido, focinho e proximidade.",
+        "goal": "Procurar pessoas conhecidas e evitar ruídos que anunciem perigo.",
+        "fear": "Se perder os companheiros do santuário em meio à guerra.",
+        "secret": "Fareja sangue fresco e reconhece o caminho dos refugiados, mas não distingue culpado de ferido.",
+        "methods": "Aproxima-se de quem está enlutado e rosna para cheiro de sangue recente; precisa de um tratador por perto.",
+        "tell": "Uma orelha caída se ergue quando reconhece um passo.",
+        "ifPressured": "Não revela soluções: conduz a um lugar ou pessoa e depende dos personagens para interpretar o sinal.",
+        "narratorGuardrail": "Interprete só o que este NPC sabe. Separe fato, suspeita e mentira; não revele o segredo sem gatilho ou evidência na cena."
+      },
+      "artBrief": "Cão branco idoso de uma orelha caída, pelo áspero, sentado perto de uma lamparina; expressão calma, sem antropomorfismo. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos."
     }
   ],
   "scenes": [
@@ -390,130 +650,639 @@ export const KAGEHAMA_CAMPAIGN = {
   ],
   "art": [
     {
-      "id": "art-ronin",
-      "title": "Retrato · Rōnin da Fronteira",
-      "description": "Retrato vertical de corpo inteiro, rōnin japonês de fantasia histórica, haori gasto em vermelho escuro e cinza, nodachi embainhada, postura robusta e cansada, cicatriz discreta, fundo de estrada de montanha com lanternas distantes, pintura editorial realista, luz cinematográfica, sem texto.",
-      "assetPath": "assets/campaigns/kagehama/classes/ronin/avatar.svg",
-      "kind": "portrait",
+      "id": "art-ronin-male",
+      "title": "Retrato masculino · Combatente de resistência",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Rōnin viajante de fantasia histórica, armadura leve remendada, haori curto gasto, nodachi embainhada, postura de guarda inclinada e olhar cansado. Silhueta larga, cicatriz pequena, cordão de viagem e sandálias enlameadas. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/ronin/male.png",
+      "kind": "character",
+      "category": "Classes",
       "status": "brief-ready",
       "done": false
     },
     {
-      "id": "art-samurai",
-      "title": "Retrato · Samurai Juramentado",
-      "description": "Retrato vertical de corpo inteiro, samurai de fantasia histórica com yoroi azul petróleo e detalhes dourados, katana embainhada, postura serena e alerta, brasão de clã simples sem letras, pátio de castelo chuvoso, pintura editorial realista, luz cinematográfica, sem texto.",
-      "assetPath": "assets/campaigns/kagehama/classes/samurai/avatar.svg",
-      "kind": "portrait",
+      "id": "art-ronin-female",
+      "title": "Retrato feminino · Combatente de resistência",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Rōnin viajante de fantasia histórica, armadura leve remendada, haori curto gasto, nodachi embainhada, postura de guarda inclinada e olhar cansado. Silhueta larga, cicatriz pequena, cordão de viagem e sandálias enlameadas. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/ronin/female.png",
+      "kind": "character",
+      "category": "Classes",
       "status": "brief-ready",
       "done": false
     },
     {
-      "id": "art-kyudoka",
-      "title": "Retrato · Kyūdōka",
-      "description": "Retrato vertical de corpo inteiro, arqueira kyūdōka de fantasia histórica com roupas de viagem verde musgo, arco longo yumi e aljava, postura de mira elegante, mata de bambu e neblina ao fundo, pintura editorial realista, luz cinematográfica, sem texto.",
-      "assetPath": "assets/campaigns/kagehama/classes/kyudoka/avatar.svg",
-      "kind": "portrait",
+      "id": "art-samurai-male",
+      "title": "Retrato masculino · Samurai juramentado",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Samurai viajante com yoroi simples, cordão de brasão sem símbolos escritos, katana na bainha e mão próxima ao punho sem sacar. Postura disciplinada, ombros alinhados, rosto sereno e atento. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/samurai/male.png",
+      "kind": "character",
+      "category": "Classes",
       "status": "brief-ready",
       "done": false
     },
     {
-      "id": "art-shinobi",
-      "title": "Retrato · Shinobi",
-      "description": "Retrato vertical de corpo inteiro, shinobi de fantasia histórica em roupas de viagem índigo e carvão, lenço baixo no pescoço sem cobrir o rosto, pequenas ferramentas discretas, telhados de Kagehama à noite, pintura editorial realista, luz cinematográfica, sem texto.",
-      "assetPath": "assets/campaigns/kagehama/classes/shinobi/avatar.svg",
-      "kind": "portrait",
+      "id": "art-samurai-female",
+      "title": "Retrato feminino · Samurai juramentado",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Samurai viajante com yoroi simples, cordão de brasão sem símbolos escritos, katana na bainha e mão próxima ao punho sem sacar. Postura disciplinada, ombros alinhados, rosto sereno e atento. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/samurai/female.png",
+      "kind": "character",
+      "category": "Classes",
       "status": "brief-ready",
       "done": false
     },
     {
-      "id": "art-onmyoji",
-      "title": "Retrato · Onmyōji",
-      "description": "Retrato vertical de corpo inteiro, onmyōji de fantasia histórica em vestes brancas e azul noturno, ofuda e estojo de pincéis, uma pequena luz espiritual dourada paira na mão, santuário enevoado, pintura editorial realista, magia sutil, sem texto.",
-      "assetPath": "assets/campaigns/kagehama/classes/onmyoji/avatar.svg",
-      "kind": "portrait",
+      "id": "art-kyudoka-male",
+      "title": "Retrato masculino · Kyūdōka",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Arqueiro kyūdōka com yumi alto e aljava, roupa de viagem ajustada para movimento, dedos protegidos, olhar de foco lateral. Corpo esguio e postura de mira relaxada, não disparando. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/kyudoka/male.png",
+      "kind": "character",
+      "category": "Classes",
       "status": "brief-ready",
       "done": false
     },
     {
-      "id": "art-miko",
-      "title": "Retrato · Miko Yamabushi",
-      "description": "Retrato vertical de corpo inteiro, miko yamabushi de fantasia histórica com hakama vermelho escuro, manto de viagem claro, cajado de peregrinação e bolsa médica, trilha de montanha ao amanhecer, pintura editorial realista, expressão acolhedora e firme, sem texto.",
-      "assetPath": "assets/campaigns/kagehama/classes/miko/avatar.svg",
-      "kind": "portrait",
+      "id": "art-kyudoka-female",
+      "title": "Retrato feminino · Kyūdōka",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Arqueiro kyūdōka com yumi alto e aljava, roupa de viagem ajustada para movimento, dedos protegidos, olhar de foco lateral. Corpo esguio e postura de mira relaxada, não disparando. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/kyudoka/female.png",
+      "kind": "character",
+      "category": "Classes",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-shinobi-male",
+      "title": "Retrato masculino · Shinobi",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Shinobi com roupa prática em camadas, faixa facial abaixada no pescoço, pequenas ferramentas presas ao cinto e uma mão oculta na manga. Silhueta compacta e postura que observa uma saída. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/shinobi/male.png",
+      "kind": "character",
+      "category": "Classes",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-shinobi-female",
+      "title": "Retrato feminino · Shinobi",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Shinobi com roupa prática em camadas, faixa facial abaixada no pescoço, pequenas ferramentas presas ao cinto e uma mão oculta na manga. Silhueta compacta e postura que observa uma saída. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/shinobi/female.png",
+      "kind": "character",
+      "category": "Classes",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-onmyoji-male",
+      "title": "Retrato masculino · Onmyōji",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Onmyōji com vestes em camadas, chapéu eboshi simples, estojo de pincéis, pequenos ofuda sem caracteres legíveis e cordão ritual. Uma das mãos segura sino ou compasso; aura sugerida por retículas, sem efeitos coloridos. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/onmyoji/male.png",
+      "kind": "character",
+      "category": "Classes",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-onmyoji-female",
+      "title": "Retrato feminino · Onmyōji",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Onmyōji com vestes em camadas, chapéu eboshi simples, estojo de pincéis, pequenos ofuda sem caracteres legíveis e cordão ritual. Uma das mãos segura sino ou compasso; aura sugerida por retículas, sem efeitos coloridos. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/onmyoji/female.png",
+      "kind": "character",
+      "category": "Classes",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-miko-male",
+      "title": "Retrato masculino · Miko yamabushi",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Miko yamabushi viajante com hakama e manto de proteção, cajado de peregrina, bolsa médica e tiras de tecido. Postura firme e acolhedora, mãos preparadas para tratar um ferimento, sem pose de combate. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/miko/male.png",
+      "kind": "character",
+      "category": "Classes",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-miko-female",
+      "title": "Retrato feminino · Miko yamabushi",
+      "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Miko yamabushi viajante com hakama e manto de proteção, cajado de peregrina, bolsa médica e tiras de tecido. Postura firme e acolhedora, mãos preparadas para tratar um ferimento, sem pose de combate. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
+      "assetPath": "assets/campaigns/kagehama/classes/miko/female.png",
+      "kind": "character",
+      "category": "Classes",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-npc-0",
+      "title": "Retrato · Lady Akiho Senda",
+      "description": "Retrato vertical de mediadora samurai, leque rachado, mangas formais e olhar atento; sala de audiência sugerida em retículas. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
+      "assetPath": "assets/campaigns/kagehama/npcs/npc-0.png",
+      "kind": "character",
+      "category": "NPCs",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-npc-1",
+      "title": "Retrato · Ren Kuroda",
+      "description": "Regente em roupa formal escura, bengala metálica, mãos impecáveis, postura cordial que ocupa espaço; fundo de painel shoji. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
+      "assetPath": "assets/campaigns/kagehama/npcs/npc-1.png",
+      "kind": "character",
+      "category": "NPCs",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-npc-2",
+      "title": "Retrato · Tomoe Arashi",
+      "description": "Escriba viajante de aparência discreta, rolos de papel e tinta nos dedos, olhar atento para a saída; sem roupa nobre ostensiva. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
+      "assetPath": "assets/campaigns/kagehama/npcs/npc-2.png",
+      "kind": "character",
+      "category": "NPCs",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-npc-3",
+      "title": "Retrato · Jiro “Três Chuvas”",
+      "description": "Mensageiro ferido sob capa de palha, sino escondido na gola e marcas de água; retrato vertical austero. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
+      "assetPath": "assets/campaigns/kagehama/npcs/npc-3.png",
+      "kind": "character",
+      "category": "NPCs",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-npc-4",
+      "title": "Retrato · Sayo",
+      "description": "Agente de aparência comum, contas de madeira no pulso, reflexo de uma janela revelando que observa todos; traje cotidiano. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
+      "assetPath": "assets/campaigns/kagehama/npcs/npc-4.png",
+      "kind": "character",
+      "category": "NPCs",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-npc-5",
+      "title": "Retrato · Monge Genzō",
+      "description": "Monge idoso com bengala entalhada, chaleira e cão branco; santuário vertical entre cedros, rosto paciente. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
+      "assetPath": "assets/campaigns/kagehama/npcs/npc-5.png",
+      "kind": "character",
+      "category": "NPCs",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-npc-6",
+      "title": "Retrato · Lady Chiyo Arashi",
+      "description": "Líder de fronteira com armadura funcional, queimadura antiga e mapa de montanhas; figura imponente sem luxo. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
+      "assetPath": "assets/campaigns/kagehama/npcs/npc-6.png",
+      "kind": "character",
+      "category": "NPCs",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-npc-7",
+      "title": "Retrato · Daichi Arashi",
+      "description": "Capitão em armadura de placas simples, correia gasta no ombro, estandarte sem letras e soldados ao fundo em chuva. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
+      "assetPath": "assets/campaigns/kagehama/npcs/npc-7.png",
+      "kind": "character",
+      "category": "NPCs",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-npc-8",
+      "title": "Retrato · Akane",
+      "description": "Curandeira em abrigo simples, mangas arregaçadas, ervas, tigelas e gaze; expressão concentrada, não idealizada. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
+      "assetPath": "assets/campaigns/kagehama/npcs/npc-8.png",
+      "kind": "character",
+      "category": "NPCs",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-npc-9",
+      "title": "Retrato · Mestre Tetsuo",
+      "description": "Armeiro de avental queimado, dois dedos ausentes, bancada com lâminas e peças da flecha; mãos como foco do quadro. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
+      "assetPath": "assets/campaigns/kagehama/npcs/npc-9.png",
+      "kind": "character",
+      "category": "NPCs",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-npc-10",
+      "title": "Retrato · Nuvem",
+      "description": "Cão branco idoso de uma orelha caída, pelo áspero, sentado perto de uma lamparina; expressão calma, sem antropomorfismo. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
+      "assetPath": "assets/campaigns/kagehama/npcs/npc-10.png",
+      "kind": "character",
+      "category": "NPCs",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-0",
+      "title": "Cenário vertical · Capítulo 1 — O salão das testemunhas",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 1 — O salão das testemunhas. Akiho convoca o grupo; versões contraditórias apontam para Arashi, Casa Sen e comerciantes.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-0.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-1",
+      "title": "Cenário vertical · Capítulo 2 — Três contas queimadas",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 2 — Três contas queimadas. Sayo leva ao santuário; refugiados somem na floresta e uma trilha cruza esconderijo de Daichi.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-1.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-2",
+      "title": "Cenário vertical · Capítulo 3 — O homem sob a água",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 3 — O homem sob a água. Nos Arquivos Afogados, o grupo escolhe salvar Jiro, documentos ou a própria segurança.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-2.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-3",
+      "title": "Cenário vertical · Capítulo 4 — A caça do cervo negro",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 4 — A caça do cervo negro. Rastro leva a posto abandonado e soldados mortos após um encontro diplomático falso.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-3.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-4",
+      "title": "Cenário vertical · Capítulo 5 — O mensageiro que não chegou",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 5 — O mensageiro que não chegou. A aldeia de Sumi perde água por uma ordem verdadeira entregue por portador falso.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-4.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-5",
+      "title": "Cenário vertical · Capítulo 6 — Um duelo sem vencedor",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 6 — Um duelo sem vencedor. Audiência no Castelo da Cinza; duelo testa contenção e respeito, não exige morte.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-5.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-6",
+      "title": "Cenário vertical · Capítulo 7 — A noite da enseada",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 7 — A noite da enseada. Infiltração ou perseguição marítima contra um navio com armas e registros falsos.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-6.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-7",
+      "title": "Cenário vertical · Capítulo 8 — A herdeira chamada Nao",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 8 — A herdeira chamada Nao. Tomoe revela a matriz do selo; tornar a falsificação pública põe seus soldados em risco.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-7.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-8",
+      "title": "Cenário vertical · Capítulo 9 — Traição no santuário",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 9 — Traição no santuário. Um agente entrega o esconderijo de refugiados para tentar salvar a própria família.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-8.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-9",
+      "title": "Cenário vertical · Capítulo 10 — A torre de sinal",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 10 — A torre de sinal. Tempestade, patrulhas recrutadas e mensagens cifradas sobre uma guerra planejada.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-9.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-10",
+      "title": "Cenário vertical · Capítulo 11 — Conselho em Kagehama",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 11 — Conselho em Kagehama. A prova exige testemunhas, proteção e uma apresentação que sobreviva à política.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-10.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-11",
+      "title": "Cenário vertical · Capítulo 12 — O cerco dos canais",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 12 — O cerco dos canais. Três frentes simultâneas: comporta, enfermaria e muralha do porto.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-11.png",
+      "kind": "scene",
+      "category": "Cenários",
+      "status": "brief-ready",
+      "done": false
+    },
+    {
+      "id": "art-kagehama-scene-12",
+      "title": "Cenário vertical · Capítulo 13 — O regente e a lâmina",
+      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 13 — O regente e a lâmina. Kuroda oferece acordo; pode haver rendição, exposição, captura, fuga ou combate.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-12.png",
+      "kind": "scene",
+      "category": "Cenários",
       "status": "brief-ready",
       "done": false
     }
   ],
   "checklist": [
     {
-      "id": "artcheck-ronin",
-      "title": "Criar retrato: Rōnin da Fronteira",
-      "description": "Arte padronizada de personagem · arquivo-alvo assets/campaigns/kagehama/classes/ronin/avatar.svg",
+      "id": "artcheck-ronin-male",
+      "title": "Criar avatar masculino · Combatente de resistência",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/ronin/male.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
-      "id": "artcheck-samurai",
-      "title": "Criar retrato: Samurai Juramentado",
-      "description": "Arte padronizada de personagem · arquivo-alvo assets/campaigns/kagehama/classes/samurai/avatar.svg",
+      "id": "artcheck-ronin-female",
+      "title": "Criar avatar feminino · Combatente de resistência",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/ronin/female.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
-      "id": "artcheck-kyudoka",
-      "title": "Criar retrato: Kyūdōka",
-      "description": "Arte padronizada de personagem · arquivo-alvo assets/campaigns/kagehama/classes/kyudoka/avatar.svg",
+      "id": "artcheck-samurai-male",
+      "title": "Criar avatar masculino · Samurai juramentado",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/samurai/male.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
-      "id": "artcheck-shinobi",
-      "title": "Criar retrato: Shinobi",
-      "description": "Arte padronizada de personagem · arquivo-alvo assets/campaigns/kagehama/classes/shinobi/avatar.svg",
+      "id": "artcheck-samurai-female",
+      "title": "Criar avatar feminino · Samurai juramentado",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/samurai/female.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
-      "id": "artcheck-onmyoji",
-      "title": "Criar retrato: Onmyōji",
-      "description": "Arte padronizada de personagem · arquivo-alvo assets/campaigns/kagehama/classes/onmyoji/avatar.svg",
+      "id": "artcheck-kyudoka-male",
+      "title": "Criar avatar masculino · Kyūdōka",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/kyudoka/male.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
-      "id": "artcheck-miko",
-      "title": "Criar retrato: Miko Yamabushi",
-      "description": "Arte padronizada de personagem · arquivo-alvo assets/campaigns/kagehama/classes/miko/avatar.svg",
+      "id": "artcheck-kyudoka-female",
+      "title": "Criar avatar feminino · Kyūdōka",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/kyudoka/female.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
-      "id": "artcheck-map",
-      "title": "Criar mapa geral de Akitsuru",
-      "description": "Mapa legível dos três reinos, estradas, portos e pontos de travessia.",
+      "id": "artcheck-shinobi-male",
+      "title": "Criar avatar masculino · Shinobi",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/shinobi/male.png",
       "done": false,
-      "category": "Mapas"
+      "category": "Arte das classes"
     },
     {
-      "id": "artcheck-kagehama",
-      "title": "Criar cenário-base de Kagehama",
-      "description": "Ponte, bairro das lanternas e castelo em uma composição visual coerente.",
+      "id": "artcheck-shinobi-female",
+      "title": "Criar avatar feminino · Shinobi",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/shinobi/female.png",
+      "done": false,
+      "category": "Arte das classes"
+    },
+    {
+      "id": "artcheck-onmyoji-male",
+      "title": "Criar avatar masculino · Onmyōji",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/onmyoji/male.png",
+      "done": false,
+      "category": "Arte das classes"
+    },
+    {
+      "id": "artcheck-onmyoji-female",
+      "title": "Criar avatar feminino · Onmyōji",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/onmyoji/female.png",
+      "done": false,
+      "category": "Arte das classes"
+    },
+    {
+      "id": "artcheck-miko-male",
+      "title": "Criar avatar masculino · Miko yamabushi",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/miko/male.png",
+      "done": false,
+      "category": "Arte das classes"
+    },
+    {
+      "id": "artcheck-miko-female",
+      "title": "Criar avatar feminino · Miko yamabushi",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/miko/female.png",
+      "done": false,
+      "category": "Arte das classes"
+    },
+    {
+      "id": "artcheck-kagehama-npc-0",
+      "title": "Criar retrato de Lady Akiho Senda",
+      "description": "Calma, formal e observadora. Faz uma pergunta por vez e espera a resposta inteira. Preservar a paz e a autoridade civil sem deixar que Kuroda controle o conselho.",
+      "done": false,
+      "category": "Arte dos NPCs"
+    },
+    {
+      "id": "artcheck-kagehama-npc-1",
+      "title": "Criar retrato de Ren Kuroda",
+      "description": "Polidez controlada, elogios com condição e perguntas que parecem convites. Tomar controle do conselho e manter a crise abaixo do limiar da guerra aberta.",
+      "done": false,
+      "category": "Arte dos NPCs"
+    },
+    {
+      "id": "artcheck-kagehama-npc-2",
+      "title": "Criar retrato de Tomoe Arashi",
+      "description": "Voz baixa, vocabulário preciso, responde com perguntas e verifica quem está perto. Expor a falsificação do tratado sem transformar o caso em uma disputa de sucessão.",
+      "done": false,
+      "category": "Arte dos NPCs"
+    },
+    {
+      "id": "artcheck-kagehama-npc-3",
+      "title": "Criar retrato de Jiro “Três Chuvas”",
+      "description": "Fala entrecortada até se sentir seguro; conta passos para organizar a memória. Entregar a prova do tratado sem expor quem o escondeu.",
+      "done": false,
+      "category": "Arte dos NPCs"
+    },
+    {
+      "id": "artcheck-kagehama-npc-4",
+      "title": "Criar retrato de Sayo",
+      "description": "Sotaque e formalidade mudam conforme o interlocutor; não sustenta contato visual por muito tempo. Proteger o irmão e impedir que a Casa Sen seja responsabilizada por uma guerra que não planejou.",
+      "done": false,
+      "category": "Arte dos NPCs"
+    },
+    {
+      "id": "artcheck-kagehama-npc-5",
+      "title": "Criar retrato de Monge Genzō",
+      "description": "Pausas longas, perguntas simples e humor sereno; não confirma acusações sem evidência. Manter o santuário neutro e dar passagem segura aos refugiados.",
+      "done": false,
+      "category": "Arte dos NPCs"
+    },
+    {
+      "id": "artcheck-kagehama-npc-6",
+      "title": "Criar retrato de Lady Chiyo Arashi",
+      "description": "Cortesia firme, perguntas diretas sobre quem pagará a consequência. Garantir autonomia para Arashi sem iniciar uma guerra que destrua as aldeias.",
+      "done": false,
+      "category": "Arte dos NPCs"
+    },
+    {
+      "id": "artcheck-kagehama-npc-7",
+      "title": "Criar retrato de Daichi Arashi",
+      "description": "Bravata pública e conversa concreta em privado; usa insultos para medir reação. Construir uma força própria e impedir que Arashi volte a depender do conselho central.",
+      "done": false,
+      "category": "Arte dos NPCs"
+    },
+    {
+      "id": "artcheck-kagehama-npc-8",
+      "title": "Criar retrato de Akane",
+      "description": "Conversa em tom prático enquanto prepara remédios; corta discussões que atrapalham o cuidado. Manter o paciente vivo e impedir que a Irmandade vire ferramenta de interrogatório.",
+      "done": false,
+      "category": "Arte dos NPCs"
+    },
+    {
+      "id": "artcheck-kagehama-npc-9",
+      "title": "Criar retrato de Mestre Tetsuo",
+      "description": "Frases curtas dirigidas às ferramentas; responde melhor a perguntas específicas que a intimidação. Provar que seu trabalho não foi usado para matar o mensageiro.",
+      "done": false,
+      "category": "Arte dos NPCs"
+    },
+    {
+      "id": "artcheck-kagehama-npc-10",
+      "title": "Criar retrato de Nuvem",
+      "description": "Não fala; reage por postura, ouvido, focinho e proximidade. Procurar pessoas conhecidas e evitar ruídos que anunciem perigo.",
+      "done": false,
+      "category": "Arte dos NPCs"
+    },
+    {
+      "id": "artcheck-kagehama-scene-0",
+      "title": "Criar cenário: Capítulo 1 — O salão das testemunhas",
+      "description": "Cenário vertical para celular, recorte sem personagens. Akiho convoca o grupo; versões contraditórias apontam para Arashi, Casa Sen e comerciantes.",
       "done": false,
       "category": "Cenários"
     },
     {
-      "id": "artcheck-npcs",
-      "title": "Criar retratos dos NPCs centrais",
-      "description": "Usar o mesmo enquadramento e linguagem visual dos retratos de classe.",
+      "id": "artcheck-kagehama-scene-1",
+      "title": "Criar cenário: Capítulo 2 — Três contas queimadas",
+      "description": "Cenário vertical para celular, recorte sem personagens. Sayo leva ao santuário; refugiados somem na floresta e uma trilha cruza esconderijo de Daichi.",
       "done": false,
-      "category": "Arte"
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-kagehama-scene-2",
+      "title": "Criar cenário: Capítulo 3 — O homem sob a água",
+      "description": "Cenário vertical para celular, recorte sem personagens. Nos Arquivos Afogados, o grupo escolhe salvar Jiro, documentos ou a própria segurança.",
+      "done": false,
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-kagehama-scene-3",
+      "title": "Criar cenário: Capítulo 4 — A caça do cervo negro",
+      "description": "Cenário vertical para celular, recorte sem personagens. Rastro leva a posto abandonado e soldados mortos após um encontro diplomático falso.",
+      "done": false,
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-kagehama-scene-4",
+      "title": "Criar cenário: Capítulo 5 — O mensageiro que não chegou",
+      "description": "Cenário vertical para celular, recorte sem personagens. A aldeia de Sumi perde água por uma ordem verdadeira entregue por portador falso.",
+      "done": false,
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-kagehama-scene-5",
+      "title": "Criar cenário: Capítulo 6 — Um duelo sem vencedor",
+      "description": "Cenário vertical para celular, recorte sem personagens. Audiência no Castelo da Cinza; duelo testa contenção e respeito, não exige morte.",
+      "done": false,
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-kagehama-scene-6",
+      "title": "Criar cenário: Capítulo 7 — A noite da enseada",
+      "description": "Cenário vertical para celular, recorte sem personagens. Infiltração ou perseguição marítima contra um navio com armas e registros falsos.",
+      "done": false,
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-kagehama-scene-7",
+      "title": "Criar cenário: Capítulo 8 — A herdeira chamada Nao",
+      "description": "Cenário vertical para celular, recorte sem personagens. Tomoe revela a matriz do selo; tornar a falsificação pública põe seus soldados em risco.",
+      "done": false,
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-kagehama-scene-8",
+      "title": "Criar cenário: Capítulo 9 — Traição no santuário",
+      "description": "Cenário vertical para celular, recorte sem personagens. Um agente entrega o esconderijo de refugiados para tentar salvar a própria família.",
+      "done": false,
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-kagehama-scene-9",
+      "title": "Criar cenário: Capítulo 10 — A torre de sinal",
+      "description": "Cenário vertical para celular, recorte sem personagens. Tempestade, patrulhas recrutadas e mensagens cifradas sobre uma guerra planejada.",
+      "done": false,
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-kagehama-scene-10",
+      "title": "Criar cenário: Capítulo 11 — Conselho em Kagehama",
+      "description": "Cenário vertical para celular, recorte sem personagens. A prova exige testemunhas, proteção e uma apresentação que sobreviva à política.",
+      "done": false,
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-kagehama-scene-11",
+      "title": "Criar cenário: Capítulo 12 — O cerco dos canais",
+      "description": "Cenário vertical para celular, recorte sem personagens. Três frentes simultâneas: comporta, enfermaria e muralha do porto.",
+      "done": false,
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-kagehama-scene-12",
+      "title": "Criar cenário: Capítulo 13 — O regente e a lâmina",
+      "description": "Cenário vertical para celular, recorte sem personagens. Kuroda oferece acordo; pode haver rendição, exposição, captura, fuga ou combate.",
+      "done": false,
+      "category": "Cenários"
+    },
+    {
+      "id": "artcheck-map",
+      "title": "Fechar mapa regional de Akitsuru",
+      "description": "Com três reinos, rotas terrestres e aquáticas, travessias e distâncias de viagem.",
+      "done": false,
+      "category": "Mapa geral"
     },
     {
       "id": "artcheck-travel",
-      "title": "Preparar cenas visuais de viagem",
-      "description": "Estradas, hospedarias, passagens de montanha e pontos de perigo.",
+      "title": "Preparar 3 variações de viagem",
+      "description": "Estrada segura, atalho arriscado e rota fluvial; cada uma com quadro vertical próprio.",
       "done": false,
       "category": "Viagens"
+    },
+    {
+      "id": "artcheck-props",
+      "title": "Criar objetos narrativos em close",
+      "description": "Tratado, selo, flecha, cordão de contas, livro de carga e mapa das comportas.",
+      "done": false,
+      "category": "Props"
     }
   ],
   "testLog": [],
@@ -636,5 +1405,25 @@ export const KAGEHAMA_CAMPAIGN = {
     ],
     "rules": "O narrador marca apenas critérios demonstrados em jogo e registra uma justificativa curta. Comportamento disruptivo só rende ponto quando produz uma escolha coerente e consequência narrativa; causar problema por si só não recompensa. Cada personagem recebe no máximo uma concessão por elo."
   },
-  "progressionLog": []
-};
+  "progressionLog": [],
+  "artDirection": {
+    "medium": "Mangá original em preto e branco, papel de página levemente amarelado na interface; artes sem cor.",
+    "palette": [
+      "#111111",
+      "#f1ead7"
+    ],
+    "sceneFormat": "Vertical 9:16 para celular, cenário sem personagem incorporado; personagens em recortes transparentes em camada separada.",
+    "linework": "Contorno de tinta preto, retículas discretas, sombras por hachura, detalhe moderado, leitura clara em tela pequena.",
+    "frames": "Molduras de quadrinhos em tinta preta com filetes duplos, cantos de papel e marcas editoriais sutis; evitar excesso de ornamento.",
+    "characterRule": "Avatares corpo inteiro em PNG/SVG transparente; nunca desenhar cenário no recorte do personagem.",
+    "npcRule": "Cada NPC tem retrato individual e ficha narrativa com desejo, medo, segredo, voz, comportamento, vínculos e gatilhos de reação.",
+    "promptBase": "Mangá de aventura original; não copiar personagens, uniformes, símbolos ou desenho de uma franquia existente. Preto e branco, papel branco, tinta preta, retículas discretas, contraste forte, sem texto, sem logotipos."
+  }
+}
+
+const classPortraits = { "roninMalePortrait":roninMalePortrait, "roninFemalePortrait":roninFemalePortrait, "samuraiMalePortrait":samuraiMalePortrait, "samuraiFemalePortrait":samuraiFemalePortrait, "kyudokaMalePortrait":kyudokaMalePortrait, "kyudokaFemalePortrait":kyudokaFemalePortrait, "shinobiMalePortrait":shinobiMalePortrait, "shinobiFemalePortrait":shinobiFemalePortrait, "onmyojiMalePortrait":onmyojiMalePortrait, "onmyojiFemalePortrait":onmyojiFemalePortrait, "mikoMalePortrait":mikoMalePortrait, "mikoFemalePortrait":mikoFemalePortrait };
+for (const cls of KAGEHAMA_CAMPAIGN.classes) {
+  cls.portraits = { male: classPortraits[cls.id+'MalePortrait'], female: classPortraits[cls.id+'FemalePortrait'] };
+  cls.portrait = cls.portraits.male;
+  cls.assetPaths = { male: 'assets/campaigns/kagehama/classes/'+cls.id+'/male.png', female: 'assets/campaigns/kagehama/classes/'+cls.id+'/female.png' };
+}
