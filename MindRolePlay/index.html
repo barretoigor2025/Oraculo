@@ -1,117 +1,99 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#090b10">
-<meta name="description" content="Mind RolePlay — RPG narrativo multiplayer.">
-<title>Mind RolePlay</title>
-<style>
-:root{--gold:#d4ae68;--bright:#efd393;--paper:#eee8db;--muted:#a9a7a4;--line:rgba(219,186,119,.28)}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#090b10;color:var(--paper);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}body{min-height:100svh;overflow-x:hidden}button,input{font:inherit}button{color:inherit}
-.backdrop{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 50% 39%,rgba(85,77,63,.28),transparent 44%),linear-gradient(180deg,rgba(8,10,15,.3),#090b10 92%),linear-gradient(125deg,#20242a,#11151b 52%,#242019)}
-.backdrop:before,.backdrop:after{content:"";position:absolute;inset:auto 0 0;height:36%;pointer-events:none}
-.backdrop:before{background:linear-gradient(140deg,transparent 10%,#131820 10.2% 35%,transparent 35.2%),linear-gradient(35deg,transparent 22%,#171b20 22.2% 62%,transparent 62.2%);opacity:.72}
-.backdrop:after{height:22%;background:linear-gradient(0deg,#080a0e,transparent)}
-#stars{position:absolute;inset:0;width:100%;height:100%;opacity:.66}
-.app{position:relative;z-index:1;min-height:100svh;display:flex;flex-direction:column}
-.topbar{width:min(calc(100% - 36px),1000px);height:72px;margin:auto;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08)}
-.wordmark{display:flex;gap:10px;align-items:center;color:#eee7d9;text-decoration:none;font-size:12px;letter-spacing:.19em;font-weight:700;text-transform:uppercase}
-.sigil{width:31px;height:31px;border:1px solid rgba(212,174,104,.68);border-radius:50%;display:grid;place-items:center;color:var(--bright);font:20px Georgia,serif;box-shadow:0 0 18px rgba(212,174,104,.13)}
-.server-status{display:flex;gap:8px;align-items:center;color:#99999b;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
-.status-dot{height:6px;width:6px;border-radius:50%;background:#c99b57;box-shadow:0 0 10px rgba(212,174,104,.6)}
-main{width:min(calc(100% - 36px),850px);margin:0 auto;flex:1;display:grid;place-items:center;padding:42px 0 54px}
-.screen{width:100%;display:none;animation:appear .3s ease}.screen.active{display:block}
-@keyframes appear{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.home{text-align:center}.game-title{font:400 clamp(50px,10vw,86px)/.95 Georgia,"Times New Roman",serif;letter-spacing:.12em;text-indent:.12em;text-transform:uppercase;text-shadow:0 3px 36px rgba(0,0,0,.72)}
-.game-subtitle{font:400 clamp(20px,4vw,31px)/1 Georgia,"Times New Roman",serif;letter-spacing:.43em;text-indent:.43em;text-transform:uppercase;margin:12px 0 0}
-.subtitle{margin:15px 0 35px;color:#c1bcb1;font-size:11px;letter-spacing:.17em;text-transform:uppercase}
-.campaign-box{width:min(100%,500px);margin:0 auto 22px;padding:17px 19px 16px;text-align:left;border:1px solid var(--line);background:linear-gradient(125deg,rgba(21,23,27,.92),rgba(13,15,20,.8));box-shadow:0 15px 50px rgba(0,0,0,.24)}
-.eyebrow{display:block;color:var(--gold);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:9px}
-.campaign-row{display:flex;align-items:center;justify-content:space-between;gap:16px}.campaign-name{font:400 21px Georgia,serif}.campaign-state{color:#88898e;font-size:11px}.empty-copy{margin:6px 0 0;color:#99999d;font-size:12px;line-height:1.6}
-.home-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
-.btn{min-height:49px;border:1px solid var(--line);border-radius:3px;padding:0 22px;display:inline-flex;align-items:center;justify-content:center;gap:11px;background:rgba(16,18,23,.8);color:#e7dfcf;text-transform:uppercase;letter-spacing:.1em;font-size:11px;font-weight:700;cursor:pointer;transition:transform .18s,border-color .18s,background .18s}
-.btn:hover{transform:translateY(-2px);border-color:rgba(239,211,147,.72);background:rgba(35,31,24,.92)}
-.btn-primary{background:linear-gradient(180deg,#ddbc7b,#c99d55);border-color:#ebd29d;color:#19160f;min-width:205px;box-shadow:0 8px 28px rgba(201,157,85,.16)}
-.btn-primary:hover{background:linear-gradient(180deg,#f0d393,#d4ae68)}.btn .icon{font-size:15px}.hint{margin:22px 0 0;color:#85858a;font-size:11px}
-.screen-head{display:flex;align-items:center;gap:15px;margin-bottom:27px}.back{border:1px solid rgba(255,255,255,.13);background:#14171d;width:39px;height:39px;border-radius:3px;color:#d6c7a9;font-size:19px;cursor:pointer}.screen-title{font:400 31px Georgia,serif}.screen-desc{color:var(--muted);font-size:13px;margin:-15px 0 24px 54px}
-.panel{border:1px solid var(--line);background:rgba(18,20,25,.86);padding:24px;box-shadow:0 22px 60px rgba(0,0,0,.25)}.stack{display:grid;gap:13px}.divider{display:flex;align-items:center;gap:12px;color:#77787d;font-size:10px;text-transform:uppercase;letter-spacing:.13em;margin:6px 0}.divider:before,.divider:after{content:"";height:1px;background:rgba(255,255,255,.1);flex:1}
-.field-label{display:block;margin:0 0 7px;color:#b5aa96;font-size:9px;letter-spacing:.15em;text-transform:uppercase}.input{width:100%;height:48px;background:#0d1015;border:1px solid rgba(255,255,255,.14);border-radius:2px;color:#f2eadb;padding:0 14px;outline:none}.input:focus{border-color:var(--gold)}.code{text-align:center;letter-spacing:.32em;text-transform:uppercase;font-size:17px}
-.db-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.db-card{padding:17px;border:1px solid rgba(255,255,255,.11);background:rgba(9,11,15,.55);min-height:98px}.db-card strong{display:block;font:400 18px Georgia,serif;margin:0 0 5px}.db-card span{color:#99999d;font-size:11px;line-height:1.5}.db-intro{color:#c2beb7;font-size:13px;line-height:1.65;margin:0 0 17px}.check-note{margin:18px 0 0;color:#85858a;font-size:10px;line-height:1.5}
-.toast{position:fixed;z-index:5;left:50%;bottom:25px;transform:translate(-50%,15px);opacity:0;pointer-events:none;max-width:calc(100% - 30px);background:#ece0c6;color:#19160f;padding:11px 16px;border-radius:3px;font-size:12px;box-shadow:0 10px 35px #0008;transition:.24s}.toast.show{opacity:1;transform:translate(-50%,0)}
-footer{width:min(calc(100% - 36px),1000px);margin:auto;padding:15px 0 18px;border-top:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;gap:16px;color:#77777d;font-size:10px}
-@media(max-width:560px){.topbar{height:62px}.server-status{font-size:8px;letter-spacing:.08em}main{padding:32px 0 40px}.game-title{font-size:clamp(43px,13vw,64px);letter-spacing:.07em}.game-subtitle{letter-spacing:.32em;text-indent:.32em}.subtitle{font-size:9px;letter-spacing:.1em;margin:13px 0 28px}.campaign-box{padding:15px}.campaign-name{font-size:19px}.home-actions{display:grid;grid-template-columns:1fr;width:min(100%,360px);margin:auto}.btn-primary{width:100%}.panel{padding:17px}.screen-title{font-size:27px}.db-grid{grid-template-columns:1fr 1fr;gap:8px}.db-card{padding:13px;min-height:93px}.db-card strong{font-size:16px}footer{flex-direction:column;gap:5px}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#090b10">
+  <meta name="description" content="Mind RolePlay — RPG narrativo multiplayer.">
+  <title>Mind RolePlay</title>
 </head>
 <body>
-<div class="backdrop"><canvas id="stars" aria-hidden="true"></canvas></div>
-<div class="app">
-<header class="topbar">
-<a class="wordmark" href="#" aria-label="Mind RolePlay início" data-screen="home"><span class="sigil">M</span><span>Mind RolePlay</span></a>
-<div class="server-status"><i class="status-dot"></i><span>Projeto em construção</span></div>
-</header>
-<main>
-<section class="screen active" id="home">
-<div class="home">
-<div class="game-title">Mind</div><div class="game-subtitle">RolePlay</div>
-<p class="subtitle">RPG narrativo · Multiplayer</p>
-<div class="campaign-box">
-<span class="eyebrow">Campanha selecionada</span>
-<div class="campaign-row"><span class="campaign-name">Nenhuma campanha</span><span class="campaign-state">Mind Database</span></div>
-<p class="empty-copy">Prepare ou escolha uma campanha no Mind Database para começar.</p>
-</div>
-<div class="home-actions">
-<button class="btn btn-primary" data-screen="lobby"><span class="icon">✦</span> Jogar Online</button>
-<button class="btn" data-screen="database"><span class="icon">▤</span> Mind Database</button>
-</div>
-<p class="hint">A aventura acontece na história — e nas escolhas de cada jogador.</p>
-</div>
-</section>
-<section class="screen" id="lobby">
-<div class="screen-head"><button class="back" data-screen="home" aria-label="Voltar">←</button><div class="screen-title">Jogar Online</div></div>
-<p class="screen-desc">Crie uma sala para seus amigos ou entre usando um código.</p>
-<div class="panel stack">
-<button class="btn btn-primary" id="create-room"><span class="icon">✦</span> Criar Nova Sala</button>
-<div class="divider">ou entre numa sala</div>
-<label><span class="field-label">Código da sala</span><input class="input code" id="room-code" maxlength="6" placeholder="ABC123" autocomplete="off"></label>
-<button class="btn" id="join-room">Entrar na Sala <span class="icon">→</span></button>
-</div>
-</section>
-<section class="screen" id="database">
-<div class="screen-head"><button class="back" data-screen="home" aria-label="Voltar">←</button><div class="screen-title">Mind Database</div></div>
-<p class="screen-desc">Organize a campanha e prepare o que a história vai precisar.</p>
-<div class="panel">
-<p class="db-intro">Cada campanha reúne seu roteiro, personagens, lugares e recursos. O checklist mostra o que ainda falta preparar.</p>
-<div class="db-grid">
-<div class="db-card"><strong>Roteiro</strong><span>Premissa, cenas e acontecimentos</span></div>
-<div class="db-card"><strong>Personagens</strong><span>Classes, perícias, vantagens e desvantagens</span></div>
-<div class="db-card"><strong>NPCs</strong><span>Personagens e informações da campanha</span></div>
-<div class="db-card"><strong>Cenários e mapa</strong><span>Locais e imagens de referência</span></div>
-<div class="db-card"><strong>Checklist</strong><span>Itens e recursos que faltam preparar</span></div>
-<div class="db-card"><strong>Narrador</strong><span>Controle da história e das decisões</span></div>
-</div>
-<div style="margin-top:17px"><button class="btn btn-primary" id="new-campaign">＋ Nova Campanha</button></div>
-<p class="check-note">Prévia visual: cadastro e salvamento no Firebase ainda serão implementados.</p>
-</div>
-</section>
-</main>
-<footer><span>Mind RolePlay</span><span>As regras e campanhas serão construídas junto com o narrador.</span></footer>
-</div>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script>
-const screens=Array.from(document.querySelectorAll(".screen"));
-function showScreen(id){screens.forEach(function(s){s.classList.toggle("active",s.id===id)});window.scrollTo({top:0,behavior:"smooth"})}
-document.querySelectorAll("[data-screen]").forEach(function(el){el.addEventListener("click",function(e){e.preventDefault();showScreen(el.dataset.screen)})});
-const toast=document.getElementById("toast");let toastTimer;
-function notice(message){toast.textContent=message;toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.classList.remove("show")},3200)}
-document.getElementById("create-room").addEventListener("click",function(){notice("A criação de salas será ligada ao Firebase do Oráculo na próxima etapa.")});
-document.getElementById("join-room").addEventListener("click",function(){const code=document.getElementById("room-code").value.trim();notice(code?"A entrada por código será ligada ao Firebase do Oráculo na próxima etapa.":"Digite o código da sala.")});
-document.getElementById("new-campaign").addEventListener("click",function(){notice("A criação e o salvamento de campanhas serão implementados no Mind Database.")});
-const canvas=document.getElementById("stars"),ctx=canvas.getContext("2d");let w=0,h=0,dots=[];
-function resize(){const dpr=Math.min(window.devicePixelRatio||1,2);w=canvas.clientWidth;h=canvas.clientHeight;canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);dots=Array.from({length:Math.min(90,Math.floor(w*h/10500))},function(){return{x:Math.random()*w,y:Math.random()*h,r:.35+Math.random()*1.1,p:Math.random()*6.28}})}
-function draw(){ctx.clearRect(0,0,w,h);dots.forEach(function(d){d.p+=.012;ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle="rgba(236,211,158,"+(.2+.35*(.5+.5*Math.sin(d.p)))+")";ctx.fill()});requestAnimationFrame(draw)}
-window.addEventListener("resize",resize);resize();draw();
-</script>
+  <div class="backdrop"><canvas id="stars" aria-hidden="true"></canvas></div>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="wordmark" data-nav="home" aria-label="Voltar ao início"><span class="sigil">M</span><span>Mind RolePlay</span></button>
+      <div class="top-status"><i></i><span id="storage-label">Conectando</span></div>
+    </header>
+    <main>
+      <section class="screen active" id="screen-home">
+        <div class="home">
+          <div class="title">Mind</div><div class="title-sub">RolePlay</div>
+          <p class="tagline">RPG narrativo <span>·</span> Multiplayer</p>
+          <div class="active-campaign">
+            <label>Campanha selecionada</label>
+            <strong id="active-campaign-name">Nenhuma campanha</strong>
+            <p>Campanhas diferentes, cada uma com seu próprio pacote e preparação.</p>
+          </div>
+          <div class="home-buttons">
+            <button class="button primary" data-nav="lobby">✦ <span>Jogar Online</span></button>
+            <button class="button" data-nav="campaigns">▤ <span>Mind Database</span></button>
+          </div>
+          <p class="home-note">Descreva o que seu personagem tenta fazer. A história responde.</p>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-lobby">
+        <div class="screen-heading"><button class="back" data-nav="home">←</button><div><small>SESSÃO MULTIPLAYER</small><h1>Jogar Online</h1></div></div>
+        <div class="panel narrow">
+          <label class="field">Campanha<select id="lobby-campaign" class="input"></select></label>
+          <label class="field">Seu nome<input id="player-name" class="input" maxlength="24" placeholder="Nome do jogador"></label>
+          <button id="create-room" class="button primary wide">✦ Criar uma sala</button>
+          <div class="divider">ou entre numa sala existente</div>
+          <label class="field">Código da sala<input id="room-code" class="input code" maxlength="6" placeholder="ABC123" autocomplete="off"></label>
+          <button id="join-room" class="button wide">Entrar na sala →</button>
+          <div id="room-result" class="result-box hidden"></div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-campaigns">
+        <div class="screen-heading"><button class="back" data-nav="home">←</button><div><small>SEUS PACOTES DE CAMPANHA</small><h1>Mind Database</h1></div></div>
+        <p class="lead">Cada campanha mantém roteiro, personagens, locais e checklist no seu próprio espaço padronizado.</p>
+        <div id="campaign-grid" class="campaign-grid"></div>
+        <form id="new-campaign-form" class="new-campaign panel">
+          <div><small>NOVA CAMPANHA</small><h2>Instalar ou começar outra história</h2></div>
+          <div class="new-fields"><input id="new-title" class="input" maxlength="60" placeholder="Nome da campanha" required><input id="new-genre" class="input" maxlength="40" placeholder="Gênero (opcional)"><button class="button primary">＋ Criar pacote</button></div>
+        </form>
+      </section>
+
+      <section class="screen" id="screen-package">
+        <div class="screen-heading"><button class="back" data-nav="campaigns">←</button><div><small id="package-genre">PACOTE DE CAMPANHA</small><h1 id="package-title">Campanha</h1></div></div>
+        <p id="package-premise" class="lead">Este pacote começa vazio. Cada área tem o mesmo formato em todas as campanhas.</p>
+        <div id="package-sections" class="section-grid"></div>
+        <div class="panel package-play">
+          <div><small>SESSÃO NARRATIVA</small><h2>O jogador descreve a tentativa.</h2><p>Ficha, habilidades e condições acompanham o personagem entre as cenas.</p></div>
+          <button class="button primary" id="open-test">Testar uma ação →</button>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-section">
+        <div class="screen-heading"><button class="back" data-nav="package">←</button><div><small id="section-kicker">PACOTE DE CAMPANHA</small><h1 id="section-title">Área</h1></div></div>
+        <p id="section-description" class="lead"></p>
+        <div id="section-body"></div>
+      </section>
+
+      <section class="screen" id="screen-test">
+        <div class="screen-heading"><button class="back" data-nav="package">←</button><div><small>TESTE DE SUCESSO · 3D6</small><h1>Tentar uma ação</h1></div></div>
+        <p class="lead">Escreva a intenção do personagem. Cada tentativa gera um teste; a ficha e as condições ajustam o nível efetivo.</p>
+        <div class="panel test-panel">
+          <label class="field">Personagem<select id="test-character" class="input"></select></label>
+          <label class="field">O que ele tenta fazer?<textarea id="action-text" class="input textarea" rows="3" placeholder="Ex.: convencer o guarda a deixar o grupo passar"></textarea></label>
+          <div class="test-modifiers">
+            <label class="field">Perícia<select id="test-skill" class="input"></select></label>
+            <label class="field">Ajuste da situação<input id="situational-modifier" class="input" type="number" value="0"></label>
+          </div>
+          <div id="character-factors" class="factors"></div>
+          <button id="roll-button" class="button primary wide">Rolar 3d6</button>
+          <div id="dice-stage" class="dice-stage hidden" aria-live="polite">
+            <div class="dice-row"><div class="die" aria-label="Dado 1"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die" aria-label="Dado 2"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die" aria-label="Dado 3"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+            <div id="roll-outcome" class="roll-outcome"></div>
+          </div>
+        </div>
+        <div class="note">O resultado dos dados é calculado pelo sistema. A interpretação da cena e os modificadores finais ficam sob controle do narrador.</div>
+      </section>
+    </main>
+    <footer><span>Mind RolePlay</span><span>Narrativa em primeiro lugar.</span></footer>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>
