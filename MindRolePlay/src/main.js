@@ -167,6 +167,10 @@ function renderSectionBody() {
           <label class="field">Classe ou arquétipo<input class="input" name="className" maxlength="40" placeholder="Opcional"></label>
           <label class="field">Perícia inicial<input class="input" name="skillName" required maxlength="40" placeholder="Ex.: Persuasão"></label>
           <label class="field">Nível da perícia<input class="input" name="skillLevel" type="number" min="1" max="20" value="10" required></label>
+          <label class="field">ST · Força<input class="input" name="st" type="number" min="1" max="20" value="10" required></label>
+          <label class="field">DX · Destreza<input class="input" name="dx" type="number" min="1" max="20" value="10" required></label>
+          <label class="field">IQ · Inteligência<input class="input" name="iq" type="number" min="1" max="20" value="10" required></label>
+          <label class="field">HT · Saúde<input class="input" name="ht" type="number" min="1" max="20" value="10" required></label>
           <label class="field wide-field">Vantagens<input class="input" name="advantages" placeholder="Ex.: boa reputação"></label>
           <label class="field wide-field">Desvantagens<input class="input" name="disadvantages" placeholder="Ex.: medo de altura"></label>
           <label class="field wide-field">Condição persistente<input class="input" name="conditionName" placeholder="Ex.: braço lesionado (ou deixe vazio)"></label>
@@ -189,6 +193,12 @@ function renderSectionBody() {
         name,
         className: String(form.get('className') || '').trim(),
         skills: [{ name: skillName, level: Number(form.get('skillLevel')) || 10 }],
+        attributes: {
+          ST: Number(form.get('st')) || 10,
+          DX: Number(form.get('dx')) || 10,
+          IQ: Number(form.get('iq')) || 10,
+          HT: Number(form.get('ht')) || 10,
+        },
         advantages: String(form.get('advantages') || '').trim(),
         disadvantages: String(form.get('disadvantages') || '').trim(),
         conditions: conditionName ? [{
@@ -282,11 +292,42 @@ function renderCharacterList() {
       `<small>${escapeHtml(condition.name)} · ${condition.modifier >= 0 ? '+' : ''}${condition.modifier} ${condition.permanent ? '· permanente' : ''}</small>`).join('');
     return `<article class="item-card">
       <div><strong>${escapeHtml(character.name)}${character.className ? ' · ' + escapeHtml(character.className) : ''}</strong><small>${skillText || 'Sem perícias'}</small>${conditions}</div>
-      <div class="item-actions"><button class="mini-button" data-test-character="${character.id}">Tentar ação</button></div>
+      <div class="item-actions">
+        <button class="mini-button" data-test-character="${character.id}">Tentar ação</button>
+        <details class="condition-editor">
+          <summary>＋ Condição</summary>
+          <form data-condition-form="${character.id}">
+            <input class="input" name="conditionName" required maxlength="60" placeholder="Lesão, perda de membro...">
+            <input class="input" name="modifier" type="number" value="0" aria-label="Modificador">
+            <input class="input" name="scope" value="all" placeholder="all ou nome da perícia">
+            <label class="check-row"><input type="checkbox" name="permanent"> Permanente</label>
+            <button class="mini-button">Salvar condição</button>
+          </form>
+        </details>
+      </div>
     </article>`;
   }).join('');
   list.querySelectorAll('[data-test-character]').forEach(button =>
     button.addEventListener('click', () => openTest(button.dataset.testCharacter)));
+  list.querySelectorAll('[data-condition-form]').forEach(form => form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const values = new FormData(form);
+    const character = chars.find(item => item.id === form.dataset.conditionForm);
+    const name = String(values.get('conditionName') || '').trim();
+    if (!character || !name) return;
+    character.conditions ||= [];
+    character.conditions.push({
+      id: crypto.randomUUID(),
+      name,
+      modifier: Number(values.get('modifier')) || 0,
+      scope: String(values.get('scope') || 'all').trim(),
+      permanent: values.get('permanent') === 'on',
+      createdAt: Date.now(),
+    });
+    await persistCampaign(currentCampaign());
+    renderSectionBody();
+    notice('Condição salva na ficha do personagem.');
+  }));
 }
 
 function openTest(characterId = '') {
@@ -310,20 +351,47 @@ function selectedCharacter() {
   return (currentCampaign()?.characters || []).find(character => character.id === document.querySelector('#test-character').value);
 }
 
+function selectedTestTarget(character) {
+  const value = document.querySelector('#test-skill').value || '';
+  const [kind, key] = value.split(':');
+  if (kind === 'attribute') {
+    const labels = { ST: 'ST · Força', DX: 'DX · Destreza', IQ: 'IQ · Inteligência', HT: 'HT · Saúde' };
+    return { name: labels[key] || key, level: Number(character.attributes?.[key]) || 10, scope: key };
+  }
+  const skill = (character.skills || [])[Number(key)];
+  return skill ? { name: skill.name, level: Number(skill.level) || 0, scope: skill.name } : null;
+}
+
+function updateTestFactors() {
+  const character = selectedCharacter();
+  const factors = document.querySelector('#character-factors');
+  if (!character) { factors.textContent = 'Escolha um personagem.'; return; }
+  const target = selectedTestTarget(character);
+  const conditions = character.conditions || [];
+  const applicable = conditions.filter(condition => {
+    const scope = String(condition.scope || 'all').toLowerCase();
+    return scope === 'all' || scope === String(target?.scope || '').toLowerCase() ||
+      scope === String(target?.name || '').toLowerCase();
+  });
+  const modifier = applicable.reduce((sum, condition) => sum + Number(condition.modifier || 0), 0);
+  factors.innerHTML = `Vantagens: ${escapeHtml(character.advantages || 'nenhuma registrada')}<br>
+    Desvantagens: ${escapeHtml(character.disadvantages || 'nenhuma registrada')}<br>
+    Condições registradas: ${conditions.length ? conditions.map(c => escapeHtml(c.name) + ' (' + (c.modifier >= 0 ? '+' : '') + c.modifier + ')' + (c.permanent ? ' permanente' : '')).join('; ') : 'nenhuma'}
+    <br>Modificador aplicável a ${escapeHtml(target?.name || 'este teste')}: ${modifier >= 0 ? '+' : ''}${modifier}`;
+}
+
 function renderTestCharacter() {
   const character = selectedCharacter();
   activeCharacterId = character?.id || '';
   const skillSelect = document.querySelector('#test-skill');
-  skillSelect.innerHTML = (character?.skills || []).map((skill, index) =>
-    `<option value="${index}">${escapeHtml(skill.name)} · nível ${skill.level}</option>`).join('');
-  const factors = document.querySelector('#character-factors');
-  if (!character) { factors.textContent = 'Escolha um personagem.'; return; }
-  const conditions = character.conditions || [];
-  const modifier = conditions.reduce((sum, condition) => sum + Number(condition.modifier || 0), 0);
-  factors.innerHTML = `Vantagens: ${escapeHtml(character.advantages || 'nenhuma registrada')}<br>
-    Desvantagens: ${escapeHtml(character.disadvantages || 'nenhuma registrada')}<br>
-    Condições persistentes: ${conditions.length ? conditions.map(c => escapeHtml(c.name) + ' (' + (c.modifier >= 0 ? '+' : '') + c.modifier + ')' + (c.permanent ? ' permanente' : '')).join('; ') : 'nenhuma'}
-    <br>Modificador das condições aplicado neste protótipo: ${modifier >= 0 ? '+' : ''}${modifier}`;
+  if (!character) { skillSelect.innerHTML = ''; updateTestFactors(); return; }
+  const skills = (character.skills || []).map((skill, index) =>
+    `<option value="skill:${index}">${escapeHtml(skill.name)} · nível ${skill.level}</option>`).join('');
+  const attrs = Object.entries({ ST: 'ST · Força', DX: 'DX · Destreza', IQ: 'IQ · Inteligência', HT: 'HT · Saúde' })
+    .map(([key, label]) => `<option value="attribute:${key}">${label} · nível ${Number(character.attributes?.[key]) || 10}</option>`).join('');
+  skillSelect.innerHTML = (skills ? '<optgroup label="Perícias">' + skills + '</optgroup>' : '') +
+    '<optgroup label="Atributos">' + attrs + '</optgroup>';
+  updateTestFactors();
 }
 
 function renderDie(element, face) {
@@ -342,8 +410,8 @@ async function performTest() {
   const action = document.querySelector('#action-text').value.trim();
   if (!character) return notice('Selecione um personagem.');
   if (!action) return notice('Escreva o que o personagem tenta fazer.');
-  const skill = (character.skills || [])[Number(document.querySelector('#test-skill').value)];
-  if (!skill) return notice('Escolha uma perícia para este teste.');
+  const target = selectedTestTarget(character);
+  if (!target) return notice('Escolha uma perícia ou atributo para este teste.');
 
   const dice = roll3d6().dice;
   const dieElements = [...document.querySelectorAll('.die')];
@@ -364,10 +432,15 @@ async function performTest() {
   dieElements.forEach(die => die.classList.remove('rolling'));
 
   const conditionModifier = (character.conditions || [])
+    .filter(condition => {
+      const scope = String(condition.scope || 'all').toLowerCase();
+      return scope === 'all' || scope === String(target.scope).toLowerCase() ||
+        scope === String(target.name).toLowerCase();
+    })
     .reduce((sum, condition) => sum + Number(condition.modifier || 0), 0);
   const situationalModifier = Number(document.querySelector('#situational-modifier').value) || 0;
   const result = resolveSuccessTest({
-    dice, skill: skill.level, conditionModifier, situationalModifier,
+    dice, skill: target.level, conditionModifier, situationalModifier,
   });
   const label = result.outcome.toLocaleUpperCase('pt-BR');
   outcome.innerHTML = `${result.total} — ${label}<span class="roll-detail">Alvo efetivo ${result.effectiveSkill} · ${result.success ? 'sucesso por ' : 'falha por '}${result.margin} · ${escapeHtml(action)}</span>`;
@@ -376,7 +449,7 @@ async function performTest() {
   campaign.testLog ||= [];
   campaign.testLog.unshift({
     id: crypto.randomUUID(), createdAt: Date.now(), characterId: character.id,
-    characterName: character.name, action, skill: skill.name, dice,
+    characterName: character.name, action, skill: target.name, dice,
     total: result.total, effectiveSkill: result.effectiveSkill, outcome: result.outcome,
     margin: result.margin,
   });
@@ -460,6 +533,7 @@ document.querySelector('#new-campaign-form').addEventListener('submit', async ev
 });
 
 document.querySelector('#test-character').addEventListener('change', renderTestCharacter);
+document.querySelector('#test-skill').addEventListener('change', updateTestFactors);
 document.querySelector('#roll-button').addEventListener('click', performTest);
 document.querySelector('#open-test').addEventListener('click', () => openTest());
 
