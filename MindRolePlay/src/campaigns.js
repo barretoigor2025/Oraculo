@@ -1,3 +1,10 @@
+import roninPortrait from '../assets/campaigns/kagehama/classes/ronin/avatar.svg';
+import samuraiPortrait from '../assets/campaigns/kagehama/classes/samurai/avatar.svg';
+import kyudokaPortrait from '../assets/campaigns/kagehama/classes/kyudoka/avatar.svg';
+import shinobiPortrait from '../assets/campaigns/kagehama/classes/shinobi/avatar.svg';
+import onmyojiPortrait from '../assets/campaigns/kagehama/classes/onmyoji/avatar.svg';
+import mikoPortrait from '../assets/campaigns/kagehama/classes/miko/avatar.svg';
+
 import { KAGEHAMA_CAMPAIGN } from './kagehamaCampaign.js';
 
 export const CAMPAIGN_SECTIONS = [
@@ -50,6 +57,11 @@ export function createDemoCampaigns() {
     createEmptyCampaign('demo-campanha-1', 'Campanha 1'),
     createEmptyCampaign('demo-campanha-2', 'Campanha 2'),
     createEmptyCampaign('demo-campanha-3', 'Campanha 3'),
-    structuredClone(KAGEHAMA_CAMPAIGN),
+    (() => {
+      const campaign = structuredClone(KAGEHAMA_CAMPAIGN);
+      const portraits = { ronin: roninPortrait, samurai: samuraiPortrait, kyudoka: kyudokaPortrait, shinobi: shinobiPortrait, onmyoji: onmyojiPortrait, miko: mikoPortrait };
+      campaign.classes = campaign.classes.map(cls => ({ ...cls, assetPath: cls.portrait, portrait: portraits[cls.id] || '' }));
+      return campaign;
+    })(),
   ];
 }
