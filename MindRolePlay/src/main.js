@@ -106,7 +106,7 @@ function renderCampaigns() {
 }
 
 function countCampaignContent(campaign) {
-  return ['classes', 'characters', 'npcs', 'scenes', 'maps', 'art', 'checklist']
+  return ['classes', 'characters', 'npcs', 'scenes', 'maps', 'travel', 'art', 'checklist']
     .reduce((sum, key) => sum + (campaign[key]?.length || 0), 0);
 }
 
@@ -240,8 +240,8 @@ function renderSectionBody() {
     return;
   }
   const list=campaign[currentSectionId]||[];
-  const label=currentSectionId==='checklist'?'Item a preparar':currentSectionId==='npcs'?'NPC':currentSectionId==='scenes'?'Cenário ou cena':currentSectionId==='maps'?'Mapa ou local':'Recurso visual';
-  body.innerHTML=`<div class="panel editor">${currentSectionId==='checklist'?'<div class="hint-box">Checklist preparado a partir do roteiro e revisável pelo narrador.</div>':''}
+  const label=currentSectionId==='checklist'?'Item a preparar':currentSectionId==='travel'?'Rota ou trecho':currentSectionId==='npcs'?'NPC':currentSectionId==='scenes'?'Cenário ou cena':currentSectionId==='maps'?'Mapa ou local':'Recurso visual';
+  body.innerHTML=`<div class="panel editor">${currentSectionId==='checklist'?'<div class="hint-box">Checklist preparado a partir do roteiro e revisável pelo narrador.</div>':''}${currentSectionId==='travel'?'<div class="hint-box"><strong>Princípio de viagem:</strong> '+escapeHtml(campaign.travelRules?.principle||'A jornada é uma sequência de cenas com escolhas e consequências.')+'<br><strong>Acompanhe:</strong> '+escapeHtml((campaign.travelRules?.track||['tempo','condição','recursos','exposição','vínculos']).join(' · '))+'<br>'+escapeHtml(campaign.travelRules?.guidance||'Apresente rotas e custos, sinalize perigos e mostre como a preparação do grupo altera a chegada.')+'</div>':''}
     <form id="item-form" class="editor-form"><label class="field">${label}<input class="input" name="title" required maxlength="70" placeholder="Nome"></label>
       <label class="field">Notas<textarea class="input textarea" name="description" rows="3" placeholder="Descrição, instruções ou referência"></textarea></label><button class="button primary">＋ Adicionar</button></form>
     <div id="section-items" class="item-list"></div></div>`;
