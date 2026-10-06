@@ -617,6 +617,25 @@ async function boot() {
     notice('A tela funciona neste navegador. Publique as regras Firestore do Mind para sincronizar pela nuvem.');
   }
   if (!campaigns.length) campaigns = localCampaigns();
+  const kagehamaSeed = createDemoCampaigns().find(item => item.id === 'demo-kagehama');
+  const kagehamaIndex = campaigns.findIndex(item => item.id === 'demo-kagehama');
+  if (kagehamaSeed && kagehamaIndex >= 0) {
+    const saved = campaigns[kagehamaIndex];
+    if ((saved.classes || []).length !== kagehamaSeed.classes.length || (saved.art || []).length !== kagehamaSeed.art.length) {
+      const seededChecklistIds = new Set(kagehamaSeed.checklist.map(item => item.id));
+      const upgraded = {
+        ...kagehamaSeed, ...saved, schemaVersion: 3,
+        classes: kagehamaSeed.classes, art: kagehamaSeed.art, progression: kagehamaSeed.progression,
+        progressionLog: saved.progressionLog || [],
+        checklist: [...kagehamaSeed.checklist, ...(saved.checklist || []).filter(item => !seededChecklistIds.has(item.id))],
+      };
+      campaigns[kagehamaIndex] = upgraded;
+      if (firebaseMode) {
+        try { await saveCampaign(upgraded); }
+        catch (error) { firebaseMode = false; storageLabel.textContent = 'Prévia local'; saveLocalCampaigns(); }
+      } else saveLocalCampaigns();
+    }
+  }
   currentCampaignId = campaigns[0]?.id || '';
   updateHomeCampaign();
   renderCampaigns();
