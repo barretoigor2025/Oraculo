@@ -1,0 +1,443 @@
+export const KAGEHAMA_CAMPAIGN = {
+  "id": "demo-kagehama",
+  "schemaVersion": 2,
+  "title": "As Sete Lanternas de Kagehama",
+  "genre": "Medieval samurai · fantasia histórica",
+  "status": "ready-for-play",
+  "source": "Campanha original criada para o Mind RolePlay",
+  "premise": "Um tratado de paz é roubado, um mensageiro desaparece e três reinos se acusam. Intriga, espionagem e escolhas morais decidirão se Akitsuru entra em guerra.",
+  "story": "# As Sete Lanternas de Kagehama\n## Campanha longa de intriga, espionagem e guerra samurai\n\n> Campanha original de fantasia histórica inspirada no Japão feudal. Os clãs, territórios, costumes mágicos e acontecimentos são ficcionais. O material abaixo foi escrito como roteiro de entrada para o Mind Database: cole o texto no campo de roteiro ao instalar a campanha.\n\n## Ficha rápida\n\n- **Gênero:** fantasia histórica, intriga política, espionagem, guerra e drama pessoal.\n- **Tom:** tensão crescente, escolhas difíceis, violência com consequências e momentos de beleza contemplativa.\n- **Duração sugerida:** 14 a 20 sessões, com espaço para histórias pessoais.\n- **Premissa:** durante uma missão diplomática, um tratado de paz é roubado, um mensageiro desaparece e três reinos culpam uns aos outros. Os personagens descobrem que a guerra foi cuidadosamente preparada por pessoas de todos os lados.\n- **Temas:** dever versus consciência, lealdade, verdade, memória, honra pública e responsabilidade pelas consequências.\n- **Abertura:** uma procissão de lanternas cruza a ponte de Kagehama durante um eclipse parcial. Um arqueiro dispara do telhado do templo. O mensageiro imperial cai na água. O estojo do tratado desaparece.\n- **Objetivo dos personagens:** proteger as pessoas envolvidas, descobrir quem fabricou a crise e decidir que tipo de paz merece sobreviver.\n\n## Classes iniciais\n\nEstas classes são arquétipos de nível inicial. A campanha usa testes 3d6 contra o nível efetivo da perícia ou atributo: quanto menor ou igual ao alvo, melhor. Os valores são pontos de partida para o Mind RolePlay e podem ser revistos pelo narrador.\n\n- **Samurai juramentado** — defensor treinado, reconhecido por sua casa e preso a deveres concretos.\n- **Shinobi** — infiltrador, observador e agente de rotas secretas, capaz de desaparecer em lugares comuns.\n- **Onmyōji** — estudioso de presságios, rituais e fenômenos espirituais; também entende política e arquivos.\n- **Batedor de fronteira** — rastreador habituado a florestas, montanhas, caça e perseguições.\n- **Curandeira de campanha** — médica de campo e mediadora, acostumada a tratar feridos de lados diferentes.\n\n### Fichas iniciais sugeridas\n\n| Classe | Atributos (ST/DX/IQ/HT) | Perícias iniciais | Habilidade fixa |\n|---|---|---|---|\n| Samurai juramentado | 12/12/10/11 | Lâmina 13, Etiqueta 11, Intimidação 11 | **Guarda do estandarte:** uma vez por cena, pode interpor-se para proteger alguém próximo; o narrador define o custo ou risco. |\n| Shinobi | 9/14/12/10 | Furtividade 14, Disfarce 12, Arrombamento 12 | **Passo sem testemunha:** com preparação e cobertura, pode cruzar uma área observada sem chamar atenção; falha ainda pode deixar uma pista. |\n| Onmyōji | 9/10/14/10 | Ocultismo 14, Pesquisa 13, Empatia 11 | **Leitura de presságio:** ao estudar um local ou objeto por alguns minutos, faz uma pergunta objetiva sobre o que aconteceu ali; a resposta pode ser incompleta. |\n| Batedor de fronteira | 11/13/11/12 | Rastreamento 14, Sobrevivência 13, Arco 12 | **Rastro dividido:** pode separar pistas de um grupo em movimento e estimar quantidade, direção e intervalo de passagem. |\n| Curandeira de campanha | 9/11/13/11 | Primeiros socorros 14, Medicina 12, Persuasão 12 | **Mãos firmes:** estabiliza um ferido sob pressão e pode obter alguns instantes de conversa antes que a condição piore. |\n\n**Gênero e nome:** escolhidos pelo jogador. A classe define o retrato provisório, as capacidades iniciais e a habilidade fixa. Condições, ferimentos e perdas físicas permanecem na ficha até serem tratados ou mudarem narrativamente. A evolução por pontos é uma etapa posterior da plataforma.\n\n## Princípios de condução\n\n- Toda declaração de ação é uma tentativa. O narrador decide se há risco suficiente para pedir um teste, qual atributo ou perícia se aplica e quais circunstâncias alteram o alvo.\n- Uma tentativa sem oposição e sem risco pode avançar a ficção sem rolagem. Um risco relevante pede 3d6.\n- O narrador descreve o que está em jogo antes da rolagem: o que pode ser ganho, o que pode dar errado e quem será afetado.\n- Sucesso informa o resultado e a consequência. Falha move a história: suspeita, atraso, custo, exposição, ferimento, dívida ou perda de oportunidade.\n- Uma condição persistente muda ações coerentes com ela. Uma mão ferida pode atrapalhar a espada; um braço perdido altera escalada, defesa e manejo de ferramentas. O narrador aplica modificadores consistentes e não apaga a condição entre cenas.\n- Em testes opostos, cada lado rola contra seu próprio alvo; compare o grau de sucesso. A ficção decide o empate.\n- Combates são perigosos e curtos. A iniciativa importa, rendição é possível e feridas deixam marcas.\n- O narrador nunca esconde uma pista essencial atrás de uma única rolagem. Uma falha pode revelar a pista com custo ou levar a outra fonte.\n\n## O mapa geral de Akitsuru\n\nAkitsuru é uma península de vales, montanhas e portos que se abre para o Mar das Garças. A estrada imperial atravessa a região de oeste a leste. No centro fica a capital, Kagehama. O mapa deve mostrar distâncias, desníveis e rotas de fuga; a viagem entre regiões pode ocupar uma ou mais cenas.\n\n| Direção | Região | Relação com Kagehama | Identidade visual |\n|---|---|---|---|\n| Centro-sul | Kagehama e Baía das Lanternas | capital e porto imperial | telhados escuros, canais, pontes, muralhas e lanternas vermelhas |\n| Norte | Serra do Cedro Negro | um dia de viagem pela Estrada do Sino | pinheiros altos, neblina, santuários e passagens estreitas |\n| Noroeste | Domínio de Arashi | dois dias por estrada de montanha | fortalezas de madeira, campos de arroz escalonados e torres de vigia |\n| Nordeste | Floresta de Aokiri | meio dia de trilha além do rio | bambuzais, cedros, ruínas e córregos de pedra |\n| Oeste | Campos de Hino e Castelo da Cinza | três dias pela estrada imperial | planície dourada, canais, vilas muradas e torres de sinal |\n| Leste | Enseada de Shirotsu | um dia de barco ou dois pela costa | falésias brancas, cavernas marinhas, armazéns e faróis |\n| Sul | Ilhas das Garças | travessia de barco | bancos de névoa, vilarejos de pescadores e rochedos cobertos de sal |\n| Sob a cidade | Arquivos Afogados | acesso por comportas antigas | galerias de pedra, água na altura do tornozelo e placas de bronze |\n\n### Rotas e pontos no mapa\n\n- **Estrada do Sino:** Kagehama → ponte de Kagehama → posto de Ichi → Serra do Cedro Negro → Arashi.\n- **Rota dos Arrozais:** Kagehama → canal do norte → aldeia de Sumi → campos de Hino → Castelo da Cinza.\n- **Caminho dos Cedros:** Kagehama → santuário de Aokiri → floresta de Aokiri → travessia antiga → trilha costeira.\n- **Rota marítima:** Porto das Lanternas → Enseada de Shirotsu → Ilhas das Garças.\n- **Passagem clandestina:** depósitos do porto → comporta velha → Arquivos Afogados → cisterna sob o palácio.\n- **Atalho perigoso:** trilha de caça na Serra do Cedro Negro. Economiza horas, mas fica exposta a deslizamentos e patrulhas.\n\n## Reinos, casas e facções\n\n### Shogunato de Hoshin\n\nGoverna a península em nome de uma corte imperial distante. O jovem shogun Harunobu é respeitado, mas não controla diretamente os exércitos. A regente Kuroda administra o conselho e afirma buscar estabilidade.\n\n### Reino de Arashi\n\nDomínio montanhoso do clã Arashi. Seus senhores controlam minas de ferro, pedreiras e os desfiladeiros ao norte. Querem autonomia e segurança para as rotas de comércio. A população está cansada das requisições militares.\n\n### Liga de Hino\n\nCidades agrícolas ligadas por canais e contratos. Não têm um único senhor: mercadores, aldeões e capitães de milícia disputam autoridade. Se os canais forem fechados, Kagehama passa fome em poucas semanas.\n\n### Casa Kuroda\n\nAdministradores do shogunato e guardiões dos selos oficiais. Querem centralizar o poder. Publicamente defendem a paz; em segredo, partes da casa alimentam uma crise limitada para dissolver o conselho rival.\n\n### Clã Arashi\n\nSenhores da fronteira norte. A líder atual, Lady Chiyo, aceita negociar, mas não entrega as minas nem a autonomia do clã. Um primo dela deseja guerra e acredita que a hesitação será interpretada como fraqueza.\n\n### Casa Sen\n\nRede de mensageiros, informantes e agentes infiltrados em hospedarias e santuários. Serviu a diferentes senhores ao longo das gerações. Parte da Casa Sen protege civis; outra parte vende informação para financiar a própria sobrevivência.\n\n### Irmandade do Junco Branco\n\nRede clandestina de curandeiros, monges e barqueiros. Resgata fugitivos e esconde documentos. Recusa-se a servir a um senhor, mas suas rotas podem ser usadas tanto para salvar pessoas quanto para contrabandear armas.\n\n### Companhia do Marfim\n\nConsórcio de comerciantes estrangeiros ficcionais, com navios, crédito e intérpretes. Fornece armas a quem pagar e lucra com rotas abertas. Não controla a conspiração, mas está disposta a ampliar o conflito se isso proteger seus contratos.\n\n## NPCs centrais\n\n### NPC — Lady Akiho Senda — mediadora do shogun\n\n**Visual:** cerca de quarenta anos, quimono de viagem azul-acinzentado, mangas presas por cordões de seda, cabelo com fios brancos e um leque de madeira rachado. Carrega um pequeno sinete imperial numa bolsa interna.  \n**Comportamento:** fala baixo, escuta sem interromper e repete a última frase de alguém quando quer que a pessoa perceba uma contradição. Nunca ameaça diretamente.  \n**Objetivo:** impedir a guerra sem entregar o governo a Kuroda.  \n**Segredo:** aceitou uma cópia não oficial do tratado, pois suspeitava que a versão oficial seria alterada.  \n**Como interpretar:** pede que os personagens provem que podem guardar um segredo antes de lhes contar o próximo.\n\n### NPC — Ren Kuroda — regente do conselho\n\n**Visual:** homem alto, roupa formal negra sem joias, cabelo impecável e uma bengala com ponteira de prata. A mão esquerda treme levemente quando ele está irritado.  \n**Comportamento:** educado até quando ameaça; oferece chá, tempo e uma saída honrosa. Faz perguntas que parecem gentis, mas medem lealdades.  \n**Objetivo:** terminar a fragmentação política de Akitsuru, mesmo que provoque uma guerra curta.  \n**Segredo:** autorizou o roubo do estojo do tratado, mas não ordenou o assassinato do mensageiro.  \n**Como interpretar:** nunca mente sobre o que considera essencial; omite contexto e enquadra fatos.\n\n### NPC — Tomoe Arashi — herdeira desaparecida\n\n**Visual:** jovem de postura marcial, cabelo cortado na altura do queixo, armadura leve de placas escuras e uma fita vermelha no pulso. Está disfarçada como uma escriba chamada Nao.  \n**Comportamento:** analisa portas, janelas e quem permanece calado. Sorri com facilidade, mas testa as promessas com pequenas solicitações.  \n**Objetivo:** levar a prova da falsificação a alguém que não pertença a um clã.  \n**Segredo:** matou em legítima defesa um capitão que tentou entregá-la. Esconde o nome dele por medo de que a culpa recaia sobre seus soldados.  \n**Como interpretar:** pode cooperar, fugir ou enfrentar os personagens; nunca aceita ser tratada como carga.\n\n### NPC — Jiro “Três Chuvas” — mensageiro imperial\n\n**Visual:** homem magro, capa de palha escura, sandálias gastas e três pequenos sinos costurados por dentro da gola.  \n**Comportamento:** conta passos quando está nervoso e memoriza os rostos de todos na sala.  \n**Objetivo:** entregar a cópia verdadeira do tratado à mediadora Akiho.  \n**Segredo:** sobreviveu ao ataque inicial e se escondeu nos Arquivos Afogados. Está ferido e acredita que a Casa Sen o traiu.  \n**Como interpretar:** confia em quem lhe oferece uma rota de saída, não em quem promete proteção.\n\n### NPC — Sayo — agente da Casa Sen\n\n**Visual:** mulher de meia-idade, rosto comum e roupas de viajante. A única constante é um cordão de contas de madeira: uma conta foi queimada.  \n**Comportamento:** muda o modo de andar e o sotaque conforme o grupo; observa reflexos em janelas e poças.  \n**Objetivo:** impedir que os agentes da Casa Sen sejam usados como culpados por uma operação de Kuroda.  \n**Segredo:** foi ela quem transportou o estojo roubado; devolveu o tratado, mas reteve uma página que compromete seu irmão.  \n**Como interpretar:** oferece informação verificável, mas exige algo concreto em troca.\n\n### NPC — Monge Genzō — guardião do santuário de Aokiri\n\n**Visual:** cabeça raspada, capa remendada, bengala coberta de marcas e um cão velho chamado Nuvem.  \n**Comportamento:** prepara chá para qualquer visitante, mas serve a bebida apenas quando percebe que a pessoa parou de mentir.  \n**Objetivo:** proteger os refugiados abrigados no santuário.  \n**Segredo:** há uma entrada para os Arquivos Afogados sob o altar, usada décadas atrás para retirar documentos da capital.  \n**Como interpretar:** responde perguntas com outra pergunta; não testa fé, testa intenção.\n\n### NPC — Lady Chiyo Arashi — senhora do norte\n\n**Visual:** armadura laqueada verde-musgo, cabelo preso com agulha de osso e queimadura antiga no lado direito do pescoço.  \n**Comportamento:** deixa a outra pessoa terminar. Quando discorda, pergunta qual custo ela está disposta a pagar pessoalmente.  \n**Objetivo:** manter o domínio de Arashi e evitar que seus camponeses sejam levados para uma guerra distante.  \n**Segredo:** sabe que o sobrinho Daichi negocia armas com a Companhia do Marfim.  \n**Como interpretar:** respeita atos públicos de responsabilidade mais do que discursos sobre honra.\n\n### NPC — Daichi Arashi — capitão de fronteira\n\n**Visual:** armadura vermelha, lança com ponta escurecida e uma faixa branca amarrada no cabo.  \n**Comportamento:** provoca antes de atacar; se alguém recua sem humilhar seus soldados, pode permitir a fuga.  \n**Objetivo:** liderar Arashi numa guerra de independência.  \n**Segredo:** não sabe que seus fornecedores pretendem vender a localização de seus depósitos ao shogunato.  \n**Como interpretar:** é antagonista de oportunidade; pode tornar-se aliado se a ameaça externa ficar clara.\n\n### NPC — Akane — curandeira da Irmandade do Junco Branco\n\n**Visual:** avental cinza sobre roupa de monja, mãos manchadas de ervas, cabelo preso por um palito de bambu.  \n**Comportamento:** trabalha enquanto conversa e interrompe qualquer discussão que ponha pacientes em risco.  \n**Objetivo:** abrir um corredor neutro para feridos e refugiados.  \n**Segredo:** está tratando um agente Kuroda ferido que viu o assassinato do mensageiro.  \n**Como interpretar:** não aceita promessas; pede um gesto útil e observável.\n\n### NPC — Mestre Tetsuo — armeiro de Kagehama\n\n**Visual:** homem largo, barba curta, avental de couro queimado e dois dedos ausentes na mão esquerda.  \n**Comportamento:** conversa com ferramentas como se fossem clientes; detesta que toquem nas lâminas sem pedir.  \n**Objetivo:** impedir que suas armas sejam usadas para matar aldeões.  \n**Segredo:** reconhece o lote que matou o mensageiro: foi vendido sob um selo oficial roubado.  \n**Como interpretar:** ajuda quem revela o que pretende fazer com uma arma antes de pedir para consertá-la.\n\n### NPC — Nuvem — cão do santuário\n\n**Visual:** cão branco envelhecido, uma orelha caída e manchas cinzentas nas patas.  \n**Comportamento:** rosna para pessoas que escondem sangue fresco, mas dorme junto de quem está de luto.  \n**Função:** pode encontrar um rastro ou revelar tensão, nunca substitui uma pista essencial.\n\n## Lugares detalhados\n\n### Local — 1. Ponte das Sete Lanternas\n\n**Visual:** ponte larga de madeira escura sobre um canal de maré. Sete lanternas de papel vermelho estão presas a mastros curtos. A quarta lanterna oscila mesmo quando o ar está parado. Há nichos de oração na parte inferior.  \n**Som e cheiro:** água sob as tábuas, sinos distantes, óleo de lamparina e peixe salgado.  \n**Uso narrativo:** cena de abertura, perseguição, encontro secreto ou emboscada. A multidão oferece cobertura e testemunhas conflitantes.  \n**Comportamento do local:** guardas se concentram nas entradas; barqueiros observam a água; vendedores repetem versões diferentes do disparo.  \n**Pistas:** um fragmento de flecha com encaixe de fabricação de Kagehama; uma conta de madeira chamuscada; marcas de arrasto que terminam no cais e não na margem.\n\n### Local — 2. Distrito dos Tecelões, Kagehama\n\n**Visual:** ruas estreitas com toldos índigo, varais cruzando entre casas e canais de drenagem. As fachadas escondem pequenas portas laterais.  \n**Som e cheiro:** teares batendo, vendedores chamando clientes, vapor de arroz e tinta.  \n**Uso narrativo:** espionagem, troca de identidades e perseguição em telhados baixos.  \n**Comportamento do local:** todos conhecem alguém que viu alguma coisa, mas cada testemunha teme perder o trabalho.  \n**Pista:** uma tecelã viu o mensageiro entrar num depósito sem escolta e sair acompanhado por alguém usando o uniforme de um guarda que estava oficialmente de serviço em outro lugar.\n\n### Local — 3. Casa de Chá da Lua Baixa\n\n**Visual:** salão comprido junto ao canal, painéis de papel translúcido, jardim interno de pedras e uma sala privada com porta que não fecha completamente.  \n**Som e cheiro:** água pingando numa bacia de bambu, chá tostado, madeira úmida e cordas de shamisen ao anoitecer.  \n**Uso narrativo:** negociação, flerte, vigilância, chantagem e troca de mensagens.  \n**Comportamento do local:** a anfitriã Rin deixa os clientes falarem primeiro; os criados lembram dos calçados, não dos rostos.  \n**Pista:** um recibo dobrado sob a mesa relaciona a compra de cordas, óleo e duas caixas de flechas a um armazém do governo.\n\n### Local — 4. Santuário de Aokiri\n\n**Visual:** escadaria de pedra coberta de musgo, portão vermelho desbotado e cedros tão antigos que suas raízes levantam o caminho. O salão principal não tem estátua: há apenas um espelho de bronze virado para a parede.  \n**Som e cheiro:** vento nas copas, passos abafados, incenso de pinho.  \n**Uso narrativo:** abrigo, investigação espiritual, negociação com Genzō e entrada para a floresta.  \n**Comportamento do local:** refugiados não fazem perguntas a quem chega molhado ou ferido.  \n**Pista:** marcas recentes na escadaria indicam que alguém carregou uma pessoa inconsciente para dentro.\n\n### Local — 5. Floresta de Aokiri\n\n**Visual:** trilhas que se dividem sem aviso, troncos verdes de musgo, fitas brancas em galhos e pedras com marcas de cinzel. O luar não atravessa a copa em algumas clareiras.  \n**Som e cheiro:** água corrente, grilos, folhas esmagadas e fumaça distante.  \n**Uso narrativo:** caça a um animal ferido, rastreamento de fugitivos, emboscada ou fuga.  \n**Comportamento do local:** o terreno muda com a chuva; pegadas recentes confundem-se com trilhas de cervos.  \n**Pista:** cinzas de papel com metade de um selo oficial e pegadas de alguém que mancava no pé esquerdo.\n\n### Local — 6. Arquivos Afogados\n\n**Visual:** corredores de pedra sob a cidade, prateleiras de cedro elevadas sobre suportes, água escura até os tornozelos e placas de bronze com datas riscadas. Algumas salas estão inundadas até o teto.  \n**Som e cheiro:** goteiras, correntes antigas, lodo e tinta dissolvida.  \n**Uso narrativo:** encontrar Jiro, recuperar a versão verdadeira do tratado e enfrentar uma equipe que conhece as comportas.  \n**Comportamento do local:** abrir uma comporta pode salvar alguém ou apagar uma prova.  \n**Pistas:** uma página do tratado tem tinta e fibra de papel de épocas diferentes; o selo foi pressionado antes de a tinta secar.\n\n### Local — 7. Castelo da Cinza\n\n**Visual:** fortaleza de pedra negra e madeira clara, muralha externa reparada com blocos de cores distintas, pátio de areia varrido e uma torre com marcas de incêndio.  \n**Som e cheiro:** bandeiras estalando, martelos, fumaça de cozinha e metal polido.  \n**Uso narrativo:** audiência política, duelo, intriga entre soldados ou fuga pelos telhados.  \n**Comportamento do local:** todo corredor tem um responsável; os guardas pedem a razão da visita antes do nome.  \n**Pista:** a enfermaria conserva um ferido que viu Daichi negociar com a Companhia do Marfim.\n\n### Local — 8. Porto de Shirotsu\n\n**Visual:** cais sobre falésias brancas, guindastes de madeira, armazéns marcados por tinta azul e um farol de três janelas.  \n**Som e cheiro:** cordas tensionadas, gaivotas, sal, algas e óleo de navio.  \n**Uso narrativo:** infiltração, combate em passarelas, perseguição em barco ou negociação com comerciantes.  \n**Comportamento do local:** marinheiros contam carga, não passageiros; o faroleiro enxerga luzes que os demais não percebem.  \n**Pista:** dois navios registraram a mesma carga com destinos diferentes; alguém financiou a diferença.\n\n### Local — 9. Aldeia de Sumi\n\n**Visual:** casas baixas de barro e madeira, diques pequenos, rodas d’água e campos de arroz inclinados. Uma ponte de corda leva ao moinho.  \n**Som e cheiro:** água nos canais, grilos e palha molhada.  \n**Uso narrativo:** caça de subsistência, proteção de civis, recrutamento e consequência da política dos clãs.  \n**Comportamento do local:** moradores escondem comida quando tropas se aproximam; crianças sabem rotas que não aparecem nos mapas.  \n**Pista:** o canal foi fechado por ordem escrita com um selo legítimo, mas entregue por um mensageiro falso.\n\n### Local — 10. Desfiladeiro do Sino Quebrado\n\n**Visual:** paredões estreitos, um sino partido preso a uma árvore e uma trilha de pedra que some junto ao precipício.  \n**Som e cheiro:** vento que parece voz, cascalho e chuva.  \n**Uso narrativo:** perseguição montada, emboscada, duelo ou negociação sob ameaça.  \n**Comportamento do local:** cavalos percebem o risco antes dos humanos.  \n**Pista:** o sino foi serrado de dentro para fora; alguém preparou o desfiladeiro antes da perseguição.\n\n## Roteiro da campanha\n\n### Prólogo — As lanternas não mentem\n\nOs personagens estão na procissão da Ponte das Sete Lanternas. Podem ser guarda, mensageiro, curandeira, convidado, informante ou viajante. Um disparo corta a música. Jiro cai no canal; o estojo do tratado some. Uma mulher de mangas brancas grita que viu um shinobi, mas descreve um uniforme de guarda.\n\n**Testes possíveis:** perceber o ponto do disparo, mergulhar para salvar Jiro, controlar o pânico da multidão, perseguir a pessoa com o estojo, impedir que os guardas ataquem civis.  \n**Consequências:** cada sucesso resgata uma pessoa, uma pista ou tempo. Uma falha nunca encerra a investigação; pode ferir alguém, separar o grupo ou fazer os personagens parecerem cúmplices.\n\n### Ato I — A cidade das versões\n\n#### Capítulo 1: O salão das testemunhas\n\nAkiho convoca os personagens para uma sala lateral do palácio. Cada facção oferece uma versão: os Arashi atacaram o mensageiro; a Casa Sen roubou o tratado; a Companhia do Marfim forneceu as flechas. Ninguém está inteiramente errado.\n\nOs personagens investigam a ponte, o Distrito dos Tecelões e a Casa de Chá da Lua Baixa. A anfitriã Rin sabe que o mensageiro visitou o salão na noite anterior, mas só fala se os personagens protegem uma jovem criada ameaçada por um cobrador.\n\n#### Capítulo 2: Três contas queimadas\n\nUma trilha leva ao santuário de Aokiri. Sayo admite que transportou o estojo, mas diz que o tratado já estava faltando quando o recebeu. Ela oferece a localização de uma página roubada em troca de salvo-conduto para seu irmão.\n\nGenzō pede que o grupo encontre dois refugiados que desapareceram na floresta. O rastro cruza uma rota de caça e um esconderijo de Daichi.\n\n#### Capítulo 3: O homem sob a água\n\nOs personagens entram nos Arquivos Afogados. Jiro está vivo, ferido e desconfiado. Ele revela que a cópia original do acordo descrevia autonomia para Arashi e limites às tropas do shogunato. A versão pública amplia o poder de Kuroda.\n\nUma comporta começa a abrir. O grupo pode salvar Jiro, os documentos ou os próprios personagens sem ajuda externa. Se dividirem a equipe, cada decisão cria uma consequência real.\n\n### Ato II — Fronteiras de papel\n\n#### Capítulo 4: A caça do cervo negro\n\nUm cervo ferido atravessa a estrada com uma flecha de fabricação oficial. A caça leva a um posto abandonado onde soldados de dois clãs foram mortos depois de um falso encontro diplomático.\n\nO grupo pode rastrear o arqueiro, cuidar do animal ou esconder os corpos antes da chegada das patrulhas. O arqueiro é um jovem recrutado por Daichi que acredita ter atirado em desertores.\n\n#### Capítulo 5: O mensageiro que não chegou\n\nEm Sumi, os canais foram fechados. Sem água, a aldeia não terá colheita. O selo na ordem é verdadeiro; o portador, falso. Descobrir quem o contratou exige combinar testemunhos, horários e uma fita de papel especial vendida no porto.\n\nAkane organiza um corredor de retirada para crianças e feridos. Os personagens escolhem se desviam o canal, expõem o oficial responsável ou negociam uma abertura temporária.\n\n#### Capítulo 6: Um duelo sem vencedor\n\nLady Chiyo oferece uma audiência no Castelo da Cinza. Daichi exige um duelo público para provar que o shogunato não controla a fronteira. O duelo pode ser de lâminas, palavras, arco ou demonstração de autocontrole.\n\nA intenção não é matar: é medir quem pode conter os próprios aliados. Se os personagens humilham Daichi, ele se torna inimigo. Se o enfrentam com firmeza e preservam a dignidade dos soldados, ele pode admitir que os comerciantes o financiaram.\n\n#### Capítulo 7: A noite da enseada\n\nUma embarcação da Companhia do Marfim parte de Shirotsu. Ela leva armas, cópias falsas do tratado e uma lista de informantes. Os personagens podem seguir por terra, contratar pescadores ou infiltrar-se como tripulação.\n\nDurante a perseguição, a maré sobe e uma vela se incendeia. O capitão abandona uma caixa de documentos para manter o navio flutuando. Entre as páginas há um recibo assinado por um funcionário Kuroda.\n\n### Ato III — O preço da verdade\n\n#### Capítulo 8: A herdeira chamada Nao\n\nA escriba Nao revela ser Tomoe Arashi. Ela possui uma matriz de selo que prova que o documento oficial foi impresso depois do suposto acordo. Porém, revelar isso também a identifica como fugitiva e coloca seus soldados sob acusação de traição.\n\nTomoe quer falar diante do conselho. Akiho quer divulgar a prova primeiro entre os líderes regionais. O grupo decide se confia a matriz a alguém, faz cópias ou usa a evidência para negociar.\n\n#### Capítulo 9: Traição no santuário\n\nUm agente da Casa Sen entrega o esconderijo dos refugiados a uma patrulha em troca de anistia. Sayo percebe o vazamento, mas a pessoa que traiu a rede é seu irmão. Ele alega que Kuroda mantém sua família como refém.\n\nO confronto pode ser combate, fuga, negociação ou um plano para resgatar a família. A cena deve revelar que a traição não elimina os laços afetivos; torna a confiança mais difícil.\n\n#### Capítulo 10: A torre de sinal\n\nUma torre na Serra do Cedro Negro envia sinais que mobilizam tropas. Chiyo pede aos personagens que a desativem sem matar os guardas, muitos deles camponeses convocados. Uma tempestade aproxima-se e a escadaria está parcialmente desabada.\n\nSe a torre cair, o exército demora. Se for tomada intacta, o grupo obtém mensagens cifradas que mostram que Kuroda pretendia limitar a guerra a três dias. O plano ainda custaria centenas de vidas.\n\n### Ato IV — Sete lanternas, sete escolhas\n\n#### Capítulo 11: Conselho em Kagehama\n\nAkiho convoca um conselho emergencial. Os personagens precisam apresentar a verdade diante de pessoas que já escolheram lados. As evidências incluem a matriz de Tomoe, o lote de flechas, a página original e o testemunho de Jiro.\n\nCada prova precisa de uma testemunha ou de uma explicação verificável. Kuroda não será derrotado por um único discurso; os personagens devem proteger quem confirma os fatos.\n\n#### Capítulo 12: O cerco dos canais\n\nUma força desconhecida ocupa as comportas e interrompe o abastecimento de Kagehama. Kuroda afirma que os Arashi começaram o ataque. Daichi chega com soldados para ajudar a abrir o canal, mas seu estandarte também provoca pânico.\n\nO grupo precisa escolher rotas, proteger civis, impedir saques e abrir passagens para os feridos. Use três frentes: a comporta, a enfermaria improvisada e a muralha do porto.\n\n#### Capítulo 13: O regente e a lâmina\n\nKuroda se encontra com os personagens na sala de mapas. Ele oferece um acordo: revelar parte da falsificação, preservar o conselho e atribuir as mortes a um capitão morto. A alternativa é expor tudo e arriscar que o shogunato se fragmente.\n\nSe houver combate, ele tenta incapacitar e escapar, não lutar até a morte. Ele acredita que uma paz imposta evitará guerras futuras. Os personagens podem prendê-lo, expô-lo, negociar uma rendição ou deixá-lo fugir com uma prova.\n\n#### Epílogo: O que a paz exige\n\nA campanha termina com uma sessão de consequência. Quem controla os canais? Tomoe voltou para Arashi? A Casa Sen foi dissolvida ou reformada? Os comerciantes mantêm seus contratos? O shogun governa ou é apenas símbolo? Que personagem ficou ferido, famoso, desacreditado ou em dívida?\n\nAs sete lanternas da ponte são reacendidas. Uma pode permanecer apagada como memorial.\n\n## Rede de pistas\n\n| Descoberta | Fonte principal | Confirmação alternativa |\n|---|---|---|\n| O disparo veio de um posto de guarda | fragmento de flecha na ponte | ferreiro Tetsuo reconhece o lote |\n| O estojo foi movido antes do ataque | testemunha no Distrito dos Tecelões | recibo da Casa de Chá |\n| O tratado público foi alterado | tinta e papel nos Arquivos Afogados | matriz de selo de Tomoe |\n| A Casa Sen transportou o estojo | relato de Sayo | cordão de contas chamuscado |\n| As armas passaram pela Companhia do Marfim | livro de carga em Shirotsu | jovem arqueiro de Daichi |\n| O mensageiro sobreviveu | água e sangue nos arquivos | Akane tratou os ferimentos |\n| Kuroda autorizou o roubo, não o assassinato | correspondência cifrada da torre | depoimento do agente ferido |\n\n## Desafios de interação para testar o Mind RolePlay\n\n1. Um personagem tenta convencer uma guarda de que a ordem é falsa, sem apresentar prova.\n2. Um shinobi tenta seguir Sayo pela multidão sem ser reconhecido.\n3. O batedor tenta rastrear um grupo durante a chuva, separando rastros de soldados e aldeões.\n4. A curandeira tenta estabilizar Jiro enquanto outra personagem interroga o mensageiro.\n5. O samurai tenta conter um duelo sem desonrar o oponente.\n6. Um personagem ferido no braço tenta subir uma parede carregando outra pessoa.\n7. O grupo tenta caçar para alimentar refugiados sem ferir o cervo marcado.\n8. Um personagem percebe que um aliado está mentindo por medo, não por malícia.\n9. O grupo tenta atravessar o canal antes que a comporta se feche.\n10. Um jogador acusa publicamente Kuroda; o narrador deve perguntar que prova ele apresenta e quem está ouvindo.\n11. Os personagens tentam negociar com Daichi depois de capturar um de seus soldados.\n12. Uma personagem tenta perdoar Sayo e manter a aliança com a Casa Sen.\n\nPara cada tentativa, determine intenção, risco, habilidade pertinente, modificadores coerentes e consequências possíveis antes da rolagem. Um resultado não substitui a decisão do jogador: ele define como a tentativa se resolve.\n\n## Lista de preparação visual\n\n- Mapa regional de Akitsuru com estradas, canais, montanhas e portos.\n- Mapa simples de Kagehama, com o palácio, ponte, distrito, porto e comportas.\n- Retratos de Akiho, Ren, Tomoe, Jiro, Sayo, Genzō, Chiyo, Daichi, Akane e Tetsuo.\n- Retratos-base das cinco classes iniciais, com espaço para gênero e variações individuais.\n- Cenários: Ponte das Sete Lanternas, Casa de Chá da Lua Baixa, Santuário de Aokiri, Arquivos Afogados, Castelo da Cinza, Porto de Shirotsu, Aldeia de Sumi e Desfiladeiro do Sino Quebrado.\n- Tokens de patrulha, mensageiros, barqueiros, refugiados e soldados de fronteira.\n- Props: tratado com duas versões, matriz de selo, flecha oficial, cordão de contas queimado, livro de carga e mapa de comportas.\n- Estados de cena: ponte durante procissão, ponte após ataque, floresta seca, floresta na chuva, porto ao amanhecer e canal durante o cerco.\n\n## Notas para o narrador\n\nEste roteiro é uma base modular. Os personagens dos jogadores devem alterar relações, rotas e resultados. Não imponha uma única solução para a conspiração. Ren pode ser preso, convencido, exposto ou sucedido por alguém pior. Tomoe pode liderar Arashi ou abandonar a política. Sayo pode reconstruir a Casa Sen. O objetivo é dar informação suficiente para escolhas consequentes, e não proteger uma trama predeterminada.\n\nAo descrever um lugar, escolha dois detalhes sensoriais e um comportamento de pessoas presentes. Ao apresentar um NPC, mostre primeiro um gesto observável; revele o segredo apenas quando os personagens fizerem perguntas, oferecerem algo ou criarem confiança.\n\n\n",
+  "classes": [
+    {
+      "id": "samurai-juramentado",
+      "name": "Samurai juramentado",
+      "icon": "⚔️",
+      "portrait": "",
+      "description": "Defensor treinado, dividido entre dever e consciência.",
+      "attributes": {
+        "ST": 12,
+        "DX": 12,
+        "IQ": 10,
+        "HT": 11
+      },
+      "skills": [
+        {
+          "name": "Lâmina",
+          "level": 13
+        },
+        {
+          "name": "Etiqueta",
+          "level": 11
+        },
+        {
+          "name": "Intimidação",
+          "level": 11
+        }
+      ],
+      "fixedAbilities": [
+        "Guarda do estandarte: pode interpor-se para proteger alguém próximo, assumindo o risco da ação."
+      ],
+      "startingLevel": 1
+    },
+    {
+      "id": "shinobi",
+      "name": "Shinobi",
+      "icon": "🥷",
+      "portrait": "",
+      "description": "Infiltrador, observador e agente de rotas secretas.",
+      "attributes": {
+        "ST": 9,
+        "DX": 14,
+        "IQ": 12,
+        "HT": 10
+      },
+      "skills": [
+        {
+          "name": "Furtividade",
+          "level": 14
+        },
+        {
+          "name": "Disfarce",
+          "level": 12
+        },
+        {
+          "name": "Arrombamento",
+          "level": 12
+        }
+      ],
+      "fixedAbilities": [
+        "Passo sem testemunha: com preparação e cobertura, pode cruzar uma área observada sem chamar atenção."
+      ],
+      "startingLevel": 1
+    },
+    {
+      "id": "onmyoji",
+      "name": "Onmyōji",
+      "icon": "☯️",
+      "portrait": "",
+      "description": "Estudioso de presságios, rituais, fenômenos espirituais e arquivos.",
+      "attributes": {
+        "ST": 9,
+        "DX": 10,
+        "IQ": 14,
+        "HT": 10
+      },
+      "skills": [
+        {
+          "name": "Ocultismo",
+          "level": 14
+        },
+        {
+          "name": "Pesquisa",
+          "level": 13
+        },
+        {
+          "name": "Empatia",
+          "level": 11
+        }
+      ],
+      "fixedAbilities": [
+        "Leitura de presságio: estudando um local ou objeto, faz uma pergunta objetiva sobre o que ocorreu ali."
+      ],
+      "startingLevel": 1
+    },
+    {
+      "id": "batedor-fronteira",
+      "name": "Batedor de fronteira",
+      "icon": "🏹",
+      "portrait": "",
+      "description": "Rastreador habituado a florestas, montanhas, caça e perseguições.",
+      "attributes": {
+        "ST": 11,
+        "DX": 13,
+        "IQ": 11,
+        "HT": 12
+      },
+      "skills": [
+        {
+          "name": "Rastreamento",
+          "level": 14
+        },
+        {
+          "name": "Sobrevivência",
+          "level": 13
+        },
+        {
+          "name": "Arco",
+          "level": 12
+        }
+      ],
+      "fixedAbilities": [
+        "Rastro dividido: distingue pistas de grupos em movimento e estima quantidade, direção e intervalo."
+      ],
+      "startingLevel": 1
+    },
+    {
+      "id": "curandeira-campanha",
+      "name": "Curandeira de campanha",
+      "icon": "🌿",
+      "portrait": "",
+      "description": "Médica de campo e mediadora que trata feridos de lados diferentes.",
+      "attributes": {
+        "ST": 9,
+        "DX": 11,
+        "IQ": 13,
+        "HT": 11
+      },
+      "skills": [
+        {
+          "name": "Primeiros socorros",
+          "level": 14
+        },
+        {
+          "name": "Medicina",
+          "level": 12
+        },
+        {
+          "name": "Persuasão",
+          "level": 12
+        }
+      ],
+      "fixedAbilities": [
+        "Mãos firmes: estabiliza um ferido sob pressão e garante instantes para conversar."
+      ],
+      "startingLevel": 1
+    }
+  ],
+  "characters": [],
+  "npcs": [
+    {
+      "id": "kagehama-npc-0",
+      "title": "NPC — Lady Akiho Senda",
+      "description": "Mediadora do shogun. Quimono azul-acinzentado, leque rachado; escuta sem interromper. Quer impedir a guerra sem entregar o governo a Kuroda. Guarda uma cópia não oficial do tratado.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-npc-1",
+      "title": "NPC — Ren Kuroda",
+      "description": "Regente do conselho, roupa negra formal, bengala de prata. Educado ao ameaçar; mede lealdades. Autorizou o roubo do estojo, mas não o assassinato do mensageiro.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-npc-2",
+      "title": "NPC — Tomoe Arashi",
+      "description": "Herdeira desaparecida, disfarçada como a escriba Nao. Analisa saídas e testa promessas. Quer revelar a falsificação; oculta que matou um capitão em legítima defesa.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-npc-3",
+      "title": "NPC — Jiro “Três Chuvas”",
+      "description": "Mensageiro imperial ferido, capa de palha e três sinos escondidos na gola. Conta passos quando nervoso. Sobreviveu e se esconde nos Arquivos Afogados.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-npc-4",
+      "title": "NPC — Sayo",
+      "description": "Agente da Casa Sen, aparência comum e contas de madeira. Observa reflexos, muda sotaque. Transportou o estojo e reteve uma página que compromete o irmão.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-npc-5",
+      "title": "NPC — Monge Genzō",
+      "description": "Guardião de Aokiri, bengala marcada e cão Nuvem. Serve chá depois que a pessoa para de mentir. Protege refugiados e conhece a entrada dos Arquivos.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-npc-6",
+      "title": "NPC — Lady Chiyo Arashi",
+      "description": "Senhora do norte, armadura verde-musgo e queimadura antiga. Faz perguntas sobre custos pessoais. Quer autonomia e sabe que o sobrinho compra armas.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-npc-7",
+      "title": "NPC — Daichi Arashi",
+      "description": "Capitão de fronteira de armadura vermelha. Provoca antes de atacar, mas poupa quem não humilha seus soldados. Quer independência e não sabe que os fornecedores o traem.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-npc-8",
+      "title": "NPC — Akane",
+      "description": "Curandeira da Irmandade do Junco Branco, mãos manchadas de ervas. Trabalha enquanto conversa e protege pacientes. Trata um agente que testemunhou o assassinato.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-npc-9",
+      "title": "NPC — Mestre Tetsuo",
+      "description": "Armeiro de Kagehama, avental queimado e dois dedos ausentes. Conversa com as ferramentas. Reconhece o lote oficial usado no disparo.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-npc-10",
+      "title": "NPC — Nuvem",
+      "description": "Cão branco idoso do santuário, uma orelha caída. Rosna para sangue fresco e busca quem está de luto; pode farejar, nunca substitui uma pista.",
+      "createdAt": 0
+    }
+  ],
+  "scenes": [
+    {
+      "id": "kagehama-scene-0",
+      "title": "Capítulo 1 — O salão das testemunhas",
+      "description": "Akiho convoca o grupo; versões contraditórias apontam para Arashi, Casa Sen e comerciantes.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-1",
+      "title": "Capítulo 2 — Três contas queimadas",
+      "description": "Sayo leva ao santuário; refugiados somem na floresta e uma trilha cruza esconderijo de Daichi.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-2",
+      "title": "Capítulo 3 — O homem sob a água",
+      "description": "Nos Arquivos Afogados, o grupo escolhe salvar Jiro, documentos ou a própria segurança.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-3",
+      "title": "Capítulo 4 — A caça do cervo negro",
+      "description": "Rastro leva a posto abandonado e soldados mortos após um encontro diplomático falso.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-4",
+      "title": "Capítulo 5 — O mensageiro que não chegou",
+      "description": "A aldeia de Sumi perde água por uma ordem verdadeira entregue por portador falso.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-5",
+      "title": "Capítulo 6 — Um duelo sem vencedor",
+      "description": "Audiência no Castelo da Cinza; duelo testa contenção e respeito, não exige morte.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-6",
+      "title": "Capítulo 7 — A noite da enseada",
+      "description": "Infiltração ou perseguição marítima contra um navio com armas e registros falsos.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-7",
+      "title": "Capítulo 8 — A herdeira chamada Nao",
+      "description": "Tomoe revela a matriz do selo; tornar a falsificação pública põe seus soldados em risco.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-8",
+      "title": "Capítulo 9 — Traição no santuário",
+      "description": "Um agente entrega o esconderijo de refugiados para tentar salvar a própria família.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-9",
+      "title": "Capítulo 10 — A torre de sinal",
+      "description": "Tempestade, patrulhas recrutadas e mensagens cifradas sobre uma guerra planejada.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-10",
+      "title": "Capítulo 11 — Conselho em Kagehama",
+      "description": "A prova exige testemunhas, proteção e uma apresentação que sobreviva à política.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-11",
+      "title": "Capítulo 12 — O cerco dos canais",
+      "description": "Três frentes simultâneas: comporta, enfermaria e muralha do porto.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-scene-12",
+      "title": "Capítulo 13 — O regente e a lâmina",
+      "description": "Kuroda oferece acordo; pode haver rendição, exposição, captura, fuga ou combate.",
+      "createdAt": 0
+    }
+  ],
+  "maps": [
+    {
+      "id": "kagehama-map-0",
+      "title": "Mapa regional de Akitsuru",
+      "description": "Peninsula de vales e costa: Kagehama no centro-sul; Arashi ao noroeste; Hino a oeste; Aokiri a nordeste; Shirotsu a leste; Ilhas das Garças ao sul.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-map-1",
+      "title": "Kagehama",
+      "description": "Palácio, Ponte das Sete Lanternas, Distrito dos Tecelões, Casa de Chá da Lua Baixa, porto e comportas.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-map-2",
+      "title": "Serra do Cedro Negro",
+      "description": "Estrada do Sino, desfiladeiro, postos de vigia, trilha de caça e fortalezas Arashi.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-map-3",
+      "title": "Floresta de Aokiri",
+      "description": "Santuário, clareiras, ruínas, córregos, trilha costeira e rotas de fuga.",
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-map-4",
+      "title": "Rede subterrânea",
+      "description": "Depósitos do porto, comporta velha, Arquivos Afogados e cisterna sob o palácio.",
+      "createdAt": 0
+    }
+  ],
+  "art": [],
+  "checklist": [
+    {
+      "id": "kagehama-check-0",
+      "title": "Retratos das cinco classes",
+      "description": "Samurai, shinobi, onmyōji, batedor e curandeira; gerar variações de gênero e roupa.",
+      "done": false,
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-check-1",
+      "title": "Mapa regional",
+      "description": "Mostrar estradas, canais, montanhas, porto e escalas aproximadas.",
+      "done": false,
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-check-2",
+      "title": "Planta de Kagehama",
+      "description": "Palácio, ponte, distrito, porto, comportas e rotas por telhado.",
+      "done": false,
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-check-3",
+      "title": "Retratos dos NPCs centrais",
+      "description": "Akiho, Ren, Tomoe, Jiro, Sayo, Genzō, Chiyo, Daichi, Akane e Tetsuo.",
+      "done": false,
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-check-4",
+      "title": "Cenários-chave",
+      "description": "Ponte, Casa de Chá, santuário, Arquivos Afogados, Castelo, porto e aldeia.",
+      "done": false,
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-check-5",
+      "title": "Tokens de grupos",
+      "description": "Patrulha, mensageiros, barqueiros, refugiados, soldados e agentes da Casa Sen.",
+      "done": false,
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-check-6",
+      "title": "Props de investigação",
+      "description": "Duas versões do tratado, matriz de selo, flecha, cordão queimado e livro de carga.",
+      "done": false,
+      "createdAt": 0
+    },
+    {
+      "id": "kagehama-check-7",
+      "title": "Cenas com estados visuais",
+      "description": "Ponte antes/depois do ataque; floresta seca/chuvosa; porto ao amanhecer; cerco dos canais.",
+      "done": false,
+      "createdAt": 0
+    }
+  ],
+  "testLog": [],
+  "analysis": {
+    "status": "pacote-de-teste",
+    "extractedAt": 0,
+    "sceneHeadings": [
+      "Capítulo 1 — O salão das testemunhas",
+      "Capítulo 2 — Três contas queimadas",
+      "Capítulo 3 — O homem sob a água",
+      "Capítulo 4 — A caça do cervo negro",
+      "Capítulo 5 — O mensageiro que não chegou",
+      "Capítulo 6 — Um duelo sem vencedor",
+      "Capítulo 7 — A noite da enseada",
+      "Capítulo 8 — A herdeira chamada Nao",
+      "Capítulo 9 — Traição no santuário",
+      "Capítulo 10 — A torre de sinal",
+      "Capítulo 11 — Conselho em Kagehama",
+      "Capítulo 12 — O cerco dos canais",
+      "Capítulo 13 — O regente e a lâmina",
+      "Local — Mapa regional de Akitsuru",
+      "Local — Kagehama",
+      "Local — Serra do Cedro Negro",
+      "Local — Floresta de Aokiri",
+      "Local — Rede subterrânea"
+    ],
+    "balance": {
+      "startingLevel": 1,
+      "recommendedSkillRange": "11–14",
+      "threats": "intriga política, espionagem, caça, perseguição, duelos e cerco",
+      "social": true,
+      "exploration": true,
+      "threatsPresent": true,
+      "narratorReview": "Classes iniciais equilibradas para investigação, interação, exploração e conflito."
+    }
+  },
+  "createdAt": 0,
+  "updatedAt": 0
+};
