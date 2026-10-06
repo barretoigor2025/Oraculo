@@ -140,7 +140,6 @@ function openCampaign(id) {
     </button>`;
   }).join('');
   grid.querySelectorAll('[data-section]').forEach(button => button.addEventListener('click', () => openSection(button.dataset.section)));
-  updateHomeCampaign();
   renderCampaigns();
   showScreen('package');
 }
