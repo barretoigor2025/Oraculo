@@ -146,7 +146,7 @@ function makeStarterClasses(text, genre) {
   const source = String(text || '');
   const explicit = source.match(/(?:classes|arquétipos|profissões)\s*:?\s*([\s\S]{0,700})/i)?.[1]
     ?.split(/\n/).filter(line => /^\s*(?:[-*•]|\d+[.)])\s*/.test(line))
-    .map(line => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').split(/[—:]/)[0].trim()).filter(Boolean).slice(0, 6);
+    .map(line => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').split(/[—:]/)[0].replace(/[*_]/g,'').trim()).filter(Boolean).slice(0, 6);
   const setting = (genre + ' ' + source).toLowerCase();
   const profiles = /terror|horror|vamp|zumbi|sobreviv/i.test(setting)
     ? [
@@ -154,6 +154,7 @@ function makeStarterClasses(text, genre) {
       ['Sobrevivente','🧭','Resiste, improvisa e encontra rotas seguras.',{ST:11,DX:12,IQ:10,HT:13},[['Sobrevivência',13],['Furtividade',12],['Primeiros socorros',11]]],
       ['Diplomata','🕯️','Consegue cooperação e acalma situações tensas.',{ST:9,DX:10,IQ:11,HT:10},[['Lábia',13],['Empatia',13],['Pesquisa',10]]],
       ['Guardião','🛡️','Protege o grupo e aguenta confronto direto.',{ST:13,DX:10,IQ:10,HT:12},[['Briga',13],['Intimidação',11],['Primeiros socorros',10]]],
+      ['Médico de campo','🩺','Cuida de feridos e mantém o grupo em condições de seguir.',{ST:9,DX:11,IQ:12,HT:12},[['Primeiros socorros',13],['Empatia',12],['Pesquisa',10]]],
     ]
     : /futur|espaço|sci.?fi|cyber|tecnolog/i.test(setting)
       ? [
@@ -161,12 +162,14 @@ function makeStarterClasses(text, genre) {
         ['Técnico','🔧','Entende máquinas, sistemas e soluções improvisadas.',{ST:9,DX:11,IQ:14,HT:10},[['Tecnologia',14],['Conserto',13],['Pesquisa',11]]],
         ['Mediador','🛰️','Negocia alianças e interpreta intenções.',{ST:9,DX:10,IQ:12,HT:10},[['Diplomacia',13],['Lábia',12],['Empatia',12]]],
         ['Defensor','🚀','Mantém a equipe segura em situações perigosas.',{ST:13,DX:11,IQ:10,HT:12},[['Armas',13],['Tática',12],['Primeiros socorros',10]]],
+        ['Médico de bordo','🩺','Cuida da equipe e mantém protocolos durante crises.',{ST:9,DX:11,IQ:13,HT:11},[['Medicina',13],['Empatia',12],['Tecnologia',10]]],
       ]
       : [
         ['Batedor','🏹','Encontra caminhos, percebe perigos e age com agilidade.',{ST:10,DX:13,IQ:11,HT:11},[['Furtividade',13],['Percepção',12],['Sobrevivência',11]]],
         ['Erudito','📜','Conhece histórias, idiomas e pistas escondidas.',{ST:9,DX:10,IQ:14,HT:10},[['Conhecimento',14],['Pesquisa',13],['Persuasão',10]]],
         ['Guardião','🛡️','Protege aliados e enfrenta ameaças de perto.',{ST:13,DX:10,IQ:10,HT:12},[['Briga',13],['Intimidação',11],['Vigor',12]]],
         ['Curandeiro','🌿','Cuida de ferimentos e mantém o grupo em condições de seguir.',{ST:9,DX:11,IQ:12,HT:11},[['Primeiros socorros',13],['Empatia',12],['Conhecimento',11]]],
+        ['Emissário de corte','🪭','Negocia acordos, lê etiqueta e reúne rumores sem chamar atenção.',{ST:9,DX:10,IQ:12,HT:10},[['Diplomacia',13],['Etiqueta',13],['Lábia',11]]],
       ];
   return profiles.map((p,index)=>({id:'class-'+(index+1),name:explicit?.[index]||p[0],icon:p[1],portrait:'',description:p[2],attributes:p[3],skills:p[4].map(([name,level])=>({name,level})),fixedAbilities:[p[2]],startingLevel:1}));
 }
@@ -180,6 +183,8 @@ function analyzeCampaignText(text, genre) {
   const checklist=[
     {title:'Revisar classes iniciais sugeridas',description:'Confirmar se os arquétipos combinam com esta campanha.',done:false},
     {title:'Definir retratos das classes',description:'Adicionar a arte definitiva depois da revisão.',done:false},
+    {title:'Definir rotas e duração das viagens',description:'Registrar caminhos alternativos, riscos e oportunidades.',done:false},
+    {title:'Preparar situações de jornada',description:'Criar encontros sociais, caça, perseguições e complicações de estrada.',done:false},
     ...(headings.length?[]:[{title:'Separar capítulos e cenas',description:'O roteiro não trouxe títulos claros de cena.',done:false}]),
     {title:'Preparar mapa e referências visuais',description:'Itens visuais podem ser adicionados quando necessários.',done:false},
   ].map((item,index)=>({id:'check-'+index,...item,createdAt:Date.now()}));
