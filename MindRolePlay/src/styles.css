@@ -111,3 +111,26 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
  .story-panel{min-height:440px;padding:14px}.game-messages{max-height:36vh}
  .lobby-actions{grid-template-columns:1fr}.home-campaign-grid{grid-template-columns:1fr}
 }
+
+.class-gender-art{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:12px 12px 0}
+.class-gender-art figure{margin:0;text-align:center;min-width:0}
+.class-gender-art .class-portrait{height:210px;display:grid;place-items:end center;background:#eee8d8;border:1px solid #28251f;overflow:hidden}
+.class-gender-art .class-portrait img{max-width:100%;max-height:100%;object-fit:contain}
+.class-gender-art figcaption{font-size:.58rem;font-weight:800;letter-spacing:.12em;padding:6px}
+.class-skill-list>div{display:grid;grid-template-columns:1fr auto;gap:3px 10px;border-top:1px solid var(--line);padding:8px 0}
+.class-skill-list span{font-size:.75rem;font-weight:800}
+.class-skill-list small{grid-column:1/-1;color:#686255;line-height:1.45}
+.npc-database{display:grid;gap:14px}
+.npc-dossier{padding:16px}
+.npc-dossier header{display:grid;grid-template-columns:72px 1fr;gap:14px;align-items:start;border-bottom:2px solid #171613;padding-bottom:13px}
+.npc-portrait-placeholder{height:92px;display:grid;place-items:center;border:1px solid #171613;background:repeating-linear-gradient(135deg,#eee8d8 0 5px,#e4ddcd 5px 6px);font:2rem Georgia,serif}
+.npc-dossier h2{font:1.5rem Georgia,serif;margin:4px 0}
+.npc-dossier header p{margin:4px 0;color:#625c50;font-size:.87rem;line-height:1.45}
+.npc-profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}
+.npc-profile-grid p{border-bottom:1px solid var(--line);padding:8px 0;margin:0;display:grid;gap:4px;font-size:.86rem}
+.npc-profile-grid b{font-size:.69rem;letter-spacing:.12em;text-transform:uppercase}
+.npc-profile-grid span{line-height:1.45;color:#514c42}
+.narrator-only,.art-brief{border-top:1px solid var(--line);padding:10px 0}
+.narrator-only summary,.art-brief summary{font-weight:800;cursor:pointer}
+.narrator-only p,.art-brief p{line-height:1.5;color:#514c42}
+@media(max-width:520px){.class-gender-art .class-portrait{height:170px}.npc-profile-grid{grid-template-columns:1fr}.npc-dossier{padding:12px}}
