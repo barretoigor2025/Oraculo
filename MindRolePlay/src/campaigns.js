@@ -12,7 +12,7 @@ export const CAMPAIGN_SECTIONS = [
 export function createEmptyCampaign(id, title, genre = '') {
   return {
     id,
-    schemaVersion: 1,
+    schemaVersion: 2,\n    analysis: null,
     title,
     genre,
     status: 'installed',
