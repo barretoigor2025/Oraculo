@@ -89,14 +89,14 @@ function roomCode() {
   return Array.from(values, value => alphabet[value % alphabet.length]).join('');
 }
 
-export async function createRoom(campaignId, playerId, playerName) {
+export async function createRoom(campaignId, playerId, playerName, character = null) {
   assertReady();
   const code = roomCode();
   await setDoc(doc(db, ROOMS, code), {
     code,
     campaignId,
     hostId: playerId,
-    players: [{ id: playerId, name: playerName || 'Narrador' }],
+    players: [{ id: playerId, name: playerName || 'Narrador', characterId: character?.id || '', characterName: character?.name || '', className: character?.className || '' }],
     status: 'waiting',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -104,17 +104,18 @@ export async function createRoom(campaignId, playerId, playerName) {
   return code;
 }
 
-export async function joinRoom(code, playerId, playerName) {
+export async function joinRoom(code, playerId, playerName, character = null) {
   assertReady();
   const normalizedCode = code.toUpperCase();
   const roomRef = doc(db, ROOMS, normalizedCode);
   const snapshot = await getDoc(roomRef);
   if (!snapshot.exists()) throw new Error('Não encontrei uma sala com esse código.');
   await updateDoc(roomRef, {
-    players: arrayUnion({ id: playerId, name: playerName || 'Jogador' }),
+    players: arrayUnion({ id: playerId, name: playerName || 'Jogador', characterId: character?.id || '', characterName: character?.name || '', className: character?.className || '' }),
     updatedAt: serverTimestamp(),
   });
-  return { code: normalizedCode, ...snapshot.data() };
+  const updated = await getDoc(roomRef);
+  return { code: normalizedCode, ...updated.data() };
 }
 
 export function listenRoom(code, callback, onError) {
