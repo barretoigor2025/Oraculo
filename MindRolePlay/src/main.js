@@ -283,7 +283,7 @@ function renderCharacterList() {
     const conditions = (character.conditions || []).map(condition =>
       `<small>${escapeHtml(condition.name)} · ${condition.modifier >= 0 ? '+' : ''}${condition.modifier} ${condition.permanent ? '· permanente' : ''}</small>`).join('');
     return `<article class="item-card">
-      <div><strong>${escapeHtml(character.name)}${character.className ? ' · ' + escapeHtml(character.className) : ''}</strong><small>${skillText || 'Sem perícias'}</small>${conditions}</div>
+      <div><strong>${escapeHtml(character.name)}${character.className ? ' · ' + escapeHtml(character.className) : ''}</strong><small>${escapeHtml(character.gender || 'Gênero não informado')} · nível ${character.level || 1} · ${skillText || 'Sem perícias'}</small>${conditions}</div>
       <div class="item-actions">
         <button class="mini-button" data-test-character="${character.id}">Tentar ação</button>
         <details class="condition-editor">
