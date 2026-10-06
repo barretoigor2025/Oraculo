@@ -1,12 +1,13 @@
 import {
+  arrayUnion,
   collection,
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
+  serverTimestamp,
   setDoc,
   updateDoc,
-  arrayUnion,
-  serverTimestamp,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../../src/firebase/config.js';
 import { createDemoCampaigns } from './campaigns.js';
@@ -29,16 +30,17 @@ export async function loadCampaigns() {
 
 export async function installDemoCampaignsIfEmpty() {
   const existing = await loadCampaigns();
-  if (existing.length) return existing;
-
-  const samples = createDemoCampaigns();
-  await Promise.all(samples.map(campaign =>
-    setDoc(doc(db, CAMPAIGNS, campaign.id), {
-      ...campaign,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    })
-  ));
+  const existingIds = new Set(existing.map(campaign => campaign.id));
+  const missing = createDemoCampaigns().filter(campaign => !existingIds.has(campaign.id));
+  if (missing.length) {
+    await Promise.all(missing.map(campaign =>
+      setDoc(doc(db, CAMPAIGNS, campaign.id), {
+        ...campaign,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+    ));
+  }
   return loadCampaigns();
 }
 
@@ -64,9 +66,16 @@ export async function createCampaign(title, genre = '') {
   return { ...campaign, createdAt: Date.now(), updatedAt: Date.now() };
 }
 
+function roomCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const values = new Uint8Array(6);
+  crypto.getRandomValues(values);
+  return Array.from(values, value => alphabet[value % alphabet.length]).join('');
+}
+
 export async function createRoom(campaignId, playerId, playerName) {
   assertReady();
-  const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const code = roomCode();
   await setDoc(doc(db, ROOMS, code), {
     code,
     campaignId,
@@ -81,12 +90,20 @@ export async function createRoom(campaignId, playerId, playerName) {
 
 export async function joinRoom(code, playerId, playerName) {
   assertReady();
-  const roomRef = doc(db, ROOMS, code.toUpperCase());
+  const normalizedCode = code.toUpperCase();
+  const roomRef = doc(db, ROOMS, normalizedCode);
   const snapshot = await getDoc(roomRef);
   if (!snapshot.exists()) throw new Error('Não encontrei uma sala com esse código.');
   await updateDoc(roomRef, {
     players: arrayUnion({ id: playerId, name: playerName || 'Jogador' }),
     updatedAt: serverTimestamp(),
   });
-  return { code: code.toUpperCase(), ...snapshot.data() };
+  return { code: normalizedCode, ...snapshot.data() };
+}
+
+export function listenRoom(code, callback, onError) {
+  assertReady();
+  return onSnapshot(doc(db, ROOMS, code.toUpperCase()), snapshot => {
+    callback(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null);
+  }, onError);
 }
