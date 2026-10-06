@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10131b">
+  <meta name="description" content="Mind RolePlay — um novo sistema de RPG em criação, com a narrativa no centro da experiência.">
+  <title>Mind RolePlay — sua história começa aqui</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f4efe4;
+      --muted: #aaa9ac;
+      --gold: #d7b879;
+      --gold-light: #f0d7a1;
+      --night: #10131b;
+      --panel: #171b25;
+      --line: rgba(230, 210, 170, .16);
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--night);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.6;
+    }
+    a { color: inherit; }
+    .shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
+    .topbar {
+      height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      position: relative;
+      z-index: 3;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid rgba(215,184,121,.55);
+      border-radius: 50%;
+      color: var(--gold-light);
+      font-family: var(--serif);
+      font-size: 21px;
+      font-weight: 400;
+      box-shadow: 0 0 22px rgba(215,184,121,.12), inset 0 0 12px rgba(215,184,121,.08);
+    }
+    .nav { display: flex; align-items: center; gap: 32px; }
+    .nav a {
+      text-decoration: none;
+      color: #c2c0c1;
+      font-size: 13px;
+      transition: color .2s ease;
+    }
+    .nav a:hover { color: var(--gold-light); }
+    .nav .nav-cta {
+      border: 1px solid rgba(215,184,121,.52);
+      color: var(--gold-light);
+      border-radius: 999px;
+      padding: 9px 16px;
+    }
+
+    .hero {
+      min-height: 660px;
+      display: grid;
+      grid-template-columns: 1.04fr .96fr;
+      align-items: center;
+      gap: 46px;
+      padding-top: 54px;
+      padding-bottom: 74px;
+      position: relative;
+      isolation: isolate;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      width: 760px;
+      height: 620px;
+      right: -270px;
+      top: -90px;
+      background: radial-gradient(ellipse, rgba(128,89,54,.17), rgba(33,49,65,.13) 37%, transparent 70%);
+      pointer-events: none;
+    }
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: .2em;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .eyebrow::before { content: ""; width: 27px; height: 1px; background: var(--gold); }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 610px;
+      margin: 24px 0 21px;
+      font: 400 clamp(48px, 6.2vw, 78px)/.99 var(--serif);
+      letter-spacing: -.045em;
+    }
+    h1 em { color: var(--gold-light); font-weight: 400; }
+    .hero-copy {
+      max-width: 490px;
+      color: #bcbabe;
+      font-size: 16px;
+      line-height: 1.85;
+      margin-bottom: 30px;
+    }
+    .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .button {
+      min-height: 46px;
+      padding: 0 19px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 650;
+      text-decoration: none;
+      transition: transform .2s ease, background .2s ease, border-color .2s ease;
+    }
+    .button:hover { transform: translateY(-2px); }
+    .button-primary { color: #211c15; background: var(--gold-light); }
+    .button-primary:hover { background: #f6e3b8; }
+    .button-quiet { border-color: var(--line); color: #ddd9d2; }
+    .button-quiet:hover { border-color: rgba(215,184,121,.55); }
+    .arrow { font-size: 17px; line-height: 1; }
+    .fine-print { margin: 17px 0 0; color: #83838a; font-size: 11px; }
+
+    .art {
+      min-height: 470px;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+    .art-glow {
+      position: absolute;
+      width: min(100%, 440px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(185,134,74,.14), rgba(92,88,92,.08) 42%, transparent 69%);
+      filter: blur(7px);
+    }
+    .story-card {
+      position: relative;
+      width: min(100%, 390px);
+      min-height: 430px;
+      padding: 28px;
+      overflow: hidden;
+      border: 1px solid rgba(218,190,140,.32);
+      border-radius: 48% 48% 5px 5px / 35% 35% 5px 5px;
+      background:
+        linear-gradient(180deg, rgba(18,23,31,.22), rgba(15,18,25,.94) 76%),
+        radial-gradient(ellipse at 50% 31%, rgba(201,155,93,.5), transparent 29%),
+        linear-gradient(140deg, #43505b, #28323d 42%, #1a1d25 80%);
+      box-shadow: 0 28px 85px rgba(0,0,0,.42), inset 0 0 45px rgba(245,211,152,.06);
+    }
+    .story-card::before {
+      content: "";
+      position: absolute;
+      inset: 11px;
+      border: 1px solid rgba(230,210,170,.15);
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    .moon {
+      position: absolute;
+      width: 91px;
+      height: 91px;
+      left: 50%;
+      top: 67px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 38%, #fff2cd, #d9b77e 48%, rgba(215,184,121,.15) 74%);
+      box-shadow: 0 0 54px rgba(239,202,135,.38);
+    }
+    .ridge {
+      position: absolute;
+      left: -12%;
+      width: 125%;
+      height: 180px;
+      bottom: 92px;
+      background: #202630;
+      clip-path: polygon(0 77%, 18% 41%, 28% 62%, 48% 18%, 62% 53%, 78% 28%, 100% 72%, 100% 100%, 0 100%);
+      opacity: .94;
+    }
+    .ridge-back {
+      bottom: 104px;
+      transform: scaleX(-1);
+      background: #303944;
+      opacity: .7;
+    }
+    .forest {
+      position: absolute;
+      inset: auto 0 0;
+      height: 155px;
+      background: #131820;
+      clip-path: polygon(0 42%, 5% 54%, 8% 24%, 12% 58%, 17% 31%, 21% 66%, 27% 22%, 32% 61%, 38% 35%, 42% 64%, 48% 14%, 54% 65%, 60% 29%, 66% 61%, 73% 19%, 79% 61%, 84% 34%, 89% 67%, 94% 24%, 100% 53%, 100% 100%, 0 100%);
+    opacity: .95;
+    filter: drop-shadow(0 -12px 14px rgba(10,12,17,.2));
+  }
+    .card-caption {
+      position: absolute;
+      z-index: 1;
+      left: 30px;
+      right: 30px;
+      bottom: 31px;
+      text-align: center;
+    }
+    .card-caption small {
+      display: block;
+      color: var(--gold-light);
+      text-transform: uppercase;
+      letter-spacing: .18em;
+      font-size: 9px;
+      margin-bottom: 8px;
+    }
+    .card-caption strong {
+      display: block;
+      font: 400 22px/1.15 var(--serif);
+      color: #f4ecdd;
+    }
+    .orbit {
+      position: absolute;
+      width: 440px;
+      aspect-ratio: 1;
+      border: 1px solid rgba(215,184,121,.13);
+      border-radius: 50%;
+      transform: rotate(-20deg) scaleY(.67);
+    }
+    .orbit::before, .orbit::after {
+      content: "✦";
+      position: absolute;
+      color: var(--gold);
+      font-size: 13px;
+      text-shadow: 0 0 17px var(--gold);
+    }
+    .orbit::before { top: 16%; left: 15%; }
+    .orbit::after { bottom: 16%; right: 15%; font-size: 9px; }
+
+    .section { padding: 91px 0; border-top: 1px solid rgba(255,255,255,.07); }
+    .section-head { max-width: 650px; margin-bottom: 37px; }
+    .section-head h2 {
+      margin: 14px 0 12px;
+      font: 400 clamp(34px, 4.2vw, 49px)/1.08 var(--serif);
+      letter-spacing: -.025em;
+    }
+    .section-head p { margin-bottom: 0; max-width: 550px; color: var(--muted); font-size: 14px; }
+    .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .principle {
+      min-height: 208px;
+      padding: 24px 24px 25px;
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+    }
+    .principle-num { color: var(--gold); font: 400 14px var(--serif); }
+    .principle h3 { margin: 22px 0 8px; font: 400 23px/1.15 var(--serif); }
+    .principle p { margin: 0; color: #aaa9ac; font-size: 13px; line-height: 1.7; }
+
+    .manifesto {
+      padding: 40px;
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(ellipse at 100% 0%, rgba(185,134,74,.11), transparent 43%),
+        var(--panel);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 28px;
+    }
+    .manifesto blockquote {
+      max-width: 670px;
+      margin: 0;
+      font: 400 clamp(25px, 3.2vw, 37px)/1.2 var(--serif);
+      letter-spacing: -.02em;
+    }
+    .manifesto blockquote span { color: var(--gold-light); }
+    .manifesto-note { color: var(--muted); font-size: 12px; margin: 14px 0 0; }
+    .seal {
+      width: 84px; height: 84px;
+      display: grid; place-items: center;
+      border: 1px solid rgba(215,184,121,.45);
+      border-radius: 50%;
+      color: var(--gold-light);
+      font: 400 33px var(--serif);
+      box-shadow: inset 0 0 20px rgba(215,184,121,.07), 0 0 28px rgba(215,184,121,.06);
+    }
+    .footer {
+      min-height: 90px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      color: #85848b;
+      font-size: 11px;
+    }
+    .footer .brand { color: #c9c5bc; font-size: 10px; }
+    .footer .brand-mark { width: 28px; height: 28px; font-size: 17px; }
+
+    @media (max-width: 780px) {
+      .shell { width: min(100% - 36px, 620px); }
+      .topbar { height: 68px; }
+      .nav { gap: 15px; }
+      .nav a { font-size: 11px; }
+      .nav a:first-child { display: none; }
+      .nav .nav-cta { padding: 8px 12px; }
+      .hero { min-height: auto; grid-template-columns: 1fr; gap: 14px; padding: 75px 0 48px; }
+      .hero-copy { font-size: 15px; }
+      .art { min-height: 425px; }
+      .story-card { width: min(90%, 360px); min-height: 390px; }
+      .orbit { width: min(100%, 400px); }
+      .section { padding: 68px 0; }
+      .principles { grid-template-columns: 1fr; }
+      .principle { min-height: 0; }
+      .principle h3 { margin-top: 14px; }
+      .manifesto { padding: 26px; grid-template-columns: 1fr; }
+      .seal { width: 60px; height: 60px; font-size: 25px; }
+    }
+    @media (max-width: 420px) {
+      .shell { width: calc(100% - 28px); }
+      .brand { gap: 8px; font-size: 11px; }
+      .brand-mark { width: 32px; height: 32px; }
+      .nav { gap: 8px; }
+      .nav a { font-size: 10px; }
+      .nav .nav-cta { padding: 7px 9px; }
+      h1 { font-size: 49px; }
+      .button { padding: 0 14px; }
+      .actions { gap: 8px; }
+      .story-card { min-height: 360px; }
+      .art { min-height: 390px; }
+      .footer { align-items: flex-start; flex-direction: column; justify-content: center; padding: 20px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell topbar">
+    <a class="brand" href="#inicio" aria-label="Mind RolePlay — início">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <span>Mind RolePlay</span>
+    </a>
+    <nav class="nav" aria-label="Navegação principal">
+      <a href="#ideia">A ideia</a>
+      <a href="#principios">Princípios</a>
+      <a class="nav-cta" href="#projeto">Projeto em criação <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="shell hero" id="inicio">
+      <div>
+        <div class="eyebrow">Um novo RPG está tomando forma</div>
+        <h1>Histórias que mudam quando <em>você escolhe.</em></h1>
+        <p class="hero-copy">
+          Mind RolePlay é um novo sistema de RPG em construção, criado para colocar
+          a narrativa, os personagens e as consequências das escolhas no centro da experiência.
+        </p>
+        <div class="actions">
+          <a class="button button-primary" href="#ideia">Entre nessa história <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="button button-quiet" href="#principios">Conheça a ideia</a>
+        </div>
+        <p class="fine-print">Projeto independente • Primeira etapa: imaginar juntos</p>
+      </div>
+
+      <div class="art" aria-label="Ilustração abstrata de uma paisagem fantástica sob a lua">
+        <div class="art-glow"></div>
+        <div class="orbit" aria-hidden="true"></div>
+        <div class="story-card" aria-hidden="true">
+          <div class="moon"></div>
+          <div class="ridge ridge-back"></div>
+          <div class="ridge"></div>
+          <div class="forest"></div>
+          <div class="card-caption">
+            <small>O começo de tudo</small>
+            <strong>O mundo espera<br>pela sua escolha.</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="ideia">
+      <div class="shell">
+        <div class="section-head">
+          <div class="eyebrow">A ideia por trás do nome</div>
+          <h2>Primeiro vem a história.<br>O resto ajuda a contá-la.</h2>
+          <p>
+            Um espaço para criar aventuras com personagens marcantes, decisões que importam
+            e um mundo que ganha forma conforme os jogadores exploram suas possibilidades.
+          </p>
+        </div>
+        <div class="principles" id="principios">
+          <article class="principle">
+            <span class="principle-num">01 — Narrativa</span>
+            <h3>Uma história compartilhada</h3>
+            <p>As ideias e escolhas de cada pessoa ajudam a construir o caminho da aventura.</p>
+          </article>
+          <article class="principle">
+            <span class="principle-num">02 — Personagens</span>
+            <h3>Gente no centro do mundo</h3>
+            <p>Personagens, vínculos e objetivos dão significado ao que acontece na história.</p>
+          </article>
+          <article class="principle">
+            <span class="principle-num">03 — Consequências</span>
+            <h3>Escolhas deixam marcas</h3>
+            <p>As decisões podem transformar relações, cenários e os rumos da narrativa.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="projeto">
+      <div class="shell">
+        <div class="manifesto">
+          <div>
+            <blockquote>“A aventura não está pronta.<br><span>Ela começa quando a gente imagina.”</span></blockquote>
+            <p class="manifesto-note">Mind RolePlay está em fase de concepção. As regras e o universo serão definidos durante a construção do projeto.</p>
+          </div>
+          <div class="seal" aria-hidden="true">✧</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell footer">
+    <a class="brand" href="#inicio">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <span>Mind RolePlay</span>
+    </a>
+    <span>Uma ideia em construção, uma história de cada vez.</span>
+  </footer>
+</body>
+</html>
