@@ -48,7 +48,7 @@ function localCampaigns() {
       if (sample) {
         const index = stored.findIndex(item => item.id === sample.id);
         if (index < 0) stored.push(sample);
-        else if (Number(stored[index].schemaVersion || 1) < 3) {
+        else if (Number(stored[index].schemaVersion || 1) < 3 || (stored[index].classes || []).length !== sample.classes.length || (stored[index].art || []).length !== sample.art.length) {
           const old = stored[index];
           stored[index] = {
             ...sample, ...old, schemaVersion: 3,
