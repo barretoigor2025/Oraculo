@@ -135,122 +135,114 @@ function openSection(id) {
   showScreen('section');
 }
 
+function makeStarterClasses(text, genre) {
+  const source = String(text || '');
+  const explicit = source.match(/(?:classes|arquétipos|profissões)\s*:?\s*([\s\S]{0,700})/i)?.[1]
+    ?.split(/\n/).filter(line => /^\s*(?:[-*•]|\d+[.)])\s*/.test(line))
+    .map(line => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').split(/[—:]/)[0].trim()).filter(Boolean).slice(0, 6);
+  const setting = (genre + ' ' + source).toLowerCase();
+  const profiles = /terror|horror|vamp|zumbi|sobreviv/i.test(setting)
+    ? [
+      ['Investigador','🔦','Lê pistas e percebe detalhes sob pressão.',{ST:9,DX:10,IQ:13,HT:10},[['Investigação',13],['Percepção',12],['Persuasão',11]]],
+      ['Sobrevivente','🧭','Resiste, improvisa e encontra rotas seguras.',{ST:11,DX:12,IQ:10,HT:13},[['Sobrevivência',13],['Furtividade',12],['Primeiros socorros',11]]],
+      ['Diplomata','🕯️','Consegue cooperação e acalma situações tensas.',{ST:9,DX:10,IQ:11,HT:10},[['Lábia',13],['Empatia',13],['Pesquisa',10]]],
+      ['Guardião','🛡️','Protege o grupo e aguenta confronto direto.',{ST:13,DX:10,IQ:10,HT:12},[['Briga',13],['Intimidação',11],['Primeiros socorros',10]]],
+    ]
+    : /futur|espaço|sci.?fi|cyber|tecnolog/i.test(setting)
+      ? [
+        ['Explorador','🪐','Explora ambientes desconhecidos e mantém o grupo em movimento.',{ST:10,DX:12,IQ:12,HT:11},[['Exploração',13],['Percepção',12],['Pilotagem',11]]],
+        ['Técnico','🔧','Entende máquinas, sistemas e soluções improvisadas.',{ST:9,DX:11,IQ:14,HT:10},[['Tecnologia',14],['Conserto',13],['Pesquisa',11]]],
+        ['Mediador','🛰️','Negocia alianças e interpreta intenções.',{ST:9,DX:10,IQ:12,HT:10},[['Diplomacia',13],['Lábia',12],['Empatia',12]]],
+        ['Defensor','🚀','Mantém a equipe segura em situações perigosas.',{ST:13,DX:11,IQ:10,HT:12},[['Armas',13],['Tática',12],['Primeiros socorros',10]]],
+      ]
+      : [
+        ['Batedor','🏹','Encontra caminhos, percebe perigos e age com agilidade.',{ST:10,DX:13,IQ:11,HT:11},[['Furtividade',13],['Percepção',12],['Sobrevivência',11]]],
+        ['Erudito','📜','Conhece histórias, idiomas e pistas escondidas.',{ST:9,DX:10,IQ:14,HT:10},[['Conhecimento',14],['Pesquisa',13],['Persuasão',10]]],
+        ['Guardião','🛡️','Protege aliados e enfrenta ameaças de perto.',{ST:13,DX:10,IQ:10,HT:12},[['Briga',13],['Intimidação',11],['Vigor',12]]],
+        ['Curandeiro','🌿','Cuida de ferimentos e mantém o grupo em condições de seguir.',{ST:9,DX:11,IQ:12,HT:11},[['Primeiros socorros',13],['Empatia',12],['Conhecimento',11]]],
+      ];
+  return profiles.map((p,index)=>({id:'class-'+(index+1),name:explicit?.[index]||p[0],icon:p[1],portrait:'',description:p[2],attributes:p[3],skills:p[4].map(([name,level])=>({name,level})),fixedAbilities:[p[2]],startingLevel:1}));
+}
+
+function analyzeCampaignText(text, genre) {
+  const lines=String(text||'').split(/\n+/).map(line=>line.trim()).filter(Boolean);
+  const headings=lines.filter(line=>/^(?:capítulo|cena|local|npc|personagem|monstro|missão|ato)\b/i.test(line));
+  const threats=/monstro|inimigo|perigo|combate|ameaça|boss|vilão/i.test(text);
+  const social=/negoci|convenc|persuad|mentir|diálogo|polític/i.test(text);
+  const exploration=/explor|investig|pista|mapa|ruína|segredo/i.test(text);
+  const checklist=[
+    {title:'Revisar classes iniciais sugeridas',description:'Confirmar se os arquétipos combinam com esta campanha.',done:false},
+    {title:'Definir retratos das classes',description:'Adicionar a arte definitiva depois da revisão.',done:false},
+    ...(headings.length?[]:[{title:'Separar capítulos e cenas',description:'O roteiro não trouxe títulos claros de cena.',done:false}]),
+    {title:'Preparar mapa e referências visuais',description:'Itens visuais podem ser adicionados quando necessários.',done:false},
+  ].map((item,index)=>({id:'check-'+index,...item,createdAt:Date.now()}));
+  return {status:'rascunho-local',extractedAt:Date.now(),sceneHeadings:headings,checklist,balance:{startingLevel:1,recommendedSkillRange:'11–13',threats:threats?'ameaças presentes; priorizar sobrevivência e proteção':'começo de baixo risco; foco em exploração e interação',social,exploration,threats,narratorReview:'Sugestão inicial para nível 1; o narrador confirma o tom e a dificuldade.'}};
+}
+
 function renderSectionBody() {
-  const campaign = currentCampaign();
-  const body = document.querySelector('#section-body');
-
-  if (currentSectionId === 'story') {
-    body.innerHTML = `<div class="panel editor">
-      <div class="hint-box">O roteiro e as notas pertencem apenas a esta campanha.</div>
-      <label class="field">Premissa<textarea id="edit-premise" class="input textarea" placeholder="Qual é a ideia central desta campanha?">${escapeHtml(campaign.premise || '')}</textarea></label>
-      <label class="field">Roteiro e cenas<textarea id="edit-story" class="input textarea" rows="8" placeholder="Cole ou escreva o roteiro. Você pode organizar em capítulos e cenas.">${escapeHtml(campaign.story || '')}</textarea></label>
-      <label class="field">Fonte ou link de referência<input id="edit-source" class="input" value="${escapeAttr(campaign.source || '')}" placeholder="https://..."></label>
-      <button id="save-story" class="button primary">Salvar roteiro</button>
-    </div>`;
-    document.querySelector('#save-story').addEventListener('click', async () => {
-      campaign.premise = document.querySelector('#edit-premise').value.trim();
-      campaign.story = document.querySelector('#edit-story').value.trim();
-      campaign.source = document.querySelector('#edit-source').value.trim();
-      await persistCampaign(campaign);
-      openCampaign(campaign.id);
-      notice('Roteiro salvo nesta campanha.');
+  const campaign=currentCampaign(), body=document.querySelector('#section-body');
+  if(currentSectionId==='story'){
+    const analysis=campaign.analysis;
+    body.innerHTML=\`<div class="panel editor">
+      <div class="hint-box">O roteiro é a entrada do pacote. A análise organiza classes, cenas e necessidades; o narrador revisa as sugestões.</div>
+      <div class="analysis-summary"><span class="analysis-mark">✦</span><div><strong>\${analysis?'Análise inicial pronta':'Roteiro ainda não analisado'}</strong><small>\${analysis?escapeHtml(analysis.balance.threats):'Cole o roteiro ao instalar a campanha para montar o pacote.'}</small></div></div>
+      <div class="story-source"><small>ROTEIRO DA CAMPANHA</small><p>\${escapeHtml(campaign.story||'Nenhum roteiro importado ainda.')}</p></div>
+      \${campaign.source?\`<div class="source-line">Fonte: \${escapeHtml(campaign.source)}</div>\`:''}
+      \${analysis?\`<div class="hint-box">Nível inicial sugerido: \${analysis.balance.startingLevel} · perícias iniciais \${analysis.balance.recommendedSkillRange}. \${escapeHtml(analysis.balance.narratorReview)}</div>\`:''}
+      <button id="reanalyze-story" class="button">\${analysis?'Reanalisar roteiro':'Analisar roteiro'}</button>
+      <small class="prototype-note">Análise estrutural local de demonstração. A integração com o serviço de IA do Oráculo ainda não está conectada.</small>
+    </div>\`;
+    document.querySelector('#reanalyze-story').addEventListener('click',async()=>{
+      campaign.analysis=analyzeCampaignText(campaign.story||'',campaign.genre||'');
+      campaign.classes=makeStarterClasses(campaign.story||'',campaign.genre||'');
+      campaign.checklist=campaign.analysis.checklist;
+      campaign.npcs=campaign.analysis.sceneHeadings.filter(name=>/^npc|personagem/i.test(name)).map((title,index)=>({id:'npc-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
+      campaign.scenes=campaign.analysis.sceneHeadings.filter(name=>/cena|capítulo|ato|local/i.test(name)).map((title,index)=>({id:'scene-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
+      await persistCampaign(campaign);openCampaign(campaign.id);notice('Estrutura inicial preparada para revisão.');
     });
     return;
   }
-
-  if (currentSectionId === 'characters') {
-    body.innerHTML = `<div class="panel editor">
-      <div class="hint-box">Condições ficam registradas na ficha e acompanham o personagem. O modificador aqui é um campo provisório para o narrador definir como aquela condição afeta os testes.</div>
-      <form id="character-form" class="editor-form">
-        <div class="form-grid">
-          <label class="field">Nome do personagem<input class="input" name="name" required maxlength="40" placeholder="Nome"></label>
-          <label class="field">Classe ou arquétipo<input class="input" name="className" maxlength="40" placeholder="Opcional"></label>
-          <label class="field">Perícia inicial<input class="input" name="skillName" required maxlength="40" placeholder="Ex.: Persuasão"></label>
-          <label class="field">Nível da perícia<input class="input" name="skillLevel" type="number" min="1" max="20" value="10" required></label>
-          <label class="field">ST · Força<input class="input" name="st" type="number" min="1" max="20" value="10" required></label>
-          <label class="field">DX · Destreza<input class="input" name="dx" type="number" min="1" max="20" value="10" required></label>
-          <label class="field">IQ · Inteligência<input class="input" name="iq" type="number" min="1" max="20" value="10" required></label>
-          <label class="field">HT · Saúde<input class="input" name="ht" type="number" min="1" max="20" value="10" required></label>
-          <label class="field wide-field">Vantagens<input class="input" name="advantages" placeholder="Ex.: boa reputação"></label>
-          <label class="field wide-field">Desvantagens<input class="input" name="disadvantages" placeholder="Ex.: medo de altura"></label>
-          <label class="field wide-field">Condição persistente<input class="input" name="conditionName" placeholder="Ex.: braço lesionado (ou deixe vazio)"></label>
-          <label class="field">Modificador provisório<input class="input" name="conditionModifier" type="number" value="0"></label>
-          <label class="check-row"><input type="checkbox" name="permanent"> Marcar como permanente</label>
-        </div>
-        <button class="button primary">＋ Criar personagem</button>
-      </form>
-      <div id="character-list" class="item-list"></div>
-    </div>`;
+  if(currentSectionId==='classes'){
+    const classes=campaign.classes||[];
+    body.innerHTML=\`<div class="class-grid">\${classes.length?classes.map(cls=>\`
+      <article class="class-template"><div class="class-portrait">\${escapeHtml(cls.icon||'✦')}</div>
+        <div class="class-template-copy"><small>CLASSE · NÍVEL \${cls.startingLevel||1}</small><h2>\${escapeHtml(cls.name)}</h2><p>\${escapeHtml(cls.description||'')}</p>
+          <div class="class-stats">\${Object.entries(cls.attributes||{}).map(([key,value])=>\`<span>\${key} <b>\${value}</b></span>\`).join('')}</div>
+          <small>Perícias fixas: \${(cls.skills||[]).map(skill=>escapeHtml(skill.name)+' '+skill.level).join(' · ')}</small>
+          <small>Habilidade: \${(cls.fixedAbilities||[]).map(escapeHtml).join(' · ')}</small></div></article>\`).join(''):'<div class="empty-state">Analise o roteiro para preparar as classes desta campanha.</div>'}</div>
+      <div class="prototype-note">Estas fichas formam a base inicial fixa. A árvore de evolução será uma etapa futura.</div>\`;
+    return;
+  }
+  if(currentSectionId==='characters'){
+    const classes=campaign.classes||[];
+    body.innerHTML=\`<div class="panel editor"><div class="hint-box">A classe define atributos e perícias iniciais. Você informa apenas nome, gênero e classe.</div>
+      \${classes.length?\`<form id="character-form" class="editor-form">
+        <div class="class-picker">\${classes.map((cls,index)=>\`<label class="class-option \${index===0?'selected':''}"><input type="radio" name="classId" value="\${escapeAttr(cls.id)}" \${index===0?'checked':''} required><span class="class-option-icon">\${escapeHtml(cls.icon||'✦')}</span><span><strong>\${escapeHtml(cls.name)}</strong><small>\${escapeHtml(cls.description||'')}</small></span></label>\`).join('')}</div>
+        <div class="form-grid"><label class="field">Nome do personagem<input class="input" name="name" required maxlength="40" placeholder="Nome"></label>
+          <label class="field">Gênero<select class="input" name="gender" required><option value="">Escolha</option><option>Feminino</option><option>Masculino</option><option>Não binário</option><option>Prefiro não informar</option></select></label></div>
+        <button class="button primary">＋ Criar personagem</button></form>\`:'<div class="empty-state">Importe e analise o roteiro para preparar as classes desta campanha.</div>'}
+      <div id="character-list" class="item-list"></div></div>\`;
     renderCharacterList();
-    document.querySelector('#character-form').addEventListener('submit', async event => {
-      event.preventDefault();
-      const form = new FormData(event.currentTarget);
-      const name = String(form.get('name')).trim();
-      const skillName = String(form.get('skillName')).trim();
-      const conditionName = String(form.get('conditionName') || '').trim();
-      const character = {
-        id: crypto.randomUUID(),
-        name,
-        className: String(form.get('className') || '').trim(),
-        skills: [{ name: skillName, level: Number(form.get('skillLevel')) || 10 }],
-        attributes: {
-          ST: Number(form.get('st')) || 10,
-          DX: Number(form.get('dx')) || 10,
-          IQ: Number(form.get('iq')) || 10,
-          HT: Number(form.get('ht')) || 10,
-        },
-        advantages: String(form.get('advantages') || '').trim(),
-        disadvantages: String(form.get('disadvantages') || '').trim(),
-        conditions: conditionName ? [{
-          id: crypto.randomUUID(),
-          name: conditionName,
-          modifier: Number(form.get('conditionModifier')) || 0,
-          permanent: form.get('permanent') === 'on',
-          scope: 'all',
-          createdAt: Date.now(),
-        }] : [],
-        createdAt: Date.now(),
-      };
-      campaign.characters ||= [];
-      campaign.characters.push(character);
-      await persistCampaign(campaign);
-      renderSectionBody();
-      notice('Personagem criado e condição registrada na ficha.');
+    document.querySelectorAll('.class-option').forEach(option=>option.addEventListener('click',()=>document.querySelectorAll('.class-option').forEach(row=>row.classList.toggle('selected',row===option))));
+    document.querySelector('#character-form')?.addEventListener('submit',async event=>{
+      event.preventDefault();const form=new FormData(event.currentTarget),cls=classes.find(item=>item.id===form.get('classId'));if(!cls)return;
+      campaign.characters||=[];
+      campaign.characters.push({id:crypto.randomUUID(),name:String(form.get('name')).trim(),gender:String(form.get('gender')),classId:cls.id,className:cls.name,portrait:cls.portrait||'',icon:cls.icon||'✦',level:cls.startingLevel||1,attributes:{...cls.attributes},skills:structuredClone(cls.skills||[]),fixedAbilities:structuredClone(cls.fixedAbilities||[]),advantages:'',disadvantages:'',conditions:[],evolutionPoints:0,createdAt:Date.now()});
+      await persistCampaign(campaign);renderSectionBody();notice('Personagem criado a partir da classe da campanha.');
     });
     return;
   }
-
-  const list = campaign[currentSectionId] || [];
-  const label = currentSectionId === 'checklist' ? 'Item a preparar' :
-    currentSectionId === 'classes' ? 'Classe ou regra' :
-    currentSectionId === 'npcs' ? 'NPC' :
-    currentSectionId === 'scenes' ? 'Cenário ou cena' :
-    currentSectionId === 'maps' ? 'Mapa ou local' : 'Recurso visual';
-  body.innerHTML = `<div class="panel editor">
-    <form id="item-form" class="editor-form">
-      <label class="field">${label}<input class="input" name="title" required maxlength="70" placeholder="Nome"></label>
-      <label class="field">Notas<textarea class="input textarea" name="description" rows="3" placeholder="Descrição, instruções ou referência"></textarea></label>
-      <button class="button primary">＋ Adicionar</button>
-    </form>
-    <div id="section-items" class="item-list"></div>
-  </div>`;
+  const list=campaign[currentSectionId]||[];
+  const label=currentSectionId==='checklist'?'Item a preparar':currentSectionId==='npcs'?'NPC':currentSectionId==='scenes'?'Cenário ou cena':currentSectionId==='maps'?'Mapa ou local':'Recurso visual';
+  body.innerHTML=\`<div class="panel editor">\${currentSectionId==='checklist'?'<div class="hint-box">Checklist preparado a partir do roteiro e revisável pelo narrador.</div>':''}
+    <form id="item-form" class="editor-form"><label class="field">\${label}<input class="input" name="title" required maxlength="70" placeholder="Nome"></label>
+      <label class="field">Notas<textarea class="input textarea" name="description" rows="3" placeholder="Descrição, instruções ou referência"></textarea></label><button class="button primary">＋ Adicionar</button></form>
+    <div id="section-items" class="item-list"></div></div>\`;
   renderGenericItems(list);
-  document.querySelector('#item-form').addEventListener('submit', async event => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const item = {
-      id: crypto.randomUUID(),
-      title: String(form.get('title')).trim(),
-      description: String(form.get('description') || '').trim(),
-      done: false,
-      createdAt: Date.now(),
-    };
-    campaign[currentSectionId] ||= [];
-    campaign[currentSectionId].push(item);
-    if (currentSectionId === 'checklist') item.done = false;
-    await persistCampaign(campaign);
-    renderSectionBody();
-    notice(currentSectionId === 'checklist' ? 'Item adicionado ao checklist.' : 'Item adicionado ao pacote.');
+  document.querySelector('#item-form').addEventListener('submit',async event=>{
+    event.preventDefault();const form=new FormData(event.currentTarget);
+    campaign[currentSectionId]||=[];campaign[currentSectionId].push({id:crypto.randomUUID(),title:String(form.get('title')).trim(),description:String(form.get('description')||'').trim(),done:false,createdAt:Date.now()});
+    await persistCampaign(campaign);renderSectionBody();notice(currentSectionId==='checklist'?'Item adicionado ao checklist.':'Item adicionado ao pacote.');
   });
 }
 
@@ -504,32 +496,18 @@ document.querySelectorAll('[data-nav]').forEach(button => button.addEventListene
   showScreen(destination);
 }));
 
-document.querySelector('#new-campaign-form').addEventListener('submit', async event => {
+document.querySelector('#new-campaign-form').addEventListener('submit',async event=>{
   event.preventDefault();
-  const title = document.querySelector('#new-title').value.trim();
-  const genre = document.querySelector('#new-genre').value.trim();
-  if (!title) return;
+  const title=document.querySelector('#new-title').value.trim(),genre=document.querySelector('#new-genre').value.trim();
+  const script=document.querySelector('#new-story').value.trim(),source=document.querySelector('#new-source').value.trim();
+  if(!title||!script)return notice('Informe o nome da campanha e cole o roteiro.');
   let campaign;
-  if (firebaseMode) {
-    try { campaign = await createCampaignRemote(title, genre); }
-    catch (error) {
-      firebaseMode = false;
-      storageLabel.textContent = 'Prévia local';
-      notice('Firebase sem permissão para o Mind; criando pacote local neste navegador.');
-    }
-  }
-  if (!campaign) {
-    campaign = createEmptyCampaign('campaign-' + crypto.randomUUID(), title, genre);
-    campaigns.push(campaign);
-    saveLocalCampaigns();
-  } else {
-    campaigns.push(campaign);
-  }
-  currentCampaignId = campaign.id;
-  event.currentTarget.reset();
-  renderCampaigns();
-  openCampaign(campaign.id);
-  notice('Pacote criado com as áreas padrão.');
+  if(firebaseMode){try{campaign=await createCampaignRemote(title,genre);}catch(error){firebaseMode=false;storageLabel.textContent='Prévia local';notice('Firebase sem permissão para o Mind; criando pacote local neste navegador.');}}
+  if(!campaign){campaign=createEmptyCampaign('campaign-'+crypto.randomUUID(),title,genre);campaigns.push(campaign);saveLocalCampaigns();}else campaigns.push(campaign);
+  campaign.story=script;campaign.source=source;campaign.analysis=analyzeCampaignText(script,genre);campaign.classes=makeStarterClasses(script,genre);campaign.checklist=campaign.analysis.checklist;
+  campaign.npcs=campaign.analysis.sceneHeadings.filter(name=>/^npc|personagem/i.test(name)).map((title,index)=>({id:'npc-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
+  campaign.scenes=campaign.analysis.sceneHeadings.filter(name=>/cena|capítulo|ato|local/i.test(name)).map((title,index)=>({id:'scene-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
+  await persistCampaign(campaign);currentCampaignId=campaign.id;event.currentTarget.reset();renderCampaigns();openCampaign(campaign.id);notice('Pacote preparado: classes, cenas e checklist aguardam revisão.');
 });
 
 document.querySelector('#test-character').addEventListener('change', renderTestCharacter);
