@@ -218,14 +218,19 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   padding:0 6px; align-content:center;
 }
 .verb-btn{
-  height:38px !important;
+  height:42px !important;
   width:auto !important;
   border-radius:7px !important;
   padding:0 2px !important;
 }
 .verb-btn .btn-icon{ font-size:14px !important; }
 .verb-btn .btn-label{ font-size:8px !important; letter-spacing:.2px !important; }
-.verb-btn.inativo{ opacity:0.46 !important; filter:saturate(.45); }
+.verb-btn.inativo{ opacity:0.58 !important; filter:saturate(.45); }
+.verb-btn.inativo::after{
+  content:attr(data-reason-short); display:block; max-width:100%; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; color:#ead28e; font-size:6px;
+  font-weight:700; line-height:1; letter-spacing:0; opacity:.9;
+}
 
 /* ── Faixa 2: Detalhe contextual ── */
 #panel-detail{
@@ -2226,6 +2231,7 @@ function _updateVerbBtns(){
     btn.title = reason;
     btn.setAttribute('aria-label', label + (e[k] ? ': disponível agora' : ': ' + reason));
     btn.dataset.estado = e[k] ? 'disponivel' : 'bloqueada';
+    btn.dataset.reasonShort = e[k] ? '' : _motivoAcaoCurto(k, faseDoTurno);
   });
   const btnAl = document.getElementById('btn-acao-livre');
   if(btnAl){
@@ -2236,7 +2242,19 @@ function _updateVerbBtns(){
     btnAl.title = reason;
     btnAl.setAttribute('aria-label', 'Ação livre' + (e.acaolivre ? ': disponível agora' : ': ' + reason));
     btnAl.dataset.estado = e.acaolivre ? 'disponivel' : 'bloqueada';
+    btnAl.dataset.reasonShort = e.acaolivre ? '' : _motivoAcaoCurto('acaolivre', faseDoTurno);
   }
+}
+
+function _motivoAcaoCurto(acao, fase){
+  if(fase==='planejar_mover' && ['atacar','skill'].includes(acao)) return 'Depois de mover';
+  if(fase==='mover_ativo') return acao==='mover' ? 'Escolha ou cancele' : 'Conclua o movimento';
+  if(fase==='planejar_acao' && acao==='mover') return 'Movimento já definido';
+  if(fase==='acao_ativa') return 'Conclua a mira';
+  if(fase==='acao_pronta') return 'Cancele para alterar';
+  if(fase==='turno_inimigo') return 'Turno inimigo';
+  if(fase==='aguardando') return 'Aguarde sua vez';
+  return 'Indisponível agora';
 }
 
 function _motivoAcaoBloqueada(acao, fase){
