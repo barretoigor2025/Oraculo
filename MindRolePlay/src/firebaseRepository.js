@@ -41,6 +41,18 @@ export async function installDemoCampaignsIfEmpty() {
       })
     ));
   }
+  const kagehama = createDemoCampaigns().find(campaign => campaign.id === 'demo-kagehama');
+  const savedKagehama = existing.find(campaign => campaign.id === 'demo-kagehama');
+  if (kagehama && savedKagehama && Number(savedKagehama.schemaVersion || 1) < 3) {
+    const seedIds = new Set(kagehama.checklist.map(item => item.id));
+    await setDoc(doc(db, CAMPAIGNS, kagehama.id), {
+      ...kagehama, ...savedKagehama, schemaVersion: 3,
+      classes: kagehama.classes, art: kagehama.art, progression: kagehama.progression,
+      progressionLog: savedKagehama.progressionLog || [],
+      checklist: [...kagehama.checklist, ...(savedKagehama.checklist || []).filter(item => !seedIds.has(item.id))],
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  }
   return loadCampaigns();
 }
 
