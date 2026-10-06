@@ -110,11 +110,10 @@ function updateHomeCampaign() {
 }
 
 function renderCampaigns() {
-  const cards = campaigns.map((campaign,index) => '<button class="campaign-card manga-card" data-play-campaign="' + escapeAttr(campaign.id) + '"><span class="number">HISTÓRIA ' + String(index+1).padStart(2,'0') + ' · ' + escapeHtml(campaign.genre || 'Aventura') + '</span><strong>' + escapeHtml(campaign.title) + '</strong><span>' + escapeHtml(campaign.premise || 'Uma campanha narrativa pronta para receber personagens.') + '</span><b>ESCOLHER PERSONAGEM →</b></button>').join('');
-  const grid=document.querySelector('#campaign-grid');
-  if(grid) grid.innerHTML=cards;
-  const home=document.querySelector('#home-campaign-grid');
-  if(home) home.innerHTML=cards || '<p class="empty-state">Nenhuma campanha instalada ainda. Abra o Mind Database para preparar a primeira.</p>';
+  const playCards=campaigns.map((campaign,index) => '<button class="campaign-card manga-card" data-play-campaign="'+escapeAttr(campaign.id)+'"><span class="number">HISTÓRIA '+String(index+1).padStart(2,'0')+' · '+escapeHtml(campaign.genre||'Aventura')+'</span><strong>'+escapeHtml(campaign.title)+'</strong><span>'+escapeHtml(campaign.premise||'Uma campanha narrativa pronta para receber personagens.')+'</span><b>ESCOLHER PERSONAGEM →</b></button>').join('');
+  const dbCards=campaigns.map((campaign,index) => '<button class="campaign-card manga-card" data-open-campaign="'+escapeAttr(campaign.id)+'"><span class="number">PACOTE '+String(index+1).padStart(2,'0')+' · '+escapeHtml(campaign.genre||'Gênero não definido')+'</span><strong>'+escapeHtml(campaign.title)+'</strong><span>'+countCampaignContent(campaign)+' elementos preparados · abrir Mind Database →</span></button>').join('');
+  const grid=document.querySelector('#campaign-grid');if(grid)grid.innerHTML=dbCards;
+  const home=document.querySelector('#home-campaign-grid');if(home)home.innerHTML=playCards||'<p class="empty-state">Nenhuma campanha instalada ainda. Abra o Mind Database para preparar a primeira.</p>';
   document.querySelectorAll('[data-play-campaign]').forEach(button=>button.addEventListener('click',()=>openCharacterBuilder(button.dataset.playCampaign)));
   document.querySelectorAll('[data-open-campaign]').forEach(button=>button.addEventListener('click',()=>openCampaign(button.dataset.openCampaign)));
 }
