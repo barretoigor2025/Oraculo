@@ -43,7 +43,14 @@ function localPlayerId() {
 function localCampaigns() {
   try {
     const stored = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
-    if (Array.isArray(stored) && stored.length) return stored;
+    if (Array.isArray(stored) && stored.length) {
+      const sample = createDemoCampaigns().find(item => item.id === 'demo-kagehama');
+      if (sample && !stored.some(item => item.id === sample.id)) {
+        stored.push(sample);
+        localStorage.setItem(STORE_KEY, JSON.stringify(stored));
+      }
+      return stored;
+    }
   } catch {}
   const samples = createDemoCampaigns();
   localStorage.setItem(STORE_KEY, JSON.stringify(samples));
