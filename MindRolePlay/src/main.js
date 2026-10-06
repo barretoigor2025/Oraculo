@@ -264,7 +264,7 @@ function renderSectionBody() {
         <div class="art-card-copy"><small>${escapeHtml(cls.archetype||'CLASSE')}</small><h3>${escapeHtml(cls.name)}</h3><p>${escapeHtml(cls.artBrief||cls.description||'Retrato da classe a criar.')}</p><code>${escapeHtml(cls.portrait||'Definir arquivo da arte')}</code>
         <label class="art-done"><input type="checkbox" data-art-done="${escapeAttr(item.id||'art-'+cls.id)}" ${item.done?'checked':''}> Marcar retrato como pronto</label></div></article>`}).join('')}</div>
       <div class="hint-box">Padrão visual: retrato vertical de corpo inteiro, mesma escala e acabamento de pintura. Os SVG atuais são guias substituíveis, não a arte final.</div>`;
-    body.querySelectorAll('[data-art-done]').forEach(input=>input.addEventListener('change',async()=>{const item=(campaign.art||[]).find(row=>row.id===input.dataset.artDone);if(item)item.done=input.checked;await persistCampaign(campaign);renderSectionBody()}));
+    body.querySelectorAll('[data-art-done]').forEach(input=>input.addEventListener('change',async()=>{const item=(campaign.art||[]).find(row=>row.id===input.dataset.artDone);if(item)item.done=input.checked;const classId=input.dataset.artDone.replace('art-','');const checklist=(campaign.checklist||[]).find(row=>row.id==='artcheck-'+classId);if(checklist)checklist.done=input.checked;await persistCampaign(campaign);renderSectionBody()}));
     return;
   }
   if(currentSectionId==='evolution'){
@@ -488,7 +488,7 @@ function renderRoomSummary(room, message) {
   document.querySelector('#room-message').textContent = message;
   const players = Array.isArray(room.players) ? room.players : [];
   document.querySelector('#room-player-list').innerHTML = players.length
-    ? players.map(player => `<div class="room-player">${escapeHtml(player.name || 'Jogador')}</div>`).join('')
+    ? players.map(player => `<div class="room-player">${escapeHtml(player.name || 'Jogador')}${player.characterName ? ` · ${escapeHtml(player.characterName)}${player.className ? ` (${escapeHtml(player.className)})` : ''}` : ''}</div>`).join('')
     : '<div class="room-player">Aguardando jogadores…</div>';
 }
 
@@ -511,6 +511,19 @@ function renderLobbyCampaigns() {
   select.innerHTML = campaigns.map(campaign =>
     `<option value="${campaign.id}">${escapeHtml(campaign.title)}</option>`).join('');
   if (currentCampaignId) select.value = currentCampaignId;
+  renderLobbyCharacters();
+}
+
+function renderLobbyCharacters() {
+  const select=document.querySelector('#lobby-character');if(!select)return;
+  const campaign=campaigns.find(item=>item.id===document.querySelector('#lobby-campaign').value);
+  const chars=campaign?.characters||[];
+  select.innerHTML='<option value="">Narrador / sem ficha</option>'+chars.map(character=>`<option value="${escapeAttr(character.id)}">${escapeHtml(character.name)} · ${escapeHtml(character.className||'Classe')}</option>`).join('');
+}
+
+function selectedLobbyCharacter() {
+  const campaign=campaigns.find(item=>item.id===document.querySelector('#lobby-campaign').value);
+  return (campaign?.characters||[]).find(character=>character.id===document.querySelector('#lobby-character').value)||null;
 }
 
 document.querySelectorAll('[data-nav]').forEach(button => button.addEventListener('click', () => {
@@ -536,6 +549,7 @@ document.querySelector('#new-campaign-form').addEventListener('submit',async eve
 });
 
 document.querySelector('#test-character').addEventListener('change', renderTestCharacter);
+document.querySelector('#lobby-campaign').addEventListener('change', renderLobbyCharacters);
 document.querySelector('#test-skill').addEventListener('change', updateTestFactors);
 document.querySelector('#roll-button').addEventListener('click', performTest);
 document.querySelector('#open-test').addEventListener('click', () => openTest());
@@ -546,7 +560,7 @@ document.querySelector('#create-room').addEventListener('click', async () => {
   let code = '';
   if (firebaseMode) {
     try {
-      code = await createRoomRemote(campaignId, localPlayerId(), name);
+      code = await createRoomRemote(campaignId, localPlayerId(), name, selectedLobbyCharacter());
       renderRoomSummary({ code, players: [{ name }] }, 'Sala online criada · compartilhe este código.');
       watchRoom(code);
       return;
@@ -557,7 +571,8 @@ document.querySelector('#create-room').addEventListener('click', async () => {
   }
   code = Math.random().toString(36).slice(2, 8).toUpperCase();
   const localRooms = JSON.parse(localStorage.getItem('mindRolePlay.rooms.demo') || '{}');
-  localRooms[code] = { code, campaignId, players: [{ name }] };
+  const character=selectedLobbyCharacter();
+  localRooms[code] = { code, campaignId, players: [{ name, characterName:character?.name||'', className:character?.className||'' }] };
   localStorage.setItem('mindRolePlay.rooms.demo', JSON.stringify(localRooms));
   renderRoomSummary(localRooms[code], 'Prévia local neste navegador. A sala online usa o Firebase quando as regras do Mind estiverem publicadas.');
 });
@@ -568,7 +583,7 @@ document.querySelector('#join-room').addEventListener('click', async () => {
   const playerName = document.querySelector('#player-name').value.trim() || 'Jogador';
   if (firebaseMode) {
     try {
-      const room = await joinRoomRemote(code, localPlayerId(), playerName);
+      const room = await joinRoomRemote(code, localPlayerId(), playerName, selectedLobbyCharacter());
       renderRoomSummary(room, 'Você entrou na sala · a lista de participantes atualiza em tempo real.');
       watchRoom(code);
       return;
