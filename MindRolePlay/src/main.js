@@ -389,6 +389,31 @@ function escapeHtml(value) {
 }
 function escapeAttr(value) { return escapeHtml(value); }
 
+function renderRoomSummary(room, message) {
+  const result = document.querySelector('#room-result');
+  result.classList.remove('hidden');
+  document.querySelector('#room-code-value').textContent = room.code || '';
+  document.querySelector('#room-message').textContent = message;
+  const players = Array.isArray(room.players) ? room.players : [];
+  document.querySelector('#room-player-list').innerHTML = players.length
+    ? players.map(player => `<div class="room-player">${escapeHtml(player.name || 'Jogador')}</div>`).join('')
+    : '<div class="room-player">Aguardando jogadores…</div>';
+}
+
+function watchRoom(code) {
+  if (roomUnsubscribe) roomUnsubscribe();
+  try {
+    roomUnsubscribe = listenRoom(code, room => {
+      if (room) renderRoomSummary(room, 'Sala sincronizada · compartilhe o código para convidar seus amigos.');
+    }, error => {
+      console.warn('Mind RolePlay: não foi possível acompanhar a sala em tempo real.', error);
+      notice('A sala foi criada, mas a sincronização em tempo real falhou.');
+    });
+  } catch (error) {
+    console.warn('Mind RolePlay: listener Firebase indisponível.', error);
+  }
+}
+
 function renderLobbyCampaigns() {
   const select = document.querySelector('#lobby-campaign');
   select.innerHTML = campaigns.map(campaign =>
@@ -441,37 +466,63 @@ document.querySelector('#create-room').addEventListener('click', async () => {
   const campaignId = document.querySelector('#lobby-campaign').value;
   let code = '';
   if (firebaseMode) {
-    try { code = await createRoomRemote(campaignId, localPlayerId(), name); }
-    catch (error) { firebaseMode = false; storageLabel.textContent = 'Prévia local'; }
+    try {
+      code = await createRoomRemote(campaignId, localPlayerId(), name);
+      renderRoomSummary({ code, players: [{ name }] }, 'Sala online criada · compartilhe este código.');
+      watchRoom(code);
+      return;
+    } catch (error) {
+      firebaseMode = false;
+      storageLabel.textContent = 'Prévia local';
+    }
   }
-  if (!code) {
-    code = Math.random().toString(36).slice(2, 8).toUpperCase();
-    const localRooms = JSON.parse(localStorage.getItem('mindRolePlay.rooms.demo') || '{}');
-    localRooms[code] = { campaignId, players: [name] };
-    localStorage.setItem('mindRolePlay.rooms.demo', JSON.stringify(localRooms));
-    document.querySelector('#room-result').textContent =
-      'Código ' + code + ' · prévia local neste navegador; salas online usam o Firebase quando as regras do Mind estiverem publicadas.';
-  } else {
-    document.querySelector('#room-result').textContent = 'Código da sala: ' + code + ' · compartilhe com seus amigos.';
-  }
-  document.querySelector('#room-result').classList.remove('hidden');
+  code = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const localRooms = JSON.parse(localStorage.getItem('mindRolePlay.rooms.demo') || '{}');
+  localRooms[code] = { code, campaignId, players: [{ name }] };
+  localStorage.setItem('mindRolePlay.rooms.demo', JSON.stringify(localRooms));
+  renderRoomSummary(localRooms[code], 'Prévia local neste navegador. A sala online usa o Firebase quando as regras do Mind estiverem publicadas.');
 });
 
 document.querySelector('#join-room').addEventListener('click', async () => {
   const code = document.querySelector('#room-code').value.trim().toUpperCase();
   if (!code) return notice('Digite o código da sala.');
-  try {
-    const room = await joinRoomRemote(code, localPlayerId(), document.querySelector('#player-name').value.trim() || 'Jogador');
-    document.querySelector('#room-result').textContent = 'Você entrou na sala ' + room.code + '. A campanha será carregada na sessão.';
-  } catch (error) {
-    const localRooms = JSON.parse(localStorage.getItem('mindRolePlay.rooms.demo') || '{}');
-    document.querySelector('#room-result').textContent = localRooms[code]
-      ? 'Código ' + code + ' encontrado na prévia local. Jogadores em outros dispositivos precisam da conexão Firebase ativa.'
-      : (error.message || 'Não encontrei uma sala com esse código.');
-    firebaseMode = false;
-    storageLabel.textContent = 'Prévia local';
+  const playerName = document.querySelector('#player-name').value.trim() || 'Jogador';
+  if (firebaseMode) {
+    try {
+      const room = await joinRoomRemote(code, localPlayerId(), playerName);
+      renderRoomSummary(room, 'Você entrou na sala · a lista de participantes atualiza em tempo real.');
+      watchRoom(code);
+      return;
+    } catch (error) {
+      if (error.message === 'Não encontrei uma sala com esse código.') {
+        renderRoomSummary({ code, players: [] }, error.message);
+        return;
+      }
+      firebaseMode = false;
+      storageLabel.textContent = 'Prévia local';
+    }
   }
-  document.querySelector('#room-result').classList.remove('hidden');
+  const localRooms = JSON.parse(localStorage.getItem('mindRolePlay.rooms.demo') || '{}');
+  const room = localRooms[code];
+  if (!room) {
+    renderRoomSummary({ code, players: [] }, 'Não encontrei uma sala local com esse código.');
+    return;
+  }
+  if (!room.players.some(player => player.name === playerName)) room.players.push({ name: playerName });
+  localRooms[code] = room;
+  localStorage.setItem('mindRolePlay.rooms.demo', JSON.stringify(localRooms));
+  renderRoomSummary(room, 'Sala de demonstração local · sincronização entre dispositivos usa Firebase.');
+});
+
+document.querySelector('#copy-room-code').addEventListener('click', async () => {
+  const code = document.querySelector('#room-code-value').textContent;
+  if (!code) return;
+  try {
+    await navigator.clipboard.writeText(code);
+    notice('Código copiado.');
+  } catch {
+    notice('Código da sala: ' + code);
+  }
 });
 
 async function boot() {
