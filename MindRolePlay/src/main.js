@@ -179,9 +179,9 @@ function prepareClassArt(campaign) {
   campaign.checklist ||= [];
   for (const cls of portraits) {
     const id = 'art-' + cls.id;
-    if (!campaign.art.some(item => item.id === id)) campaign.art.push({id,title:'Retrato · '+cls.name,description:cls.artBrief,assetPath:cls.portrait,kind:'portrait',status:'brief-ready',done:false});
+    if (!campaign.art.some(item => item.id === id)) campaign.art.push({id,title:'Retrato · '+cls.name,description:cls.artBrief,assetPath:cls.assetPath||cls.portrait,kind:'portrait',status:'brief-ready',done:false});
     const checkId = 'artcheck-' + cls.id;
-    if (!campaign.checklist.some(item => item.id === checkId)) campaign.checklist.unshift({id:checkId,title:'Criar retrato: '+cls.name,description:'Arte padronizada de personagem · arquivo-alvo '+cls.portrait,done:false,category:'Arte das classes',createdAt:Date.now()});
+    if (!campaign.checklist.some(item => item.id === checkId)) campaign.checklist.unshift({id:checkId,title:'Criar retrato: '+cls.name,description:'Arte padronizada de personagem · arquivo-alvo '+(cls.assetPath||cls.portrait),done:false,category:'Arte das classes',createdAt:Date.now()});
   }
 }
 
@@ -234,7 +234,7 @@ function renderSectionBody() {
           <div class="class-stats">${Object.entries(cls.attributes||{}).map(([key,value])=>`<span>${key} <b>${value}</b></span>`).join('')}</div>
           <small>Perícias fixas: ${(cls.skills||[]).map(skill=>escapeHtml(skill.name)+' '+skill.level).join(' · ')}</small>
           <small>Habilidade: ${(cls.fixedAbilities||[]).map(escapeHtml).join(' · ')}</small>
-          ${cls.artBrief?`<details class="art-brief"><summary>Direção da arte</summary><p>${escapeHtml(cls.artBrief)}</p><small>ARQUIVO-ALVO · ${escapeHtml(cls.portrait||'definir')}</small></details>`:''}</div></article>`).join(''):'<div class="empty-state">Analise o roteiro para preparar as classes desta campanha.</div>'}</div>
+          ${cls.artBrief?`<details class="art-brief"><summary>Direção da arte</summary><p>${escapeHtml(cls.artBrief)}</p><small>ARQUIVO-ALVO · ${escapeHtml(cls.assetPath||cls.portrait||'definir')}</small></details>`:''}</div></article>`).join(''):'<div class="empty-state">Analise o roteiro para preparar as classes desta campanha.</div>'}</div>
       <div class="prototype-note">Atributos, perícias e habilidade são fixos na criação. Retratos padronizados estão prontos para receber a arte final.</div>`;
     return;
   }
