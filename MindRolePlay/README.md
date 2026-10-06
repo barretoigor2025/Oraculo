@@ -1,27 +1,42 @@
 # Mind RolePlay
 
-## Documento inicial do projeto
+Um sistema de RPG independente, desenvolvido dentro de `MindRolePlay/` e inspirado no fluxo online do Oráculo. O foco será a narrativa: os jogadores escrevem o que seus personagens tentam fazer, enquanto o narrador conduz a campanha e a IA ajuda a interpretar contexto, capacidades e consequências.
 
-**Mind RolePlay** é um novo sistema de RPG que será desenvolvido do zero dentro deste repositório, em uma pasta própria. Ele pode aproveitar ideias gerais que funcionam no Oráculo, mas será um projeto independente: suas regras, estrutura, identidade e evolução não devem alterar nem depender do sistema Oráculo.
+## Começo do projeto
 
-## Ideia central
+A página inicial segue a lógica de entrada do Oráculo: escolher a campanha, jogar online ou abrir o **Mind Database**. O sistema será construído do zero e terá identidade e regras próprias. O que será compartilhado com o Oráculo é a configuração Firebase/Firestore já existente para as salas online.
 
-Criar uma experiência de RPG com foco maior na **narrativa**: histórias, escolhas, personagens, relações, consequências e participação dos jogadores devem estar no centro da experiência.
+## Direção
 
-A parte visual também deve ser cuidada para deixar o jogo claro, agradável e envolvente. Ela serve à narrativa e à experiência da mesa; não é motivo para deixar de lado a qualidade do jogo e das histórias.
+- Campanhas narrativas com salas online para jogar com amigos.
+- Ações escritas em texto livre, em vez de depender principalmente de cliques e combate tático.
+- Cenários e personagens podem aparecer como imagens estáticas; a história é o foco.
+- A IA consulta campanha, personagem, habilidades, vantagens, desvantagens e situação para ajudar a decidir se uma ação pede rolagem e quais modificadores se aplicam.
+- O narrador mantém autoridade sobre o rumo da história.
+- O sistema calcula os três d6 e apresenta a animação de dados do Oráculo; a IA ajuda a narrar a consequência.
 
-## Direção de trabalho
+## Mind Database
 
-- Começar do zero e construir o sistema por etapas, junto com Igor.
-- Manter todo o material do Mind RolePlay separado em `MindRolePlay/`.
-- Priorizar uma experiência narrativa, flexível e fácil de acompanhar pelos jogadores.
-- Tratar regras, interface e recursos de apoio como ferramentas para a história.
-- Registrar as decisões do projeto para que a ideia continue consistente conforme o sistema crescer.
+Cada campanha será um pacote próprio com roteiro, gênero e regras da campanha, classes/personagens jogáveis, NPCs, cenários, imagens, mapa geral e um checklist dos recursos que ainda precisam ser preparados.
 
-## Limites desta primeira definição
+## Referência GURPS
 
-Ainda não estão definidos: cenário, tom, mecânicas, resolução de ações, criação de personagens, papéis do narrador, suporte digital ou formato das sessões. Essas decisões serão construídas nas próximas conversas, sem presumir que o Mind RolePlay precisa repetir as regras do Oráculo.
+A mecânica básica de sucesso do GURPS usa 3d6 somados: em geral, o resultado precisa ser igual ou menor que a habilidade ou atributo efetivo, após modificadores. A soma vai de 3 a 18 e os resultados se concentram perto do meio, formando uma curva de probabilidades. Isso confirma a referência dos 3d6, mas o Mind RolePlay ainda definirá sua própria versão simplificada; não será necessariamente GURPS completo.
 
-## Próximas conversas
+Referência oficial: [GURPS Lite — Steve Jackson Games](https://www.sjgames.com/gurps/lite/).
 
-Igor vai apresentar os detalhes da ideia e as decisões que deseja para o sistema. Este documento é o ponto de partida para essa construção, não uma especificação fechada nem uma transcrição literal de outro chat.
+## Firebase e separação
+
+O Mind RolePlay reutilizará a configuração Firebase/Firestore existente no Oráculo. Os dados de campanhas e salas do Mind devem ficar em estruturas próprias, sem alterar as salas nem os dados do Oráculo. A integração online ainda precisa ser implementada.
+
+## Estado atual
+
+- [x] Pasta própria e visão inicial do projeto.
+- [x] Protótipo navegável da tela inicial e das áreas principais.
+- [ ] Adaptar a animação de rolagem do Oráculo.
+- [ ] Definir testes, habilidades, modificadores e graus de resultado.
+- [ ] Implementar salas online no Firebase compartilhado.
+- [ ] Construir o Mind Database e o checklist por campanha.
+- [ ] Integrar a interpretação narrativa por IA com controle do narrador.
+
+Veja [CONCEITO.md](CONCEITO.md) para o fluxo de jogo e detalhes da visão.
