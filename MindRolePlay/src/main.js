@@ -9,6 +9,9 @@ import {
   loadCampaigns,
   listenRoom,
   saveCampaign,
+  setPlayerReady,
+  startNarration,
+  postRoomMessage,
 } from './firebaseRepository.js';
 
 const STORE_KEY = 'mindRolePlay.demo.v1';
@@ -22,6 +25,11 @@ let currentSectionId = '';
 let activeCharacterId = '';
 let firebaseMode = true;
 let roomUnsubscribe = null;
+let chosenCharacter = null;
+let activeRoomCode = '';
+let liveRoom = null;
+let playerGender = 'male';
+let returnRoomCode = new URLSearchParams(location.search).get('room')?.toUpperCase() || '';
 let toastTimer;
 
 function notice(message) {
@@ -102,17 +110,13 @@ function updateHomeCampaign() {
 }
 
 function renderCampaigns() {
-  const grid = document.querySelector('#campaign-grid');
-  grid.innerHTML = campaigns.map((campaign, index) => `
-    <button class="campaign-card" data-open-campaign="${campaign.id}">
-      <span class="number">Pacote ${String(index + 1).padStart(2, '0')} · ${escapeHtml(campaign.genre || 'Gênero não definido')}</span>
-      <strong>${escapeHtml(campaign.title)}</strong>
-      <span>${countCampaignContent(campaign)} itens preparados · abrir pacote →</span>
-    </button>
-  `).join('');
-  grid.querySelectorAll('[data-open-campaign]').forEach(button => {
-    button.addEventListener('click', () => openCampaign(button.dataset.openCampaign));
-  });
+  const cards = campaigns.map((campaign,index) => '<button class="campaign-card manga-card" data-play-campaign="' + escapeAttr(campaign.id) + '"><span class="number">HISTÓRIA ' + String(index+1).padStart(2,'0') + ' · ' + escapeHtml(campaign.genre || 'Aventura') + '</span><strong>' + escapeHtml(campaign.title) + '</strong><span>' + escapeHtml(campaign.premise || 'Uma campanha narrativa pronta para receber personagens.') + '</span><b>ESCOLHER PERSONAGEM →</b></button>').join('');
+  const grid=document.querySelector('#campaign-grid');
+  if(grid) grid.innerHTML=cards;
+  const home=document.querySelector('#home-campaign-grid');
+  if(home) home.innerHTML=cards || '<p class="empty-state">Nenhuma campanha instalada ainda. Abra o Mind Database para preparar a primeira.</p>';
+  document.querySelectorAll('[data-play-campaign]').forEach(button=>button.addEventListener('click',()=>openCharacterBuilder(button.dataset.playCampaign)));
+  document.querySelectorAll('[data-open-campaign]').forEach(button=>button.addEventListener('click',()=>openCampaign(button.dataset.openCampaign)));
 }
 
 function countCampaignContent(campaign) {
@@ -482,54 +486,103 @@ function escapeHtml(value) {
 function escapeAttr(value) { return escapeHtml(value); }
 
 function renderRoomSummary(room, message) {
-  const result = document.querySelector('#room-result');
-  result.classList.remove('hidden');
-  document.querySelector('#room-code-value').textContent = room.code || '';
-  document.querySelector('#room-message').textContent = message;
-  const players = Array.isArray(room.players) ? room.players : [];
-  document.querySelector('#room-player-list').innerHTML = players.length
-    ? players.map(player => `<div class="room-player">${escapeHtml(player.name || 'Jogador')}${player.characterName ? ` · ${escapeHtml(player.characterName)}${player.className ? ` (${escapeHtml(player.className)})` : ''}` : ''}</div>`).join('')
-    : '<div class="room-player">Aguardando jogadores…</div>';
+  liveRoom=room; activeRoomCode=room.code||activeRoomCode;
+  const result=document.querySelector('#room-result');result.classList.remove('hidden');
+  document.querySelector('#room-code-value').textContent=room.code||'';
+  document.querySelector('#room-message').textContent=message;
+  const players=Array.isArray(room.players)?room.players:[];
+  document.querySelector('#room-player-list').innerHTML=players.length?players.map(player=>'<div class="room-player '+(player.ready?'is-ready':'')+'"><span class="player-ready-dot"></span><span><strong>'+escapeHtml(player.name||'Jogador')+'</strong>'+(player.characterName?' · '+escapeHtml(player.characterName)+(player.className?' ('+escapeHtml(player.className)+')':''):'')+'</span><small>'+(player.ready?'PRONTO':'AGUARDANDO')+'</small></div>').join(''):'<div class="room-player">Aguardando jogadores…</div>';
+  const me=players.find(player=>player.id===localPlayerId()),readyButton=document.querySelector('#ready-button');
+  readyButton.disabled=!me;readyButton.textContent=me?.ready?'Cancelar pronto':'Marcar como pronto';
+  const allReady=players.length>=2&&players.every(player=>player.ready),start=document.querySelector('#start-narration');
+  start.disabled=room.hostId!==localPlayerId()||!allReady||room.status!=='waiting';
+  document.querySelector('#ready-status').textContent=room.status==='narration'?'Narração iniciada.':players.length<2?'Convide pelo menos mais uma pessoa.':allReady?'Todos prontos. O anfitrião pode começar.':players.filter(player=>player.ready).length+' de '+players.length+' prontos.';
+  document.querySelector('#copy-room-code').dataset.shareUrl=roomShareUrl(room.code,room.campaignId);
+  if(room.status==='narration')renderGame(room);
 }
-
-function watchRoom(code) {
-  if (roomUnsubscribe) roomUnsubscribe();
-  try {
-    roomUnsubscribe = listenRoom(code, room => {
-      if (room) renderRoomSummary(room, 'Sala sincronizada · compartilhe o código para convidar seus amigos.');
-    }, error => {
-      console.warn('Mind RolePlay: não foi possível acompanhar a sala em tempo real.', error);
-      notice('A sala foi criada, mas a sincronização em tempo real falhou.');
-    });
-  } catch (error) {
-    console.warn('Mind RolePlay: listener Firebase indisponível.', error);
+function roomShareUrl(code,campaignId){const url=new URL(location.href);url.search='';url.searchParams.set('room',code);if(campaignId)url.searchParams.set('campaign',campaignId);return url.toString();}
+function watchRoom(code){
+  if(roomUnsubscribe)roomUnsubscribe();
+  try{roomUnsubscribe=listenRoom(code,room=>{if(room)renderRoomSummary(room,'Sala sincronizada · envie o link para seus amigos.');},error=>{console.warn('Mind RolePlay: sala sem sincronização.',error);notice('A sincronização em tempo real falhou.');});}catch(error){console.warn(error);}
+}
+function openCharacterBuilder(id){
+  currentCampaignId=id;const campaign=currentCampaign();if(!campaign)return;
+  document.querySelector('#character-campaign-title').textContent=campaign.title;
+  document.querySelector('#character-campaign-premise').textContent=campaign.premise||campaign.genre||'';
+  const select=document.querySelector('#class-select');
+  select.innerHTML=(campaign.classes||[]).map(cls=>'<option value="'+escapeAttr(cls.id)+'">'+escapeHtml(cls.name)+'</option>').join('');
+  selectedClassId=select.value;renderClassDetails();renderSavedCharacters();showScreen('character');
+}
+let selectedClassId='';
+function renderClassDetails(){
+  const campaign=currentCampaign(),cls=(campaign?.classes||[]).find(item=>item.id===selectedClassId)||campaign?.classes?.[0];if(!cls)return;
+  selectedClassId=cls.id;const portrait=cls.portraits?.[playerGender]||cls.portrait||'';
+  const img=document.querySelector('#class-portrait');img.src=portrait;img.alt='Retrato '+(playerGender==='female'?'feminino':'masculino')+' de '+cls.name;
+  const attrs=Object.entries(cls.attributes||{}).map(([key,value])=>'<span><b>'+escapeHtml(key)+'</b> '+escapeHtml(value)+'</span>').join('');
+  const skills=(cls.skills||[]).map(skill=>'<div class="skill-line"><b>'+escapeHtml(skill.name)+'</b><span>Alvo '+escapeHtml(skill.level)+' · teste 3d6</span><small>'+escapeHtml(skill.description||skill.attribute||'Usada quando a ação exige esta perícia.')+'</small></div>').join('');
+  document.querySelector('#class-details').innerHTML='<h2>'+escapeHtml(cls.name)+'</h2><p>'+escapeHtml(cls.description||cls.role||'Arquétipo de campanha')+'</p><div class="attribute-strip">'+attrs+'</div><h3>Perícias iniciais</h3>'+skills+'<div class="fixed-ability"><b>Capacidade fixa</b><p>'+escapeHtml((cls.fixedAbilities||[]).join(' · ')||'A definir na ficha da campanha.')+'</p></div>'+(cls.roleplayProfile?'<details><summary>Guia de interpretação e narrador</summary><p>'+escapeHtml(cls.roleplayProfile.narratorGuidance||cls.roleplayProfile.voice||'')+'</p></details>':'');
+}
+function renderSavedCharacters(){
+  const box=document.querySelector('#saved-characters'),chars=currentCampaign()?.characters||[];
+  box.innerHTML=chars.length?'<h2>Personagens desta campanha</h2>'+chars.map(c=>'<button class="saved-character" data-use-character="'+escapeAttr(c.id)+'">'+escapeHtml(c.name)+' · '+escapeHtml(c.className)+'</button>').join(''):'';
+  box.querySelectorAll('[data-use-character]').forEach(button=>button.addEventListener('click',()=>{chosenCharacter=chars.find(c=>c.id===button.dataset.useCharacter);showLobby();}));
+}
+function showLobby(){
+  if(!currentCampaign()||!chosenCharacter)return;
+  document.querySelector('#lobby-character-name').textContent=chosenCharacter.name;
+  document.querySelector('#lobby-character-class').textContent=chosenCharacter.className;
+  const img=document.querySelector('#lobby-avatar');img.src=chosenCharacter.portrait||'';img.alt=chosenCharacter.className;
+  document.querySelector('#room-result').classList.add('hidden');
+  if(returnRoomCode)document.querySelector('#room-code').value=returnRoomCode;
+  showScreen('lobby');if(returnRoomCode)joinActiveRoom(returnRoomCode);
+}
+async function joinActiveRoom(code){
+  if(!chosenCharacter)return;document.querySelector('#room-code').value=code;
+  const playerName=document.querySelector('#player-name').value.trim()||'Jogador';
+  try{const room=await joinRoomRemote(code,localPlayerId(),playerName,chosenCharacter);currentCampaignId=room.campaignId;renderRoomSummary(room,'Você entrou pelo convite da sala.');watchRoom(code);returnRoomCode='';const url=new URL(location.href);url.search='';history.replaceState({},'',url);}
+  catch(error){notice(error.message||'Não foi possível entrar na sala.');}
+}
+function renderGame(room){
+  const campaign=campaigns.find(item=>item.id===room.campaignId)||currentCampaign();if(!campaign)return;
+  document.querySelector('#game-campaign-title').textContent=campaign.title;
+  document.querySelector('#game-room-code').textContent='SALA '+room.code;
+  document.querySelector('#game-player-count').textContent=(room.players||[]).length+' jogadores';
+  const scene=room.scene||campaign.scenes?.[0]||{};
+  document.querySelector('#scene-title').textContent=scene.title||'O começo';
+  document.querySelector('#scene-description').textContent=scene.description||'A história aguarda o primeiro movimento.';
+  document.querySelector('#scene-chapter').textContent=scene.chapter||'CENA 01';
+  document.querySelector('#scene-background').style.backgroundImage=scene.image?'url("'+scene.image+'")':'';
+  const me=(room.players||[]).find(player=>player.id===localPlayerId()),avatar=document.querySelector('#scene-avatar');
+  avatar.src=me?.portrait||chosenCharacter?.portrait||'';avatar.alt=me?.characterName||chosenCharacter?.name||'Personagem';
+  const feed=document.querySelector('#game-messages'),messages=room.messages||[];
+  feed.innerHTML=messages.length?messages.map(item=>'<article class="story-message '+(item.playerId===localPlayerId()?'mine':'')+'"><small>'+escapeHtml(item.characterName||item.playerName||'Narrador')+' · '+escapeHtml(item.className||'Jogador')+'</small><p>'+escapeHtml(item.text)+'</p></article>').join(''):'<div class="empty-story">A cena começa. Descreva uma ação ou fala do personagem.</div>';
+  feed.scrollTop=feed.scrollHeight;showScreen('game');
+}
+async function createActiveRoom(){
+  const name=document.querySelector('#player-name').value.trim()||'Jogador',campaignId=currentCampaignId;
+  try{
+    const code=await createRoomRemote(campaignId,localPlayerId(),name,chosenCharacter);
+    const url=new URL(roomShareUrl(code,campaignId));history.replaceState({},'',url);
+    renderRoomSummary({code,campaignId,hostId:localPlayerId(),status:'waiting',players:[{id:localPlayerId(),name,characterName:chosenCharacter.name,className:chosenCharacter.className,portrait:chosenCharacter.portrait,ready:true}]},'Sala criada. Copie o link e convide seus amigos.');
+    watchRoom(code);
+  }catch(error){
+    firebaseMode=false;storageLabel.textContent='Prévia local';notice('Firebase indisponível para salas; a prévia local não sincroniza com os celulares dos amigos.');
+    const code=Math.random().toString(36).slice(2,8).toUpperCase();
+    renderRoomSummary({code,campaignId,hostId:localPlayerId(),status:'waiting',players:[{id:localPlayerId(),name,characterName:chosenCharacter.name,className:chosenCharacter.className,portrait:chosenCharacter.portrait,ready:true}]},'Sala local de demonstração · link não sincroniza entre dispositivos.');
+    activeRoomCode=code;
   }
 }
-
-function renderLobbyCampaigns() {
-  const select = document.querySelector('#lobby-campaign');
-  select.innerHTML = campaigns.map(campaign =>
-    `<option value="${campaign.id}">${escapeHtml(campaign.title)}</option>`).join('');
-  if (currentCampaignId) select.value = currentCampaignId;
-  renderLobbyCharacters();
-}
-
-function renderLobbyCharacters() {
-  const select=document.querySelector('#lobby-character');if(!select)return;
-  const campaign=campaigns.find(item=>item.id===document.querySelector('#lobby-campaign').value);
-  const chars=campaign?.characters||[];
-  select.innerHTML='<option value="">Narrador / sem ficha</option>'+chars.map(character=>`<option value="${escapeAttr(character.id)}">${escapeHtml(character.name)} · ${escapeHtml(character.className||'Classe')}</option>`).join('');
-}
-
-function selectedLobbyCharacter() {
-  const campaign=campaigns.find(item=>item.id===document.querySelector('#lobby-campaign').value);
-  return (campaign?.characters||[]).find(character=>character.id===document.querySelector('#lobby-character').value)||null;
+async function toggleReady(){if(!liveRoom)return;const me=(liveRoom.players||[]).find(player=>player.id===localPlayerId());try{const room=await setPlayerReady(liveRoom.code,localPlayerId(),!me?.ready);renderRoomSummary(room,'Estado atualizado.');}catch(error){notice(error.message||'Não foi possível atualizar presença.');}}
+async function beginNarration(){
+  if(!liveRoom)return;const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign();
+  try{await startNarration(liveRoom.code,localPlayerId(),campaign?.scenes?.[0]||{title:'A primeira cena',description:campaign?.premise||'A história começa.'});}
+  catch(error){notice(error.message||'Não foi possível iniciar a narração.');}
 }
 
 document.querySelectorAll('[data-nav]').forEach(button => button.addEventListener('click', () => {
   const destination = button.dataset.nav;
   if (destination === 'campaigns') renderCampaigns();
-  if (destination === 'lobby') renderLobbyCampaigns();
+  if (destination === 'lobby' && chosenCharacter) showLobby();
   if (destination === 'package' && currentCampaign()) openCampaign(currentCampaignId);
   showScreen(destination);
 }));
@@ -549,75 +602,31 @@ document.querySelector('#new-campaign-form').addEventListener('submit',async eve
 });
 
 document.querySelector('#test-character').addEventListener('change', renderTestCharacter);
-document.querySelector('#lobby-campaign').addEventListener('change', renderLobbyCharacters);
+document.querySelector('#lobby-campaign')?.addEventListener('change', renderLobbyCharacters);
 document.querySelector('#test-skill').addEventListener('change', updateTestFactors);
 document.querySelector('#roll-button').addEventListener('click', performTest);
 document.querySelector('#open-test').addEventListener('click', () => openTest());
 
-document.querySelector('#create-room').addEventListener('click', async () => {
-  const name = document.querySelector('#player-name').value.trim() || 'Narrador';
-  const campaignId = document.querySelector('#lobby-campaign').value;
-  let code = '';
-  if (firebaseMode) {
-    try {
-      code = await createRoomRemote(campaignId, localPlayerId(), name, selectedLobbyCharacter());
-      const character=selectedLobbyCharacter();
-      renderRoomSummary({ code, players: [{ name, characterName:character?.name||'', className:character?.className||'' }] }, 'Sala online criada · compartilhe este código.');
-      watchRoom(code);
-      return;
-    } catch (error) {
-      firebaseMode = false;
-      storageLabel.textContent = 'Prévia local';
-    }
-  }
-  code = Math.random().toString(36).slice(2, 8).toUpperCase();
-  const localRooms = JSON.parse(localStorage.getItem('mindRolePlay.rooms.demo') || '{}');
-  const character=selectedLobbyCharacter();
-  localRooms[code] = { code, campaignId, players: [{ name, characterName:character?.name||'', className:character?.className||'' }] };
-  localStorage.setItem('mindRolePlay.rooms.demo', JSON.stringify(localRooms));
-  renderRoomSummary(localRooms[code], 'Prévia local neste navegador. A sala online usa o Firebase quando as regras do Mind estiverem publicadas.');
+document.querySelector('#class-select').addEventListener('change',event=>{selectedClassId=event.target.value;renderClassDetails();});
+document.querySelectorAll('[data-gender]').forEach(button=>button.addEventListener('click',()=>{playerGender=button.dataset.gender;document.querySelectorAll('[data-gender]').forEach(item=>item.classList.toggle('active',item===button));renderClassDetails();}));
+document.querySelector('#save-character').addEventListener('click',async()=>{
+  const campaign=currentCampaign(),cls=(campaign?.classes||[]).find(item=>item.id===selectedClassId),name=document.querySelector('#character-name').value.trim();
+  if(!name)return notice('Escolha um nome para o personagem.');if(!cls)return notice('Esta campanha ainda não tem arquétipos definidos.');
+  chosenCharacter={id:'character-'+crypto.randomUUID(),name,gender:playerGender,classId:cls.id,className:cls.name,portrait:cls.portraits?.[playerGender]||cls.portrait||'',assetPath:cls.assetPaths?.[playerGender]||'',attributes:cls.attributes||{},skills:cls.skills||[],fixedAbilities:cls.fixedAbilities||[],conditions:[],createdAt:Date.now()};
+  campaign.characters ||= [];campaign.characters.push(chosenCharacter);await persistCampaign(campaign);renderSavedCharacters();showLobby();
 });
-
-document.querySelector('#join-room').addEventListener('click', async () => {
-  const code = document.querySelector('#room-code').value.trim().toUpperCase();
-  if (!code) return notice('Digite o código da sala.');
-  const playerName = document.querySelector('#player-name').value.trim() || 'Jogador';
-  if (firebaseMode) {
-    try {
-      const room = await joinRoomRemote(code, localPlayerId(), playerName, selectedLobbyCharacter());
-      renderRoomSummary(room, 'Você entrou na sala · a lista de participantes atualiza em tempo real.');
-      watchRoom(code);
-      return;
-    } catch (error) {
-      if (error.message === 'Não encontrei uma sala com esse código.') {
-        renderRoomSummary({ code, players: [] }, error.message);
-        return;
-      }
-      firebaseMode = false;
-      storageLabel.textContent = 'Prévia local';
-    }
-  }
-  const localRooms = JSON.parse(localStorage.getItem('mindRolePlay.rooms.demo') || '{}');
-  const room = localRooms[code];
-  if (!room) {
-    renderRoomSummary({ code, players: [] }, 'Não encontrei uma sala local com esse código.');
-    return;
-  }
-  if (!room.players.some(player => player.name === playerName)) { const character=selectedLobbyCharacter(); room.players.push({ name:playerName,characterName:character?.name||'',className:character?.className||'' }); }
-  localRooms[code] = room;
-  localStorage.setItem('mindRolePlay.rooms.demo', JSON.stringify(localRooms));
-  renderRoomSummary(room, 'Sala de demonstração local · sincronização entre dispositivos usa Firebase.');
+document.querySelector('#create-room').addEventListener('click',createActiveRoom);
+document.querySelector('#join-room').addEventListener('click',()=>joinActiveRoom(document.querySelector('#room-code').value.trim().toUpperCase()));
+document.querySelector('#ready-button').addEventListener('click',toggleReady);
+document.querySelector('#start-narration').addEventListener('click',beginNarration);
+document.querySelector('#copy-room-code').addEventListener('click',async()=>{
+  const url=document.querySelector('#copy-room-code').dataset.shareUrl||roomShareUrl(activeRoomCode,currentCampaignId);
+  try{await navigator.clipboard.writeText(url);notice('Link da sala copiado.');}catch{notice(url);}
 });
-
-document.querySelector('#copy-room-code').addEventListener('click', async () => {
-  const code = document.querySelector('#room-code-value').textContent;
-  if (!code) return;
-  try {
-    await navigator.clipboard.writeText(code);
-    notice('Código copiado.');
-  } catch {
-    notice('Código da sala: ' + code);
-  }
+document.querySelector('#message-form').addEventListener('submit',async event=>{
+  event.preventDefault();const input=document.querySelector('#message-input'),text=input.value.trim();if(!text||!liveRoom)return;
+  const message={id:crypto.randomUUID(),playerId:localPlayerId(),playerName:document.querySelector('#player-name').value.trim()||'Jogador',characterName:chosenCharacter?.name||'Personagem',className:chosenCharacter?.className||'',text,createdAt:Date.now()};input.value='';
+  try{await postRoomMessage(liveRoom.code,message);}catch(error){notice('A ação não sincronizou. Confira o acesso online à sala.');}
 });
 
 async function boot() {
@@ -652,10 +661,10 @@ async function boot() {
       } else saveLocalCampaigns();
     }
   }
-  currentCampaignId = campaigns[0]?.id || '';
-  updateHomeCampaign();
-  renderCampaigns();
-  renderLobbyCampaigns();
+  const query=new URLSearchParams(location.search),campaignParam=query.get('campaign');
+  currentCampaignId=campaigns.find(c=>c.id===campaignParam)?.id||campaigns[0]?.id||'';
+  updateHomeCampaign();renderCampaigns();
+  if(returnRoomCode&&currentCampaignId)openCharacterBuilder(currentCampaignId);
 }
 
 function resizeStars() {
