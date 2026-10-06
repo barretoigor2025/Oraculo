@@ -46,6 +46,7 @@ export function createDemoCampaigns() {
   return [
     createEmptyCampaign('demo-campanha-1', 'Campanha 1'),
     createEmptyCampaign('demo-campanha-2', 'Campanha 2'),
-    createEmptyCampaign('demo-campanha-3', 'Campanha 3'),\n    structuredClone(KAGEHAMA_CAMPAIGN),
+    createEmptyCampaign('demo-campanha-3', 'Campanha 3'),
+    structuredClone(KAGEHAMA_CAMPAIGN),
   ];
 }
