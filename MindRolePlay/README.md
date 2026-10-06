@@ -1,42 +1,47 @@
 # Mind RolePlay
 
-Um sistema de RPG independente, desenvolvido dentro de `MindRolePlay/` e inspirado no fluxo online do Oráculo. O foco será a narrativa: os jogadores escrevem o que seus personagens tentam fazer, enquanto o narrador conduz a campanha e a IA ajuda a interpretar contexto, capacidades e consequências.
+Mind RolePlay é a casa onde várias campanhas narrativas ficam organizadas. O sistema é independente do Oráculo, mas reaproveita sua configuração de Firebase/Firestore e o fluxo simples de sala online.
 
-## Começo do projeto
+## O esqueleto implementado
 
-A página inicial segue a lógica de entrada do Oráculo: escolher a campanha, jogar online ou abrir o **Mind Database**. O sistema será construído do zero e terá identidade e regras próprias. O que será compartilhado com o Oráculo é a configuração Firebase/Firestore já existente para as salas online.
+- Tela inicial com entrada para **Jogar Online** e **Mind Database**.
+- Três pacotes vazios de exemplo, criados na coleção `mindCampaigns`.
+- Cada pacote usa o mesmo formato: roteiro, classes/regras, personagens, NPCs, cenários, mapa, arte, checklist e histórico de testes.
+- Cadastro inicial de personagem com perícia, vantagens, desvantagens e condição persistente.
+- Teste de tentativa em 3d6, animação dos três dados, resultado, margem e registro na campanha.
+- Sala inicial com criar código e entrar por código na coleção própria `mindRooms`.
 
-## Direção
+O HTML e os módulos ficam em `MindRolePlay/`; Vite inclui essa página como entrada independente sem substituir a tela do Oráculo.
 
-- Campanhas narrativas com salas online para jogar com amigos.
-- Ações escritas em texto livre, em vez de depender principalmente de cliques e combate tático.
-- Cenários e personagens podem aparecer como imagens estáticas; a história é o foco.
-- A IA consulta campanha, personagem, habilidades, vantagens, desvantagens e situação para ajudar a decidir se uma ação pede rolagem e quais modificadores se aplicam.
-- O narrador mantém autoridade sobre o rumo da história.
-- O sistema calcula os três d6 e apresenta a animação de dados do Oráculo; a IA ajuda a narrar a consequência.
+## Resolução 3d6
 
-## Mind Database
+O motor de regras soma três d6 e compara o total ao nível efetivo da perícia. Neste primeiro corte, uma tentativa sempre rola os dados, conforme a premissa definida para o Mind RolePlay. Os resultados críticos seguem os limites básicos do GURPS; modificadores da situação e condições persistentes entram no nível efetivo. A implementação vive em [`src/gurps.js`](src/gurps.js).
 
-Cada campanha será um pacote próprio com roteiro, gênero e regras da campanha, classes/personagens jogáveis, NPCs, cenários, imagens, mapa geral e um checklist dos recursos que ainda precisam ser preparados.
+O GURPS usa esse teste básico de 3d6 contra habilidade/atributo efetivo, com sucesso em resultado igual ou abaixo do alvo. O Mind RolePlay está tomando isso como base, sem copiar o sistema inteiro. Referência: [GURPS Lite — Steve Jackson Games](https://www.sjgames.com/gurps/lite/).
 
-## Referência GURPS
+## Pacote de campanha
 
-A mecânica básica de sucesso do GURPS usa 3d6 somados: em geral, o resultado precisa ser igual ou menor que a habilidade ou atributo efetivo, após modificadores. A soma vai de 3 a 18 e os resultados se concentram perto do meio, formando uma curva de probabilidades. Isso confirma a referência dos 3d6, mas o Mind RolePlay ainda definirá sua própria versão simplificada; não será necessariamente GURPS completo.
+Cada campanha tem um documento independente em `mindCampaigns/{campaignId}`, padronizado por `schemaVersion`. O documento mantém suas listas próprias de conteúdo; a arte e os arquivos pesados poderão usar caminhos separados no Firebase Storage quando essa etapa for construída.
 
-Referência oficial: [GURPS Lite — Steve Jackson Games](https://www.sjgames.com/gurps/lite/).
+## Firebase compartilhado
 
-## Firebase e separação
+O app importa o Firestore da configuração existente em `src/firebase/config.js`. Os dados do Mind ficam nas coleções `mindCampaigns` e `mindRooms`; as coleções do Oráculo permanecem intactas.
 
-O Mind RolePlay reutilizará a configuração Firebase/Firestore existente no Oráculo. Os dados de campanhas e salas do Mind devem ficar em estruturas próprias, sem alterar as salas nem os dados do Oráculo. A integração online ainda precisa ser implementada.
+As novas regras estão em `firestore.rules`. Para liberar gravação em Firebase, elas precisam ser publicadas no projeto com:
 
-## Estado atual
+```bash
+firebase deploy --only firestore:rules
+```
 
-- [x] Pasta própria e visão inicial do projeto.
-- [x] Protótipo navegável da tela inicial e das áreas principais.
-- [ ] Adaptar a animação de rolagem do Oráculo.
-- [ ] Definir testes, habilidades, modificadores e graus de resultado.
-- [ ] Implementar salas online no Firebase compartilhado.
-- [ ] Construir o Mind Database e o checklist por campanha.
-- [ ] Integrar a interpretação narrativa por IA com controle do narrador.
+Se a leitura ou gravação remota falhar, o protótipo abre em modo local neste navegador, para permitir explorar as telas e testar os dados sem misturar com as salas do Oráculo.
 
-Veja [CONCEITO.md](CONCEITO.md) para o fluxo de jogo e detalhes da visão.
+## Próximas etapas
+
+- [ ] Adicionar atualização em tempo real e estado completo das salas multiplayer.
+- [ ] Definir atributos, lista de perícias, vantagens/desvantagens e efeitos de condições com mais detalhe.
+- [ ] Expandir as fichas e permitir múltiplas perícias e modelos de personagem.
+- [ ] Construir a importação de campanha e o checklist automático.
+- [ ] Conectar IA para sugerir perícia/modificadores e narrar efeitos, sempre sob autoridade do narrador.
+- [ ] Migrar textos/listas extensos para subcoleções e arte para Storage quando necessário.
+
+Veja [CONCEITO.md](CONCEITO.md) para o fluxo completo e as decisões de design.
