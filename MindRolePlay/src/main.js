@@ -561,7 +561,8 @@ document.querySelector('#create-room').addEventListener('click', async () => {
   if (firebaseMode) {
     try {
       code = await createRoomRemote(campaignId, localPlayerId(), name, selectedLobbyCharacter());
-      renderRoomSummary({ code, players: [{ name }] }, 'Sala online criada · compartilhe este código.');
+      const character=selectedLobbyCharacter();
+      renderRoomSummary({ code, players: [{ name, characterName:character?.name||'', className:character?.className||'' }] }, 'Sala online criada · compartilhe este código.');
       watchRoom(code);
       return;
     } catch (error) {
@@ -602,7 +603,7 @@ document.querySelector('#join-room').addEventListener('click', async () => {
     renderRoomSummary({ code, players: [] }, 'Não encontrei uma sala local com esse código.');
     return;
   }
-  if (!room.players.some(player => player.name === playerName)) room.players.push({ name: playerName });
+  if (!room.players.some(player => player.name === playerName)) { const character=selectedLobbyCharacter(); room.players.push({ name:playerName,characterName:character?.name||'',className:character?.className||'' }); }
   localRooms[code] = room;
   localStorage.setItem('mindRolePlay.rooms.demo', JSON.stringify(localRooms));
   renderRoomSummary(room, 'Sala de demonstração local · sincronização entre dispositivos usa Firebase.');
