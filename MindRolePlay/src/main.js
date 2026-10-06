@@ -56,12 +56,14 @@ function localCampaigns() {
       if (sample) {
         const index = stored.findIndex(item => item.id === sample.id);
         if (index < 0) stored.push(sample);
-        else if (Number(stored[index].schemaVersion || 1) < 3 || (stored[index].classes || []).length !== sample.classes.length || (stored[index].art || []).length !== sample.art.length) {
+        else if (Number(stored[index].schemaVersion || 1) < 4 || (stored[index].classes || []).length !== sample.classes.length || (stored[index].art || []).length !== sample.art.length) {
           const old = stored[index];
           stored[index] = {
-            ...sample, ...old, schemaVersion: 3,
-            classes: sample.classes, art: sample.art, progression: sample.progression,
-            progressionLog: old.progressionLog || [],
+            ...sample, ...old, schemaVersion: 4,
+            classes: sample.classes, art: sample.art, progression: sample.progression, artDirection: sample.artDirection,
+            npcs: [...sample.npcs, ...(old.npcs || []).filter(item => !sample.npcs.some(seed => seed.id === item.id))],
+            scenes: [...sample.scenes, ...(old.scenes || []).filter(item => !sample.scenes.some(seed => seed.id === item.id))],
+            progressionLog: old.progressionLog || [], characters: old.characters || [],
             checklist: [...sample.checklist, ...(old.checklist || []).filter(item => !sample.checklist.some(seed => seed.id === item.id))],
           };
         }
@@ -663,12 +665,14 @@ async function boot() {
   const kagehamaIndex = campaigns.findIndex(item => item.id === 'demo-kagehama');
   if (kagehamaSeed && kagehamaIndex >= 0) {
     const saved = campaigns[kagehamaIndex];
-    if ((saved.classes || []).length !== kagehamaSeed.classes.length || (saved.art || []).length !== kagehamaSeed.art.length) {
+    if (Number(saved.schemaVersion || 1) < 4 || (saved.classes || []).length !== kagehamaSeed.classes.length || (saved.art || []).length !== kagehamaSeed.art.length || (saved.npcs || []).some(npc => !npc.behaviorProfile)) {
       const seededChecklistIds = new Set(kagehamaSeed.checklist.map(item => item.id));
       const upgraded = {
-        ...kagehamaSeed, ...saved, schemaVersion: 3,
-        classes: kagehamaSeed.classes, art: kagehamaSeed.art, progression: kagehamaSeed.progression,
-        progressionLog: saved.progressionLog || [],
+        ...kagehamaSeed, ...saved, schemaVersion: 4,
+        classes: kagehamaSeed.classes, art: kagehamaSeed.art, progression: kagehamaSeed.progression, artDirection: kagehamaSeed.artDirection,
+        npcs: [...kagehamaSeed.npcs, ...(saved.npcs || []).filter(item => !kagehamaSeed.npcs.some(seed => seed.id === item.id))],
+        scenes: [...kagehamaSeed.scenes, ...(saved.scenes || []).filter(item => !kagehamaSeed.scenes.some(seed => seed.id === item.id))],
+        characters: saved.characters || [], progressionLog: saved.progressionLog || [],
         checklist: [...kagehamaSeed.checklist, ...(saved.checklist || []).filter(item => !seededChecklistIds.has(item.id))],
       };
       campaigns[kagehamaIndex] = upgraded;
