@@ -44,12 +44,14 @@ export async function installDemoCampaignsIfEmpty() {
   }
   const kagehama = createDemoCampaigns().find(campaign => campaign.id === 'demo-kagehama');
   const savedKagehama = existing.find(campaign => campaign.id === 'demo-kagehama');
-  if (kagehama && savedKagehama && (Number(savedKagehama.schemaVersion || 1) < 3 || (savedKagehama.classes || []).length !== kagehama.classes.length || (savedKagehama.art || []).length !== kagehama.art.length)) {
+  if (kagehama && savedKagehama && (Number(savedKagehama.schemaVersion || 1) < 4 || (savedKagehama.classes || []).length !== kagehama.classes.length || (savedKagehama.art || []).length !== kagehama.art.length || (savedKagehama.npcs || []).some(npc => !npc.behaviorProfile))) {
     const seedIds = new Set(kagehama.checklist.map(item => item.id));
     await setDoc(doc(db, CAMPAIGNS, kagehama.id), {
-      ...kagehama, ...savedKagehama, schemaVersion: 3,
-      classes: kagehama.classes, art: kagehama.art, progression: kagehama.progression,
-      progressionLog: savedKagehama.progressionLog || [],
+      ...kagehama, ...savedKagehama, schemaVersion: 4,
+      classes: kagehama.classes, art: kagehama.art, progression: kagehama.progression, artDirection: kagehama.artDirection,
+      npcs: [...kagehama.npcs, ...(savedKagehama.npcs || []).filter(item => !kagehama.npcs.some(seed => seed.id === item.id))],
+      scenes: [...kagehama.scenes, ...(savedKagehama.scenes || []).filter(item => !kagehama.scenes.some(seed => seed.id === item.id))],
+      characters: savedKagehama.characters || [], progressionLog: savedKagehama.progressionLog || [],
       checklist: [...kagehama.checklist, ...(savedKagehama.checklist || []).filter(item => !seedIds.has(item.id))],
       updatedAt: serverTimestamp(),
     }, { merge: true });
