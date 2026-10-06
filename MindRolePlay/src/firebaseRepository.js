@@ -5,6 +5,7 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  runTransaction,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -96,7 +97,7 @@ export async function createRoom(campaignId, playerId, playerName, character = n
     code,
     campaignId,
     hostId: playerId,
-    players: [{ id: playerId, name: playerName || 'Narrador', characterId: character?.id || '', characterName: character?.name || '', className: character?.className || '' }],
+    players: [{ id: playerId, name: playerName || 'Narrador', characterId: character?.id || '', characterName: character?.name || '', className: character?.className || '', gender: character?.gender || '', portrait: character?.portrait || '', ready: true }],
     status: 'waiting',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -108,14 +109,60 @@ export async function joinRoom(code, playerId, playerName, character = null) {
   assertReady();
   const normalizedCode = code.toUpperCase();
   const roomRef = doc(db, ROOMS, normalizedCode);
-  const snapshot = await getDoc(roomRef);
-  if (!snapshot.exists()) throw new Error('Não encontrei uma sala com esse código.');
-  await updateDoc(roomRef, {
-    players: arrayUnion({ id: playerId, name: playerName || 'Jogador', characterId: character?.id || '', characterName: character?.name || '', className: character?.className || '' }),
-    updatedAt: serverTimestamp(),
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(roomRef);
+    if (!snapshot.exists()) throw new Error('Não encontrei uma sala com esse código.');
+    const room = snapshot.data();
+    if (room.status !== 'waiting') throw new Error('Esta sala já iniciou a narração.');
+    const players = Array.isArray(room.players) ? room.players : [];
+    const player = { id: playerId, name: playerName || 'Jogador', characterId: character?.id || '', characterName: character?.name || '', className: character?.className || '', gender: character?.gender || '', portrait: character?.portrait || '', ready: false };
+    const index = players.findIndex(item => item.id === playerId);
+    if (index >= 0) players[index] = { ...players[index], ...player };
+    else players.push(player);
+    transaction.update(roomRef, { players, updatedAt: serverTimestamp() });
+    return { code: normalizedCode, ...room, players };
   });
-  const updated = await getDoc(roomRef);
-  return { code: normalizedCode, ...updated.data() };
+}
+
+export async function setPlayerReady(code, playerId, ready) {
+  assertReady();
+  const roomRef = doc(db, ROOMS, code.toUpperCase());
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(roomRef);
+    if (!snapshot.exists()) throw new Error('Não encontrei a sala.');
+    const room = snapshot.data();
+    const players = (room.players || []).map(player => player.id === playerId ? { ...player, ready: Boolean(ready) } : player);
+    transaction.update(roomRef, { players, updatedAt: serverTimestamp() });
+    return { code: code.toUpperCase(), ...room, players };
+  });
+}
+
+export async function startNarration(code, hostId, scene) {
+  assertReady();
+  const roomRef = doc(db, ROOMS, code.toUpperCase());
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(roomRef);
+    if (!snapshot.exists()) throw new Error('Não encontrei a sala.');
+    const room = snapshot.data();
+    const players = room.players || [];
+    if (room.hostId !== hostId) throw new Error('Somente quem criou a sala pode iniciar.');
+    if (players.length < 2 || players.some(player => !player.ready)) throw new Error('Todos os jogadores precisam estar prontos.');
+    transaction.update(roomRef, { status: 'narration', scene, messages: [], startedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    return { ...room, status: 'narration', scene, messages: [] };
+  });
+}
+
+export async function postRoomMessage(code, message) {
+  assertReady();
+  const roomRef = doc(db, ROOMS, code.toUpperCase());
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(roomRef);
+    if (!snapshot.exists()) throw new Error('Não encontrei a sala.');
+    const room = snapshot.data();
+    const messages = [...(room.messages || []), message].slice(-150);
+    transaction.update(roomRef, { messages, updatedAt: serverTimestamp() });
+    return messages;
+  });
 }
 
 export function listenRoom(code, callback, onError) {
