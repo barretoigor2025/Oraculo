@@ -43,7 +43,7 @@ export async function installDemoCampaignsIfEmpty() {
   }
   const kagehama = createDemoCampaigns().find(campaign => campaign.id === 'demo-kagehama');
   const savedKagehama = existing.find(campaign => campaign.id === 'demo-kagehama');
-  if (kagehama && savedKagehama && Number(savedKagehama.schemaVersion || 1) < 3) {
+  if (kagehama && savedKagehama && (Number(savedKagehama.schemaVersion || 1) < 3 || (savedKagehama.classes || []).length !== kagehama.classes.length || (savedKagehama.art || []).length !== kagehama.art.length)) {
     const seedIds = new Set(kagehama.checklist.map(item => item.id));
     await setDoc(doc(db, CAMPAIGNS, kagehama.id), {
       ...kagehama, ...savedKagehama, schemaVersion: 3,
