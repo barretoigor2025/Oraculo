@@ -106,7 +106,7 @@ function renderCampaigns() {
 }
 
 function countCampaignContent(campaign) {
-  return ['classes', 'characters', 'npcs', 'scenes', 'maps', 'travel', 'art', 'checklist']
+  return ['classes', 'characters', 'npcs', 'scenes', 'maps', 'travel', 'art', 'checklist', 'progressionLog']
     .reduce((sum, key) => sum + (campaign[key]?.length || 0), 0);
 }
 
@@ -120,7 +120,7 @@ function openCampaign(id) {
     campaign.premise || 'Este pacote começa vazio. Cada área tem o mesmo formato em todas as campanhas.';
   const grid = document.querySelector('#package-sections');
   grid.innerHTML = CAMPAIGN_SECTIONS.map(section => {
-    const count = section.id === 'story' ? (campaign.story ? 1 : 0) : (campaign[section.id]?.length || 0);
+    const count = section.id === 'story' ? (campaign.story ? 1 : 0) : section.id === 'evolution' ? (campaign.progressionLog?.length || 0) : (campaign[section.id]?.length || 0);
     return `<button class="section-card" data-section="${section.id}">
       <em>${count} item${count === 1 ? '' : 's'}</em><strong>${section.label}</strong><span>${section.description}</span>
     </button>`;
@@ -138,42 +138,31 @@ function openSection(id) {
   document.querySelector('#section-title').textContent = section.label;
   document.querySelector('#section-description').textContent = section.description;
   document.querySelector('#section-kicker').textContent = currentCampaign().title;
+  renderSectionTabs();
   renderSectionBody();
   showScreen('section');
 }
 
-function makeStarterClasses(text, genre) {
-  const source = String(text || '');
-  const explicit = source.match(/(?:classes|arquétipos|profissões)\s*:?\s*([\s\S]{0,700})/i)?.[1]
-    ?.split(/\n/).filter(line => /^\s*(?:[-*•]|\d+[.)])\s*/.test(line))
-    .map(line => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').split(/[—:]/)[0].replace(/[*_]/g,'').trim()).filter(Boolean).slice(0, 6);
-  const setting = (genre + ' ' + source).toLowerCase();
-  const profiles = /terror|horror|vamp|zumbi|sobreviv/i.test(setting)
-    ? [
-      ['Investigador','🔦','Lê pistas e percebe detalhes sob pressão.',{ST:9,DX:10,IQ:13,HT:10},[['Investigação',13],['Percepção',12],['Persuasão',11]]],
-      ['Sobrevivente','🧭','Resiste, improvisa e encontra rotas seguras.',{ST:11,DX:12,IQ:10,HT:13},[['Sobrevivência',13],['Furtividade',12],['Primeiros socorros',11]]],
-      ['Diplomata','🕯️','Consegue cooperação e acalma situações tensas.',{ST:9,DX:10,IQ:11,HT:10},[['Lábia',13],['Empatia',13],['Pesquisa',10]]],
-      ['Guardião','🛡️','Protege o grupo e aguenta confronto direto.',{ST:13,DX:10,IQ:10,HT:12},[['Briga',13],['Intimidação',11],['Primeiros socorros',10]]],
-      ['Médico de campo','🩺','Cuida de feridos e mantém o grupo em condições de seguir.',{ST:9,DX:11,IQ:12,HT:12},[['Primeiros socorros',13],['Empatia',12],['Pesquisa',10]]],
-    ]
-    : /futur|espaço|sci.?fi|cyber|tecnolog/i.test(setting)
-      ? [
-        ['Explorador','🪐','Explora ambientes desconhecidos e mantém o grupo em movimento.',{ST:10,DX:12,IQ:12,HT:11},[['Exploração',13],['Percepção',12],['Pilotagem',11]]],
-        ['Técnico','🔧','Entende máquinas, sistemas e soluções improvisadas.',{ST:9,DX:11,IQ:14,HT:10},[['Tecnologia',14],['Conserto',13],['Pesquisa',11]]],
-        ['Mediador','🛰️','Negocia alianças e interpreta intenções.',{ST:9,DX:10,IQ:12,HT:10},[['Diplomacia',13],['Lábia',12],['Empatia',12]]],
-        ['Defensor','🚀','Mantém a equipe segura em situações perigosas.',{ST:13,DX:11,IQ:10,HT:12},[['Armas',13],['Tática',12],['Primeiros socorros',10]]],
-        ['Médico de bordo','🩺','Cuida da equipe e mantém protocolos durante crises.',{ST:9,DX:11,IQ:13,HT:11},[['Medicina',13],['Empatia',12],['Tecnologia',10]]],
-      ]
-      : [
-        ['Batedor','🏹','Encontra caminhos, percebe perigos e age com agilidade.',{ST:10,DX:13,IQ:11,HT:11},[['Furtividade',13],['Percepção',12],['Sobrevivência',11]]],
-        ['Erudito','📜','Conhece histórias, idiomas e pistas escondidas.',{ST:9,DX:10,IQ:14,HT:10},[['Conhecimento',14],['Pesquisa',13],['Persuasão',10]]],
-        ['Guardião','🛡️','Protege aliados e enfrenta ameaças de perto.',{ST:13,DX:10,IQ:10,HT:12},[['Briga',13],['Intimidação',11],['Vigor',12]]],
-        ['Curandeiro','🌿','Cuida de ferimentos e mantém o grupo em condições de seguir.',{ST:9,DX:11,IQ:12,HT:11},[['Primeiros socorros',13],['Empatia',12],['Conhecimento',11]]],
-        ['Emissário de corte','🪭','Negocia acordos, lê etiqueta e reúne rumores sem chamar atenção.',{ST:9,DX:10,IQ:12,HT:10},[['Diplomacia',13],['Etiqueta',13],['Lábia',11]]],
-      ];
-  return profiles.map((p,index)=>({id:'class-'+(index+1),name:explicit?.[index]||p[0],icon:p[1],portrait:'',description:p[2],attributes:p[3],skills:p[4].map(([name,level])=>({name,level})),fixedAbilities:[p[2]],startingLevel:1}));
+function renderSectionTabs() {
+  const tabs = document.querySelector('#section-tabs');
+  if (!tabs) return;
+  tabs.innerHTML = CAMPAIGN_SECTIONS.map(section => `<button class="section-tab ${section.id===currentSectionId?'active':''}" data-tab="${section.id}">${escapeHtml(section.label)}</button>`).join('');
+  tabs.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', () => openSection(button.dataset.tab)));
 }
 
+function makeStarterClasses(text, genre) {
+  const setting = (genre + ' ' + String(text||'')).toLowerCase();
+  if (/samurai|medieval jap|feudal|kagehama/.test(setting)) return [{"id":"ronin","name":"Rōnin da Fronteira","archetype":"Bárbaro","icon":"⚔","portrait":"assets/campaigns/kagehama/classes/ronin/avatar.svg","description":"Combatente errante, forte e resistente. Protege viajantes, conhece estradas secundárias e desconfia das promessas dos senhores.","attributes":{"ST":14,"DX":11,"IQ":10,"HT":13},"skills":[{"name":"Lâmina pesada","level":13},{"name":"Sobrevivência","level":12},{"name":"Intimidação","level":12}],"fixedAbilities":["Fúria contida: uma vez por cena, transforma um ferimento ou provocação em foco para uma ação física; o narrador registra o custo emocional ou social."],"startingLevel":1,"artBrief":"Retrato vertical de corpo inteiro, rōnin japonês de fantasia histórica, haori gasto em vermelho escuro e cinza, nodachi embainhada, postura robusta e cansada, cicatriz discreta, fundo de estrada de montanha com lanternas distantes, pintura editorial realista, luz cinematográfica, sem texto."},{"id":"samurai","name":"Samurai Juramentado","archetype":"Guerreiro","icon":"⛨","portrait":"assets/campaigns/kagehama/classes/samurai/avatar.svg","description":"Defensor treinado e disciplinado. A armadura e o brasão declaram a quem serve, mas cada juramento traz um preço.","attributes":{"ST":12,"DX":12,"IQ":11,"HT":12},"skills":[{"name":"Katana","level":13},{"name":"Etiqueta","level":12},{"name":"Tática","level":12}],"fixedAbilities":["Guarda do estandarte: uma vez por cena, pode interpor-se para proteger alguém próximo; o narrador define o risco ou custo."],"startingLevel":1,"artBrief":"Retrato vertical de corpo inteiro, samurai de fantasia histórica com yoroi azul petróleo e detalhes dourados, katana embainhada, postura serena e alerta, brasão de clã simples sem letras, pátio de castelo chuvoso, pintura editorial realista, luz cinematográfica, sem texto."},{"id":"kyudoka","name":"Kyūdōka","archetype":"Arqueiro","icon":"弓","portrait":"assets/campaigns/kagehama/classes/kyudoka/avatar.svg","description":"Arqueiro paciente que lê vento, terreno e movimento. É caçador, batedor e sentinela das estradas entre os domínios.","attributes":{"ST":11,"DX":14,"IQ":12,"HT":11},"skills":[{"name":"Arco longo","level":14},{"name":"Rastreamento","level":13},{"name":"Percepção","level":13}],"fixedAbilities":["Disparo calculado: com tempo para observar, identifica uma linha de tiro segura ou um detalhe distante antes de agir."],"startingLevel":1,"artBrief":"Retrato vertical de corpo inteiro, arqueira kyūdōka de fantasia histórica com roupas de viagem verde musgo, arco longo yumi e aljava, postura de mira elegante, mata de bambu e neblina ao fundo, pintura editorial realista, luz cinematográfica, sem texto."},{"id":"shinobi","name":"Shinobi","archetype":"Ladino","icon":"忍","portrait":"assets/campaigns/kagehama/classes/shinobi/avatar.svg","description":"Infiltrador, observador e agente de rotas secretas. Prefere informação, disfarce e preparação ao confronto aberto.","attributes":{"ST":9,"DX":14,"IQ":13,"HT":11},"skills":[{"name":"Furtividade","level":14},{"name":"Disfarce","level":13},{"name":"Investigação","level":12}],"fixedAbilities":["Passo sem testemunha: com preparação e cobertura, pode cruzar uma área observada sem chamar atenção; uma falha ainda pode deixar uma pista."],"startingLevel":1,"artBrief":"Retrato vertical de corpo inteiro, shinobi de fantasia histórica em roupas de viagem índigo e carvão, lenço baixo no pescoço sem cobrir o rosto, pequenas ferramentas discretas, telhados de Kagehama à noite, pintura editorial realista, luz cinematográfica, sem texto."},{"id":"onmyoji","name":"Onmyōji","archetype":"Mago","icon":"☯","portrait":"assets/campaigns/kagehama/classes/onmyoji/avatar.svg","description":"Erudito de rituais, presságios e fenômenos espirituais. A magia existe, mas exige preparo, interpretação e consequências.","attributes":{"ST":9,"DX":10,"IQ":15,"HT":10},"skills":[{"name":"Ocultismo","level":14},{"name":"Pesquisa","level":14},{"name":"Empatia","level":12}],"fixedAbilities":["Leitura de presságio: após estudar um local ou objeto, formula uma pergunta objetiva; a resposta do narrador pode ser incompleta ou simbólica."],"startingLevel":1,"artBrief":"Retrato vertical de corpo inteiro, onmyōji de fantasia histórica em vestes brancas e azul noturno, ofuda e estojo de pincéis, uma pequena luz espiritual dourada paira na mão, santuário enevoado, pintura editorial realista, magia sutil, sem texto."},{"id":"miko","name":"Miko Yamabushi","archetype":"Clérigo","icon":"✧","portrait":"assets/campaigns/kagehama/classes/miko/avatar.svg","description":"Curandeira e guia espiritual que cruza montanhas e campos de batalha. Sua fé consola, mas não apaga o custo dos ferimentos.","attributes":{"ST":10,"DX":11,"IQ":13,"HT":12},"skills":[{"name":"Primeiros socorros","level":14},{"name":"Empatia","level":13},{"name":"Sobrevivência","level":12}],"fixedAbilities":["Mãos firmes: uma vez por cena, estabiliza alguém ferido com recursos simples; recuperar-se por completo ainda exige tempo e cuidado."],"startingLevel":1,"artBrief":"Retrato vertical de corpo inteiro, miko yamabushi de fantasia histórica com hakama vermelho escuro, manto de viagem claro, cajado de peregrinação e bolsa médica, trilha de montanha ao amanhecer, pintura editorial realista, expressão acolhedora e firme, sem texto."}].map(item => structuredClone(item));
+  const profile=[
+    ['Batedor','🏹','Encontra caminhos e percebe perigos.',{ST:10,DX:13,IQ:11,HT:11},[['Furtividade',13],['Percepção',12],['Sobrevivência',11]]],
+    ['Erudito','📜','Conhece histórias, idiomas e pistas.',{ST:9,DX:10,IQ:14,HT:10},[['Conhecimento',14],['Pesquisa',13],['Persuasão',10]]],
+    ['Guardião','🛡️','Protege aliados e enfrenta ameaças.',{ST:13,DX:10,IQ:10,HT:12},[['Briga',13],['Intimidação',11],['Vigor',12]]],
+    ['Curandeiro','🌿','Cuida de ferimentos e mantém o grupo em movimento.',{ST:9,DX:11,IQ:12,HT:11},[['Primeiros socorros',13],['Empatia',12],['Conhecimento',11]]],
+    ['Infiltrador','◈','Age com discrição e preparação.',{ST:9,DX:14,IQ:12,HT:10},[['Furtividade',14],['Disfarce',12],['Investigação',12]]],
+    ['Místico','✧','Interpreta fenômenos e conduz rituais.',{ST:9,DX:10,IQ:14,HT:10},[['Ocultismo',14],['Pesquisa',13],['Empatia',11]]],
+  ];
+  return profile.map((p,index)=>({id:'class-'+(index+1),name:p[0],icon:p[1],portrait:'',description:p[2],attributes:p[3],skills:p[4].map(([name,level])=>({name,level})),fixedAbilities:[p[2]],startingLevel:1}));
+}
 function analyzeCampaignText(text, genre) {
   const lines=String(text||'').split(/\n+/).map(line=>line.replace(/^#{1,6}\s*/,'').trim()).filter(Boolean);
   const headings=lines.filter(line=>/^(?:capítulo|cena|local|npc|personagem|monstro|missão|ato)\b/i.test(line));
@@ -217,30 +206,60 @@ function renderSectionBody() {
   if(currentSectionId==='classes'){
     const classes=campaign.classes||[];
     body.innerHTML=`<div class="class-grid">${classes.length?classes.map(cls=>`
-      <article class="class-template"><div class="class-portrait">${escapeHtml(cls.icon||'✦')}</div>
-        <div class="class-template-copy"><small>CLASSE · NÍVEL ${cls.startingLevel||1}</small><h2>${escapeHtml(cls.name)}</h2><p>${escapeHtml(cls.description||'')}</p>
+      <article class="class-template"><div class="class-portrait">${cls.portrait?`<img src="${escapeAttr(cls.portrait)}" alt="Retrato de ${escapeAttr(cls.name)}">`:`<span>${escapeHtml(cls.icon||'✦')}</span>`}</div>
+        <div class="class-template-copy"><small>${escapeHtml(cls.archetype||'ARQUÉTIPO')} · CLASSE · NÍVEL ${cls.startingLevel||1}</small><h2>${escapeHtml(cls.name)}</h2><p>${escapeHtml(cls.description||'')}</p>
           <div class="class-stats">${Object.entries(cls.attributes||{}).map(([key,value])=>`<span>${key} <b>${value}</b></span>`).join('')}</div>
           <small>Perícias fixas: ${(cls.skills||[]).map(skill=>escapeHtml(skill.name)+' '+skill.level).join(' · ')}</small>
-          <small>Habilidade: ${(cls.fixedAbilities||[]).map(escapeHtml).join(' · ')}</small></div></article>`).join(''):'<div class="empty-state">Analise o roteiro para preparar as classes desta campanha.</div>'}</div>
-      <div class="prototype-note">Estas fichas formam a base inicial fixa. A árvore de evolução será uma etapa futura.</div>`;
+          <small>Habilidade: ${(cls.fixedAbilities||[]).map(escapeHtml).join(' · ')}</small>
+          ${cls.artBrief?`<details class="art-brief"><summary>Direção da arte</summary><p>${escapeHtml(cls.artBrief)}</p><small>ARQUIVO-ALVO · ${escapeHtml(cls.portrait||'definir')}</small></details>`:''}</div></article>`).join(''):'<div class="empty-state">Analise o roteiro para preparar as classes desta campanha.</div>'}</div>
+      <div class="prototype-note">Atributos, perícias e habilidade são fixos na criação. Retratos padronizados estão prontos para receber a arte final.</div>`;
     return;
   }
   if(currentSectionId==='characters'){
     const classes=campaign.classes||[];
-    body.innerHTML=`<div class="panel editor"><div class="hint-box">A classe define atributos e perícias iniciais. Você informa apenas nome, gênero e classe.</div>
+    body.innerHTML=`<div class="panel editor"><div class="hint-box">Escolha um arquétipo e dê um nome. Retrato, atributos, perícias e habilidade inicial vêm prontos da classe.</div>
       ${classes.length?`<form id="character-form" class="editor-form">
-        <div class="class-picker">${classes.map((cls,index)=>`<label class="class-option ${index===0?'selected':''}"><input type="radio" name="classId" value="${escapeAttr(cls.id)}" ${index===0?'checked':''} required><span class="class-option-icon">${escapeHtml(cls.icon||'✦')}</span><span><strong>${escapeHtml(cls.name)}</strong><small>${escapeHtml(cls.description||'')}</small></span></label>`).join('')}</div>
-        <div class="form-grid"><label class="field">Nome do personagem<input class="input" name="name" required maxlength="40" placeholder="Nome"></label>
-          <label class="field">Gênero<select class="input" name="gender" required><option value="">Escolha</option><option>Feminino</option><option>Masculino</option><option>Não binário</option><option>Prefiro não informar</option></select></label></div>
+        <div class="class-picker">${classes.map((cls,index)=>`<label class="class-option ${index===0?'selected':''}"><input type="radio" name="classId" value="${escapeAttr(cls.id)}" ${index===0?'checked':''} required><span class="class-option-icon">${cls.portrait?`<img src="${escapeAttr(cls.portrait)}" alt="">`:escapeHtml(cls.icon||'✦')}</span><span><strong>${escapeHtml(cls.name)}</strong><small>${escapeHtml(cls.archetype||'Classe')} · ${escapeHtml(cls.description||'')}</small></span></label>`).join('')}</div>
+        <label class="field">Nome do personagem<input class="input" name="name" required maxlength="40" placeholder="Nome do personagem"></label>
         <button class="button primary">＋ Criar personagem</button></form>`:'<div class="empty-state">Importe e analise o roteiro para preparar as classes desta campanha.</div>'}
-      <div id="character-list" class="item-list"></div></div>`;
+      <div id="character-list" class="character-sheet-list"></div></div>`;
     renderCharacterList();
     document.querySelectorAll('.class-option').forEach(option=>option.addEventListener('click',()=>document.querySelectorAll('.class-option').forEach(row=>row.classList.toggle('selected',row===option))));
     document.querySelector('#character-form')?.addEventListener('submit',async event=>{
       event.preventDefault();const form=new FormData(event.currentTarget),cls=classes.find(item=>item.id===form.get('classId'));if(!cls)return;
       campaign.characters||=[];
-      campaign.characters.push({id:crypto.randomUUID(),name:String(form.get('name')).trim(),gender:String(form.get('gender')),classId:cls.id,className:cls.name,portrait:cls.portrait||'',icon:cls.icon||'✦',level:cls.startingLevel||1,attributes:{...cls.attributes},skills:structuredClone(cls.skills||[]),fixedAbilities:structuredClone(cls.fixedAbilities||[]),advantages:'',disadvantages:'',conditions:[],evolutionPoints:0,createdAt:Date.now()});
-      await persistCampaign(campaign);renderSectionBody();notice('Personagem criado a partir da classe da campanha.');
+      campaign.characters.push({id:crypto.randomUUID(),name:String(form.get('name')).trim(),classId:cls.id,className:cls.name,archetype:cls.archetype||'',portrait:cls.portrait||'',icon:cls.icon||'✦',level:cls.startingLevel||1,attributes:{...cls.attributes},skills:structuredClone(cls.skills||[]),fixedAbilities:structuredClone(cls.fixedAbilities||[]),advantages:'',disadvantages:'',conditions:[],evolutionPoints:0,createdAt:Date.now()});
+      await persistCampaign(campaign);renderSectionBody();notice('Ficha criada. A classe definiu retrato, perícias e habilidades iniciais.');
+    });
+    return;
+  }
+  if(currentSectionId==='art'){
+    const portraits=(campaign.art||[]).filter(item=>item.kind==='portrait');
+    body.innerHTML=`<div class="art-board-head"><div><span class="eyebrow">DIREÇÃO DE ARTE DA CAMPANHA</span><h2>Retratos das classes</h2><p>Mesmo enquadramento e linguagem visual; cada descrição já está pronta para orientar a criação da imagem.</p></div><span class="art-progress">${portraits.filter(item=>item.done).length}/${portraits.length} prontos</span></div>
+      <div class="art-grid">${(campaign.classes||[]).map(cls=>{const item=portraits.find(row=>row.id==='art-'+cls.id)||{};return `<article class="art-card">
+        <div class="art-preview">${cls.portrait?`<img src="${escapeAttr(cls.portrait)}" alt="Arte provisória de ${escapeAttr(cls.name)}">`:escapeHtml(cls.icon||'✦')}<span>${item.done?'ARTE ADICIONADA':'ARTE PENDENTE'}</span></div>
+        <div class="art-card-copy"><small>${escapeHtml(cls.archetype||'CLASSE')}</small><h3>${escapeHtml(cls.name)}</h3><p>${escapeHtml(cls.artBrief||cls.description||'Retrato da classe a criar.')}</p><code>${escapeHtml(cls.portrait||'Definir arquivo da arte')}</code>
+        <label class="art-done"><input type="checkbox" data-art-done="${escapeAttr(item.id||'art-'+cls.id)}" ${item.done?'checked':''}> Marcar retrato como pronto</label></div></article>`}).join('')}</div>
+      <div class="hint-box">Padrão visual: retrato vertical de corpo inteiro, mesma escala e acabamento de pintura. Os SVG atuais são guias substituíveis, não a arte final.</div>`;
+    body.querySelectorAll('[data-art-done]').forEach(input=>input.addEventListener('change',async()=>{const item=(campaign.art||[]).find(row=>row.id===input.dataset.artDone);if(item)item.done=input.checked;await persistCampaign(campaign);renderSectionBody()}));
+    return;
+  }
+  if(currentSectionId==='evolution'){
+    const rules=campaign.progression||{}, log=campaign.progressionLog||[], chars=campaign.characters||[];
+    body.innerHTML=`<div class="progression-layout"><section class="panel progression-rules"><span class="eyebrow">PONTOS DE PERSONAGEM · MARCOS NARRATIVOS</span><h2>Feche um elo. Reconheça o que mudou.</h2><p>${escapeHtml(rules.rules||'O narrador registra a razão de cada concessão.')}</p>
+      <div class="criteria-list">${(rules.criteria||[]).map(item=>`<span>✦ ${escapeHtml(item.label)}</span>`).join('')}</div><div class="hint-box">Limite sugerido: até ${rules.awardCap||5} pontos por elo, definidos pelo narrador com base no que aconteceu em jogo.</div></section>
+      <section class="panel progression-award"><h3>Registrar evolução</h3>${chars.length?`<form id="award-form" class="editor-form">
+        <label class="field">Elo / marco<input class="input" name="milestone" required maxlength="80" placeholder="Ex.: negociação no Porto das Garças"></label>
+        <label class="field">Personagem<select class="input" name="characterId" required>${chars.map(c=>`<option value="${escapeAttr(c.id)}">${escapeHtml(c.name)} · ${escapeHtml(c.className)}</option>`).join('')}</select></label>
+        <fieldset class="award-checks"><legend>O que o personagem demonstrou?</legend>${(rules.criteria||[]).map((item,index)=>`<label><input type="checkbox" name="criterion" value="${escapeAttr(item.id)}"> ${escapeHtml(item.label)}</label>`).join('')}</fieldset>
+        <label class="field">Justificativa do narrador<textarea class="input textarea" name="reason" rows="2" required placeholder="Descreva a escolha ou consequência que justifica os pontos."></textarea></label>
+        <button class="button primary">＋ Conceder pontos</button></form>`:'<div class="empty-state">Crie personagens para registrar a evolução.</div>'}</section></div>
+      <section class="panel progression-history"><h3>Histórico de marcos</h3>${log.length?log.slice().reverse().map(entry=>`<article class="progress-entry"><div><strong>${escapeHtml(entry.characterName)} · +${entry.points} PC</strong><small>${escapeHtml(entry.milestone)} · ${new Date(entry.createdAt).toLocaleDateString('pt-BR')}</small><p>${escapeHtml(entry.reason)}</p></div></article>`).join(''):'<div class="empty-state">Os ganhos ficam registrados aqui e na ficha do personagem.</div>'}</section>`;
+    document.querySelector('#award-form')?.addEventListener('submit',async event=>{event.preventDefault();const form=new FormData(event.currentTarget),character=chars.find(c=>c.id===form.get('characterId')),milestone=String(form.get('milestone')).trim(),reason=String(form.get('reason')).trim();if(!character||!milestone||!reason)return;
+      if(log.some(row=>row.characterId===character.id&&row.milestone.toLowerCase()===milestone.toLowerCase()))return notice('Esse personagem já recebeu evolução por esse elo.');
+      const points=Math.min(rules.awardCap||5,form.getAll('criterion').length);if(!points)return notice('Marque ao menos uma contribuição demonstrada em jogo.');
+      character.evolutionPoints=(character.evolutionPoints||0)+points;campaign.progressionLog||=[];campaign.progressionLog.push({id:crypto.randomUUID(),characterId:character.id,characterName:character.name,milestone,points,reason,criteria:form.getAll('criterion'),createdAt:Date.now()});
+      await persistCampaign(campaign);renderSectionBody();notice(`+${points} pontos registrados na ficha de ${character.name}.`);
     });
     return;
   }
@@ -283,54 +302,25 @@ function renderGenericItems(items) {
 }
 
 function renderCharacterList() {
-  const list = document.querySelector('#character-list');
-  if (!list) return;
-  const chars = currentCampaign().characters || [];
-  if (!chars.length) {
-    list.innerHTML = '<div class="empty-state">Nenhum personagem nesta campanha ainda.</div>';
-    return;
-  }
-  list.innerHTML = chars.map(character => {
-    const skillText = (character.skills || []).map(skill => `${escapeHtml(skill.name)} ${skill.level}`).join(' · ');
-    const conditions = (character.conditions || []).map(condition =>
-      `<small>${escapeHtml(condition.name)} · ${condition.modifier >= 0 ? '+' : ''}${condition.modifier} ${condition.permanent ? '· permanente' : ''}</small>`).join('');
-    return `<article class="item-card">
-      <div><strong>${escapeHtml(character.name)}${character.className ? ' · ' + escapeHtml(character.className) : ''}</strong><small>${escapeHtml(character.gender || 'Gênero não informado')} · nível ${character.level || 1} · ${skillText || 'Sem perícias'}</small>${conditions}</div>
-      <div class="item-actions">
-        <button class="mini-button" data-test-character="${character.id}">Tentar ação</button>
-        <details class="condition-editor">
-          <summary>＋ Condição</summary>
-          <form data-condition-form="${character.id}">
-            <input class="input" name="conditionName" required maxlength="60" placeholder="Lesão, perda de membro...">
-            <input class="input" name="modifier" type="number" value="0" aria-label="Modificador">
-            <input class="input" name="scope" value="all" placeholder="all ou nome da perícia">
-            <label class="check-row"><input type="checkbox" name="permanent"> Permanente</label>
-            <button class="mini-button">Salvar condição</button>
-          </form>
-        </details>
-      </div>
-    </article>`;
+  const list=document.querySelector('#character-list');if(!list)return;
+  const chars=currentCampaign().characters||[];
+  if(!chars.length){list.innerHTML='<div class="empty-state">Nenhum personagem nesta campanha ainda.</div>';return;}
+  list.innerHTML=chars.map(character=>{
+    const conditions=(character.conditions||[]).map(c=>`<span class="condition-chip">${escapeHtml(c.name)} · ${c.modifier>=0?'+':''}${c.modifier}${c.permanent?' · permanente':''}</span>`).join('');
+    return `<article class="character-sheet">
+      <div class="character-portrait">${character.portrait?`<img src="${escapeAttr(character.portrait)}" alt="">`:escapeHtml(character.icon||'✦')}</div>
+      <div class="character-main"><div class="character-title"><div><small>FICHA DO JOGADOR · NÍVEL ${character.level||1}</small><h3>${escapeHtml(character.name)}</h3><span>${escapeHtml(character.className||'Classe')} · ${escapeHtml(character.archetype||'')}</span></div><b class="pc-badge">${character.evolutionPoints||0} PC</b></div>
+        <div class="character-quick-stats">${Object.entries(character.attributes||{}).map(([key,value])=>`<span>${key} <b>${value}</b></span>`).join('')}</div>
+        <div class="character-skills">${(character.skills||[]).map(s=>`<span>${escapeHtml(s.name)} ${s.level}</span>`).join('')}</div>
+        <details class="sheet-details"><summary>Abrir ficha completa</summary><p><strong>Habilidade:</strong> ${(character.fixedAbilities||[]).map(escapeHtml).join(' · ')}</p><p><strong>Condições persistentes:</strong> ${conditions||'Nenhuma registrada'}</p></details>
+      </div><div class="character-actions"><button class="mini-button" data-test-character="${escapeAttr(character.id)}">Tentar ação</button>
+      <details class="condition-editor"><summary>＋ Condição</summary><form data-condition-form="${escapeAttr(character.id)}">
+        <input class="input" name="conditionName" required maxlength="60" placeholder="Lesão, perda de membro..."><input class="input" name="modifier" type="number" value="0" aria-label="Modificador"><input class="input" name="scope" value="all" placeholder="all ou nome da perícia"><label class="check-row"><input type="checkbox" name="permanent"> Permanente</label><button class="mini-button">Salvar condição</button></form></details></div></article>`;
   }).join('');
-  list.querySelectorAll('[data-test-character]').forEach(button =>
-    button.addEventListener('click', () => openTest(button.dataset.testCharacter)));
-  list.querySelectorAll('[data-condition-form]').forEach(form => form.addEventListener('submit', async event => {
-    event.preventDefault();
-    const values = new FormData(form);
-    const character = chars.find(item => item.id === form.dataset.conditionForm);
-    const name = String(values.get('conditionName') || '').trim();
-    if (!character || !name) return;
-    character.conditions ||= [];
-    character.conditions.push({
-      id: crypto.randomUUID(),
-      name,
-      modifier: Number(values.get('modifier')) || 0,
-      scope: String(values.get('scope') || 'all').trim(),
-      permanent: values.get('permanent') === 'on',
-      createdAt: Date.now(),
-    });
-    await persistCampaign(currentCampaign());
-    renderSectionBody();
-    notice('Condição salva na ficha do personagem.');
+  list.querySelectorAll('[data-test-character]').forEach(button=>button.addEventListener('click',()=>openTest(button.dataset.testCharacter)));
+  list.querySelectorAll('[data-condition-form]').forEach(form=>form.addEventListener('submit',async event=>{event.preventDefault();const values=new FormData(form),character=chars.find(item=>item.id===form.dataset.conditionForm),name=String(values.get('conditionName')||'').trim();if(!character||!name)return;
+    character.conditions||=[];character.conditions.push({id:crypto.randomUUID(),name,modifier:Number(values.get('modifier'))||0,scope:String(values.get('scope')||'all').trim(),permanent:values.get('permanent')==='on',createdAt:Date.now()});
+    await persistCampaign(currentCampaign());renderSectionBody();notice('Condição salva na ficha do personagem.');
   }));
 }
 
