@@ -9,13 +9,14 @@ export const CAMPAIGN_SECTIONS = [
   { id: 'maps', label: 'Mapa geral', description: 'Mapas e referências de localização.' },
   { id: 'travel', label: 'Viagens e rotas', description: 'Deslocamentos como cenas, escolhas e consequências.' },
   { id: 'art', label: 'Arte e recursos', description: 'Imagens e recursos visuais da campanha.' },
+  { id: 'evolution', label: 'Evolução', description: 'Pontos de personagem concedidos ao fechar elos narrativos.' },
   { id: 'checklist', label: 'Checklist', description: 'Itens que ainda precisam ser preparados.' },
 ];
 
 export function createEmptyCampaign(id, title, genre = '') {
   return {
     id,
-    schemaVersion: 2,
+    schemaVersion: 3,
     analysis: null,
     title,
     genre,
@@ -36,6 +37,8 @@ export function createEmptyCampaign(id, title, genre = '') {
     },
     art: [],
     checklist: [],
+    progression: { currency: 'Pontos de personagem', awardCap: 5, criteria: [], rules: 'O narrador registra uma justificativa por marco narrativo.' },
+    progressionLog: [],
     testLog: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
