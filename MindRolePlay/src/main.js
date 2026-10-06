@@ -56,14 +56,14 @@ function localCampaigns() {
       if (sample) {
         const index = stored.findIndex(item => item.id === sample.id);
         if (index < 0) stored.push(sample);
-        else if (Number(stored[index].schemaVersion || 1) < 4 || (stored[index].classes || []).length !== sample.classes.length || (stored[index].art || []).length !== sample.art.length) {
+        else if (Number(stored[index].schemaVersion || 1) < 5 || (stored[index].classes || []).length !== sample.classes.length || (stored[index].art || []).length !== sample.art.length) {
           const old = stored[index];
           stored[index] = {
-            ...sample, ...old, schemaVersion: 4,
+            ...sample, ...old, schemaVersion: 5,
             classes: sample.classes, art: sample.art, progression: sample.progression, artDirection: sample.artDirection,
             npcs: [...sample.npcs, ...(old.npcs || []).filter(item => !sample.npcs.some(seed => seed.id === item.id))],
             scenes: [...sample.scenes, ...(old.scenes || []).filter(item => !sample.scenes.some(seed => seed.id === item.id))],
-            progressionLog: old.progressionLog || [], characters: old.characters || [],
+            progressionLog: old.progressionLog || [], characters: (old.characters || []).map(character => { const cls = sample.classes.find(item => item.id === character.classId); const gender = character.gender === 'female' ? 'female' : 'male'; return cls ? { ...character, portrait: cls.portraits[gender], assetPath: cls.assetPaths[gender] } : character; }),
             checklist: [...sample.checklist, ...(old.checklist || []).filter(item => !sample.checklist.some(seed => seed.id === item.id))],
           };
         }

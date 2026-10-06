@@ -1421,9 +1421,10 @@ export const KAGEHAMA_CAMPAIGN = {
   }
 }
 
-const classPortraits = { "roninMalePortrait":roninMalePortrait, "roninFemalePortrait":roninFemalePortrait, "samuraiMalePortrait":samuraiMalePortrait, "samuraiFemalePortrait":samuraiFemalePortrait, "kyudokaMalePortrait":kyudokaMalePortrait, "kyudokaFemalePortrait":kyudokaFemalePortrait, "shinobiMalePortrait":shinobiMalePortrait, "shinobiFemalePortrait":shinobiFemalePortrait, "onmyojiMalePortrait":onmyojiMalePortrait, "onmyojiFemalePortrait":onmyojiFemalePortrait, "mikoMalePortrait":mikoMalePortrait, "mikoFemalePortrait":mikoFemalePortrait };
 for (const cls of KAGEHAMA_CAMPAIGN.classes) {
-  cls.portraits = { male: classPortraits[cls.id+'MalePortrait'], female: classPortraits[cls.id+'FemalePortrait'] };
+  const base = 'assets/campaigns/kagehama/classes/' + cls.id;
+  cls.portraits = { male: base + '/male.png', female: base + '/female.png' };
   cls.portrait = cls.portraits.male;
-  cls.assetPaths = { male: 'assets/campaigns/kagehama/classes/'+cls.id+'/male.png', female: 'assets/campaigns/kagehama/classes/'+cls.id+'/female.png' };
+  cls.assetPaths = { ...cls.portraits };
+  cls.assetPath = cls.portrait;
 }
