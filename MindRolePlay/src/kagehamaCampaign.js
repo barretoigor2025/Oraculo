@@ -13,7 +13,7 @@ import mikoFemalePortrait from '../assets/campaigns/kagehama/classes/miko/female
 
 export const KAGEHAMA_CAMPAIGN = {
   "id": "demo-kagehama",
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "title": "As Sete Lanternas de Kagehama",
   "genre": "Medieval samurai · fantasia histórica",
   "status": "ready-for-play",
