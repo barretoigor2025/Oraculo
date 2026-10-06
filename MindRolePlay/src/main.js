@@ -274,14 +274,18 @@ function renderSectionBody() {
     return;
   }
   if(currentSectionId==='art'){
-    const portraits=(campaign.art||[]).filter(item=>item.kind==='portrait');
-    body.innerHTML=`<div class="art-board-head"><div><span class="eyebrow">DIREÇÃO DE ARTE DA CAMPANHA</span><h2>Retratos das classes</h2><p>Mesmo enquadramento e linguagem visual; cada descrição já está pronta para orientar a criação da imagem.</p></div><span class="art-progress">${portraits.filter(item=>item.done).length}/${portraits.length} prontos</span></div>
-      <div class="art-grid">${(campaign.classes||[]).map(cls=>{const item=portraits.find(row=>row.id==='art-'+cls.id)||{};return `<article class="art-card">
-        <div class="art-preview">${cls.portrait?`<img src="${escapeAttr(cls.portrait)}" alt="Arte provisória de ${escapeAttr(cls.name)}">`:escapeHtml(cls.icon||'✦')}<span>${item.done?'ARTE ADICIONADA':'ARTE PENDENTE'}</span></div>
-        <div class="art-card-copy"><small>${escapeHtml(cls.archetype||'CLASSE')}</small><h3>${escapeHtml(cls.name)}</h3><p>${escapeHtml(cls.artBrief||cls.description||'Retrato da classe a criar.')}</p><code>${escapeHtml(cls.assetPath||cls.portrait||'Definir arquivo da arte')}</code>
-        <label class="art-done"><input type="checkbox" data-art-done="${escapeAttr(item.id||'art-'+cls.id)}" ${item.done?'checked':''}> Marcar retrato como pronto</label></div></article>`}).join('')}</div>
-      <div class="hint-box">Padrão visual: retrato vertical de corpo inteiro, mesma escala e acabamento de pintura. Os SVG atuais são guias substituíveis, não a arte final.</div>`;
-    body.querySelectorAll('[data-art-done]').forEach(input=>input.addEventListener('change',async()=>{const item=(campaign.art||[]).find(row=>row.id===input.dataset.artDone);if(item)item.done=input.checked;const classId=input.dataset.artDone.replace('art-','');const checklist=(campaign.checklist||[]).find(row=>row.id==='artcheck-'+classId);if(checklist)checklist.done=input.checked;await persistCampaign(campaign);renderSectionBody()}));
+    const art=campaign.art||[];
+    const categories=[...new Set(art.map(item=>item.category||'Outros'))];
+    const previewFor=item=>{
+      const cls=(campaign.classes||[]).find(c=>item.id.includes(c.id));
+      if(cls){const gender=item.id.endsWith('-female')?'female':'male';return cls.portraits?.[gender]||cls.portrait||'';}
+      return '';
+    };
+    body.innerHTML='<div class="art-direction-card panel"><small>LINGUAGEM VISUAL DA CAMPANHA</small><h2>Mangá em tinta sobre papel claro</h2><p>'+
+      escapeHtml(campaign.artDirection?.medium||'Preto e branco, retículas discretas e contorno de tinta.')+'</p><p>'+escapeHtml(campaign.artDirection?.sceneFormat||'Cenários verticais 9:16; personagens em camada transparente.')+'</p></div>'+
+      (categories.length?categories.map(category=>'<section class="art-category"><div class="art-board-head"><div><span class="eyebrow">PREPARAÇÃO DE ARTE</span><h2>'+escapeHtml(category)+'</h2></div><span class="art-progress">'+art.filter(item=>(item.category||'Outros')===category&&item.done).length+'/'+art.filter(item=>(item.category||'Outros')===category).length+' prontos</span></div><div class="art-grid">'+art.filter(item=>(item.category||'Outros')===category).map(item=>'<article class="art-card"><div class="art-preview '+(item.kind==='scene'?'vertical-preview':'')+'">'+(previewFor(item)?'<img src="'+escapeAttr(previewFor(item))+'" alt="">':'<span class="art-placeholder">'+(item.kind==='scene'?'QUADRO 9:16':item.kind==='npc'?'NPC':'ARTE')+'</span>')+'<span>'+(item.done?'ARTE ADICIONADA':'BRIEF PRONTO')+'</span></div><div class="art-card-copy"><h3>'+escapeHtml(item.title)+'</h3><p>'+escapeHtml(item.description||'Brief de arte a definir.')+'</p><code>'+escapeHtml(item.assetPath||'Definir caminho do arquivo')+'</code><label class="art-done"><input type="checkbox" data-art-done="'+escapeAttr(item.id)+'" '+(item.done?'checked':'')+'> Marcar como pronto</label></div></article>').join('')+'</div></section>').join(''):'<div class="panel empty-state">Os briefs de arte da campanha aparecerão aqui após instalar ou analisar o roteiro.</div>')+
+      '<div class="hint-box">Avatares: PNG/SVG com transparência. Cenários: imagem vertical sem personagens embutidos. O retrato provisório atual pode ser substituído mantendo o caminho de arquivo indicado.</div>';
+    body.querySelectorAll('[data-art-done]').forEach(input=>input.addEventListener('change',async()=>{const item=art.find(row=>row.id===input.dataset.artDone);if(item)item.done=input.checked;const checkId='artcheck-'+input.dataset.artDone.replace(/^art-/,'');const checklist=(campaign.checklist||[]).find(row=>row.id===checkId);if(checklist)checklist.done=input.checked;await persistCampaign(campaign);renderSectionBody();}));
     return;
   }
   if(currentSectionId==='evolution'){
