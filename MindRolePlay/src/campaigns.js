@@ -7,6 +7,7 @@ export const CAMPAIGN_SECTIONS = [
   { id: 'npcs', label: 'NPCs', description: 'Personagens controlados pelo narrador.' },
   { id: 'scenes', label: 'Cenários', description: 'Locais e cenas da campanha.' },
   { id: 'maps', label: 'Mapa geral', description: 'Mapas e referências de localização.' },
+  { id: 'travel', label: 'Viagens e rotas', description: 'Deslocamentos como cenas, escolhas e consequências.' },
   { id: 'art', label: 'Arte e recursos', description: 'Imagens e recursos visuais da campanha.' },
   { id: 'checklist', label: 'Checklist', description: 'Itens que ainda precisam ser preparados.' },
 ];
@@ -27,6 +28,12 @@ export function createEmptyCampaign(id, title, genre = '') {
     npcs: [],
     scenes: [],
     maps: [],
+    travel: [],
+    travelRules: {
+      principle: 'A jornada é uma sequência de cenas com escolhas e consequências.',
+      track: ['tempo', 'condição', 'recursos', 'exposição', 'vínculos'],
+      guidance: 'Apresente rotas e custos; mostre sinais antes dos perigos; pergunte como cada personagem contribui; atualize o mundo na chegada.',
+    },
     art: [],
     checklist: [],
     testLog: [],
