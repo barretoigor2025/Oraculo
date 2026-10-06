@@ -183,15 +183,15 @@ function renderSectionBody() {
   const campaign=currentCampaign(), body=document.querySelector('#section-body');
   if(currentSectionId==='story'){
     const analysis=campaign.analysis;
-    body.innerHTML=\`<div class="panel editor">
+    body.innerHTML=`<div class="panel editor">
       <div class="hint-box">O roteiro é a entrada do pacote. A análise organiza classes, cenas e necessidades; o narrador revisa as sugestões.</div>
-      <div class="analysis-summary"><span class="analysis-mark">✦</span><div><strong>\${analysis?'Análise inicial pronta':'Roteiro ainda não analisado'}</strong><small>\${analysis?escapeHtml(analysis.balance.threats):'Cole o roteiro ao instalar a campanha para montar o pacote.'}</small></div></div>
-      <div class="story-source"><small>ROTEIRO DA CAMPANHA</small><p>\${escapeHtml(campaign.story||'Nenhum roteiro importado ainda.')}</p></div>
-      \${campaign.source?\`<div class="source-line">Fonte: \${escapeHtml(campaign.source)}</div>\`:''}
-      \${analysis?\`<div class="hint-box">Nível inicial sugerido: \${analysis.balance.startingLevel} · perícias iniciais \${analysis.balance.recommendedSkillRange}. \${escapeHtml(analysis.balance.narratorReview)}</div>\`:''}
-      <button id="reanalyze-story" class="button">\${analysis?'Reanalisar roteiro':'Analisar roteiro'}</button>
+      <div class="analysis-summary"><span class="analysis-mark">✦</span><div><strong>${analysis?'Análise inicial pronta':'Roteiro ainda não analisado'}</strong><small>${analysis?escapeHtml(analysis.balance.threats):'Cole o roteiro ao instalar a campanha para montar o pacote.'}</small></div></div>
+      <div class="story-source"><small>ROTEIRO DA CAMPANHA</small><p>${escapeHtml(campaign.story||'Nenhum roteiro importado ainda.')}</p></div>
+      ${campaign.source?`<div class="source-line">Fonte: ${escapeHtml(campaign.source)}</div>`:''}
+      ${analysis?`<div class="hint-box">Nível inicial sugerido: ${analysis.balance.startingLevel} · perícias iniciais ${analysis.balance.recommendedSkillRange}. ${escapeHtml(analysis.balance.narratorReview)}</div>`:''}
+      <button id="reanalyze-story" class="button">${analysis?'Reanalisar roteiro':'Analisar roteiro'}</button>
       <small class="prototype-note">Análise estrutural local de demonstração. A integração com o serviço de IA do Oráculo ainda não está conectada.</small>
-    </div>\`;
+    </div>`;
     document.querySelector('#reanalyze-story').addEventListener('click',async()=>{
       campaign.analysis=analyzeCampaignText(campaign.story||'',campaign.genre||'');
       campaign.classes=makeStarterClasses(campaign.story||'',campaign.genre||'');
@@ -204,24 +204,24 @@ function renderSectionBody() {
   }
   if(currentSectionId==='classes'){
     const classes=campaign.classes||[];
-    body.innerHTML=\`<div class="class-grid">\${classes.length?classes.map(cls=>\`
-      <article class="class-template"><div class="class-portrait">\${escapeHtml(cls.icon||'✦')}</div>
-        <div class="class-template-copy"><small>CLASSE · NÍVEL \${cls.startingLevel||1}</small><h2>\${escapeHtml(cls.name)}</h2><p>\${escapeHtml(cls.description||'')}</p>
-          <div class="class-stats">\${Object.entries(cls.attributes||{}).map(([key,value])=>\`<span>\${key} <b>\${value}</b></span>\`).join('')}</div>
-          <small>Perícias fixas: \${(cls.skills||[]).map(skill=>escapeHtml(skill.name)+' '+skill.level).join(' · ')}</small>
-          <small>Habilidade: \${(cls.fixedAbilities||[]).map(escapeHtml).join(' · ')}</small></div></article>\`).join(''):'<div class="empty-state">Analise o roteiro para preparar as classes desta campanha.</div>'}</div>
-      <div class="prototype-note">Estas fichas formam a base inicial fixa. A árvore de evolução será uma etapa futura.</div>\`;
+    body.innerHTML=`<div class="class-grid">${classes.length?classes.map(cls=>`
+      <article class="class-template"><div class="class-portrait">${escapeHtml(cls.icon||'✦')}</div>
+        <div class="class-template-copy"><small>CLASSE · NÍVEL ${cls.startingLevel||1}</small><h2>${escapeHtml(cls.name)}</h2><p>${escapeHtml(cls.description||'')}</p>
+          <div class="class-stats">${Object.entries(cls.attributes||{}).map(([key,value])=>`<span>${key} <b>${value}</b></span>`).join('')}</div>
+          <small>Perícias fixas: ${(cls.skills||[]).map(skill=>escapeHtml(skill.name)+' '+skill.level).join(' · ')}</small>
+          <small>Habilidade: ${(cls.fixedAbilities||[]).map(escapeHtml).join(' · ')}</small></div></article>`).join(''):'<div class="empty-state">Analise o roteiro para preparar as classes desta campanha.</div>'}</div>
+      <div class="prototype-note">Estas fichas formam a base inicial fixa. A árvore de evolução será uma etapa futura.</div>`;
     return;
   }
   if(currentSectionId==='characters'){
     const classes=campaign.classes||[];
-    body.innerHTML=\`<div class="panel editor"><div class="hint-box">A classe define atributos e perícias iniciais. Você informa apenas nome, gênero e classe.</div>
-      \${classes.length?\`<form id="character-form" class="editor-form">
-        <div class="class-picker">\${classes.map((cls,index)=>\`<label class="class-option \${index===0?'selected':''}"><input type="radio" name="classId" value="\${escapeAttr(cls.id)}" \${index===0?'checked':''} required><span class="class-option-icon">\${escapeHtml(cls.icon||'✦')}</span><span><strong>\${escapeHtml(cls.name)}</strong><small>\${escapeHtml(cls.description||'')}</small></span></label>\`).join('')}</div>
+    body.innerHTML=`<div class="panel editor"><div class="hint-box">A classe define atributos e perícias iniciais. Você informa apenas nome, gênero e classe.</div>
+      ${classes.length?`<form id="character-form" class="editor-form">
+        <div class="class-picker">${classes.map((cls,index)=>`<label class="class-option ${index===0?'selected':''}"><input type="radio" name="classId" value="${escapeAttr(cls.id)}" ${index===0?'checked':''} required><span class="class-option-icon">${escapeHtml(cls.icon||'✦')}</span><span><strong>${escapeHtml(cls.name)}</strong><small>${escapeHtml(cls.description||'')}</small></span></label>`).join('')}</div>
         <div class="form-grid"><label class="field">Nome do personagem<input class="input" name="name" required maxlength="40" placeholder="Nome"></label>
           <label class="field">Gênero<select class="input" name="gender" required><option value="">Escolha</option><option>Feminino</option><option>Masculino</option><option>Não binário</option><option>Prefiro não informar</option></select></label></div>
-        <button class="button primary">＋ Criar personagem</button></form>\`:'<div class="empty-state">Importe e analise o roteiro para preparar as classes desta campanha.</div>'}
-      <div id="character-list" class="item-list"></div></div>\`;
+        <button class="button primary">＋ Criar personagem</button></form>`:'<div class="empty-state">Importe e analise o roteiro para preparar as classes desta campanha.</div>'}
+      <div id="character-list" class="item-list"></div></div>`;
     renderCharacterList();
     document.querySelectorAll('.class-option').forEach(option=>option.addEventListener('click',()=>document.querySelectorAll('.class-option').forEach(row=>row.classList.toggle('selected',row===option))));
     document.querySelector('#character-form')?.addEventListener('submit',async event=>{
@@ -234,10 +234,10 @@ function renderSectionBody() {
   }
   const list=campaign[currentSectionId]||[];
   const label=currentSectionId==='checklist'?'Item a preparar':currentSectionId==='npcs'?'NPC':currentSectionId==='scenes'?'Cenário ou cena':currentSectionId==='maps'?'Mapa ou local':'Recurso visual';
-  body.innerHTML=\`<div class="panel editor">\${currentSectionId==='checklist'?'<div class="hint-box">Checklist preparado a partir do roteiro e revisável pelo narrador.</div>':''}
-    <form id="item-form" class="editor-form"><label class="field">\${label}<input class="input" name="title" required maxlength="70" placeholder="Nome"></label>
+  body.innerHTML=`<div class="panel editor">${currentSectionId==='checklist'?'<div class="hint-box">Checklist preparado a partir do roteiro e revisável pelo narrador.</div>':''}
+    <form id="item-form" class="editor-form"><label class="field">${label}<input class="input" name="title" required maxlength="70" placeholder="Nome"></label>
       <label class="field">Notas<textarea class="input textarea" name="description" rows="3" placeholder="Descrição, instruções ou referência"></textarea></label><button class="button primary">＋ Adicionar</button></form>
-    <div id="section-items" class="item-list"></div></div>\`;
+    <div id="section-items" class="item-list"></div></div>`;
   renderGenericItems(list);
   document.querySelector('#item-form').addEventListener('submit',async event=>{
     event.preventDefault();const form=new FormData(event.currentTarget);
