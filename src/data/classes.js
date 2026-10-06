@@ -175,6 +175,10 @@ export function getDerivedStats(playerClass) {
   const conMod = getModifier(a.CON ?? 10);
   const dexMod = getModifier(a.DEX ?? 10);
   const wisMod = getModifier(a.WIS ?? 10);
+  const resourcePool = playerClass.sp ?? playerClass.maxStamina ?? playerClass.maxMana ?? 0;
+  const usesMana = playerClass.resourceType === 'mana';
+  const maxMana = usesMana ? resourcePool : 0;
+  const maxStamina = usesMana ? 0 : resourcePool;
   return {
     hp: playerClass.maxHp ?? Math.max(1, 8 + conMod),
     ac: 10 + dexMod,
@@ -182,9 +186,9 @@ export function getDerivedStats(playerClass) {
     fort: conMod,
     ref: dexMod,
     will: wisMod,
-    mana: 0,
-    maxMana: 0,
-    stamina: 0,
-    maxStamina: 0,
+    mana: maxMana,
+    maxMana,
+    stamina: maxStamina,
+    maxStamina,
   };
 }
