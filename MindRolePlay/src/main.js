@@ -106,7 +106,8 @@ function currentCampaign() {
 
 function updateHomeCampaign() {
   const campaign = currentCampaign();
-  document.querySelector('#active-campaign-name').textContent = campaign?.title || 'Nenhuma campanha selecionada';
+  const label = document.querySelector('#active-campaign-name');
+  if (label) label.textContent = campaign?.title || 'Nenhuma campanha selecionada';
 }
 
 function renderCampaigns() {
