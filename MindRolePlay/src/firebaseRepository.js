@@ -15,7 +15,7 @@ import { createDemoCampaigns } from './campaigns.js';
 
 const CAMPAIGNS = 'mindCampaigns';
 const ROOMS = 'mindRooms';
-const KAGEHAMA_SCHEMA_VERSION = 8;
+const KAGEHAMA_SCHEMA_VERSION = 9;
 
 function characterSlug(name) {
   return String(name || 'personagem')
@@ -194,8 +194,17 @@ export async function startNarration(code, hostId, scene) {
     const players = room.players || [];
     if (room.hostId !== hostId) throw new Error('Somente quem criou a sala pode iniciar.');
     if (!players.length || players.some(player => !player.ready)) throw new Error('Todos os jogadores presentes precisam estar prontos.');
-    transaction.update(roomRef, { status: 'narration', scene, messages: [], startedAt: serverTimestamp(), updatedAt: serverTimestamp() });
-    return { ...room, status: 'narration', scene, messages: [] };
+    const messages = (scene.openingMessages || []).map((message, index) => ({
+      id: message.id || 'opening-' + index,
+      playerId: message.playerId || 'narrator',
+      playerName: message.playerName || 'Narrador',
+      characterName: message.characterName || 'Mind',
+      className: message.className || 'Prólogo',
+      text: message.text || scene.openingPrompt || scene.description || 'A cena começa.',
+      createdAt: Date.now() + index,
+    }));
+    transaction.update(roomRef, { status: 'narration', scene, messages, startedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    return { ...room, status: 'narration', scene, messages };
   });
 }
 

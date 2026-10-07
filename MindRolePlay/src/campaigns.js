@@ -48,9 +48,6 @@ export function createEmptyCampaign(id, title, genre = '') {
 
 export function createDemoCampaigns() {
   return [
-    createEmptyCampaign('demo-campanha-1', 'Campanha 1'),
-    createEmptyCampaign('demo-campanha-2', 'Campanha 2'),
-    createEmptyCampaign('demo-campanha-3', 'Campanha 3'),
     (() => {
       const campaign = structuredClone(KAGEHAMA_CAMPAIGN);
       campaign.classes = campaign.classes.map(cls => ({ ...cls, portraits: { ...cls.portraits }, assetPaths: { ...cls.assetPaths }, portrait: cls.portraits?.male || '', assetPath: cls.assetPaths?.male || '' }));

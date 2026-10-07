@@ -16,7 +16,7 @@ import {
 
 const STORE_KEY = 'mindRolePlay.demo.v1';
 const PLAYER_KEY = 'mindRolePlay.playerId';
-const KAGEHAMA_SCHEMA_VERSION = 8;
+const KAGEHAMA_SCHEMA_VERSION = 9;
 const screens = [...document.querySelectorAll('.screen')];
 const toast = document.querySelector('#toast');
 const storageLabel = document.querySelector('#storage-label');
@@ -120,6 +120,11 @@ function localCampaigns() {
   try {
     const stored = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
     if (Array.isArray(stored) && stored.length) {
+      const hiddenIds = new Set(stored.filter(item => /^demo-campanha-\d+$/.test(item.id)).map(item => item.id));
+      for (const id of hiddenIds) {
+        const index = stored.findIndex(item => item.id === id);
+        if (index >= 0) stored.splice(index, 1);
+      }
       const sample = createDemoCampaigns().find(item => item.id === 'demo-kagehama');
       if (sample) {
         const index = stored.findIndex(item => item.id === sample.id);
@@ -180,9 +185,14 @@ function updateHomeCampaign() {
   if (label) label.textContent = campaign?.title || 'Nenhuma campanha selecionada';
 }
 
+function visibleCampaigns(list = campaigns) {
+  return list.filter(campaign => !/^demo-campanha-\d+$/.test(campaign.id));
+}
+
 function renderCampaigns() {
-  const playCards=campaigns.map((campaign,index) => '<button class="campaign-card manga-card" data-play-campaign="'+escapeAttr(campaign.id)+'"><span class="number">HISTÓRIA '+String(index+1).padStart(2,'0')+' · '+escapeHtml(campaign.genre||'Aventura')+'</span><strong>'+escapeHtml(campaign.title)+'</strong><span>'+escapeHtml(campaign.premise||'Uma campanha narrativa pronta para receber personagens.')+'</span><b>ESCOLHER PERSONAGEM →</b></button>').join('');
-  const dbCards=campaigns.map((campaign,index) => '<button class="campaign-card manga-card" data-open-campaign="'+escapeAttr(campaign.id)+'"><span class="number">PACOTE '+String(index+1).padStart(2,'0')+' · '+escapeHtml(campaign.genre||'Gênero não definido')+'</span><strong>'+escapeHtml(campaign.title)+'</strong><span>'+countCampaignContent(campaign)+' elementos preparados · abrir Mind Database →</span></button>').join('');
+  const visible = visibleCampaigns();
+  const playCards=visible.map(campaign => '<button class="campaign-card manga-card" data-play-campaign="'+escapeAttr(campaign.id)+'"><span class="number">KAGEHAMA · '+escapeHtml(campaign.genre||'Aventura')+'</span><strong>'+escapeHtml(campaign.title)+'</strong><span>'+escapeHtml(campaign.premise||'Uma campanha narrativa pronta para receber personagens.')+'</span><b>CRIAR PERSONAGEM →</b></button>').join('');
+  const dbCards=visible.map(campaign => '<button class="campaign-card manga-card" data-open-campaign="'+escapeAttr(campaign.id)+'"><span class="number">KAGEHAMA · PACOTE ATIVO</span><strong>'+escapeHtml(campaign.title)+'</strong><span>'+countCampaignContent(campaign)+' elementos preparados · abrir Mind Database →</span></button>').join('');
   const grid=document.querySelector('#campaign-grid');if(grid)grid.innerHTML=dbCards;
   const home=document.querySelector('#home-campaign-grid');if(home)home.innerHTML=playCards||'<p class="empty-state">Nenhuma campanha instalada ainda. Abra o Mind Database para preparar a primeira.</p>';
   document.querySelectorAll('[data-play-campaign]').forEach(button=>button.addEventListener('click',()=>openCharacterBuilder(button.dataset.playCampaign)));
@@ -349,6 +359,7 @@ function renderSectionBody() {
     const previewFor=item=>{
       const cls=(campaign.classes||[]).find(c=>item.id.includes(c.id));
       if(cls){const gender=item.id.endsWith('-female')?'female':'male';return cls.portraits?.[gender]||cls.portrait||'';}
+      if(item.kind==='scene')return (campaign.scenes||[]).find(scene=>item.id.endsWith(scene.id))?.image||'';
       return '';
     };
     body.innerHTML='<div class="art-direction-card panel"><small>LINGUAGEM VISUAL DA CAMPANHA</small><h2>Mangá em tinta sobre papel claro</h2><p>'+
@@ -661,7 +672,8 @@ function renderGame(room){
   const me=(room.players||[]).find(player=>player.id===localPlayerId()),avatar=document.querySelector('#scene-avatar');
   avatar.src=me?.portrait||chosenCharacter?.portrait||'';avatar.alt=me?.characterName||chosenCharacter?.name||'Personagem';
   const feed=document.querySelector('#game-messages'),messages=room.messages||[];
-  feed.innerHTML=messages.length?messages.map(item=>'<article class="story-message '+(item.playerId===localPlayerId()?'mine':'')+'"><small>'+escapeHtml(item.characterName||item.playerName||'Narrador')+' · '+escapeHtml(item.className||'Jogador')+'</small><p>'+escapeHtml(item.text)+'</p></article>').join(''):'<div class="empty-story">A cena começa. Descreva uma ação ou fala do personagem.</div>';
+  const sceneBrief='<div class="scene-brief"><b>Contexto inicial</b><p>'+escapeHtml(scene.playerContext||'Os personagens chegam à cena por motivos próprios e se unem quando o perigo aparece.')+'</p><b>Objetivo da cena</b><p>'+escapeHtml(scene.objective||'Apresente seu personagem e declare uma ação curta.')+'</p></div>';
+  feed.innerHTML=messages.length?sceneBrief+messages.map(item=>'<article class="story-message '+(item.playerId===localPlayerId()?'mine':item.playerId==='narrator'?'narrator':'')+'"><small>'+escapeHtml(item.characterName||item.playerName||'Narrador')+' · '+escapeHtml(item.className||'Jogador')+'</small><p>'+escapeHtml(item.text)+'</p></article>').join(''):sceneBrief+'<div class="empty-story">A cena começa. Descreva uma ação ou fala do personagem.</div>';
   feed.scrollTop=feed.scrollHeight;showScreen('game');
 }
 async function createActiveRoom(){
@@ -685,7 +697,7 @@ async function beginNarration(){
   try{await startNarration(liveRoom.code,localPlayerId(),scene);}
   catch(error){
     if(!firebaseMode&&liveRoom.hostId===localPlayerId()){
-      renderRoomSummary({...liveRoom,status:'narration',scene,messages:[]},'Aventura solo local iniciada.');
+      renderRoomSummary({...liveRoom,status:'narration',scene,messages:scene.openingMessages||[]},'Aventura solo local iniciada.');
       return;
     }
     notice(error.message||'Não foi possível iniciar a narração.');
@@ -746,17 +758,17 @@ document.querySelector('#message-form').addEventListener('submit',async event=>{
 
 async function boot() {
   try {
-    campaigns = await installDemoCampaignsIfEmpty();
+    campaigns = visibleCampaigns(await installDemoCampaignsIfEmpty());
     firebaseMode = true;
     storageLabel.textContent = 'Firebase · Mind';
   } catch (error) {
     console.warn('Mind RolePlay: Firestore indisponível; abrindo prévia local.', error);
     firebaseMode = false;
-    campaigns = localCampaigns();
+    campaigns = visibleCampaigns(localCampaigns());
     storageLabel.textContent = 'Prévia local';
     notice('A tela funciona neste navegador. Publique as regras Firestore do Mind para sincronizar pela nuvem.');
   }
-  if (!campaigns.length) campaigns = localCampaigns();
+  if (!campaigns.length) campaigns = visibleCampaigns(localCampaigns());
   const kagehamaSeed = createDemoCampaigns().find(item => item.id === 'demo-kagehama');
   const kagehamaIndex = campaigns.findIndex(item => item.id === 'demo-kagehama');
   if (kagehamaSeed && kagehamaIndex >= 0) {
@@ -779,7 +791,8 @@ async function boot() {
     }
   }
   const query=new URLSearchParams(location.search),campaignParam=query.get('campaign');
-  currentCampaignId=campaigns.find(c=>c.id===campaignParam)?.id||campaigns[0]?.id||'';
+  campaigns = visibleCampaigns(campaigns);
+  currentCampaignId=campaigns.find(c=>c.id===campaignParam)?.id||campaigns.find(c=>c.id==='demo-kagehama')?.id||campaigns[0]?.id||'';
   updateHomeCampaign();renderCampaigns();
   if(returnRoomCode&&currentCampaignId)openCharacterBuilder(currentCampaignId);
 }

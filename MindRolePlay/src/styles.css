@@ -101,9 +101,17 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
 .story-panel-heading{display:flex;justify-content:space-between;border-bottom:2px solid #171613;padding-bottom:11px}
 .story-panel-heading h2{margin:3px 0}.ink-seal{border:1px solid #171613;border-radius:50%;width:34px;height:34px;display:grid;place-items:center;font-family:Georgia,serif}
 .game-messages{flex:1;overflow:auto;max-height:48vh;padding:8px 2px}
-.story-message{padding:10px 12px;margin:8px 0;background:#eee8d8;border-left:2px solid #716b5e}
-.story-message.mine{border-left:4px solid #171613;background:#f1ecdf}
+.scene-brief{padding:10px 12px;margin:8px 0 12px;border:1.5px solid #171613;background:#f7f1df;box-shadow:2px 2px 0 rgba(20,19,16,.16)}
+.scene-brief b{display:block;font-size:.66rem;letter-spacing:.11em;text-transform:uppercase;margin:0 0 3px}
+.scene-brief p{margin:0 0 8px;color:#514c42;font-size:.78rem;line-height:1.42}.scene-brief p:last-child{margin-bottom:0}
+.story-message{position:relative;max-width:88%;padding:10px 12px;margin:9px auto 9px 0;background:#fffaf0;border:1.5px solid #171613;border-radius:10px 10px 10px 2px;box-shadow:2px 2px 0 rgba(20,19,16,.18)}
+.story-message:after{content:"";position:absolute;left:10px;bottom:-7px;width:12px;height:12px;background:#fffaf0;border-left:1.5px solid #171613;border-bottom:1.5px solid #171613;transform:skew(-18deg) rotate(-14deg)}
+.story-message.mine{margin-left:auto;margin-right:0;background:#ede5d4;border-radius:10px 10px 2px 10px}
+.story-message.mine:after{left:auto;right:10px;background:#ede5d4;transform:skew(18deg) rotate(14deg)}
+.story-message.narrator{max-width:100%;background:#171613;color:#f7f1df;border-radius:2px;box-shadow:none}
+.story-message.narrator:after{display:none}
 .story-message small{font-size:.67rem;letter-spacing:.05em;font-weight:700}.story-message p{margin:5px 0 0;line-height:1.5;white-space:pre-wrap}
+.story-message.narrator small,.story-message.narrator p{color:#f7f1df}
 .empty-story{color:#716b5e;text-align:center;padding:38px 12px;font:1.05rem Georgia,serif}
 .message-form{border-top:1px solid var(--line);padding-top:12px}
 .message-form label{font-weight:700;font-size:.85rem;display:block;margin-bottom:7px}

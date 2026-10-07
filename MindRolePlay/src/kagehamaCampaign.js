@@ -10,6 +10,7 @@ import onmyojiMalePortrait from '../assets/campaigns/kagehama/classes/onmyoji/on
 import onmyojiFemalePortrait from '../assets/campaigns/kagehama/classes/onmyoji/onmyoji_feminino.png';
 import mikoMalePortrait from '../assets/campaigns/kagehama/classes/miko/miko_masculino.png';
 import mikoFemalePortrait from '../assets/campaigns/kagehama/classes/miko/miko_feminino.png';
+import kagehamaScene0 from '../assets/campaigns/kagehama/scenes/kagehama-scene-0.png';
 
 const KAGEHAMA_PORTRAITS = {
   ronin: { male: roninMalePortrait, female: roninFemalePortrait },
@@ -22,7 +23,7 @@ const KAGEHAMA_PORTRAITS = {
 
 export const KAGEHAMA_CAMPAIGN = {
   "id": "demo-kagehama",
-  "schemaVersion": 8,
+  "schemaVersion": 9,
   "title": "As Sete Lanternas de Kagehama",
   "genre": "Medieval samurai · fantasia histórica",
   "status": "ready-for-play",
@@ -566,8 +567,22 @@ export const KAGEHAMA_CAMPAIGN = {
   "scenes": [
     {
       "id": "kagehama-scene-0",
-      "title": "Capítulo 1 — O salão das testemunhas",
-      "description": "Akiho convoca o grupo; versões contraditórias apontam para Arashi, Casa Sen e comerciantes.",
+      "chapter": "PRÓLOGO",
+      "title": "Ponte das Sete Lanternas",
+      "description": "A procissão atravessa a ponte de Kagehama sob lanternas acesas. Cada personagem está ali por um motivo próprio quando o mensageiro imperial surge escoltado.",
+      "playerContext": "Os personagens ainda não precisam se conhecer. Cada jogador escolhe por que está na ponte: serviço, passagem, escolta, investigação, cura, dívida ou simples acaso. A primeira cena deve juntá-los por necessidade, não por convite artificial.",
+      "objective": "Apresentar o personagem em uma fala ou ação curta, notar um detalhe estranho na procissão e decidir como reage quando o ataque começa.",
+      "openingPrompt": "A Ponte das Sete Lanternas está cheia. Música, passos, água escura sob as tábuas. Um mensageiro imperial passa carregando um estojo lacrado. Antes do disparo, cada personagem tem um instante para aparecer: onde está, o que observa e por que veio a Kagehama?",
+      "openingMessages": [
+        {
+          "playerId": "narrator",
+          "playerName": "Narrador",
+          "characterName": "Mind",
+          "className": "Prólogo",
+          "text": "A Ponte das Sete Lanternas está cheia. Música, passos, água escura sob as tábuas. Um mensageiro imperial passa carregando um estojo lacrado. Antes do disparo, cada personagem tem um instante para aparecer: onde está, o que observa e por que veio a Kagehama?"
+        }
+      ],
+      "image": kagehamaScene0,
       "createdAt": 0
     },
     {
@@ -908,13 +923,13 @@ export const KAGEHAMA_CAMPAIGN = {
     },
     {
       "id": "art-kagehama-scene-0",
-      "title": "Cenário vertical · Capítulo 1 — O salão das testemunhas",
-      "description": "Ilustração de cenário vertical 9:16, sem personagens em primeiro plano, quadro estabelecedor para jogo em celular. Capítulo 1 — O salão das testemunhas. Akiho convoca o grupo; versões contraditórias apontam para Arashi, Casa Sen e comerciantes.. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
+      "title": "Cenário vertical · Prólogo — Ponte das Sete Lanternas",
+      "description": "Ilustração de cenário vertical 9:16, sem personagem principal em primeiro plano. A procissão atravessa a Ponte das Sete Lanternas antes do ataque ao mensageiro imperial. Mangá de aventura original, tinta preta sobre papel branco, contraste forte, retículas discretas e hachuras; somente preto e branco, sem texto ou balões.",
       "assetPath": "assets/campaigns/kagehama/scenes/kagehama-scene-0.png",
       "kind": "scene",
       "category": "Cenários",
-      "status": "brief-ready",
-      "done": false
+      "status": "asset-ready",
+      "done": true
     },
     {
       "id": "art-kagehama-scene-1",
@@ -1201,9 +1216,9 @@ export const KAGEHAMA_CAMPAIGN = {
     },
     {
       "id": "artcheck-kagehama-scene-0",
-      "title": "Criar cenário: Capítulo 1 — O salão das testemunhas",
-      "description": "Cenário vertical para celular, recorte sem personagens. Akiho convoca o grupo; versões contraditórias apontam para Arashi, Casa Sen e comerciantes.",
-      "done": false,
+      "title": "Criar cenário: Prólogo — Ponte das Sete Lanternas",
+      "description": "Cenário vertical para celular. Procissão, ponte, canal e tensão antes do ataque ao mensageiro imperial.",
+      "done": true,
       "category": "Cenários"
     },
     {
