@@ -53,10 +53,10 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
 .manga-card span:not(.number){color:#625c50;line-height:1.5;font-size:.88rem}
 .manga-card b{margin-top:auto;font-size:.72rem;letter-spacing:.11em;color:#171613}
 .database-link{margin-top:20px}
-.character-builder{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:26px;padding:22px;max-width:960px;margin:auto}
-.character-art-frame{min-height:420px;background:radial-gradient(ellipse at 50% 65%,#e7dfcc,transparent 65%),#f4efdf;border:1px solid #312e28;position:relative;display:grid;place-items:end center;overflow:hidden}
+.character-builder{display:grid;grid-template-columns:minmax(180px,.78fr) minmax(0,1.22fr);gap:26px;padding:22px;max-width:960px;margin:auto;align-items:start}
+.character-art-frame{min-height:420px;padding:48px 12px 14px;background:radial-gradient(ellipse at 50% 65%,#e7dfcc,transparent 65%),#f4efdf;border:1px solid #312e28;position:relative;display:grid;place-items:end center;overflow:hidden}
 .character-art-frame:before{content:"";position:absolute;inset:8px;border:1px solid rgba(20,19,16,.32);pointer-events:none}
-.character-art-frame img{max-height:390px;max-width:100%;object-fit:contain;object-position:bottom;z-index:1}
+.character-art-frame img{width:100%;height:100%;max-height:360px;object-fit:contain;object-position:bottom center;z-index:1}
 .art-caption{position:absolute;left:16px;top:16px;z-index:2}
 .character-controls{min-width:0}
 .gender-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
@@ -106,7 +106,22 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
 .narrator-pending{font-size:.72rem;line-height:1.45;color:#6b6456;margin:10px 0 0}
 @media(max-width:720px){
  .home{margin:34px auto 24px;padding:0 3px}.home .title{font-size:clamp(3.2rem,17vw,5.5rem)}
- .character-builder{grid-template-columns:1fr;gap:17px;padding:13px}.character-art-frame{min-height:290px;max-height:44vh}.character-art-frame img{max-height:39vh}
+ .character-builder{grid-template-columns:minmax(122px,42%) minmax(0,1fr);gap:10px;padding:10px}
+ .character-art-frame{min-height:330px;height:min(58svh,430px);padding:42px 7px 10px}
+ .character-art-frame:before{inset:6px}
+ .character-art-frame img{max-height:100%}
+ .art-caption{left:9px;right:9px;top:9px;font-size:.52rem;line-height:1.25;letter-spacing:.12em}
+ .character-controls .field{margin-bottom:8px;font-size:.58rem;letter-spacing:.09em}
+ .character-controls .input{height:39px;margin-top:6px;padding:0 9px;font-size:.82rem}
+ .gender-choice{gap:5px}
+ .gender-button{padding:8px 5px;font-size:.74rem}
+ .class-details h2{font-size:1.35rem;line-height:1.05}
+ .class-details p{font-size:.9rem;line-height:1.45}
+ .attribute-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .attribute-strip span{padding:5px 6px;font-size:.74rem}
+ .skill-line{grid-template-columns:1fr;gap:2px;padding:7px 0}
+ .skill-line span,.skill-line small{font-size:.72rem}
+ .fixed-ability{padding:8px 9px}
  .game-layout{grid-template-columns:1fr}.manga-frame{width:min(100%,390px);min-height:0;height:auto;aspect-ratio:9/16;margin:0 auto}
  .story-panel{min-height:440px;padding:14px}.game-messages{max-height:36vh}
  .lobby-actions{grid-template-columns:1fr}.home-campaign-grid{grid-template-columns:1fr}
@@ -175,5 +190,17 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
 .condition-editor{border:1px solid #171613;background:#eee8d8;padding:8px 10px}
 .condition-editor summary{cursor:pointer;font-weight:900}.condition-editor form{display:grid;gap:8px;margin-top:10px;min-width:min(420px,80vw)}
 @media(max-width:720px){
- .sheet-header{display:grid}.sheet-body{grid-template-columns:1fr;padding:13px}.character-sheet .character-portrait{min-height:300px}.character-actions{padding:0 13px 13px}
+ .sheet-header{display:grid;padding:13px}
+ .sheet-body{grid-template-columns:minmax(112px,40%) minmax(0,1fr);gap:10px;padding:10px}
+ .character-sheet .character-portrait{min-height:260px}
+ .character-sheet .character-portrait img{max-height:260px}
+ .character-sheet .character-portrait figcaption{font-size:.53rem;padding:6px 4px}
+ .sheet-section{padding:9px;margin-bottom:9px}
+ .sheet-section h4{font-size:.62rem}
+ .character-quick-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .character-quick-stats span{padding:6px}
+ .character-quick-stats b{font-size:1.05rem}
+ .character-skills{grid-template-columns:1fr}
+ .sheet-skill span,.sheet-skill small{font-size:.72rem}
+ .character-actions{padding:0 13px 13px}
 }
