@@ -54,9 +54,9 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
 .manga-card b{margin-top:auto;font-size:.72rem;letter-spacing:.11em;color:#171613}
 .database-link{margin-top:20px}
 .character-builder{display:grid;grid-template-columns:minmax(180px,.72fr) minmax(0,1.28fr);gap:18px;padding:18px;max-width:960px;margin:auto;align-items:start}
-.character-art-frame{min-height:420px;padding:10px;background:radial-gradient(ellipse at 50% 48%,#e7dfcc,transparent 65%),#f4efdf;border:1px solid #312e28;position:relative;display:grid;place-items:center;overflow:hidden}
+.character-art-frame{min-height:360px;padding:8px;background:radial-gradient(ellipse at 50% 48%,#e7dfcc,transparent 65%),#f4efdf;border:1px solid #312e28;position:relative;display:grid;place-items:center;overflow:hidden}
 .character-art-frame:before{content:"";position:absolute;inset:8px;border:1px solid rgba(20,19,16,.32);pointer-events:none}
-.character-art-frame img{width:100%;height:100%;max-height:400px;object-fit:contain;object-position:center center;z-index:1}
+.character-art-frame img{width:100%;height:100%;max-height:345px;object-fit:contain;object-position:center bottom;z-index:1;transform:scale(1.35);transform-origin:center bottom}
 .art-caption{position:absolute;left:16px;top:16px;z-index:2}
 .character-controls{min-width:0}
 .class-stepper{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;gap:7px;margin-top:7px}
@@ -109,26 +109,35 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
 .message-form label{font-weight:700;font-size:.85rem;display:block;margin-bottom:7px}
 .narrator-pending{font-size:.72rem;line-height:1.45;color:#6b6456;margin:10px 0 0}
 @media(max-width:720px){
+ .topbar{height:54px;width:min(calc(100% - 28px),1040px)}
+ main{width:min(calc(100% - 28px),930px);padding-top:18px}
+ .screen-heading{gap:8px;margin-bottom:13px}
+ .screen-heading h1{font-size:clamp(1.75rem,9vw,2.25rem);line-height:1.02}
+ .screen-heading small{font-size:.58rem;letter-spacing:.13em}
+ .back{flex-basis:34px;width:34px;height:34px;font-size:17px}
+ .lead{font-size:.82rem;line-height:1.48;margin-bottom:14px}
+ .button{min-height:38px;padding:0 13px;font-size:.66rem;letter-spacing:.08em}
  .home{margin:34px auto 24px;padding:0 3px}.home .title{font-size:clamp(3.2rem,17vw,5.5rem)}
- .character-builder{grid-template-columns:minmax(122px,39%) minmax(0,1fr);gap:9px;padding:9px}
- .character-art-frame{min-height:360px;height:min(58svh,430px);padding:6px}
- .character-art-frame:before{inset:6px}
- .character-art-frame img{max-height:100%}
- .character-controls .field{margin-bottom:8px;font-size:.58rem;letter-spacing:.09em}
- .character-controls .input{height:39px;margin-top:6px;padding:0 9px;font-size:.82rem}
- .class-stepper{grid-template-columns:32px minmax(0,1fr) 32px;gap:5px}
- .class-stepper button{height:36px;font-size:1.2rem}
- .class-stepper strong{min-height:36px;font-size:.66rem;padding:5px 4px}
+ .character-builder{grid-template-columns:minmax(108px,36%) minmax(0,1fr);gap:8px;padding:8px}
+ .character-art-frame{min-height:292px;height:min(43svh,328px);padding:5px}
+ .character-art-frame:before{inset:5px}
+ .character-art-frame img{max-height:100%;transform:scale(1.58);transform-origin:center bottom}
+ .character-controls .field{margin-bottom:7px;font-size:.51rem;letter-spacing:.08em}
+ .character-controls .input{height:35px;margin-top:5px;padding:0 8px;font-size:.73rem}
+ .class-stepper{grid-template-columns:28px minmax(0,1fr) 28px;gap:4px}
+ .class-stepper button{height:32px;font-size:1rem;box-shadow:1.5px 1.5px 0 #171613}
+ .class-stepper strong{min-height:32px;font-size:.58rem;padding:4px 3px;letter-spacing:.035em}
  .gender-choice{gap:5px}
- .gender-button{padding:8px 5px;font-size:.74rem}
- .class-details h2{font-size:1.08rem;line-height:1.05}
- .class-details p{font-size:.78rem;line-height:1.33}
- .class-details h3{font-size:.74rem}
+ .gender-button{padding:6px 4px;font-size:.66rem}
+ .class-details h2{font-size:.92rem;line-height:1.04;margin-top:7px}
+ .class-details p{font-size:.68rem;line-height:1.27}
+ .class-details h3{font-size:.65rem;margin-top:8px}
  .attribute-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
- .attribute-strip span{padding:5px 6px;font-size:.68rem}
- .skill-line{grid-template-columns:1fr;gap:2px;padding:7px 0}
- .skill-line b{font-size:.82rem}.skill-line span,.skill-line small{font-size:.68rem}
- .fixed-ability{padding:8px 9px}
+ .attribute-strip span{padding:4px 5px;font-size:.6rem}
+ .skill-line{grid-template-columns:1fr;gap:1px;padding:5px 0}
+ .skill-line b{font-size:.7rem}.skill-line span,.skill-line small{font-size:.6rem}
+ .fixed-ability{padding:6px 8px;margin:7px 0}
+ .fixed-ability p{font-size:.65rem}
  .game-layout{grid-template-columns:1fr}.manga-frame{width:min(100%,390px);min-height:0;height:auto;aspect-ratio:9/16;margin:0 auto}
  .story-panel{min-height:440px;padding:14px}.game-messages{max-height:36vh}
  .lobby-actions{grid-template-columns:1fr}.home-campaign-grid{grid-template-columns:1fr}
