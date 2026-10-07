@@ -53,24 +53,28 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
 .manga-card span:not(.number){color:#625c50;line-height:1.5;font-size:.88rem}
 .manga-card b{margin-top:auto;font-size:.72rem;letter-spacing:.11em;color:#171613}
 .database-link{margin-top:20px}
-.character-builder{display:grid;grid-template-columns:minmax(180px,.78fr) minmax(0,1.22fr);gap:26px;padding:22px;max-width:960px;margin:auto;align-items:start}
-.character-art-frame{min-height:420px;padding:48px 12px 14px;background:radial-gradient(ellipse at 50% 65%,#e7dfcc,transparent 65%),#f4efdf;border:1px solid #312e28;position:relative;display:grid;place-items:end center;overflow:hidden}
+.character-builder{display:grid;grid-template-columns:minmax(180px,.72fr) minmax(0,1.28fr);gap:18px;padding:18px;max-width:960px;margin:auto;align-items:start}
+.character-art-frame{min-height:420px;padding:10px;background:radial-gradient(ellipse at 50% 48%,#e7dfcc,transparent 65%),#f4efdf;border:1px solid #312e28;position:relative;display:grid;place-items:center;overflow:hidden}
 .character-art-frame:before{content:"";position:absolute;inset:8px;border:1px solid rgba(20,19,16,.32);pointer-events:none}
-.character-art-frame img{width:100%;height:100%;max-height:360px;object-fit:contain;object-position:bottom center;z-index:1}
+.character-art-frame img{width:100%;height:100%;max-height:400px;object-fit:contain;object-position:center center;z-index:1}
 .art-caption{position:absolute;left:16px;top:16px;z-index:2}
 .character-controls{min-width:0}
+.class-stepper{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;gap:7px;margin-top:7px}
+.class-stepper button{height:40px;border:1.5px solid #171613;background:#f7f3e9;box-shadow:2px 2px 0 #171613;font-size:1.45rem;line-height:1;cursor:pointer}
+.class-stepper strong{min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center;border:1.5px solid #716b5e;background:#fbf8ef;padding:6px 8px;font-size:.78rem;letter-spacing:.04em;color:#171613;overflow:hidden}
 .gender-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .gender-button,.saved-character{padding:10px;border:1px solid #797265;background:#f8f4e9;color:#181714;border-radius:2px}
 .gender-button.active{background:#171613;color:#f7f1df}
-.class-details h2{font-family:Georgia,serif;font-size:1.5rem;margin:10px 0 4px}
-.class-details p{color:#575247;line-height:1.5}
-.attribute-strip{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
-.attribute-strip span{border:1px solid #aaa18e;padding:5px 8px;background:#f1ecdd;font-size:.82rem}
-.skill-line{display:grid;grid-template-columns:1fr auto;gap:3px 10px;padding:9px 0;border-top:1px solid rgba(20,19,16,.2)}
-.skill-line span{font-size:.77rem;font-weight:700}
-.skill-line small{grid-column:1/-1;color:#696254;line-height:1.4}
-.fixed-ability{background:#eee8d8;border-left:3px solid #171613;padding:9px 12px;margin:10px 0}
-.fixed-ability p{margin:4px 0;font-size:.85rem}
+.class-details h2{font-family:Georgia,serif;font-size:1.32rem;line-height:1.08;margin:10px 0 4px}
+.class-details p{color:#575247;line-height:1.42;font-size:.86rem;margin:.35rem 0}
+.class-details h3{font-size:.8rem;margin:10px 0 3px}
+.attribute-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:10px 0}
+.attribute-strip span{border:1px solid #aaa18e;padding:5px 6px;background:#f1ecdd;font-size:.75rem}
+.skill-line{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:6px 0;border-top:1px solid rgba(20,19,16,.2)}
+.skill-line b{font-size:.86rem}.skill-line span{font-size:.68rem;font-weight:800;color:#4f493e}
+.skill-line small{grid-column:1/-1;color:#696254;line-height:1.32;font-size:.72rem}
+.fixed-ability{background:#eee8d8;border-left:3px solid #171613;padding:8px 10px;margin:9px 0}
+.fixed-ability p{margin:4px 0;font-size:.78rem;line-height:1.35}
 .class-details details{border-top:1px solid var(--line);padding:10px 0;font-size:.88rem}
 .saved-character-list{max-width:960px;margin:20px auto;display:flex;gap:8px;flex-wrap:wrap}
 .saved-character-list h2{width:100%;font-family:Georgia,serif}
@@ -106,21 +110,24 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
 .narrator-pending{font-size:.72rem;line-height:1.45;color:#6b6456;margin:10px 0 0}
 @media(max-width:720px){
  .home{margin:34px auto 24px;padding:0 3px}.home .title{font-size:clamp(3.2rem,17vw,5.5rem)}
- .character-builder{grid-template-columns:minmax(122px,42%) minmax(0,1fr);gap:10px;padding:10px}
- .character-art-frame{min-height:330px;height:min(58svh,430px);padding:42px 7px 10px}
+ .character-builder{grid-template-columns:minmax(122px,39%) minmax(0,1fr);gap:9px;padding:9px}
+ .character-art-frame{min-height:360px;height:min(58svh,430px);padding:6px}
  .character-art-frame:before{inset:6px}
  .character-art-frame img{max-height:100%}
- .art-caption{left:9px;right:9px;top:9px;font-size:.52rem;line-height:1.25;letter-spacing:.12em}
  .character-controls .field{margin-bottom:8px;font-size:.58rem;letter-spacing:.09em}
  .character-controls .input{height:39px;margin-top:6px;padding:0 9px;font-size:.82rem}
+ .class-stepper{grid-template-columns:32px minmax(0,1fr) 32px;gap:5px}
+ .class-stepper button{height:36px;font-size:1.2rem}
+ .class-stepper strong{min-height:36px;font-size:.66rem;padding:5px 4px}
  .gender-choice{gap:5px}
  .gender-button{padding:8px 5px;font-size:.74rem}
- .class-details h2{font-size:1.35rem;line-height:1.05}
- .class-details p{font-size:.9rem;line-height:1.45}
+ .class-details h2{font-size:1.08rem;line-height:1.05}
+ .class-details p{font-size:.78rem;line-height:1.33}
+ .class-details h3{font-size:.74rem}
  .attribute-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
- .attribute-strip span{padding:5px 6px;font-size:.74rem}
+ .attribute-strip span{padding:5px 6px;font-size:.68rem}
  .skill-line{grid-template-columns:1fr;gap:2px;padding:7px 0}
- .skill-line span,.skill-line small{font-size:.72rem}
+ .skill-line b{font-size:.82rem}.skill-line span,.skill-line small{font-size:.68rem}
  .fixed-ability{padding:8px 9px}
  .game-layout{grid-template-columns:1fr}.manga-frame{width:min(100%,390px);min-height:0;height:auto;aspect-ratio:9/16;margin:0 auto}
  .story-panel{min-height:440px;padding:14px}.game-messages{max-height:36vh}

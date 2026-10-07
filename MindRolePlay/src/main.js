@@ -16,7 +16,7 @@ import {
 
 const STORE_KEY = 'mindRolePlay.demo.v1';
 const PLAYER_KEY = 'mindRolePlay.playerId';
-const KAGEHAMA_SCHEMA_VERSION = 7;
+const KAGEHAMA_SCHEMA_VERSION = 8;
 const screens = [...document.querySelectorAll('.screen')];
 const toast = document.querySelector('#toast');
 const storageLabel = document.querySelector('#storage-label');
@@ -587,9 +587,11 @@ function renderRoomSummary(room, message) {
   document.querySelector('#room-player-list').innerHTML=players.length?players.map(player=>'<div class="room-player '+(player.ready?'is-ready':'')+'"><span class="player-ready-dot"></span><span><strong>'+escapeHtml(player.name||'Jogador')+'</strong>'+(player.characterName?' · '+escapeHtml(player.characterName)+(player.className?' ('+escapeHtml(player.className)+')':''):'')+'</span><small>'+(player.ready?'PRONTO':'AGUARDANDO')+'</small></div>').join(''):'<div class="room-player">Aguardando jogadores…</div>';
   const me=players.find(player=>player.id===localPlayerId()),readyButton=document.querySelector('#ready-button');
   readyButton.disabled=!me;readyButton.textContent=me?.ready?'Cancelar pronto':'Marcar como pronto';
-  const allReady=players.length>=2&&players.every(player=>player.ready),start=document.querySelector('#start-narration');
+  const readyCount=players.filter(player=>player.ready).length;
+  const allReady=players.length>=1&&players.every(player=>player.ready),start=document.querySelector('#start-narration');
   start.disabled=room.hostId!==localPlayerId()||!allReady||room.status!=='waiting';
-  document.querySelector('#ready-status').textContent=room.status==='narration'?'Narração iniciada.':players.length<2?'Convide pelo menos mais uma pessoa.':allReady?'Todos prontos. O anfitrião pode começar.':players.filter(player=>player.ready).length+' de '+players.length+' prontos.';
+  start.textContent=players.length>1?'Iniciar multiplayer':'Iniciar solo';
+  document.querySelector('#ready-status').textContent=room.status==='narration'?'Narração iniciada.':!players.length?'Crie uma aventura ou entre por convite.':players.length===1&&allReady?'Modo solo pronto. Se copiar o convite, a mesma sala vira multiplayer.':allReady?'Todos prontos. O anfitrião pode começar.':readyCount+' de '+players.length+' prontos.';
   document.querySelector('#copy-room-code').dataset.shareUrl=roomShareUrl(room.code,room.campaignId);
   if(room.status==='narration')renderGame(room);
 }
@@ -607,13 +609,24 @@ function openCharacterBuilder(id){
   selectedClassId=select.value;renderClassDetails();renderSavedCharacters();showScreen('character');
 }
 let selectedClassId='';
+function cycleClass(direction){
+  const classes=currentCampaign()?.classes||[];
+  if(!classes.length)return;
+  const currentIndex=Math.max(0,classes.findIndex(item=>item.id===selectedClassId));
+  const nextIndex=(currentIndex+direction+classes.length)%classes.length;
+  selectedClassId=classes[nextIndex].id;
+  renderClassDetails();
+}
 function renderClassDetails(){
   const campaign=currentCampaign(),cls=(campaign?.classes||[]).find(item=>item.id===selectedClassId)||campaign?.classes?.[0];if(!cls)return;
   selectedClassId=cls.id;const portrait=cls.portraits?.[playerGender]||cls.portrait||'';
   const img=document.querySelector('#class-portrait');img.src=portrait;img.alt='Retrato '+(playerGender==='female'?'feminino':'masculino')+' de '+cls.name;
+  const select=document.querySelector('#class-select');if(select)select.value=cls.id;
+  const classes=campaign?.classes||[],index=Math.max(0,classes.findIndex(item=>item.id===cls.id));
+  const stepper=document.querySelector('#class-stepper-name');if(stepper)stepper.textContent=(index+1)+'/'+classes.length+' · '+cls.name;
   const attrs=Object.entries(cls.attributes||{}).map(([key,value])=>'<span><b>'+escapeHtml(key)+'</b> '+escapeHtml(value)+'</span>').join('');
-  const skills=(cls.skills||[]).map(skill=>'<div class="skill-line"><b>'+escapeHtml(skill.name)+'</b><span>Alvo '+escapeHtml(skill.level)+' · teste 3d6</span><small>'+escapeHtml(skill.description||skill.attribute||'Usada quando a ação exige esta perícia.')+'</small></div>').join('');
-  document.querySelector('#class-details').innerHTML='<h2>'+escapeHtml(cls.name)+'</h2><p>'+escapeHtml(cls.description||cls.role||'Arquétipo de campanha')+'</p><div class="attribute-strip">'+attrs+'</div><h3>Perícias iniciais</h3>'+skills+'<div class="fixed-ability"><b>Capacidade fixa</b><p>'+escapeHtml((cls.fixedAbilities||[]).join(' · ')||'A definir na ficha da campanha.')+'</p></div>'+(cls.roleplayProfile?'<details><summary>Guia de interpretação e narrador</summary><p>'+escapeHtml(cls.roleplayProfile.narratorGuidance||cls.roleplayProfile.voice||'')+'</p></details>':'');
+  const skills=(cls.skills||[]).map(skill=>'<div class="skill-line"><b>'+escapeHtml(skill.name)+'</b><span>'+escapeHtml(skill.attribute||'')+' · alvo '+escapeHtml(skill.level)+'</span><small>'+escapeHtml(skill.description||'Teste quando houver risco real.')+'</small></div>').join('');
+  document.querySelector('#class-details').innerHTML='<h2>'+escapeHtml(cls.name)+'</h2><p>'+escapeHtml(cls.description||cls.role||'Arquétipo de campanha')+'</p><div class="attribute-strip">'+attrs+'</div><h3>Testes GURPS · 3d6</h3>'+skills+'<div class="fixed-ability"><b>Habilidade de classe</b><p>'+escapeHtml((cls.fixedAbilities||[]).join(' · ')||'A definir na ficha da campanha.')+'</p></div>'+(cls.roleplayProfile?'<details><summary>Guia da IA narradora</summary><p>'+escapeHtml(cls.roleplayProfile.narratorGuidance||cls.roleplayProfile.voice||'')+'</p></details>':'');
 }
 function renderSavedCharacters(){
   const box=document.querySelector('#saved-characters'),chars=currentCampaign()?.characters||[];
@@ -668,8 +681,15 @@ async function createActiveRoom(){
 async function toggleReady(){if(!liveRoom)return;const me=(liveRoom.players||[]).find(player=>player.id===localPlayerId());try{const room=await setPlayerReady(liveRoom.code,localPlayerId(),!me?.ready);renderRoomSummary(room,'Estado atualizado.');}catch(error){notice(error.message||'Não foi possível atualizar presença.');}}
 async function beginNarration(){
   if(!liveRoom)return;const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign();
-  try{await startNarration(liveRoom.code,localPlayerId(),campaign?.scenes?.[0]||{title:'A primeira cena',description:campaign?.premise||'A história começa.'});}
-  catch(error){notice(error.message||'Não foi possível iniciar a narração.');}
+  const scene=campaign?.scenes?.[0]||{title:'A primeira cena',description:campaign?.premise||'A história começa.'};
+  try{await startNarration(liveRoom.code,localPlayerId(),scene);}
+  catch(error){
+    if(!firebaseMode&&liveRoom.hostId===localPlayerId()){
+      renderRoomSummary({...liveRoom,status:'narration',scene,messages:[]},'Aventura solo local iniciada.');
+      return;
+    }
+    notice(error.message||'Não foi possível iniciar a narração.');
+  }
 }
 
 document.querySelectorAll('[data-nav]').forEach(button => button.addEventListener('click', () => {
@@ -701,6 +721,8 @@ document.querySelector('#roll-button').addEventListener('click', performTest);
 document.querySelector('#open-test').addEventListener('click', () => openTest());
 
 document.querySelector('#class-select').addEventListener('change',event=>{selectedClassId=event.target.value;renderClassDetails();});
+document.querySelector('#prev-class')?.addEventListener('click',()=>cycleClass(-1));
+document.querySelector('#next-class')?.addEventListener('click',()=>cycleClass(1));
 document.querySelectorAll('[data-gender]').forEach(button=>button.addEventListener('click',()=>{playerGender=button.dataset.gender;document.querySelectorAll('[data-gender]').forEach(item=>item.classList.toggle('active',item===button));renderClassDetails();}));
 document.querySelector('#save-character').addEventListener('click',async()=>{
   const campaign=currentCampaign(),cls=(campaign?.classes||[]).find(item=>item.id===selectedClassId),name=document.querySelector('#character-name').value.trim();
