@@ -1,19 +1,28 @@
-import roninMalePortrait from '../assets/campaigns/kagehama/classes/ronin/male.svg';
-import roninFemalePortrait from '../assets/campaigns/kagehama/classes/ronin/female.svg';
-import samuraiMalePortrait from '../assets/campaigns/kagehama/classes/samurai/male.svg';
-import samuraiFemalePortrait from '../assets/campaigns/kagehama/classes/samurai/female.svg';
-import kyudokaMalePortrait from '../assets/campaigns/kagehama/classes/kyudoka/male.svg';
-import kyudokaFemalePortrait from '../assets/campaigns/kagehama/classes/kyudoka/female.svg';
-import shinobiMalePortrait from '../assets/campaigns/kagehama/classes/shinobi/male.svg';
-import shinobiFemalePortrait from '../assets/campaigns/kagehama/classes/shinobi/female.svg';
-import onmyojiMalePortrait from '../assets/campaigns/kagehama/classes/onmyoji/male.svg';
-import onmyojiFemalePortrait from '../assets/campaigns/kagehama/classes/onmyoji/female.svg';
-import mikoMalePortrait from '../assets/campaigns/kagehama/classes/miko/male.svg';
-import mikoFemalePortrait from '../assets/campaigns/kagehama/classes/miko/female.svg';
+import roninMalePortrait from '../assets/campaigns/kagehama/classes/ronin/ronin_masculino.png';
+import roninFemalePortrait from '../assets/campaigns/kagehama/classes/ronin/ronin_feminino.png';
+import samuraiMalePortrait from '../assets/campaigns/kagehama/classes/samurai/samurai_masculino.png';
+import samuraiFemalePortrait from '../assets/campaigns/kagehama/classes/samurai/samurai_feminino.png';
+import kyudokaMalePortrait from '../assets/campaigns/kagehama/classes/kyudoka/kyudoka_masculino.png';
+import kyudokaFemalePortrait from '../assets/campaigns/kagehama/classes/kyudoka/kyudoka_feminino.png';
+import shinobiMalePortrait from '../assets/campaigns/kagehama/classes/shinobi/shinobi_masculino.png';
+import shinobiFemalePortrait from '../assets/campaigns/kagehama/classes/shinobi/shinobi_feminino.png';
+import onmyojiMalePortrait from '../assets/campaigns/kagehama/classes/onmyoji/onmyoji_masculino.png';
+import onmyojiFemalePortrait from '../assets/campaigns/kagehama/classes/onmyoji/onmyoji_feminino.png';
+import mikoMalePortrait from '../assets/campaigns/kagehama/classes/miko/miko_masculino.png';
+import mikoFemalePortrait from '../assets/campaigns/kagehama/classes/miko/miko_feminino.png';
+
+const KAGEHAMA_PORTRAITS = {
+  ronin: { male: roninMalePortrait, female: roninFemalePortrait },
+  samurai: { male: samuraiMalePortrait, female: samuraiFemalePortrait },
+  kyudoka: { male: kyudokaMalePortrait, female: kyudokaFemalePortrait },
+  shinobi: { male: shinobiMalePortrait, female: shinobiFemalePortrait },
+  onmyoji: { male: onmyojiMalePortrait, female: onmyojiFemalePortrait },
+  miko: { male: mikoMalePortrait, female: mikoFemalePortrait },
+};
 
 export const KAGEHAMA_CAMPAIGN = {
   "id": "demo-kagehama",
-  "schemaVersion": 4,
+  "schemaVersion": 7,
   "title": "As Sete Lanternas de Kagehama",
   "genre": "Medieval samurai · fantasia histórica",
   "status": "ready-for-play",
@@ -26,7 +35,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "name": "Combatente de resistência",
       "archetype": "Combatente de resistência",
       "icon": "⚔",
-      "portrait": "assets/campaigns/kagehama/classes/ronin/avatar.svg",
+      "portrait": "assets/campaigns/kagehama/classes/ronin/ronin_masculino.png",
       "description": "Errante de fronteira que resiste ao cansaço, abre passagem e protege quem não pode se defender.",
       "attributes": {
         "ST": 14,
@@ -71,8 +80,8 @@ export const KAGEHAMA_CAMPAIGN = {
       },
       "visualCore": "Rōnin viajante de fantasia histórica, armadura leve remendada, haori curto gasto, nodachi embainhada, postura de guarda inclinada e olhar cansado. Silhueta larga, cicatriz pequena, cordão de viagem e sandálias enlameadas.",
       "assetPaths": {
-        "male": "assets/campaigns/kagehama/classes/ronin/male.png",
-        "female": "assets/campaigns/kagehama/classes/ronin/female.png"
+        "male": "assets/campaigns/kagehama/classes/ronin/ronin_masculino.png",
+        "female": "assets/campaigns/kagehama/classes/ronin/ronin_feminino.png"
       }
     },
     {
@@ -80,7 +89,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "name": "Samurai juramentado",
       "archetype": "Samurai juramentado",
       "icon": "⛨",
-      "portrait": "assets/campaigns/kagehama/classes/samurai/avatar.svg",
+      "portrait": "assets/campaigns/kagehama/classes/samurai/samurai_masculino.png",
       "description": "Defensor treinado, cuja armadura e brasão anunciam uma lealdade que pode entrar em conflito com a consciência.",
       "attributes": {
         "ST": 12,
@@ -125,8 +134,8 @@ export const KAGEHAMA_CAMPAIGN = {
       },
       "visualCore": "Samurai viajante com yoroi simples, cordão de brasão sem símbolos escritos, katana na bainha e mão próxima ao punho sem sacar. Postura disciplinada, ombros alinhados, rosto sereno e atento.",
       "assetPaths": {
-        "male": "assets/campaigns/kagehama/classes/samurai/male.png",
-        "female": "assets/campaigns/kagehama/classes/samurai/female.png"
+        "male": "assets/campaigns/kagehama/classes/samurai/samurai_masculino.png",
+        "female": "assets/campaigns/kagehama/classes/samurai/samurai_feminino.png"
       }
     },
     {
@@ -134,7 +143,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "name": "Kyūdōka",
       "archetype": "Kyūdōka",
       "icon": "弓",
-      "portrait": "assets/campaigns/kagehama/classes/kyudoka/avatar.svg",
+      "portrait": "assets/campaigns/kagehama/classes/kyudoka/kyudoka_masculino.png",
       "description": "Arqueiro e sentinela que lê vento, terreno, pegadas e movimentos distantes antes de agir.",
       "attributes": {
         "ST": 11,
@@ -179,8 +188,8 @@ export const KAGEHAMA_CAMPAIGN = {
       },
       "visualCore": "Arqueiro kyūdōka com yumi alto e aljava, roupa de viagem ajustada para movimento, dedos protegidos, olhar de foco lateral. Corpo esguio e postura de mira relaxada, não disparando.",
       "assetPaths": {
-        "male": "assets/campaigns/kagehama/classes/kyudoka/male.png",
-        "female": "assets/campaigns/kagehama/classes/kyudoka/female.png"
+        "male": "assets/campaigns/kagehama/classes/kyudoka/kyudoka_masculino.png",
+        "female": "assets/campaigns/kagehama/classes/kyudoka/kyudoka_feminino.png"
       }
     },
     {
@@ -188,7 +197,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "name": "Shinobi",
       "archetype": "Shinobi",
       "icon": "忍",
-      "portrait": "assets/campaigns/kagehama/classes/shinobi/avatar.svg",
+      "portrait": "assets/campaigns/kagehama/classes/shinobi/shinobi_masculino.png",
       "description": "Infiltrador que vence com preparo, observação, disfarce e rotas discretas, evitando confronto desnecessário.",
       "attributes": {
         "ST": 9,
@@ -233,8 +242,8 @@ export const KAGEHAMA_CAMPAIGN = {
       },
       "visualCore": "Shinobi com roupa prática em camadas, faixa facial abaixada no pescoço, pequenas ferramentas presas ao cinto e uma mão oculta na manga. Silhueta compacta e postura que observa uma saída.",
       "assetPaths": {
-        "male": "assets/campaigns/kagehama/classes/shinobi/male.png",
-        "female": "assets/campaigns/kagehama/classes/shinobi/female.png"
+        "male": "assets/campaigns/kagehama/classes/shinobi/shinobi_masculino.png",
+        "female": "assets/campaigns/kagehama/classes/shinobi/shinobi_feminino.png"
       }
     },
     {
@@ -242,7 +251,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "name": "Onmyōji",
       "archetype": "Onmyōji",
       "icon": "☯",
-      "portrait": "assets/campaigns/kagehama/classes/onmyoji/avatar.svg",
+      "portrait": "assets/campaigns/kagehama/classes/onmyoji/onmyoji_masculino.png",
       "description": "Ritualista erudito que interpreta presságios, espíritos, arquivos e sinais da natureza; magia exige tempo e tem consequências.",
       "attributes": {
         "ST": 9,
@@ -287,8 +296,8 @@ export const KAGEHAMA_CAMPAIGN = {
       },
       "visualCore": "Onmyōji com vestes em camadas, chapéu eboshi simples, estojo de pincéis, pequenos ofuda sem caracteres legíveis e cordão ritual. Uma das mãos segura sino ou compasso; aura sugerida por retículas, sem efeitos coloridos.",
       "assetPaths": {
-        "male": "assets/campaigns/kagehama/classes/onmyoji/male.png",
-        "female": "assets/campaigns/kagehama/classes/onmyoji/female.png"
+        "male": "assets/campaigns/kagehama/classes/onmyoji/onmyoji_masculino.png",
+        "female": "assets/campaigns/kagehama/classes/onmyoji/onmyoji_feminino.png"
       }
     },
     {
@@ -296,7 +305,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "name": "Miko yamabushi",
       "archetype": "Miko yamabushi",
       "icon": "✧",
-      "portrait": "assets/campaigns/kagehama/classes/miko/avatar.svg",
+      "portrait": "assets/campaigns/kagehama/classes/miko/miko_masculino.png",
       "description": "Curandeira e guia de montanha que estabiliza feridos e sustenta o grupo; não substitui repouso e recursos.",
       "attributes": {
         "ST": 10,
@@ -341,8 +350,8 @@ export const KAGEHAMA_CAMPAIGN = {
       },
       "visualCore": "Miko yamabushi viajante com hakama e manto de proteção, cajado de peregrina, bolsa médica e tiras de tecido. Postura firme e acolhedora, mãos preparadas para tratar um ferimento, sem pose de combate.",
       "assetPaths": {
-        "male": "assets/campaigns/kagehama/classes/miko/male.png",
-        "female": "assets/campaigns/kagehama/classes/miko/female.png"
+        "male": "assets/campaigns/kagehama/classes/miko/miko_masculino.png",
+        "female": "assets/campaigns/kagehama/classes/miko/miko_feminino.png"
       }
     }
   ],
@@ -653,7 +662,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-ronin-male",
       "title": "Retrato masculino · Combatente de resistência",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Rōnin viajante de fantasia histórica, armadura leve remendada, haori curto gasto, nodachi embainhada, postura de guarda inclinada e olhar cansado. Silhueta larga, cicatriz pequena, cordão de viagem e sandálias enlameadas. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/ronin/male.png",
+      "assetPath": "assets/campaigns/kagehama/classes/ronin/ronin_masculino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -663,7 +672,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-ronin-female",
       "title": "Retrato feminino · Combatente de resistência",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Rōnin viajante de fantasia histórica, armadura leve remendada, haori curto gasto, nodachi embainhada, postura de guarda inclinada e olhar cansado. Silhueta larga, cicatriz pequena, cordão de viagem e sandálias enlameadas. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/ronin/female.png",
+      "assetPath": "assets/campaigns/kagehama/classes/ronin/ronin_feminino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -673,7 +682,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-samurai-male",
       "title": "Retrato masculino · Samurai juramentado",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Samurai viajante com yoroi simples, cordão de brasão sem símbolos escritos, katana na bainha e mão próxima ao punho sem sacar. Postura disciplinada, ombros alinhados, rosto sereno e atento. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/samurai/male.png",
+      "assetPath": "assets/campaigns/kagehama/classes/samurai/samurai_masculino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -683,7 +692,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-samurai-female",
       "title": "Retrato feminino · Samurai juramentado",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Samurai viajante com yoroi simples, cordão de brasão sem símbolos escritos, katana na bainha e mão próxima ao punho sem sacar. Postura disciplinada, ombros alinhados, rosto sereno e atento. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/samurai/female.png",
+      "assetPath": "assets/campaigns/kagehama/classes/samurai/samurai_feminino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -693,7 +702,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-kyudoka-male",
       "title": "Retrato masculino · Kyūdōka",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Arqueiro kyūdōka com yumi alto e aljava, roupa de viagem ajustada para movimento, dedos protegidos, olhar de foco lateral. Corpo esguio e postura de mira relaxada, não disparando. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/kyudoka/male.png",
+      "assetPath": "assets/campaigns/kagehama/classes/kyudoka/kyudoka_masculino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -703,7 +712,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-kyudoka-female",
       "title": "Retrato feminino · Kyūdōka",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Arqueiro kyūdōka com yumi alto e aljava, roupa de viagem ajustada para movimento, dedos protegidos, olhar de foco lateral. Corpo esguio e postura de mira relaxada, não disparando. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/kyudoka/female.png",
+      "assetPath": "assets/campaigns/kagehama/classes/kyudoka/kyudoka_feminino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -713,7 +722,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-shinobi-male",
       "title": "Retrato masculino · Shinobi",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Shinobi com roupa prática em camadas, faixa facial abaixada no pescoço, pequenas ferramentas presas ao cinto e uma mão oculta na manga. Silhueta compacta e postura que observa uma saída. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/shinobi/male.png",
+      "assetPath": "assets/campaigns/kagehama/classes/shinobi/shinobi_masculino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -723,7 +732,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-shinobi-female",
       "title": "Retrato feminino · Shinobi",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Shinobi com roupa prática em camadas, faixa facial abaixada no pescoço, pequenas ferramentas presas ao cinto e uma mão oculta na manga. Silhueta compacta e postura que observa uma saída. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/shinobi/female.png",
+      "assetPath": "assets/campaigns/kagehama/classes/shinobi/shinobi_feminino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -733,7 +742,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-onmyoji-male",
       "title": "Retrato masculino · Onmyōji",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Onmyōji com vestes em camadas, chapéu eboshi simples, estojo de pincéis, pequenos ofuda sem caracteres legíveis e cordão ritual. Uma das mãos segura sino ou compasso; aura sugerida por retículas, sem efeitos coloridos. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/onmyoji/male.png",
+      "assetPath": "assets/campaigns/kagehama/classes/onmyoji/onmyoji_masculino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -743,7 +752,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-onmyoji-female",
       "title": "Retrato feminino · Onmyōji",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Onmyōji com vestes em camadas, chapéu eboshi simples, estojo de pincéis, pequenos ofuda sem caracteres legíveis e cordão ritual. Uma das mãos segura sino ou compasso; aura sugerida por retículas, sem efeitos coloridos. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/onmyoji/female.png",
+      "assetPath": "assets/campaigns/kagehama/classes/onmyoji/onmyoji_feminino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -753,7 +762,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-miko-male",
       "title": "Retrato masculino · Miko yamabushi",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem homem: Miko yamabushi viajante com hakama e manto de proteção, cajado de peregrina, bolsa médica e tiras de tecido. Postura firme e acolhedora, mãos preparadas para tratar um ferimento, sem pose de combate. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/miko/male.png",
+      "assetPath": "assets/campaigns/kagehama/classes/miko/miko_masculino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -763,7 +772,7 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-miko-female",
       "title": "Retrato feminino · Miko yamabushi",
       "description": "Arte de personagem para jogo narrativo, corpo inteiro, recorte transparente sem fundo, silhueta legível. Personagem mulher: Miko yamabushi viajante com hakama e manto de proteção, cajado de peregrina, bolsa médica e tiras de tecido. Postura firme e acolhedora, mãos preparadas para tratar um ferimento, sem pose de combate. Mangá de aventura original em tinta preta sobre papel branco, contorno expressivo e limpo, poucas retículas, sombras em hachura, alto contraste, somente preto e branco, sem cinza colorido, sem texto, sem assinatura, sem logotipo, sem moldura.",
-      "assetPath": "assets/campaigns/kagehama/classes/miko/female.png",
+      "assetPath": "assets/campaigns/kagehama/classes/miko/miko_feminino.png",
       "kind": "character",
       "category": "Classes",
       "status": "brief-ready",
@@ -1014,84 +1023,84 @@ export const KAGEHAMA_CAMPAIGN = {
     {
       "id": "artcheck-ronin-male",
       "title": "Criar avatar masculino · Combatente de resistência",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/ronin/male.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/ronin/ronin_masculino.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-ronin-female",
       "title": "Criar avatar feminino · Combatente de resistência",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/ronin/female.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/ronin/ronin_feminino.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-samurai-male",
       "title": "Criar avatar masculino · Samurai juramentado",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/samurai/male.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/samurai/samurai_masculino.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-samurai-female",
       "title": "Criar avatar feminino · Samurai juramentado",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/samurai/female.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/samurai/samurai_feminino.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-kyudoka-male",
       "title": "Criar avatar masculino · Kyūdōka",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/kyudoka/male.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/kyudoka/kyudoka_masculino.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-kyudoka-female",
       "title": "Criar avatar feminino · Kyūdōka",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/kyudoka/female.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/kyudoka/kyudoka_feminino.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-shinobi-male",
       "title": "Criar avatar masculino · Shinobi",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/shinobi/male.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/shinobi/shinobi_masculino.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-shinobi-female",
       "title": "Criar avatar feminino · Shinobi",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/shinobi/female.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/shinobi/shinobi_feminino.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-onmyoji-male",
       "title": "Criar avatar masculino · Onmyōji",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/onmyoji/male.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/onmyoji/onmyoji_masculino.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-onmyoji-female",
       "title": "Criar avatar feminino · Onmyōji",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/onmyoji/female.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/onmyoji/onmyoji_feminino.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-miko-male",
       "title": "Criar avatar masculino · Miko yamabushi",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/miko/male.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/miko/miko_masculino.png",
       "done": false,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-miko-female",
       "title": "Criar avatar feminino · Miko yamabushi",
-      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/miko/female.png",
+      "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/miko/miko_feminino.png",
       "done": false,
       "category": "Arte das classes"
     },
@@ -1415,15 +1424,14 @@ export const KAGEHAMA_CAMPAIGN = {
     "sceneFormat": "Vertical 9:16 para celular, cenário sem personagem incorporado; personagens em recortes transparentes em camada separada.",
     "linework": "Contorno de tinta preto, retículas discretas, sombras por hachura, detalhe moderado, leitura clara em tela pequena.",
     "frames": "Molduras de quadrinhos em tinta preta com filetes duplos, cantos de papel e marcas editoriais sutis; evitar excesso de ornamento.",
-    "characterRule": "Avatares corpo inteiro em PNG/SVG transparente; nunca desenhar cenário no recorte do personagem.",
+    "characterRule": "Avatares corpo inteiro em PNG transparente; nunca desenhar cenário no recorte do personagem.",
     "npcRule": "Cada NPC tem retrato individual e ficha narrativa com desejo, medo, segredo, voz, comportamento, vínculos e gatilhos de reação.",
     "promptBase": "Mangá de aventura original; não copiar personagens, uniformes, símbolos ou desenho de uma franquia existente. Preto e branco, papel branco, tinta preta, retículas discretas, contraste forte, sem texto, sem logotipos."
   }
 }
 
 for (const cls of KAGEHAMA_CAMPAIGN.classes) {
-  const base = 'assets/campaigns/kagehama/classes/' + cls.id;
-  cls.portraits = { male: base + '/male.png', female: base + '/female.png' };
+  cls.portraits = KAGEHAMA_PORTRAITS[cls.id];
   cls.portrait = cls.portraits.male;
   cls.assetPaths = { ...cls.portraits };
   cls.assetPath = cls.portrait;

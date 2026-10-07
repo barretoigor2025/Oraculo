@@ -16,6 +16,7 @@ import {
 
 const STORE_KEY = 'mindRolePlay.demo.v1';
 const PLAYER_KEY = 'mindRolePlay.playerId';
+const KAGEHAMA_SCHEMA_VERSION = 7;
 const screens = [...document.querySelectorAll('.screen')];
 const toast = document.querySelector('#toast');
 const storageLabel = document.querySelector('#storage-label');
@@ -31,6 +32,73 @@ let liveRoom = null;
 let playerGender = 'male';
 let returnRoomCode = new URLSearchParams(location.search).get('room')?.toUpperCase() || '';
 let toastTimer;
+
+function characterSlug(name) {
+  return String(name || 'personagem')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'personagem';
+}
+
+function avatarFileName(cls, gender) {
+  const suffix = gender === 'female' ? 'feminino' : 'masculino';
+  return `${cls.id}_${suffix}.png`;
+}
+
+function buildCharacter(name, cls, gender = 'male', previous = {}) {
+  const safeGender = gender === 'female' ? 'female' : 'male';
+  const cleanName = String(name || previous.name || 'Personagem').trim();
+  return {
+    ...previous,
+    id: previous.id || `character-${crypto.randomUUID()}`,
+    name: cleanName,
+    recordName: `ficha_${characterSlug(cleanName)}.json`,
+    gender: safeGender,
+    classId: cls.id,
+    className: cls.name,
+    archetype: cls.archetype || '',
+    portrait: cls.portraits?.[safeGender] || cls.portrait || '',
+    assetPath: cls.assetPaths?.[safeGender] || cls.portraits?.[safeGender] || cls.portrait || '',
+    avatarFileName: avatarFileName(cls, safeGender),
+    icon: cls.icon || previous.icon || '✦',
+    level: previous.level || cls.startingLevel || 1,
+    attributes: previous.attributes || structuredClone(cls.attributes || {}),
+    skills: previous.skills || structuredClone(cls.skills || []),
+    fixedAbilities: previous.fixedAbilities || structuredClone(cls.fixedAbilities || []),
+    advantages: previous.advantages || '',
+    disadvantages: previous.disadvantages || '',
+    conditions: previous.conditions || [],
+    evolutionPoints: previous.evolutionPoints || 0,
+    createdAt: previous.createdAt || Date.now(),
+  };
+}
+
+function migrateCharacters(characters, classes) {
+  return (characters || []).map(character => {
+    const cls = classes.find(item => item.id === character.classId);
+    return cls ? buildCharacter(character.name, cls, character.gender, character) : character;
+  });
+}
+
+function needsKagehamaUpgrade(saved, seed) {
+  if (Number(saved.schemaVersion || 1) < KAGEHAMA_SCHEMA_VERSION) return true;
+  if ((saved.classes || []).length !== seed.classes.length) return true;
+  if ((saved.art || []).length !== seed.art.length) return true;
+  if ((saved.npcs || []).some(npc => !npc.behaviorProfile)) return true;
+
+  return (seed.classes || []).some(seedClass => {
+    const savedClass = (saved.classes || []).find(item => item.id === seedClass.id);
+    if (!savedClass) return true;
+    return ['male', 'female'].some(gender =>
+      savedClass.portraits?.[gender] !== seedClass.portraits?.[gender] ||
+      savedClass.assetPaths?.[gender] !== seedClass.assetPaths?.[gender]
+    );
+  }) || (saved.characters || []).some(character => {
+    const seedClass = (seed.classes || []).find(item => item.id === character.classId);
+    if (!seedClass) return false;
+    const gender = character.gender === 'female' ? 'female' : 'male';
+    return character.portrait !== seedClass.portraits?.[gender];
+  });
+}
 
 function notice(message) {
   toast.textContent = message;
@@ -56,14 +124,14 @@ function localCampaigns() {
       if (sample) {
         const index = stored.findIndex(item => item.id === sample.id);
         if (index < 0) stored.push(sample);
-        else if (Number(stored[index].schemaVersion || 1) < 5 || (stored[index].classes || []).length !== sample.classes.length || (stored[index].art || []).length !== sample.art.length) {
+        else if (needsKagehamaUpgrade(stored[index], sample)) {
           const old = stored[index];
           stored[index] = {
-            ...sample, ...old, schemaVersion: 5,
+            ...sample, ...old, schemaVersion: KAGEHAMA_SCHEMA_VERSION,
             classes: sample.classes, art: sample.art, progression: sample.progression, artDirection: sample.artDirection,
             npcs: [...sample.npcs, ...(old.npcs || []).filter(item => !sample.npcs.some(seed => seed.id === item.id))],
             scenes: [...sample.scenes, ...(old.scenes || []).filter(item => !sample.scenes.some(seed => seed.id === item.id))],
-            progressionLog: old.progressionLog || [], characters: (old.characters || []).map(character => { const cls = sample.classes.find(item => item.id === character.classId); const gender = character.gender === 'female' ? 'female' : 'male'; return cls ? { ...character, portrait: cls.portraits[gender], assetPath: cls.assetPaths[gender] } : character; }),
+            progressionLog: old.progressionLog || [], characters: migrateCharacters(old.characters, sample.classes),
             checklist: [...sample.checklist, ...(old.checklist || []).filter(item => !sample.checklist.some(seed => seed.id === item.id))],
           };
         }
@@ -259,7 +327,7 @@ function renderSectionBody() {
     document.querySelector('#character-form')?.addEventListener('submit',async event=>{
       event.preventDefault();const form=new FormData(event.currentTarget),cls=classes.find(item=>item.id===form.get('classId'));if(!cls)return;
       campaign.characters||=[];
-      campaign.characters.push({id:crypto.randomUUID(),name:String(form.get('name')).trim(),classId:cls.id,className:cls.name,archetype:cls.archetype||'',portrait:cls.portrait||'',icon:cls.icon||'✦',level:cls.startingLevel||1,attributes:{...cls.attributes},skills:structuredClone(cls.skills||[]),fixedAbilities:structuredClone(cls.fixedAbilities||[]),advantages:'',disadvantages:'',conditions:[],evolutionPoints:0,createdAt:Date.now()});
+      campaign.characters.push(buildCharacter(form.get('name'), cls, form.get('gender')));
       await persistCampaign(campaign);renderSectionBody();notice('Ficha criada. A classe definiu retrato, perícias e habilidades iniciais.');
     });
     return;
@@ -286,7 +354,7 @@ function renderSectionBody() {
     body.innerHTML='<div class="art-direction-card panel"><small>LINGUAGEM VISUAL DA CAMPANHA</small><h2>Mangá em tinta sobre papel claro</h2><p>'+
       escapeHtml(campaign.artDirection?.medium||'Preto e branco, retículas discretas e contorno de tinta.')+'</p><p>'+escapeHtml(campaign.artDirection?.sceneFormat||'Cenários verticais 9:16; personagens em camada transparente.')+'</p></div>'+
       (categories.length?categories.map(category=>'<section class="art-category"><div class="art-board-head"><div><span class="eyebrow">PREPARAÇÃO DE ARTE</span><h2>'+escapeHtml(category)+'</h2></div><span class="art-progress">'+art.filter(item=>(item.category||'Outros')===category&&item.done).length+'/'+art.filter(item=>(item.category||'Outros')===category).length+' prontos</span></div><div class="art-grid">'+art.filter(item=>(item.category||'Outros')===category).map(item=>'<article class="art-card"><div class="art-preview '+(item.kind==='scene'?'vertical-preview':'')+'">'+(previewFor(item)?'<img src="'+escapeAttr(previewFor(item))+'" alt="">':'<span class="art-placeholder">'+(item.kind==='scene'?'QUADRO 9:16':item.kind==='npc'?'NPC':'ARTE')+'</span>')+'<span>'+(item.done?'ARTE ADICIONADA':'BRIEF PRONTO')+'</span></div><div class="art-card-copy"><h3>'+escapeHtml(item.title)+'</h3><p>'+escapeHtml(item.description||'Brief de arte a definir.')+'</p><code>'+escapeHtml(item.assetPath||'Definir caminho do arquivo')+'</code><label class="art-done"><input type="checkbox" data-art-done="'+escapeAttr(item.id)+'" '+(item.done?'checked':'')+'> Marcar como pronto</label></div></article>').join('')+'</div></section>').join(''):'<div class="panel empty-state">Os briefs de arte da campanha aparecerão aqui após instalar ou analisar o roteiro.</div>')+
-      '<div class="hint-box">Avatares: PNG/SVG com transparência. Cenários: imagem vertical sem personagens embutidos. O retrato provisório atual pode ser substituído mantendo o caminho de arquivo indicado.</div>';
+      '<div class="hint-box">Avatares: PNG com transparência. Cenários: imagem vertical sem personagens embutidos. O retrato atual pode ser substituído mantendo o nome de arquivo indicado.</div>';
     body.querySelectorAll('[data-art-done]').forEach(input=>input.addEventListener('change',async()=>{const item=art.find(row=>row.id===input.dataset.artDone);if(item)item.done=input.checked;const checkId='artcheck-'+input.dataset.artDone.replace(/^art-/,'');const checklist=(campaign.checklist||[]).find(row=>row.id===checkId);if(checklist)checklist.done=input.checked;await persistCampaign(campaign);renderSectionBody();}));
     return;
   }
@@ -353,15 +421,21 @@ function renderCharacterList() {
   if(!chars.length){list.innerHTML='<div class="empty-state">Nenhum personagem nesta campanha ainda.</div>';return;}
   list.innerHTML=chars.map(character=>{
     const conditions=(character.conditions||[]).map(c=>`<span class="condition-chip">${escapeHtml(c.name)} · ${c.modifier>=0?'+':''}${c.modifier}${c.permanent?' · permanente':''}</span>`).join('');
-    return `<article class="character-sheet">
-      <div class="character-portrait">${character.portrait?`<img src="${escapeAttr(character.portrait)}" alt="">`:escapeHtml(character.icon||'✦')}</div>
-      <div class="character-main"><div class="character-title"><div><small>FICHA DO JOGADOR · NÍVEL ${character.level||1}</small><h3>${escapeHtml(character.name)}</h3><span>${escapeHtml(character.className||'Classe')} · ${escapeHtml(character.archetype||'')}</span></div><b class="pc-badge">${character.evolutionPoints||0} PC</b></div>
-        <div class="character-quick-stats">${Object.entries(character.attributes||{}).map(([key,value])=>`<span>${key} <b>${value}</b></span>`).join('')}</div>
-        <div class="character-skills">${(character.skills||[]).map(s=>`<span>${escapeHtml(s.name)} ${s.level}</span>`).join('')}</div>
-        <details class="sheet-details"><summary>Abrir ficha completa</summary><p><strong>Habilidade:</strong> ${(character.fixedAbilities||[]).map(escapeHtml).join(' · ')}</p><p><strong>Condições persistentes:</strong> ${conditions||'Nenhuma registrada'}</p></details>
-      </div><div class="character-actions"><button class="mini-button" data-test-character="${escapeAttr(character.id)}">Tentar ação</button>
+    const skills=(character.skills||[]).map(skill=>`<div class="sheet-skill"><span>${escapeHtml(skill.name)}</span><b>${escapeHtml(skill.level)}</b><small>${escapeHtml(skill.attribute||'3d6')}</small></div>`).join('');
+    return `<article class="character-sheet rpg-sheet">
+      <header class="sheet-header"><div><small>FICHA DE PERSONAGEM · ${escapeHtml(currentCampaign().title)}</small><h3>${escapeHtml(character.name)}</h3><p>${escapeHtml(character.className||'Classe')} · Nível ${character.level||1}</p></div><b class="pc-badge">${character.evolutionPoints||0}<small> PC</small></b></header>
+      <div class="sheet-body">
+        <figure class="character-portrait">${character.portrait?`<img src="${escapeAttr(character.portrait)}" alt="${escapeAttr(character.name)}, ${escapeAttr(character.className||'personagem')}">`:escapeHtml(character.icon||'✦')}<figcaption>${escapeHtml(character.avatarFileName||'avatar.png')}</figcaption></figure>
+        <div class="character-main">
+          <section class="sheet-section"><h4>Atributos</h4><div class="character-quick-stats">${Object.entries(character.attributes||{}).map(([key,value])=>`<span><small>${escapeHtml(key)}</small><b>${escapeHtml(value)}</b></span>`).join('')}</div></section>
+          <section class="sheet-section"><h4>Perícias</h4><div class="character-skills">${skills||'<p>Nenhuma perícia registrada.</p>'}</div></section>
+          <section class="sheet-section ability-section"><h4>Habilidade de classe</h4><p>${(character.fixedAbilities||[]).map(escapeHtml).join(' · ')||'Nenhuma habilidade registrada.'}</p></section>
+          <section class="sheet-section condition-section"><h4>Condições persistentes</h4><div>${conditions||'<span class="condition-empty">Nenhuma condição registrada.</span>'}</div></section>
+        </div>
+      </div>
+      <footer class="character-actions"><button class="button primary" data-test-character="${escapeAttr(character.id)}">Tentar ação</button>
       <details class="condition-editor"><summary>＋ Condição</summary><form data-condition-form="${escapeAttr(character.id)}">
-        <input class="input" name="conditionName" required maxlength="60" placeholder="Lesão, perda de membro..."><input class="input" name="modifier" type="number" value="0" aria-label="Modificador"><input class="input" name="scope" value="all" placeholder="all ou nome da perícia"><label class="check-row"><input type="checkbox" name="permanent"> Permanente</label><button class="mini-button">Salvar condição</button></form></details></div></article>`;
+        <input class="input" name="conditionName" required maxlength="60" placeholder="Lesão, perda de membro..."><input class="input" name="modifier" type="number" value="0" aria-label="Modificador"><input class="input" name="scope" value="all" placeholder="all ou nome da perícia"><label class="check-row"><input type="checkbox" name="permanent"> Permanente</label><button class="mini-button">Salvar condição</button></form></details></footer></article>`;
   }).join('');
   list.querySelectorAll('[data-test-character]').forEach(button=>button.addEventListener('click',()=>openTest(button.dataset.testCharacter)));
   list.querySelectorAll('[data-condition-form]').forEach(form=>form.addEventListener('submit',async event=>{event.preventDefault();const values=new FormData(form),character=chars.find(item=>item.id===form.dataset.conditionForm),name=String(values.get('conditionName')||'').trim();if(!character||!name)return;
@@ -631,7 +705,7 @@ document.querySelectorAll('[data-gender]').forEach(button=>button.addEventListen
 document.querySelector('#save-character').addEventListener('click',async()=>{
   const campaign=currentCampaign(),cls=(campaign?.classes||[]).find(item=>item.id===selectedClassId),name=document.querySelector('#character-name').value.trim();
   if(!name)return notice('Escolha um nome para o personagem.');if(!cls)return notice('Esta campanha ainda não tem arquétipos definidos.');
-  chosenCharacter={id:'character-'+crypto.randomUUID(),name,gender:playerGender,classId:cls.id,className:cls.name,portrait:cls.portraits?.[playerGender]||cls.portrait||'',assetPath:cls.assetPaths?.[playerGender]||'',attributes:cls.attributes||{},skills:cls.skills||[],fixedAbilities:cls.fixedAbilities||[],conditions:[],createdAt:Date.now()};
+  chosenCharacter=buildCharacter(name,cls,playerGender);
   campaign.characters ||= [];campaign.characters.push(chosenCharacter);await persistCampaign(campaign);renderSavedCharacters();showLobby();
 });
 document.querySelector('#create-room').addEventListener('click',createActiveRoom);
@@ -665,14 +739,14 @@ async function boot() {
   const kagehamaIndex = campaigns.findIndex(item => item.id === 'demo-kagehama');
   if (kagehamaSeed && kagehamaIndex >= 0) {
     const saved = campaigns[kagehamaIndex];
-    if (Number(saved.schemaVersion || 1) < 4 || (saved.classes || []).length !== kagehamaSeed.classes.length || (saved.art || []).length !== kagehamaSeed.art.length || (saved.npcs || []).some(npc => !npc.behaviorProfile)) {
+    if (needsKagehamaUpgrade(saved, kagehamaSeed)) {
       const seededChecklistIds = new Set(kagehamaSeed.checklist.map(item => item.id));
       const upgraded = {
-        ...kagehamaSeed, ...saved, schemaVersion: 4,
+        ...kagehamaSeed, ...saved, schemaVersion: KAGEHAMA_SCHEMA_VERSION,
         classes: kagehamaSeed.classes, art: kagehamaSeed.art, progression: kagehamaSeed.progression, artDirection: kagehamaSeed.artDirection,
         npcs: [...kagehamaSeed.npcs, ...(saved.npcs || []).filter(item => !kagehamaSeed.npcs.some(seed => seed.id === item.id))],
         scenes: [...kagehamaSeed.scenes, ...(saved.scenes || []).filter(item => !kagehamaSeed.scenes.some(seed => seed.id === item.id))],
-        characters: saved.characters || [], progressionLog: saved.progressionLog || [],
+        characters: migrateCharacters(saved.characters, kagehamaSeed.classes), progressionLog: saved.progressionLog || [],
         checklist: [...kagehamaSeed.checklist, ...(saved.checklist || []).filter(item => !seededChecklistIds.has(item.id))],
       };
       campaigns[kagehamaIndex] = upgraded;

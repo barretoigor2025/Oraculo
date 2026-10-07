@@ -15,6 +15,51 @@ import { createDemoCampaigns } from './campaigns.js';
 
 const CAMPAIGNS = 'mindCampaigns';
 const ROOMS = 'mindRooms';
+const KAGEHAMA_SCHEMA_VERSION = 7;
+
+function characterSlug(name) {
+  return String(name || 'personagem')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'personagem';
+}
+
+function migrateCharacterPortraits(characters, classes) {
+  return (characters || []).map(character => {
+    const cls = classes.find(item => item.id === character.classId);
+    if (!cls) return character;
+    const gender = character.gender === 'female' ? 'female' : 'male';
+    const suffix = gender === 'female' ? 'feminino' : 'masculino';
+    return {
+      ...character,
+      gender,
+      recordName: `ficha_${characterSlug(character.name)}.json`,
+      portrait: cls.portraits?.[gender] || cls.portrait || '',
+      assetPath: cls.assetPaths?.[gender] || cls.portraits?.[gender] || cls.portrait || '',
+      avatarFileName: `${cls.id}_${suffix}.png`,
+    };
+  });
+}
+
+function needsKagehamaUpgrade(saved, seed) {
+  if (Number(saved.schemaVersion || 1) < KAGEHAMA_SCHEMA_VERSION) return true;
+  if ((saved.classes || []).length !== seed.classes.length) return true;
+  if ((saved.art || []).length !== seed.art.length) return true;
+  if ((saved.npcs || []).some(npc => !npc.behaviorProfile)) return true;
+
+  return (seed.classes || []).some(seedClass => {
+    const savedClass = (saved.classes || []).find(item => item.id === seedClass.id);
+    if (!savedClass) return true;
+    return ['male', 'female'].some(gender =>
+      savedClass.portraits?.[gender] !== seedClass.portraits?.[gender] ||
+      savedClass.assetPaths?.[gender] !== seedClass.assetPaths?.[gender]
+    );
+  }) || (saved.characters || []).some(character => {
+    const seedClass = (seed.classes || []).find(item => item.id === character.classId);
+    if (!seedClass) return false;
+    const gender = character.gender === 'female' ? 'female' : 'male';
+    return character.portrait !== seedClass.portraits?.[gender];
+  });
+}
 
 function assertReady() {
   if (!isFirebaseConfigured || !db) {
@@ -44,14 +89,14 @@ export async function installDemoCampaignsIfEmpty() {
   }
   const kagehama = createDemoCampaigns().find(campaign => campaign.id === 'demo-kagehama');
   const savedKagehama = existing.find(campaign => campaign.id === 'demo-kagehama');
-  if (kagehama && savedKagehama && (Number(savedKagehama.schemaVersion || 1) < 4 || (savedKagehama.classes || []).length !== kagehama.classes.length || (savedKagehama.art || []).length !== kagehama.art.length || (savedKagehama.npcs || []).some(npc => !npc.behaviorProfile))) {
+  if (kagehama && savedKagehama && needsKagehamaUpgrade(savedKagehama, kagehama)) {
     const seedIds = new Set(kagehama.checklist.map(item => item.id));
     await setDoc(doc(db, CAMPAIGNS, kagehama.id), {
-      ...kagehama, ...savedKagehama, schemaVersion: 4,
+      ...kagehama, ...savedKagehama, schemaVersion: KAGEHAMA_SCHEMA_VERSION,
       classes: kagehama.classes, art: kagehama.art, progression: kagehama.progression, artDirection: kagehama.artDirection,
       npcs: [...kagehama.npcs, ...(savedKagehama.npcs || []).filter(item => !kagehama.npcs.some(seed => seed.id === item.id))],
       scenes: [...kagehama.scenes, ...(savedKagehama.scenes || []).filter(item => !kagehama.scenes.some(seed => seed.id === item.id))],
-      characters: savedKagehama.characters || [], progressionLog: savedKagehama.progressionLog || [],
+      characters: migrateCharacterPortraits(savedKagehama.characters, kagehama.classes), progressionLog: savedKagehama.progressionLog || [],
       checklist: [...kagehama.checklist, ...(savedKagehama.checklist || []).filter(item => !seedIds.has(item.id))],
       updatedAt: serverTimestamp(),
     }, { merge: true });
