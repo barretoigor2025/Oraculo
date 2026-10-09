@@ -784,7 +784,7 @@ function renderGame(room){
     const side=[...activeSpeakerKey].reduce((sum,char)=>sum+char.charCodeAt(0),0)%2?'right':'left';
     const changed=actor.dataset.speakerKey!==activeSpeakerKey;
     actor.classList.remove('hidden','enter-from-left','enter-from-right');
-    actor.dataset.side=side;actor.dataset.sceneId=scene.id||'';actor.style.setProperty('--actor-ground',scene.id==='kagehama-scene-0'?'12vh':['kagehama-scene-1','kagehama-scene-8'].includes(scene.id)?'9vh':['kagehama-scene-2','kagehama-scene-6'].includes(scene.id)?'14vh':'8vh');avatar.dataset.side=side;avatar.src=activePortrait;avatar.alt=activeSpeakerName;
+    actor.dataset.side=side;avatar.dataset.side=side;avatar.src=activePortrait;avatar.alt=activeSpeakerName;
     actorName.textContent=activeSpeakerName;actor.dataset.speakerKey=activeSpeakerKey;
     if(changed){actor.classList.add(side==='right'?'enter-from-right':'enter-from-left');}
   }else{actor.classList.add('hidden');actor.dataset.speakerKey='';}
