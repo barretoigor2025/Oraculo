@@ -54,7 +54,7 @@
             <p id="room-message"></p>
             <div id="room-player-list"></div>
             <button id="copy-room-code" class="mini-button">Copiar convite</button>
-            <div class="lobby-actions"><button id="ready-button" class="button">Marcar como pronto</button><button id="start-narration" class="button primary" disabled>Iniciar narração</button></div>
+            <div class="lobby-actions"><button id="ready-button" class="button">Marcar como pronto</button><button id="start-narration" class="button primary" disabled>▶ Iniciar história</button></div>
             <small id="ready-status" class="ready-status">Aguardando jogadores.</small>
           </div>
         </div>
@@ -72,10 +72,15 @@
           <section class="story-panel panel">
             <div class="story-panel-heading"><div><small>DIÁRIO DA SESSÃO</small><h2 id="game-campaign-title">Campanha</h2></div><span class="ink-seal">M</span></div>
             <div id="game-messages" class="game-messages" aria-live="polite"></div>
+            <section class="action-cycle" aria-live="polite">
+              <div><small id="action-cycle-label">RODADA 1</small><strong id="action-cycle-summary">Aguardando ações dos jogadores</strong></div>
+              <ul id="action-player-status" class="action-player-status"></ul>
+              <button id="advance-action-cycle" class="mini-button" type="button" disabled>Todos agiram · próxima rodada →</button>
+            </section>
             <form id="message-form" class="message-form">
               <label for="message-input">O que você tenta fazer?</label>
-              <textarea id="message-input" class="input textarea" rows="3" maxlength="800" placeholder="Descreva sua ação, fala ou intenção…"></textarea>
-              <button class="button primary wide">Registrar ação →</button>
+              <textarea id="message-input" class="input textarea" rows="3" maxlength="800" placeholder="O que seu personagem diz ou tenta fazer nesta rodada?"></textarea>
+              <button type="submit" class="button primary wide">Registrar ação →</button>
             </form>
             <p class="narrator-pending">O perfil do narrador e o teste 3d6 estão preparados. A resposta automática por IA será conectada na próxima etapa.</p>
           </section>

@@ -22,6 +22,32 @@ import sceneSumi from '../assets/campaigns/kagehama/scenes/aldeia-sumi.jpg';
 import sceneGorge from '../assets/campaigns/kagehama/scenes/desfiladeiro-sino-quebrado.jpg';
 import sceneCouncil from '../assets/campaigns/kagehama/scenes/palacio-sala-conselho.jpg';
 
+import npcPortrait0 from '../assets/campaigns/kagehama/npcs/kagehama-npc-0.png';
+import npcPortrait1 from '../assets/campaigns/kagehama/npcs/kagehama-npc-1.png';
+import npcPortrait2 from '../assets/campaigns/kagehama/npcs/kagehama-npc-2.png';
+import npcPortrait3 from '../assets/campaigns/kagehama/npcs/kagehama-npc-3.png';
+import npcPortrait4 from '../assets/campaigns/kagehama/npcs/kagehama-npc-4.png';
+import npcPortrait5 from '../assets/campaigns/kagehama/npcs/kagehama-npc-5.png';
+import npcPortrait6 from '../assets/campaigns/kagehama/npcs/kagehama-npc-6.png';
+import npcPortrait7 from '../assets/campaigns/kagehama/npcs/kagehama-npc-7.png';
+import npcPortrait8 from '../assets/campaigns/kagehama/npcs/kagehama-npc-8.png';
+import npcPortrait9 from '../assets/campaigns/kagehama/npcs/kagehama-npc-9.png';
+import npcPortrait10 from '../assets/campaigns/kagehama/npcs/kagehama-npc-10.png';
+
+const KAGEHAMA_NPC_PORTRAITS = {
+  'kagehama-npc-0': npcPortrait0,
+  'kagehama-npc-1': npcPortrait1,
+  'kagehama-npc-2': npcPortrait2,
+  'kagehama-npc-3': npcPortrait3,
+  'kagehama-npc-4': npcPortrait4,
+  'kagehama-npc-5': npcPortrait5,
+  'kagehama-npc-6': npcPortrait6,
+  'kagehama-npc-7': npcPortrait7,
+  'kagehama-npc-8': npcPortrait8,
+  'kagehama-npc-9': npcPortrait9,
+  'kagehama-npc-10': npcPortrait10,
+};
+
 const KAGEHAMA_PORTRAITS = {
   ronin: { male: roninMalePortrait, female: roninFemalePortrait },
   samurai: { male: samuraiMalePortrait, female: samuraiFemalePortrait },
@@ -33,7 +59,7 @@ const KAGEHAMA_PORTRAITS = {
 
 export const KAGEHAMA_CAMPAIGN = {
   "id": "demo-kagehama",
-  "schemaVersion": 10,
+  "schemaVersion": 11,
   "title": "As Sete Lanternas de Kagehama",
   "genre": "Medieval samurai · fantasia histórica",
   "status": "ready-for-play",
@@ -837,111 +863,111 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "art-kagehama-npc-0",
       "title": "Retrato · Lady Akiho Senda",
       "description": "Retrato vertical de mediadora samurai, leque rachado, mangas formais e olhar atento; sala de audiência sugerida em retículas. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
-      "assetPath": "assets/campaigns/kagehama/npcs/npc-0.png",
+      "assetPath": "assets/campaigns/kagehama/npcs/kagehama-npc-0.png",
       "kind": "character",
       "category": "NPCs",
-      "status": "brief-ready",
-      "done": false
+      "status": "published",
+      "done": true
     },
     {
       "id": "art-kagehama-npc-1",
       "title": "Retrato · Ren Kuroda",
       "description": "Regente em roupa formal escura, bengala metálica, mãos impecáveis, postura cordial que ocupa espaço; fundo de painel shoji. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
-      "assetPath": "assets/campaigns/kagehama/npcs/npc-1.png",
+      "assetPath": "assets/campaigns/kagehama/npcs/kagehama-npc-1.png",
       "kind": "character",
       "category": "NPCs",
-      "status": "brief-ready",
-      "done": false
+      "status": "published",
+      "done": true
     },
     {
       "id": "art-kagehama-npc-2",
       "title": "Retrato · Tomoe Arashi",
       "description": "Escriba viajante de aparência discreta, rolos de papel e tinta nos dedos, olhar atento para a saída; sem roupa nobre ostensiva. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
-      "assetPath": "assets/campaigns/kagehama/npcs/npc-2.png",
+      "assetPath": "assets/campaigns/kagehama/npcs/kagehama-npc-2.png",
       "kind": "character",
       "category": "NPCs",
-      "status": "brief-ready",
-      "done": false
+      "status": "published",
+      "done": true
     },
     {
       "id": "art-kagehama-npc-3",
       "title": "Retrato · Jiro “Três Chuvas”",
       "description": "Mensageiro ferido sob capa de palha, sino escondido na gola e marcas de água; retrato vertical austero. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
-      "assetPath": "assets/campaigns/kagehama/npcs/npc-3.png",
+      "assetPath": "assets/campaigns/kagehama/npcs/kagehama-npc-3.png",
       "kind": "character",
       "category": "NPCs",
-      "status": "brief-ready",
-      "done": false
+      "status": "published",
+      "done": true
     },
     {
       "id": "art-kagehama-npc-4",
       "title": "Retrato · Sayo",
       "description": "Agente de aparência comum, contas de madeira no pulso, reflexo de uma janela revelando que observa todos; traje cotidiano. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
-      "assetPath": "assets/campaigns/kagehama/npcs/npc-4.png",
+      "assetPath": "assets/campaigns/kagehama/npcs/kagehama-npc-4.png",
       "kind": "character",
       "category": "NPCs",
-      "status": "brief-ready",
-      "done": false
+      "status": "published",
+      "done": true
     },
     {
       "id": "art-kagehama-npc-5",
       "title": "Retrato · Monge Genzō",
       "description": "Monge idoso com bengala entalhada, chaleira e cão branco; santuário vertical entre cedros, rosto paciente. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
-      "assetPath": "assets/campaigns/kagehama/npcs/npc-5.png",
+      "assetPath": "assets/campaigns/kagehama/npcs/kagehama-npc-5.png",
       "kind": "character",
       "category": "NPCs",
-      "status": "brief-ready",
-      "done": false
+      "status": "published",
+      "done": true
     },
     {
       "id": "art-kagehama-npc-6",
       "title": "Retrato · Lady Chiyo Arashi",
       "description": "Líder de fronteira com armadura funcional, queimadura antiga e mapa de montanhas; figura imponente sem luxo. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
-      "assetPath": "assets/campaigns/kagehama/npcs/npc-6.png",
+      "assetPath": "assets/campaigns/kagehama/npcs/kagehama-npc-6.png",
       "kind": "character",
       "category": "NPCs",
-      "status": "brief-ready",
-      "done": false
+      "status": "published",
+      "done": true
     },
     {
       "id": "art-kagehama-npc-7",
       "title": "Retrato · Daichi Arashi",
       "description": "Capitão em armadura de placas simples, correia gasta no ombro, estandarte sem letras e soldados ao fundo em chuva. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
-      "assetPath": "assets/campaigns/kagehama/npcs/npc-7.png",
+      "assetPath": "assets/campaigns/kagehama/npcs/kagehama-npc-7.png",
       "kind": "character",
       "category": "NPCs",
-      "status": "brief-ready",
-      "done": false
+      "status": "published",
+      "done": true
     },
     {
       "id": "art-kagehama-npc-8",
       "title": "Retrato · Akane",
       "description": "Curandeira em abrigo simples, mangas arregaçadas, ervas, tigelas e gaze; expressão concentrada, não idealizada. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
-      "assetPath": "assets/campaigns/kagehama/npcs/npc-8.png",
+      "assetPath": "assets/campaigns/kagehama/npcs/kagehama-npc-8.png",
       "kind": "character",
       "category": "NPCs",
-      "status": "brief-ready",
-      "done": false
+      "status": "published",
+      "done": true
     },
     {
       "id": "art-kagehama-npc-9",
       "title": "Retrato · Mestre Tetsuo",
       "description": "Armeiro de avental queimado, dois dedos ausentes, bancada com lâminas e peças da flecha; mãos como foco do quadro. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
-      "assetPath": "assets/campaigns/kagehama/npcs/npc-9.png",
+      "assetPath": "assets/campaigns/kagehama/npcs/kagehama-npc-9.png",
       "kind": "character",
       "category": "NPCs",
-      "status": "brief-ready",
-      "done": false
+      "status": "published",
+      "done": true
     },
     {
       "id": "art-kagehama-npc-10",
       "title": "Retrato · Nuvem",
       "description": "Cão branco idoso de uma orelha caída, pelo áspero, sentado perto de uma lamparina; expressão calma, sem antropomorfismo. Arte de mangá original em preto e branco, contorno de tinta, retículas discretas, sombras em hachura, fundo transparente, retrato vertical, sem letras ou logotipos.",
-      "assetPath": "assets/campaigns/kagehama/npcs/npc-10.png",
+      "assetPath": "assets/campaigns/kagehama/npcs/kagehama-npc-10.png",
       "kind": "character",
       "category": "NPCs",
-      "status": "brief-ready",
-      "done": false
+      "status": "published",
+      "done": true
     },
     {
       "id": "art-kagehama-scene-0",
@@ -1163,77 +1189,77 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "artcheck-kagehama-npc-0",
       "title": "Criar retrato de Lady Akiho Senda",
       "description": "Calma, formal e observadora. Faz uma pergunta por vez e espera a resposta inteira. Preservar a paz e a autoridade civil sem deixar que Kuroda controle o conselho.",
-      "done": false,
+      "done": true,
       "category": "Arte dos NPCs"
     },
     {
       "id": "artcheck-kagehama-npc-1",
       "title": "Criar retrato de Ren Kuroda",
       "description": "Polidez controlada, elogios com condição e perguntas que parecem convites. Tomar controle do conselho e manter a crise abaixo do limiar da guerra aberta.",
-      "done": false,
+      "done": true,
       "category": "Arte dos NPCs"
     },
     {
       "id": "artcheck-kagehama-npc-2",
       "title": "Criar retrato de Tomoe Arashi",
       "description": "Voz baixa, vocabulário preciso, responde com perguntas e verifica quem está perto. Expor a falsificação do tratado sem transformar o caso em uma disputa de sucessão.",
-      "done": false,
+      "done": true,
       "category": "Arte dos NPCs"
     },
     {
       "id": "artcheck-kagehama-npc-3",
       "title": "Criar retrato de Jiro “Três Chuvas”",
       "description": "Fala entrecortada até se sentir seguro; conta passos para organizar a memória. Entregar a prova do tratado sem expor quem o escondeu.",
-      "done": false,
+      "done": true,
       "category": "Arte dos NPCs"
     },
     {
       "id": "artcheck-kagehama-npc-4",
       "title": "Criar retrato de Sayo",
       "description": "Sotaque e formalidade mudam conforme o interlocutor; não sustenta contato visual por muito tempo. Proteger o irmão e impedir que a Casa Sen seja responsabilizada por uma guerra que não planejou.",
-      "done": false,
+      "done": true,
       "category": "Arte dos NPCs"
     },
     {
       "id": "artcheck-kagehama-npc-5",
       "title": "Criar retrato de Monge Genzō",
       "description": "Pausas longas, perguntas simples e humor sereno; não confirma acusações sem evidência. Manter o santuário neutro e dar passagem segura aos refugiados.",
-      "done": false,
+      "done": true,
       "category": "Arte dos NPCs"
     },
     {
       "id": "artcheck-kagehama-npc-6",
       "title": "Criar retrato de Lady Chiyo Arashi",
       "description": "Cortesia firme, perguntas diretas sobre quem pagará a consequência. Garantir autonomia para Arashi sem iniciar uma guerra que destrua as aldeias.",
-      "done": false,
+      "done": true,
       "category": "Arte dos NPCs"
     },
     {
       "id": "artcheck-kagehama-npc-7",
       "title": "Criar retrato de Daichi Arashi",
       "description": "Bravata pública e conversa concreta em privado; usa insultos para medir reação. Construir uma força própria e impedir que Arashi volte a depender do conselho central.",
-      "done": false,
+      "done": true,
       "category": "Arte dos NPCs"
     },
     {
       "id": "artcheck-kagehama-npc-8",
       "title": "Criar retrato de Akane",
       "description": "Conversa em tom prático enquanto prepara remédios; corta discussões que atrapalham o cuidado. Manter o paciente vivo e impedir que a Irmandade vire ferramenta de interrogatório.",
-      "done": false,
+      "done": true,
       "category": "Arte dos NPCs"
     },
     {
       "id": "artcheck-kagehama-npc-9",
       "title": "Criar retrato de Mestre Tetsuo",
       "description": "Frases curtas dirigidas às ferramentas; responde melhor a perguntas específicas que a intimidação. Provar que seu trabalho não foi usado para matar o mensageiro.",
-      "done": false,
+      "done": true,
       "category": "Arte dos NPCs"
     },
     {
       "id": "artcheck-kagehama-npc-10",
       "title": "Criar retrato de Nuvem",
       "description": "Não fala; reage por postura, ouvido, focinho e proximidade. Procurar pessoas conhecidas e evitar ruídos que anunciem perigo.",
-      "done": false,
+      "done": true,
       "category": "Arte dos NPCs"
     },
     {
@@ -1504,6 +1530,10 @@ export const KAGEHAMA_CAMPAIGN = {
     "npcRule": "Cada NPC tem retrato individual e ficha narrativa com desejo, medo, segredo, voz, comportamento, vínculos e gatilhos de reação.",
     "promptBase": "Mangá de aventura original; não copiar personagens, uniformes, símbolos ou desenho de uma franquia existente. Preto e branco, papel branco, tinta preta, retículas discretas, contraste forte, sem texto, sem logotipos."
   }
+}
+
+for (const npc of KAGEHAMA_CAMPAIGN.npcs) {
+  npc.portrait = KAGEHAMA_NPC_PORTRAITS[npc.id] || '';
 }
 
 for (const cls of KAGEHAMA_CAMPAIGN.classes) {

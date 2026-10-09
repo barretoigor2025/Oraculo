@@ -228,3 +228,80 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-ser
  .sheet-skill span,.sheet-skill small{font-size:.72rem}
  .character-actions{padding:0 13px 13px}
 }
+
+
+/* Enquadramento responsivo: retratos inteiros e leitura sem colunas estreitas. */
+.class-template{grid-template-columns:minmax(140px,180px) minmax(0,1fr);align-items:start}
+.class-gender-art{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0;align-content:start}
+.class-gender-art .class-portrait{height:148px;aspect-ratio:4/5;display:grid;place-items:center;padding:4px;background:#eee8d8}
+.class-gender-art .class-portrait img{width:100%;height:100%;object-fit:contain;object-position:center bottom;transform:none}
+.class-gender-art figcaption{min-height:24px;font-size:.55rem;line-height:1.2;letter-spacing:.06em;overflow-wrap:anywhere}
+.character-builder{grid-template-columns:minmax(125px,.42fr) minmax(0,1.58fr);gap:12px;padding:14px}
+.character-art-frame{min-height:245px;max-height:300px}
+.character-art-frame img{max-height:230px;transform:none}
+.class-portrait img,.class-option-icon img,.art-preview img,.character-portrait img{object-fit:contain}
+.art-preview{background:#eee8d8}
+.art-preview.vertical-preview img{width:100%;height:100%;object-fit:contain}
+.scene-background{background-size:contain;background-repeat:no-repeat;background-color:#111}
+.npc-dossier header{grid-template-columns:minmax(90px,118px) minmax(0,1fr);gap:12px}
+.npc-dossier .npc-portrait{margin:0;min-width:0;aspect-ratio:3/4;display:grid;grid-template-rows:1fr auto;place-items:center;overflow:hidden;border:1px solid #171613;background:repeating-linear-gradient(135deg,#eee8d8 0 7px,#e4ddcd 7px 8px)}
+.npc-portrait img{width:100%;height:100%;min-height:0;object-fit:contain;object-position:center bottom}
+.npc-portrait figcaption{width:100%;padding:5px 3px;border-top:1px solid #171613;text-align:center;font-size:.48rem;font-weight:900;letter-spacing:.07em}
+.npc-heading-copy{min-width:0}
+.action-cycle{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:9px 10px;margin:5px 0 10px;border:1px solid #171613;background:#eee8d8}
+.action-cycle>div{display:grid;gap:3px}
+.action-cycle>div small{font-size:.58rem;font-weight:900;letter-spacing:.12em;color:#625c50}
+.action-cycle>div strong{font:1rem Georgia,serif;color:#171613}
+.action-player-status{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px 12px;padding:0;margin:0;list-style:none}
+.action-player-status li{display:flex;align-items:center;gap:5px;font-size:.62rem;font-weight:800;color:#625c50}
+.action-player-status li span{width:7px;height:7px;border:1px solid #686255;border-radius:50%;background:#b9b09f}
+.action-player-status li.acted{color:#171613}
+.action-player-status li.acted span{background:#171613}
+.action-cycle .mini-button{grid-column:1/-1;width:100%;padding:8px}
+.action-cycle .mini-button:disabled{opacity:.45}
+#message-input:disabled{opacity:.68}
+@media(max-width:760px){
+ .class-template{grid-template-columns:minmax(0,1fr);gap:10px}
+ .class-gender-art{grid-template-columns:repeat(2,minmax(76px,104px));justify-content:start;gap:9px}
+ .class-gender-art .class-portrait{height:132px}
+ .class-template h2{font-size:19px}
+ .class-template p{line-height:1.45}
+}
+@media(max-width:650px){
+ .character-builder{grid-template-columns:minmax(88px,108px) minmax(0,1fr);gap:10px;padding:12px}
+ .character-art-frame{min-height:185px;max-height:220px;padding:4px}
+ .character-art-frame:before{inset:5px}
+ .character-art-frame img{max-height:176px;width:100%;height:100%;object-fit:contain;transform:none}
+ .character-controls .field{font-size:.78rem}
+ .class-stepper{grid-template-columns:30px minmax(0,1fr) 30px;gap:4px}
+ .class-stepper button{height:34px;font-size:1.15rem}
+ .class-stepper strong{font-size:.68rem;padding:5px}
+ .gender-choice{gap:5px}
+ .gender-button{padding:7px 4px;font-size:.69rem}
+ .class-details h2{font-size:1.1rem}
+ .class-details p{font-size:.76rem}
+ .attribute-strip{gap:4px}
+ .attribute-strip span{padding:4px 3px;font-size:.66rem;text-align:center}
+ .skill-line{gap:2px 4px;padding:5px 0}
+ .skill-line b{font-size:.78rem}
+ .skill-line span{font-size:.6rem}
+ .skill-line small{font-size:.66rem}
+ .fixed-ability p{font-size:.7rem}
+ .npc-dossier header{grid-template-columns:86px minmax(0,1fr);gap:9px}
+ .npc-dossier{padding:10px}
+ .npc-dossier h2{font-size:1.15rem}
+ .npc-dossier header p{font-size:.75rem}
+ .game-layout{grid-template-columns:minmax(0,1fr);gap:10px}
+ .manga-frame{width:min(100%,340px);height:min(56svh,560px);min-height:0;max-height:560px;margin:0 auto;aspect-ratio:9/16}
+ .scene-background{background-size:contain}
+ .scene-caption{padding:12px}
+ .scene-caption h1{font-size:1.35rem}
+ .scene-caption p{font-size:.76rem;line-height:1.38}
+ .story-panel{min-height:0;padding:12px}
+ .game-messages{max-height:31svh}
+ .action-cycle{grid-template-columns:1fr}
+ .action-player-status,.action-cycle .mini-button{grid-column:1}
+ .sheet-body{grid-template-columns:minmax(96px,116px) minmax(0,1fr);gap:8px;padding:9px}
+ .character-sheet .character-portrait{min-height:190px}
+ .character-sheet .character-portrait img{max-height:188px}
+}

@@ -4,6 +4,7 @@ import { roll3d6, resolveSuccessTest } from './gurps.js';
 import {
   createCampaign as createCampaignRemote,
   createRoom as createRoomRemote,
+  advanceActionCycle as advanceActionCycleRemote,
   installDemoCampaignsIfEmpty,
   joinRoom as joinRoomRemote,
   loadCampaigns,
@@ -16,7 +17,7 @@ import {
 
 const STORE_KEY = 'mindRolePlay.demo.v1';
 const PLAYER_KEY = 'mindRolePlay.playerId';
-const KAGEHAMA_SCHEMA_VERSION = 10;
+const KAGEHAMA_SCHEMA_VERSION = 11;
 const screens = [...document.querySelectorAll('.screen')];
 const toast = document.querySelector('#toast');
 const storageLabel = document.querySelector('#storage-label');
@@ -346,7 +347,7 @@ function renderSectionBody() {
     const npcs=campaign.npcs||[];
     body.innerHTML=npcs.length?`<div class="npc-database">${npcs.map(npc=>{const p=npc.behaviorProfile||{};return `
       <article class="npc-dossier panel">
-        <header><div class="npc-portrait-placeholder" aria-hidden="true">人</div><div><small>ARQUIVO DE NPC · ${escapeHtml(npc.faction||'FACÇÃO A DEFINIR')}</small><h2>${escapeHtml(npc.title||npc.name||'NPC')}</h2><p>${escapeHtml(npc.description||'')}</p></div></header>
+        <header><figure class="npc-portrait"><img src="${escapeAttr(npc.portrait||'')}" alt="Retrato de ${escapeAttr(npc.title||npc.name||'NPC')}" loading="lazy"><figcaption>RETRATO · ${escapeHtml(npc.faction||'KAGEHAMA')}</figcaption></figure><div class="npc-heading-copy"><small>ARQUIVO DE NPC · ${escapeHtml(npc.faction||'FACÇÃO A DEFINIR')}</small><h2>${escapeHtml(npc.title||npc.name||'NPC')}</h2><p>${escapeHtml(npc.description||'')}</p></div></header>
         <div class="npc-profile-grid"><p><b>Voz</b><span>${escapeHtml(p.voice||'A definir')}</span></p><p><b>Objetivo</b><span>${escapeHtml(p.goal||'A definir')}</span></p><p><b>Medo</b><span>${escapeHtml(p.fear||'A definir')}</span></p><p><b>Métodos</b><span>${escapeHtml(p.methods||'A definir')}</span></p><p><b>Sinal observável</b><span>${escapeHtml(p.tell||'A definir')}</span></p><p><b>Se pressionado</b><span>${escapeHtml(p.ifPressured||'A definir')}</span></p></div>
         <details class="narrator-only"><summary>Segredo e limites do narrador</summary><p><b>Segredo:</b> ${escapeHtml(p.secret||'Ainda não definido.')}</p><p><b>Regra de interpretação:</b> ${escapeHtml(p.narratorGuardrail||'Interprete apenas o que o NPC sabe e revele informações conforme as evidências e ações em cena.')}</p></details>
         <details class="art-brief"><summary>Brief de retrato</summary><p>${escapeHtml(npc.artBrief||'Retrato individual em mangá preto e branco; fundo transparente.')}</p><small>ARQUIVO-ALVO · assets/campaigns/${escapeHtml(campaign.id)}/npcs/${escapeHtml(npc.id)}.png</small></details>
@@ -359,6 +360,7 @@ function renderSectionBody() {
     const previewFor=item=>{
       const cls=(campaign.classes||[]).find(c=>item.id.includes(c.id));
       if(cls){const gender=item.id.endsWith('-female')?'female':'male';return cls.portraits?.[gender]||cls.portrait||'';}
+      if(item.id.startsWith('art-kagehama-npc-'))return (campaign.npcs||[]).find(npc=>item.id==='art-'+npc.id)?.portrait||'';
       if(item.kind==='scene')return (campaign.scenes||[]).find(scene=>item.id.endsWith(scene.id))?.image||'';
       return '';
     };
@@ -601,7 +603,7 @@ function renderRoomSummary(room, message) {
   const readyCount=players.filter(player=>player.ready).length;
   const allReady=players.length>=1&&players.every(player=>player.ready),start=document.querySelector('#start-narration');
   start.disabled=room.hostId!==localPlayerId()||!allReady||room.status!=='waiting';
-  start.textContent=players.length>1?'Iniciar multiplayer':'Iniciar solo';
+  start.textContent=players.length>1?'Iniciar história · grupo':'Iniciar história · solo';
   document.querySelector('#ready-status').textContent=room.status==='narration'?'Narração iniciada.':!players.length?'Crie uma aventura ou entre por convite.':players.length===1&&allReady?'Modo solo pronto. Se copiar o convite, a mesma sala vira multiplayer.':allReady?'Todos prontos. O anfitrião pode começar.':readyCount+' de '+players.length+' prontos.';
   document.querySelector('#copy-room-code').dataset.shareUrl=roomShareUrl(room.code,room.campaignId);
   if(room.status==='narration')renderGame(room);
@@ -663,17 +665,32 @@ function renderGame(room){
   const campaign=campaigns.find(item=>item.id===room.campaignId)||currentCampaign();if(!campaign)return;
   document.querySelector('#game-campaign-title').textContent=campaign.title;
   document.querySelector('#game-room-code').textContent='SALA '+room.code;
-  document.querySelector('#game-player-count').textContent=(room.players||[]).length+' jogadores';
+  const players=room.players||[];
+  document.querySelector('#game-player-count').textContent=players.length+' jogadores';
   const scene=room.scene||campaign.scenes?.[0]||{};
   document.querySelector('#scene-title').textContent=scene.title||'O começo';
   document.querySelector('#scene-description').textContent=scene.description||'A história aguarda o primeiro movimento.';
   document.querySelector('#scene-chapter').textContent=scene.chapter||'CENA 01';
   document.querySelector('#scene-background').style.backgroundImage=scene.image?'url("'+scene.image+'")':'';
-  const me=(room.players||[]).find(player=>player.id===localPlayerId()),avatar=document.querySelector('#scene-avatar');
+  const me=players.find(player=>player.id===localPlayerId()),avatar=document.querySelector('#scene-avatar');
   avatar.src=me?.portrait||chosenCharacter?.portrait||'';avatar.alt=me?.characterName||chosenCharacter?.name||'Personagem';
   const feed=document.querySelector('#game-messages'),messages=room.messages||[];
   const sceneBrief='<div class="scene-brief"><b>Contexto inicial</b><p>'+escapeHtml(scene.playerContext||'Os personagens chegam à cena por motivos próprios e se unem quando o perigo aparece.')+'</p><b>Objetivo da cena</b><p>'+escapeHtml(scene.objective||'Apresente seu personagem e declare uma ação curta.')+'</p></div>';
-  feed.innerHTML=messages.length?sceneBrief+messages.map(item=>'<article class="story-message '+(item.playerId===localPlayerId()?'mine':item.playerId==='narrator'?'narrator':'')+'"><small>'+escapeHtml(item.characterName||item.playerName||'Narrador')+' · '+escapeHtml(item.className||'Jogador')+'</small><p>'+escapeHtml(item.text)+'</p></article>').join(''):sceneBrief+'<div class="empty-story">A cena começa. Descreva uma ação ou fala do personagem.</div>';
+  feed.innerHTML=messages.length?sceneBrief+messages.map(item=>'<article class="story-message '+(item.playerId===localPlayerId()?'mine':item.playerId==='narrator'?'narrator':'')+'"><small>'+escapeHtml(item.characterName||item.playerName||'Narrador')+' · '+escapeHtml(item.className||'Jogador')+(item.type==='player-action'?' · RODADA '+escapeHtml(item.cycle):'')+'</small><p>'+escapeHtml(item.text)+'</p></article>').join(''):sceneBrief+'<div class="empty-story">A cena começou. Declare o que seu personagem diz ou tenta fazer.</div>';
+  const cycle=room.actionCycle||{number:1,requiredPlayerIds:players.map(player=>player.id),status:'collecting'};
+  const required=cycle.requiredPlayerIds?.length?cycle.requiredPlayerIds:players.map(player=>player.id);
+  const cycleActions=messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number));
+  const actedIds=new Set(cycleActions.map(item=>item.playerId));
+  const actedCount=required.filter(id=>actedIds.has(id)).length,allActed=required.length>0&&actedCount===required.length;
+  document.querySelector('#action-cycle-label').textContent='RODADA '+cycle.number;
+  document.querySelector('#action-cycle-summary').textContent=allActed?'Todas as ações chegaram. O anfitrião pode abrir a próxima rodada.':actedCount+' de '+required.length+' ações registradas';
+  document.querySelector('#action-player-status').innerHTML=players.map(player=>'<li class="'+(actedIds.has(player.id)?'acted':'waiting')+'"><span></span>'+escapeHtml(player.characterName||player.name||'Jogador')+' · '+(actedIds.has(player.id)?'AÇÃO ENVIADA':'FALTA AGIR')+'</li>').join('');
+  const canSubmit=room.status==='narration'&&me&&required.includes(me.id)&&!actedIds.has(me.id);
+  const input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]');
+  input.disabled=!canSubmit;if(submit)submit.disabled=!canSubmit;
+  input.placeholder=canSubmit?'O que seu personagem diz ou tenta fazer nesta rodada?':'Sua ação já foi enviada. Aguarde a próxima rodada.';
+  const next=document.querySelector('#advance-action-cycle');
+  next.disabled=!allActed||room.hostId!==localPlayerId();next.hidden=room.status!=='narration';
   feed.scrollTop=feed.scrollHeight;showScreen('game');
 }
 async function createActiveRoom(){
@@ -691,6 +708,19 @@ async function createActiveRoom(){
   }
 }
 async function toggleReady(){if(!liveRoom)return;const me=(liveRoom.players||[]).find(player=>player.id===localPlayerId());try{const room=await setPlayerReady(liveRoom.code,localPlayerId(),!me?.ready);renderRoomSummary(room,'Estado atualizado.');}catch(error){notice(error.message||'Não foi possível atualizar presença.');}}
+async function advanceActionRound(){
+  if(!liveRoom||liveRoom.hostId!==localPlayerId())return;
+  try{
+    if(firebaseMode){
+      const room=await advanceActionCycleRemote(liveRoom.code,localPlayerId());
+      renderGame(room);
+    }else{
+      const cycle=liveRoom.actionCycle||{number:1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),status:'collecting'};
+      const nextCycle={number:Number(cycle.number)+1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),openedAt:Date.now(),status:'collecting'};
+      liveRoom={...liveRoom,actionCycle:nextCycle};renderGame(liveRoom);
+    }
+  }catch(error){notice(error.message||'Não foi possível abrir a próxima rodada.');}
+}
 async function beginNarration(){
   if(!liveRoom)return;const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign();
   const scene=campaign?.scenes?.[0]||{title:'A primeira cena',description:campaign?.premise||'A história começa.'};
@@ -746,14 +776,25 @@ document.querySelector('#create-room').addEventListener('click',createActiveRoom
 document.querySelector('#join-room').addEventListener('click',()=>joinActiveRoom(document.querySelector('#room-code').value.trim().toUpperCase()));
 document.querySelector('#ready-button').addEventListener('click',toggleReady);
 document.querySelector('#start-narration').addEventListener('click',beginNarration);
+document.querySelector('#advance-action-cycle').addEventListener('click',advanceActionRound);
 document.querySelector('#copy-room-code').addEventListener('click',async()=>{
   const url=document.querySelector('#copy-room-code').dataset.shareUrl||roomShareUrl(activeRoomCode,currentCampaignId);
   try{await navigator.clipboard.writeText(url);notice('Link da sala copiado.');}catch{notice(url);}
 });
 document.querySelector('#message-form').addEventListener('submit',async event=>{
-  event.preventDefault();const input=document.querySelector('#message-input'),text=input.value.trim();if(!text||!liveRoom)return;
-  const message={id:crypto.randomUUID(),playerId:localPlayerId(),playerName:document.querySelector('#player-name').value.trim()||'Jogador',characterName:chosenCharacter?.name||'Personagem',className:chosenCharacter?.className||'',text,createdAt:Date.now()};input.value='';
-  try{await postRoomMessage(liveRoom.code,message);}catch(error){notice('A ação não sincronizou. Confira o acesso online à sala.');}
+  event.preventDefault();const input=document.querySelector('#message-input'),text=input.value.trim();
+  if(!text||!liveRoom||input.disabled)return;
+  const cycle=liveRoom.actionCycle||{number:1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),status:'collecting'};
+  const message={id:crypto.randomUUID(),type:'player-action',cycle:Number(cycle.number),playerId:localPlayerId(),playerName:document.querySelector('#player-name').value.trim()||'Jogador',characterName:chosenCharacter?.name||'Personagem',className:chosenCharacter?.className||'',text,createdAt:Date.now()};
+  input.value='';
+  if(!firebaseMode){
+    const messages=[...(liveRoom.messages||[]),message].slice(-150),required=cycle.requiredPlayerIds||[];
+    const acted=new Set(messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
+    liveRoom={...liveRoom,messages,actionCycle:{...cycle,status:required.length&&required.every(id=>acted.has(id))?'complete':'collecting'}};
+    renderGame(liveRoom);return;
+  }
+  try{await postRoomMessage(liveRoom.code,message);}
+  catch(error){notice(error.message||'A ação não sincronizou. Confira o acesso online à sala.');}
 });
 
 async function boot() {

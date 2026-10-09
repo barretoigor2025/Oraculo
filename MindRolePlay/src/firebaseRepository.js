@@ -203,8 +203,9 @@ export async function startNarration(code, hostId, scene) {
       text: message.text || scene.openingPrompt || scene.description || 'A cena começa.',
       createdAt: Date.now() + index,
     }));
-    transaction.update(roomRef, { status: 'narration', scene, messages, startedAt: serverTimestamp(), updatedAt: serverTimestamp() });
-    return { ...room, status: 'narration', scene, messages };
+    const actionCycle = { number: 1, requiredPlayerIds: players.map(player => player.id), openedAt: Date.now(), status: 'collecting' };
+    transaction.update(roomRef, { status: 'narration', scene, messages, actionCycle, startedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    return { ...room, status: 'narration', scene, messages, actionCycle };
   });
 }
 
@@ -215,8 +216,22 @@ export async function postRoomMessage(code, message) {
     const snapshot = await transaction.get(roomRef);
     if (!snapshot.exists()) throw new Error('Não encontrei a sala.');
     const room = snapshot.data();
-    const messages = [...(room.messages || []), message].slice(-150);
-    transaction.update(roomRef, { messages, updatedAt: serverTimestamp() });
+    let savedMessage = message;
+    let actionCycle = room.actionCycle || { number: 1, requiredPlayerIds: (room.players || []).map(player => player.id), status: 'collecting' };
+    if (message.type === 'player-action') {
+      if (room.status !== 'narration') throw new Error('A narração ainda não começou.');
+      if (!actionCycle.requiredPlayerIds.includes(message.playerId)) throw new Error('Este jogador não está nesta rodada.');
+      if (Number(message.cycle) !== Number(actionCycle.number)) throw new Error('A rodada mudou. Atualize a tela antes de enviar outra ação.');
+      const alreadyActed = (room.messages || []).some(item => item.type === 'player-action' && Number(item.cycle) === Number(actionCycle.number) && item.playerId === message.playerId);
+      if (alreadyActed) throw new Error('Sua ação desta rodada já foi registrada.');
+      savedMessage = { ...message, cycle: actionCycle.number };
+    }
+    const messages = [...(room.messages || []), savedMessage].slice(-150);
+    if (savedMessage.type === 'player-action') {
+      const acted = new Set(messages.filter(item => item.type === 'player-action' && Number(item.cycle) === Number(actionCycle.number)).map(item => item.playerId));
+      actionCycle = { ...actionCycle, status: actionCycle.requiredPlayerIds.every(id => acted.has(id)) ? 'complete' : 'collecting' };
+      transaction.update(roomRef, { messages, actionCycle, updatedAt: serverTimestamp() });
+    } else transaction.update(roomRef, { messages, updatedAt: serverTimestamp() });
     return messages;
   });
 }
@@ -226,4 +241,23 @@ export function listenRoom(code, callback, onError) {
   return onSnapshot(doc(db, ROOMS, code.toUpperCase()), snapshot => {
     callback(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null);
   }, onError);
+}
+
+
+export async function advanceActionCycle(code, hostId) {
+  assertReady();
+  const roomRef = doc(db, ROOMS, code.toUpperCase());
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(roomRef);
+    if (!snapshot.exists()) throw new Error('Não encontrei a sala.');
+    const room = snapshot.data();
+    const cycle = room.actionCycle || { number: 1, requiredPlayerIds: (room.players || []).map(player => player.id), status: 'collecting' };
+    if (room.hostId !== hostId) throw new Error('Somente quem criou a sala pode abrir a próxima rodada.');
+    if (room.status !== 'narration') throw new Error('A narração ainda não começou.');
+    const acted = new Set((room.messages || []).filter(item => item.type === 'player-action' && Number(item.cycle) === Number(cycle.number)).map(item => item.playerId));
+    if (!cycle.requiredPlayerIds.length || !cycle.requiredPlayerIds.every(id => acted.has(id))) throw new Error('Ainda falta a ação de um ou mais jogadores.');
+    const nextCycle = { number: Number(cycle.number) + 1, requiredPlayerIds: (room.players || []).map(player => player.id), openedAt: Date.now(), status: 'collecting' };
+    transaction.update(roomRef, { actionCycle: nextCycle, updatedAt: serverTimestamp() });
+    return { ...room, actionCycle: nextCycle };
+  });
 }
