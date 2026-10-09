@@ -1,10 +1,10 @@
 import './styles.css';
-import { CAMPAIGN_SECTIONS, createDemoCampaigns, createEmptyCampaign } from './campaigns.js';
+import { CAMPAIGN_SECTIONS, createDemoCampaigns } from './campaigns.js';
 import { roll3d6, resolveSuccessTest } from './gurps.js';
 import {
-  createCampaign as createCampaignRemote,
   createRoom as createRoomRemote,
   advanceActionCycle as advanceActionCycleRemote,
+  advanceNarrativeBeat as advanceNarrativeBeatRemote,
   installDemoCampaignsIfEmpty,
   joinRoom as joinRoomRemote,
   loadCampaigns,
@@ -17,7 +17,7 @@ import {
 
 const STORE_KEY = 'mindRolePlay.demo.v1';
 const PLAYER_KEY = 'mindRolePlay.playerId';
-const KAGEHAMA_SCHEMA_VERSION = 11;
+const KAGEHAMA_SCHEMA_VERSION = 12;
 const screens = [...document.querySelectorAll('.screen')];
 const toast = document.querySelector('#toast');
 const storageLabel = document.querySelector('#storage-label');
@@ -201,7 +201,7 @@ function renderCampaigns() {
 }
 
 function countCampaignContent(campaign) {
-  return ['classes', 'characters', 'npcs', 'scenes', 'maps', 'travel', 'art', 'checklist', 'progressionLog']
+  return ['classes', 'characters', 'npcs', 'bestiary', 'relics', 'scenes', 'maps', 'travel', 'art', 'checklist', 'progressionLog']
     .reduce((sum, key) => sum + (campaign[key]?.length || 0), 0);
 }
 
@@ -289,25 +289,10 @@ function analyzeCampaignText(text, genre) {
 function renderSectionBody() {
   const campaign=currentCampaign(), body=document.querySelector('#section-body');
   if(currentSectionId==='story'){
-    const analysis=campaign.analysis;
-    body.innerHTML=`<div class="panel editor">
-      <div class="hint-box">O roteiro é a entrada do pacote. A análise organiza classes, cenas e necessidades; o narrador revisa as sugestões.</div>
-      <div class="analysis-summary"><span class="analysis-mark">✦</span><div><strong>${analysis?'Análise inicial pronta':'Roteiro ainda não analisado'}</strong><small>${analysis?escapeHtml(analysis.balance.threats):'Cole o roteiro ao instalar a campanha para montar o pacote.'}</small></div></div>
-      <div class="story-source"><small>ROTEIRO DA CAMPANHA</small><p>${escapeHtml(campaign.story||'Nenhum roteiro importado ainda.')}</p></div>
-      ${campaign.source?`<div class="source-line">Fonte: ${escapeHtml(campaign.source)}</div>`:''}
-      ${analysis?`<div class="hint-box">Nível inicial sugerido: ${analysis.balance.startingLevel} · perícias iniciais ${analysis.balance.recommendedSkillRange}. ${escapeHtml(analysis.balance.narratorReview)}</div>`:''}
-      <button id="reanalyze-story" class="button">${analysis?'Reanalisar roteiro':'Analisar roteiro'}</button>
-      <small class="prototype-note">Análise estrutural local de demonstração. A integração com o serviço de IA do Oráculo ainda não está conectada.</small>
-    </div>`;
-    document.querySelector('#reanalyze-story').addEventListener('click',async()=>{
-      campaign.analysis=analyzeCampaignText(campaign.story||'',campaign.genre||'');
-      campaign.classes=makeStarterClasses(campaign.story||'',campaign.genre||'');
-      campaign.checklist=campaign.analysis.checklist;
-      campaign.art=[]; prepareClassArt(campaign);
-      campaign.npcs=campaign.analysis.sceneHeadings.filter(name=>/^npc|personagem/i.test(name)).map((title,index)=>({id:'npc-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
-      campaign.scenes=campaign.analysis.sceneHeadings.filter(name=>/cena|capítulo|ato|local/i.test(name)).map((title,index)=>({id:'scene-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
-      await persistCampaign(campaign);openCampaign(campaign.id);notice('Estrutura inicial preparada para revisão.');
-    });
+    const chapters=campaign.scenes||[];
+    body.innerHTML=`<div class="campaign-chronicle panel"><div class="hint-box"><b>Crônica canônica · campanha fixa</b><br>Os capítulos, cenas, personagens e pistas pertencem à campanha “As Sete Lanternas de Kagehama”. Este roteiro é lido pelo modo de narração, que apresenta um quadro por vez para toda a sala.</div>
+    <h2>${escapeHtml(campaign.title)}</h2><p class="chronicle-premise">${escapeHtml(campaign.premise||'')}</p><div class="chronicle-stats"><span>${chapters.length} capítulos</span><span>${campaign.npcs?.length||0} NPCs com perfil</span><span>${campaign.bestiary?.length||0} ameaças espirituais</span></div>
+    <details><summary>Texto completo da história e diretrizes do narrador</summary><div class="story-source"><p>${escapeHtml(campaign.story||'A crônica está sendo preparada.')}</p></div></details><h3>Ordem dos capítulos</h3><ol class="chapter-list">${chapters.map(scene=>`<li><b>${escapeHtml(scene.chapter||scene.title)}</b><span>${escapeHtml(scene.title)}</span><small>${escapeHtml(scene.description||'')}</small></li>`).join('')}</ol></div>`;
     return;
   }
   if(currentSectionId==='classes'){
@@ -352,6 +337,16 @@ function renderSectionBody() {
         <details class="narrator-only"><summary>Segredo e limites do narrador</summary><p><b>Segredo:</b> ${escapeHtml(p.secret||'Ainda não definido.')}</p><p><b>Regra de interpretação:</b> ${escapeHtml(p.narratorGuardrail||'Interprete apenas o que o NPC sabe e revele informações conforme as evidências e ações em cena.')}</p></details>
         <details class="art-brief"><summary>Brief de retrato</summary><p>${escapeHtml(npc.artBrief||'Retrato individual em mangá preto e branco; fundo transparente.')}</p><small>ARQUIVO-ALVO · assets/campaigns/${escapeHtml(campaign.id)}/npcs/${escapeHtml(npc.id)}.png</small></details>
       </article>`;}).join('')}</div><p class="prototype-note">Fichas preparadas para consulta do narrador. Cada NPC tem comportamento, gatilhos, segredo e direção de arte separados.</p>`:'<div class="panel empty-state">Esta campanha ainda não tem NPCs catalogados.</div>';
+    return;
+  }
+  if(currentSectionId==='relics'){
+    const relics=campaign.relics||[];
+    body.innerHTML=`<div class="bestiary-intro panel"><small>RECURSOS DE CAMPANHA</small><h2>Armas, selos e evidências</h2><p>Itens espirituais têm requisitos ficcionais e custos. Nenhum artefato resolve sozinho a crise política.</p></div><div class="bestiary-grid">${relics.map(item=>`<article class="bestiary-card panel"><small>${escapeHtml(item.category||'Relíquia')}</small><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.description)}</p></article>`).join('')}</div>`;
+    return;
+  }
+  if(currentSectionId==='bestiary'){
+    const entries=campaign.bestiary||[];
+    body.innerHTML=`<div class="bestiary-intro panel"><small>ESCALA DE AMEAÇA · NÍVEIS 1–5</small><h2>Entidades da maré dos nomes</h2><p>Aparições deixam sinais antes de atacar. Descubram o vínculo que as prende: lâminas comuns dispersam ou atrasam; armas encantadas, selos e rituais podem romper a ancoragem. Uma rolagem de Percepção 3d6 revela pistas opcionais; falhar não bloqueia a história.</p></div><div class="bestiary-grid">${entries.map(foe=>`<article class="bestiary-card panel"><div class="bestiary-level"><span>AMEAÇA</span><b>NÍVEL ${escapeHtml(foe.level)}</b></div><small>${escapeHtml(foe.role)} · ${escapeHtml(foe.threat)}</small><h3>${escapeHtml(foe.name)}</h3><p><b>Sinal:</b> ${escapeHtml(foe.sign)}</p><p><b>Comportamento:</b> ${escapeHtml(foe.behavior)}</p><p><b>Como vencer:</b> ${escapeHtml(foe.weakness)}</p><p><b>Descoberta:</b> ${escapeHtml(foe.reward)}</p></article>`).join('')}</div>`;
     return;
   }
   if(currentSectionId==='art'){
@@ -661,37 +656,114 @@ async function joinActiveRoom(code){
   try{const room=await joinRoomRemote(code,localPlayerId(),playerName,chosenCharacter);currentCampaignId=room.campaignId;renderRoomSummary(room,'Você entrou pelo convite da sala.');watchRoom(code);returnRoomCode='';const url=new URL(location.href);url.search='';history.replaceState({},'',url);}
   catch(error){notice(error.message||'Não foi possível entrar na sala.');}
 }
+function configureNarratorAI(){
+  const current=localStorage.getItem('oraculo.groqKey')||'';
+  const key=window.prompt('Cole sua chave Groq para habilitar respostas dinâmicas de NPC. Ela fica salva somente neste navegador.',current);
+  if(key===null)return;
+  if(key.trim())localStorage.setItem('oraculo.groqKey',key.trim());else localStorage.removeItem('oraculo.groqKey');
+  notice(key.trim()?'Chave de narração salva neste navegador.':'Chave removida.');
+}
+async function generateNpcReply(){
+  if(!liveRoom||liveRoom.hostId!==localPlayerId())return;
+  const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign(),select=document.querySelector('#game-npc-select'),npc=(campaign.npcs||[]).find(item=>item.id===select?.value);
+  if(!npc)return notice('Escolha um NPC presente na crônica.');
+  if(!localStorage.getItem('oraculo.groqKey')){configureNarratorAI();if(!localStorage.getItem('oraculo.groqKey'))return;}
+  const directive=document.querySelector('#npc-directive')?.value.trim()||'',profile=npc.behaviorProfile||{},scene=liveRoom.scene||{};
+  const ids=(scene.presentNpcIds||[...new Set((scene.beats||[]).map(beat=>beat.speakerId).filter(Boolean))]).filter(id=>id!==npc.id);
+  const others=ids.map(id=>(campaign.npcs||[]).find(item=>item.id===id)).filter(Boolean).map(item=>{const p=item.behaviorProfile||{};return (item.title||item.name)+': '+(p.voice||'')+' Objetivo: '+(p.goal||'');}).join('\n');
+  const recent=(liveRoom.messages||[]).slice(-12).map(item=>(item.characterName||item.playerName||'Narrador')+': '+(item.type==='perception'?(item.success?item.successText:item.failureText):item.text)).join('\n');
+  const system=`Você interpreta ${(npc.title||npc.name||'um NPC').replace(/^NPC — /,'')}, personagem de uma campanha de fantasia histórica em Kagehama. Fale como alguém com vontade, interesses e memória social.
+VOZ: ${profile.voice||''}
+OBJETIVO: ${profile.goal||''}
+MEDO: ${profile.fear||''}
+MÉTODOS: ${profile.methods||''}
+SINAL: ${profile.tell||''}
+SE PRESSIONADO: ${profile.ifPressured||''}
+SEGREDO DO MESTRE (proteja até haver gatilho ou evidência): ${profile.secret||''}
+LIMITE DE CONHECIMENTO: ${profile.narratorGuardrail||'Use apenas fatos que este NPC sabe ou pode observar; distinga fato, suspeita e mentira.'}
+CENA: ${scene.title||''} — ${scene.description||''}
+OUTROS NPCs PRESENTES:
+${others||'Nenhum outro interlocutor definido.'}
+REGRAS: Português brasileiro, primeira pessoa, no máximo 3 frases. Responda à intenção real da pergunta; pode recusar, negociar, contradizer outro NPC, proteger segredo ou encerrar conversa. Reaja ao histórico e às ações, sem repetir a ficha ou despejar exposição. Gesto visível opcional no formato [ACAO: descrição em terceira pessoa], antes da fala. Se outro NPC presente for relevante, dirija-se a ele pelo nome. Não narre decisões dos jogadores.`;
+  const button=document.querySelector('#generate-npc-line');if(button){button.disabled=true;button.textContent='Gerando…';}
+  try{
+    const response=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Authorization':'Bearer '+localStorage.getItem('oraculo.groqKey'),'content-type':'application/json'},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:350,temperature:.82,messages:[{role:'system',content:system},{role:'user',content:`${recent?'Histórico recente:\n'+recent+'\n\n':''}${directive||'Responda naturalmente ao que foi dito e feito nesta rodada.'}`} ]})});
+    const data=await response.json(),reply=data.choices?.[0]?.message?.content?.trim();
+    if(!response.ok||!reply)throw new Error(data.error?.message||'A IA não retornou uma fala.');
+    const message={id:crypto.randomUUID(),type:'npc-line',playerId:localPlayerId(),characterName:(npc.title||npc.name||'NPC').replace(/^NPC — /,''),speakerId:npc.id,text:reply,cycle:Number(liveRoom.actionCycle?.number||1),createdAt:Date.now()};
+    if(firebaseMode)await postRoomMessage(liveRoom.code,message);else{liveRoom={...liveRoom,messages:[...(liveRoom.messages||[]),message].slice(-150)};renderGame(liveRoom);}
+    const field=document.querySelector('#npc-directive');if(field)field.value='';
+  }catch(error){notice('Falha ao gerar fala: '+(error.message||'verifique a chave e a conexão.'));}
+  finally{const fresh=document.querySelector('#generate-npc-line');if(fresh){fresh.disabled=false;fresh.textContent='✦ Gerar resposta do NPC';}}
+}
 function renderGame(room){
   const campaign=campaigns.find(item=>item.id===room.campaignId)||currentCampaign();if(!campaign)return;
   document.querySelector('#game-campaign-title').textContent=campaign.title;
   document.querySelector('#game-room-code').textContent='SALA '+room.code;
-  const players=room.players||[];
-  document.querySelector('#game-player-count').textContent=players.length+' jogadores';
-  const scene=room.scene||campaign.scenes?.[0]||{};
+  const players=room.players||[];document.querySelector('#game-player-count').textContent=players.length+' jogadores';
+  const scene=room.scene||campaign.scenes?.[0]||{},sceneIndex=Number(room.sceneIndex||0);
   document.querySelector('#scene-title').textContent=scene.title||'O começo';
   document.querySelector('#scene-description').textContent=scene.description||'A história aguarda o primeiro movimento.';
-  document.querySelector('#scene-chapter').textContent=scene.chapter||'CENA 01';
+  document.querySelector('#scene-chapter').textContent=scene.chapter||('CAPÍTULO '+String(sceneIndex+1).padStart(2,'0'));
   document.querySelector('#scene-background').style.backgroundImage=scene.image?'url("'+scene.image+'")':'';
-  const me=players.find(player=>player.id===localPlayerId()),avatar=document.querySelector('#scene-avatar');
-  avatar.src=me?.portrait||chosenCharacter?.portrait||'';avatar.alt=me?.characterName||chosenCharacter?.name||'Personagem';
-  const feed=document.querySelector('#game-messages'),messages=room.messages||[];
-  const sceneBrief='<div class="scene-brief"><b>Contexto inicial</b><p>'+escapeHtml(scene.playerContext||'Os personagens chegam à cena por motivos próprios e se unem quando o perigo aparece.')+'</p><b>Objetivo da cena</b><p>'+escapeHtml(scene.objective||'Apresente seu personagem e declare uma ação curta.')+'</p></div>';
-  feed.innerHTML=messages.length?sceneBrief+messages.map(item=>'<article class="story-message '+(item.playerId===localPlayerId()?'mine':item.playerId==='narrator'?'narrator':'')+'"><small>'+escapeHtml(item.characterName||item.playerName||'Narrador')+' · '+escapeHtml(item.className||'Jogador')+(item.type==='player-action'?' · RODADA '+escapeHtml(item.cycle):'')+'</small><p>'+escapeHtml(item.text)+'</p></article>').join(''):sceneBrief+'<div class="empty-story">A cena começou. Declare o que seu personagem diz ou tenta fazer.</div>';
-  const cycle=room.actionCycle||{number:1,requiredPlayerIds:players.map(player=>player.id),status:'collecting'};
-  const required=cycle.requiredPlayerIds?.length?cycle.requiredPlayerIds:players.map(player=>player.id);
-  const cycleActions=messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number));
-  const actedIds=new Set(cycleActions.map(item=>item.playerId));
+  const me=players.find(player=>player.id===localPlayerId()),avatar=document.querySelector('#scene-avatar');avatar.src=me?.portrait||chosenCharacter?.portrait||'';avatar.alt=me?.characterName||chosenCharacter?.name||'Personagem';
+  const messages=room.messages||[],cycle=room.actionCycle||{number:1,requiredPlayerIds:players.map(player=>player.id),status:'collecting'},required=cycle.requiredPlayerIds?.length?cycle.requiredPlayerIds:players.map(player=>player.id);
+  const cycleActions=messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)),actedIds=new Set(cycleActions.map(item=>item.playerId));
   const actedCount=required.filter(id=>actedIds.has(id)).length,allActed=required.length>0&&actedCount===required.length;
-  document.querySelector('#action-cycle-label').textContent='RODADA '+cycle.number;
-  document.querySelector('#action-cycle-summary').textContent=allActed?'Todas as ações chegaram. O anfitrião pode abrir a próxima rodada.':actedCount+' de '+required.length+' ações registradas';
+  const beats=scene.beats||[{type:'narration',text:scene.openingPrompt||scene.description||'A história começa.'}],beatIndex=Math.min(Number(room.beatIndex||0),beats.length-1),beat=beats[beatIndex]||beats[0];
+  const speaker=(campaign.npcs||[]).find(npc=>npc.id===beat?.speakerId),stage=document.querySelector('#narrative-stage');
+  stage.innerHTML=`${room.hostId===localPlayerId()?'<div class="npc-engine"><label>NPC da vez<select id="game-npc-select" class="input">'+(campaign.npcs||[]).filter(npc=>(scene.presentNpcIds||[]).includes(npc.id)).map(npc=>'<option value="'+escapeAttr(npc.id)+'">'+escapeHtml((npc.title||npc.name||'NPC').replace(/^NPC — /,''))+'</option>').join('')+'</select></label><input id="npc-directive" class="input" maxlength="240" placeholder="Diretiva opcional · o que este NPC ouviu?" '+(allActed?'':'disabled')+'><button id="generate-npc-line" class="mini-button" '+(allActed?'':'disabled')+'>✦ Gerar resposta do NPC</button><button id="configure-narrator-ai" class="mini-button">⚙ Chave de narração</button></div>':''}<article class="narrative-frame ${speaker?'has-speaker':''}"><div class="frame-kicker"><span>${escapeHtml(scene.chapter||'CENA')}</span><span>QUADRO ${beatIndex+1}/${beats.length}</span></div>
+  ${speaker?`<figure class="dialogue-portrait"><img src="${escapeAttr(speaker.portrait||'')}" alt=""><figcaption>${escapeHtml((speaker.title||'').replace(/^NPC — /,''))}</figcaption></figure>`:''}
+  <div class="dialogue-balloon ${beat?.type==='prompt'?'choice-balloon':''}"><small>${escapeHtml(speaker?(speaker.title||'').replace(/^NPC — /,''):beat?.type==='prompt'?'À MESA':'NARRADOR')}</small><p>${escapeHtml(beat?.text||scene.description||'A cena aguarda a primeira ação.')}</p></div></article>
+  <div class="narrative-controls"><span>${escapeHtml(beat?.type==='prompt'?'Declarem uma ação; cada pessoa registra uma vez por rodada.':'O mesmo quadro aparece para todos na sala.')}</span><button id="advance-narrative-beat" class="mini-button" type="button">${beatIndex<beats.length-1?'Próximo quadro →':sceneIndex<campaign.scenes.length-1?'Próximo capítulo →':'Fechar crônica'}</button></div>
+  <section class="perception-trigger"><div><b>Olhar atento</b><small>${escapeHtml(scene.perception?.teaser||'Uma pista opcional pode estar escondida neste lugar. Teste Percepção para procurá-la.')}</small></div><button id="scene-perception" class="mini-button" type="button">Testar Percepção · 3d6</button>
+  <div id="scene-dice-stage" class="scene-dice-stage hidden"><div class="dice-row"><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div><output id="scene-dice-result"></output></div></section>`;
+  const generateNpcButton=stage.querySelector('#generate-npc-line');if(generateNpcButton)generateNpcButton.addEventListener('click',generateNpcReply);
+  const configureNpcAI=stage.querySelector('#configure-narrator-ai');if(configureNpcAI)configureNpcAI.addEventListener('click',configureNarratorAI);
+  const advanceNarrativeButton=stage.querySelector('#advance-narrative-beat');advanceNarrativeButton.addEventListener('click',advanceNarrativeBeat);
+  const perceptionRollButton=stage.querySelector('#scene-perception');perceptionRollButton.addEventListener('click',rollScenePerception);
+  const alreadyPerceived=messages.some(item=>item.type==='perception'&&item.sceneId===scene.id&&item.playerId===localPlayerId());
+  const perceptionButton=document.querySelector('#scene-perception');perceptionButton.disabled=alreadyPerceived||room.status!=='narration';perceptionButton.textContent=alreadyPerceived?'Percepção já testada':'Testar Percepção · 3d6';
+  const nextBeat=document.querySelector('#advance-narrative-beat');nextBeat.hidden=room.status!=='narration';nextBeat.disabled=room.hostId!==localPlayerId()||!allActed;
+  if(nextBeat.disabled&&room.hostId===localPlayerId())nextBeat.title='Aguarde as ações de todos antes de avançar o quadro.';
+  const feed=document.querySelector('#game-messages');
+  feed.innerHTML=messages.length?messages.map(item=>{
+    const isRoll=item.type==='perception',isNpc=item.type==='npc-line',isNarrator=item.playerId==='narrator',label=isRoll?'PERCEPÇÃO · '+(item.success?'PISTA ENCONTRADA':'PISTA NÃO PERCEBIDA'):(item.type==='player-action'?'AÇÃO · RODADA '+escapeHtml(item.cycle||''):isNpc?'NPC EM CENA':item.className||'Narrador');
+    const rollDetail=item.dice?'<p><b>3d6: '+escapeHtml(item.dice.join(' · '))+' = '+escapeHtml(item.total)+' vs. '+escapeHtml(item.effectiveSkill)+' · '+(item.success?'SUCESSO':'FALHA')+'</b></p>':'';const result=isRoll?'<p><b>'+escapeHtml(item.dice.join(' · '))+' = '+escapeHtml(item.total)+' vs. '+escapeHtml(item.effectiveSkill)+'</b><br>'+escapeHtml(item.success?item.successText:item.failureText)+'</p>':rollDetail+'<p>'+escapeHtml(item.text)+'</p>';
+    if(item.type==='npc-line'){const portrait=(campaign.npcs||[]).find(npc=>npc.id===item.speakerId)?.portrait||'';return '<article class="npc-dialogue-feed"><img src="'+escapeAttr(portrait)+'" alt=""><div><small>'+escapeHtml(item.characterName||'NPC')+' · FALA EM CENA</small><p>'+escapeHtml(item.text)+'</p></div></article>';}
+    return '<article class="story-message '+(item.playerId===localPlayerId()?'mine':isNarrator?'narrator':'')+'"><small>'+escapeHtml(item.characterName||item.playerName||'Narrador')+' · '+label+'</small>'+result+'</article>';
+  }).join(''):'<div class="empty-story">As ações da mesa e as pistas descobertas aparecem aqui.</div>';
+  document.querySelector('#action-cycle-label').textContent='RODADA '+cycle.number;document.querySelector('#action-cycle-summary').textContent=allActed?'Todas as ações chegaram. O anfitrião pode avançar o quadro ou abrir a próxima rodada.':actedCount+' de '+required.length+' ações registradas';
   document.querySelector('#action-player-status').innerHTML=players.map(player=>'<li class="'+(actedIds.has(player.id)?'acted':'waiting')+'"><span></span>'+escapeHtml(player.characterName||player.name||'Jogador')+' · '+(actedIds.has(player.id)?'AÇÃO ENVIADA':'FALTA AGIR')+'</li>').join('');
-  const canSubmit=room.status==='narration'&&me&&required.includes(me.id)&&!actedIds.has(me.id);
-  const input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]');
-  input.disabled=!canSubmit;if(submit)submit.disabled=!canSubmit;
-  input.placeholder=canSubmit?'O que seu personagem diz ou tenta fazer nesta rodada?':'Sua ação já foi enviada. Aguarde a próxima rodada.';
-  const next=document.querySelector('#advance-action-cycle');
-  next.disabled=!allActed||room.hostId!==localPlayerId();next.hidden=room.status!=='narration';
+  const canSubmit=room.status==='narration'&&me&&required.includes(me.id)&&!actedIds.has(me.id),input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]');
+  input.disabled=!canSubmit;if(submit)submit.disabled=!canSubmit;const rollButton=document.querySelector('#roll-action-test');rollButton.disabled=!canSubmit;const skillPicker=document.querySelector('#action-skill'),activeCharacter=(campaign.characters||[]).find(character=>character.id===me?.characterId)||chosenCharacter||{};if(skillPicker){const skills=activeCharacter.skills||[];skillPicker.innerHTML=skills.map((item,index)=>'<option value="'+index+'" data-level="'+escapeAttr(item.level)+'">'+escapeHtml(item.name)+' · '+escapeHtml(item.level)+'</option>').join('')||'<option data-level="11">Atributo · 11</option>';skillPicker.disabled=!canSubmit;}input.placeholder=canSubmit?'O que seu personagem diz ou tenta fazer nesta rodada?':'Sua ação já foi enviada. Aguarde a próxima rodada.';
+  const next=document.querySelector('#advance-action-cycle');next.disabled=!allActed||room.hostId!==localPlayerId();next.hidden=room.status!=='narration';
   feed.scrollTop=feed.scrollHeight;showScreen('game');
+}
+async function advanceNarrativeBeat(){
+  if(!liveRoom||liveRoom.hostId!==localPlayerId())return;
+  const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign(),scenes=campaign?.scenes||[],sceneIndex=Number(liveRoom.sceneIndex||0),scene=liveRoom.scene||scenes[sceneIndex],beatIndex=Number(liveRoom.beatIndex||0),beats=scene?.beats||[];
+  const cycle=liveRoom.actionCycle||{number:1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id)},acted=new Set((liveRoom.messages||[]).filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
+  if((cycle.requiredPlayerIds||[]).some(id=>!acted.has(id)))return notice('Aguarde uma ação de cada jogador antes de avançar o quadro.');
+  const next=beatIndex+1>=beats.length?{sceneIndex:sceneIndex+1,beatIndex:0,scene:scenes[sceneIndex+1]}:{sceneIndex,beatIndex:beatIndex+1,scene};
+  if(!next.scene)return notice('A crônica chegou ao último capítulo.');
+  try{if(firebaseMode){const room=await advanceNarrativeBeatRemote(liveRoom.code,localPlayerId(),next);renderGame(room);}else{
+    liveRoom={...liveRoom,...next,actionCycle:{number:Number(liveRoom.actionCycle?.number||1)+1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),openedAt:Date.now(),status:'collecting'}};
+    renderGame(liveRoom);notice(next.sceneIndex!==sceneIndex?'Novo capítulo aberto.':'Próximo quadro. A mesa pode agir.');
+  }}catch(error){notice(error.message||'Não foi possível avançar a narração.');}
+}
+async function rollScenePerception(){
+  if(!liveRoom)return;
+  const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign(),scene=liveRoom.scene||campaign?.scenes?.[0],me=(liveRoom.players||[]).find(player=>player.id===localPlayerId());
+  if(!scene||!me)return;
+  if((liveRoom.messages||[]).some(item=>item.type==='perception'&&item.sceneId===scene.id&&item.playerId===me.id))return notice('Você já examinou esta cena.');
+  const character=(campaign.characters||[]).find(item=>item.id===me.characterId)||chosenCharacter||{},skill=(character.skills||[]).find(item=>/percep/i.test(item.name||'')),target=Number(skill?.level||character.attributes?.IQ||11),effectiveSkill=Number(scene.perception?.target||12)+Math.max(0,target-11),dice=roll3d6().dice,total=dice.reduce((sum,value)=>sum+value,0),result=resolveSuccessTest({dice,skill:effectiveSkill});
+  const stage=document.querySelector('#scene-dice-stage'),diceEls=[...stage.querySelectorAll('.die')],out=document.querySelector('#scene-dice-result');stage.classList.remove('hidden');out.textContent='Os três dados caem…';
+  diceEls.forEach(die=>{die.classList.remove('rolling');void die.offsetWidth;die.classList.add('rolling');});
+  for(let tick=0;tick<8;tick++){diceEls.forEach((die,i)=>renderDie(die,dice[(tick+i)%3]));await sleep(75);}
+  diceEls.forEach((die,i)=>renderDie(die,dice[i]));out.innerHTML='<b>'+total+' ≤ '+effectiveSkill+' · '+(result.success?'SUCESSO':'FALHA')+'</b>';
+  const message={id:crypto.randomUUID(),type:'perception',sceneId:scene.id,playerId:me.id,playerName:me.name||'Jogador',characterName:me.characterName||character.name||'Personagem',dice,total,effectiveSkill,success:result.success,successText:scene.perception?.success||scene.perception?.clue||'Você encontra um detalhe revelador.',failureText:scene.perception?.failure||'O detalhe passa despercebido.',createdAt:Date.now()};
+  if(firebaseMode){try{await postRoomMessage(liveRoom.code,message);}catch(error){notice(error.message||'Não foi possível sincronizar o teste.');}}else{liveRoom={...liveRoom,messages:[...(liveRoom.messages||[]),message].slice(-150)};renderGame(liveRoom);}
 }
 async function createActiveRoom(){
   const name=document.querySelector('#player-name').value.trim()||'Jogador',campaignId=currentCampaignId;
@@ -742,20 +814,6 @@ document.querySelectorAll('[data-nav]').forEach(button => button.addEventListene
   showScreen(destination);
 }));
 
-document.querySelector('#new-campaign-form').addEventListener('submit',async event=>{
-  event.preventDefault();
-  const title=document.querySelector('#new-title').value.trim(),genre=document.querySelector('#new-genre').value.trim();
-  const script=document.querySelector('#new-story').value.trim(),source=document.querySelector('#new-source').value.trim();
-  if(!title||!script)return notice('Informe o nome da campanha e cole o roteiro.');
-  let campaign;
-  if(firebaseMode){try{campaign=await createCampaignRemote(title,genre);}catch(error){firebaseMode=false;storageLabel.textContent='Prévia local';notice('Firebase sem permissão para o Mind; criando pacote local neste navegador.');}}
-  if(!campaign){campaign=createEmptyCampaign('campaign-'+crypto.randomUUID(),title,genre);campaigns.push(campaign);saveLocalCampaigns();}else campaigns.push(campaign);
-  campaign.story=script;campaign.source=source;campaign.analysis=analyzeCampaignText(script,genre);campaign.classes=makeStarterClasses(script,genre);campaign.checklist=campaign.analysis.checklist;campaign.art=[];prepareClassArt(campaign);
-  campaign.npcs=campaign.analysis.sceneHeadings.filter(name=>/^npc|personagem/i.test(name)).map((title,index)=>({id:'npc-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
-  campaign.scenes=campaign.analysis.sceneHeadings.filter(name=>/cena|capítulo|ato|local/i.test(name)).map((title,index)=>({id:'scene-'+index,title,description:'Identificado no roteiro',createdAt:Date.now()}));
-  await persistCampaign(campaign);currentCampaignId=campaign.id;event.currentTarget.reset();renderCampaigns();openCampaign(campaign.id);notice('Pacote preparado: classes, cenas e checklist aguardam revisão.');
-});
-
 document.querySelector('#test-character').addEventListener('change', renderTestCharacter);
 document.querySelector('#lobby-campaign')?.addEventListener('change', renderLobbyCharacters);
 document.querySelector('#test-skill').addEventListener('change', updateTestFactors);
@@ -781,21 +839,29 @@ document.querySelector('#copy-room-code').addEventListener('click',async()=>{
   const url=document.querySelector('#copy-room-code').dataset.shareUrl||roomShareUrl(activeRoomCode,currentCampaignId);
   try{await navigator.clipboard.writeText(url);notice('Link da sala copiado.');}catch{notice(url);}
 });
-document.querySelector('#message-form').addEventListener('submit',async event=>{
-  event.preventDefault();const input=document.querySelector('#message-input'),text=input.value.trim();
-  if(!text||!liveRoom||input.disabled)return;
+async function sendPlayerAction(roll=null){
+  const input=document.querySelector('#message-input'),text=input.value.trim();
+  if(!text||!liveRoom||input.disabled)return notice('Escreva sua ação antes de registrar.');
   const cycle=liveRoom.actionCycle||{number:1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),status:'collecting'};
-  const message={id:crypto.randomUUID(),type:'player-action',cycle:Number(cycle.number),playerId:localPlayerId(),playerName:document.querySelector('#player-name').value.trim()||'Jogador',characterName:chosenCharacter?.name||'Personagem',className:chosenCharacter?.className||'',text,createdAt:Date.now()};
+  const message={id:crypto.randomUUID(),type:'player-action',cycle:Number(cycle.number),playerId:localPlayerId(),playerName:document.querySelector('#player-name').value.trim()||'Jogador',characterName:chosenCharacter?.name||'Personagem',className:chosenCharacter?.className||'',text,...(roll||{}),createdAt:Date.now()};
   input.value='';
-  if(!firebaseMode){
-    const messages=[...(liveRoom.messages||[]),message].slice(-150),required=cycle.requiredPlayerIds||[];
-    const acted=new Set(messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
-    liveRoom={...liveRoom,messages,actionCycle:{...cycle,status:required.length&&required.every(id=>acted.has(id))?'complete':'collecting'}};
-    renderGame(liveRoom);return;
-  }
-  try{await postRoomMessage(liveRoom.code,message);}
-  catch(error){notice(error.message||'A ação não sincronizou. Confira o acesso online à sala.');}
-});
+  if(!firebaseMode){const messages=[...(liveRoom.messages||[]),message].slice(-150),required=cycle.requiredPlayerIds||[],acted=new Set(messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));liveRoom={...liveRoom,messages,actionCycle:{...cycle,status:required.length&&required.every(id=>acted.has(id))?'complete':'collecting'}};renderGame(liveRoom);return;}
+  try{await postRoomMessage(liveRoom.code,message);}catch(error){notice(error.message||'A ação não sincronizou. Confira o acesso online à sala.');}
+}
+async function rollActionTest(){
+  if(!liveRoom)return;
+  const action=document.querySelector('#message-input').value.trim(),character=chosenCharacter||{};
+  if(!action)return notice('Escreva a ação antes de rolar.');
+  const select=document.querySelector('#action-skill'),selected=select?.selectedOptions?.[0],skill=Number(selected?.dataset.level||11),name=selected?.textContent||'Percepção';
+  const dice=roll3d6().dice,result=resolveSuccessTest({dice,skill}),stage=document.querySelector('#action-dice-stage'),diceEls=[...stage.querySelectorAll('.die')],out=document.querySelector('#action-dice-result');
+  stage.classList.remove('hidden');out.textContent='Os dados caem…';diceEls.forEach(die=>{die.classList.remove('rolling');void die.offsetWidth;die.classList.add('rolling');});
+  for(let tick=0;tick<8;tick++){diceEls.forEach((die,i)=>renderDie(die,dice[(tick+i)%3]));await sleep(75);}diceEls.forEach((die,i)=>renderDie(die,dice[i]));
+  const total=dice.reduce((sum,value)=>sum+value,0);out.innerHTML='<b>'+dice.join(' · ')+' = '+total+' · '+(result.success?'SUCESSO':'FALHA')+'</b>';
+  await sendPlayerAction({dice,total,skillName:name,effectiveSkill:skill,success:result.success,criticalSuccess:result.criticalSuccess,criticalFailure:result.criticalFailure});
+}
+document.querySelector('#message-form').addEventListener('submit',event=>{event.preventDefault();sendPlayerAction();});
+document.querySelector('#roll-action-test').addEventListener('click',rollActionTest);
+
 
 async function boot() {
   try {
@@ -818,7 +884,7 @@ async function boot() {
       const seededChecklistIds = new Set(kagehamaSeed.checklist.map(item => item.id));
       const upgraded = {
         ...kagehamaSeed, ...saved, schemaVersion: KAGEHAMA_SCHEMA_VERSION,
-        classes: kagehamaSeed.classes, art: kagehamaSeed.art, progression: kagehamaSeed.progression, artDirection: kagehamaSeed.artDirection,
+        classes: kagehamaSeed.classes, art: kagehamaSeed.art, progression: kagehamaSeed.progression, artDirection: kagehamaSeed.artDirection, bestiary: kagehamaSeed.bestiary, relics: kagehamaSeed.relics,
         story: kagehamaSeed.story, npcBehaviorModel: kagehamaSeed.npcBehaviorModel,
         npcs: [...kagehamaSeed.npcs, ...(saved.npcs || []).filter(item => !kagehamaSeed.npcs.some(seed => seed.id === item.id))],
         scenes: [...kagehamaSeed.scenes, ...(saved.scenes || []).filter(item => !kagehamaSeed.scenes.some(seed => seed.id === item.id))],

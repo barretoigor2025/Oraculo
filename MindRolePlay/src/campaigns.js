@@ -6,6 +6,8 @@ export const CAMPAIGN_SECTIONS = [
   { id: 'classes', label: 'Classes e regras', description: 'Arquétipos e regras próprias desta campanha.' },
   { id: 'characters', label: 'Personagens', description: 'Fichas dos jogadores e condições persistentes.' },
   { id: 'npcs', label: 'NPCs', description: 'Personagens controlados pelo narrador.' },
+  { id: 'bestiary', label: 'Ameaças', description: 'Espíritos, monstros, níveis e formas de vencê-los.' },
+  { id: 'relics', label: 'Armas e relíquias', description: 'Itens, armas consagradas e recursos espirituais.' },
   { id: 'scenes', label: 'Cenários', description: 'Locais e cenas da campanha.' },
   { id: 'maps', label: 'Mapa geral', description: 'Mapas e referências de localização.' },
   { id: 'travel', label: 'Viagens e rotas', description: 'Deslocamentos como cenas, escolhas e consequências.' },

@@ -19,9 +19,9 @@
         <div class="home manga-cover">
           <div class="home-kicker">UM RPG DE HISTÓRIAS COMPARTILHADAS</div>
           <h1 class="title">Mind <span>RolePlay</span></h1>
-          <p class="tagline">Escolha uma campanha e entre na história.</p>
+          <p class="tagline">Uma crônica. Sete lanternas. Suas escolhas decidem o que permanece aceso.</p>
           <div id="home-campaign-grid" class="campaign-grid home-campaign-grid"></div>
-          <button class="button database-link" data-nav="campaigns">Abrir Mind Database →</button>
+          <button class="button database-link" data-nav="campaigns">Arquivo da campanha →</button>
         </div>
       </section>
 
@@ -71,6 +71,7 @@
           </section>
           <section class="story-panel panel">
             <div class="story-panel-heading"><div><small>DIÁRIO DA SESSÃO</small><h2 id="game-campaign-title">Campanha</h2></div><span class="ink-seal">M</span></div>
+            <div id="narrative-stage" class="narrative-stage" aria-live="polite"></div>
             <div id="game-messages" class="game-messages" aria-live="polite"></div>
             <section class="action-cycle" aria-live="polite">
               <div><small id="action-cycle-label">RODADA 1</small><strong id="action-cycle-summary">Aguardando ações dos jogadores</strong></div>
@@ -80,26 +81,19 @@
             <form id="message-form" class="message-form">
               <label for="message-input">O que você tenta fazer?</label>
               <textarea id="message-input" class="input textarea" rows="3" maxlength="800" placeholder="O que seu personagem diz ou tenta fazer nesta rodada?"></textarea>
-              <button type="submit" class="button primary wide">Registrar ação →</button>
+              <label class="field action-skill-field">Perícia para o teste opcional<select id="action-skill" class="input"></select></label>
+              <div id="action-dice-stage" class="scene-dice-stage hidden"><div class="dice-row"><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div><output id="action-dice-result"></output></div>
+              <div class="action-submit-row"><button type="submit" class="button primary">Registrar sem teste →</button><button id="roll-action-test" type="button" class="button">Rolar 3d6 e registrar →</button></div>
             </form>
-            <p class="narrator-pending">O perfil do narrador e o teste 3d6 estão preparados. A resposta automática por IA será conectada na próxima etapa.</p>
+            <p class="narrator-pending">O anfitrião conduz o próximo quadro; ações e testes ficam sincronizados para toda a mesa. NPCs têm objetivos, segredos e reações definidos no arquivo.</p>
           </section>
         </div>
       </section>
       <section class="screen" id="screen-campaigns">
         <div class="screen-heading"><button class="back" data-nav="home">←</button><div><small>SEUS PACOTES DE CAMPANHA</small><h1>Mind Database</h1></div></div>
-        <p class="lead">Cada campanha mantém roteiro, personagens, locais e checklist no seu próprio espaço padronizado.</p>
+        <p class="lead">Arquivo de produção de Kagehama: roteiro, fichas, NPCs, ameaças, locais, artes e checklist.</p>
         <div id="campaign-grid" class="campaign-grid"></div>
-        <form id="new-campaign-form" class="new-campaign panel">
-          <div><small>INSTALAR CAMPANHA</small><h2>Cole o roteiro. O pacote começa a se organizar.</h2><p>Classes iniciais, cenas e checklist recebem uma primeira estrutura para revisão do narrador.</p></div>
-          <div class="new-fields install-fields">
-            <input id="new-title" class="input" maxlength="60" placeholder="Nome da campanha" required>
-            <div class="form-grid"><input id="new-genre" class="input" maxlength="40" placeholder="Gênero (opcional)"><input id="new-source" class="input" placeholder="Fonte / link (opcional)"></div>
-            <textarea id="new-story" class="input textarea" rows="5" placeholder="Cole aqui o roteiro da campanha..." required></textarea>
-            <button class="button primary">✦ Analisar roteiro e instalar</button>
-          </div>
-        </form>
-      </section>
+        <div class="panel fixed-campaign-note"><b>Campanha ativa: As Sete Lanternas de Kagehama</b><p>O roteiro e a estrutura são mantidos como uma única crônica. Novos capítulos, NPCs e ameaças entram no arquivo desta campanha.</p></div>      </section>
 
       <section class="screen" id="screen-package">
         <div class="screen-heading"><button class="back" data-nav="campaigns">←</button><div><small id="package-genre">PACOTE DE CAMPANHA</small><h1 id="package-title">Campanha</h1></div></div>

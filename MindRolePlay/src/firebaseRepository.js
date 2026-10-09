@@ -15,7 +15,7 @@ import { createDemoCampaigns } from './campaigns.js';
 
 const CAMPAIGNS = 'mindCampaigns';
 const ROOMS = 'mindRooms';
-const KAGEHAMA_SCHEMA_VERSION = 9;
+const KAGEHAMA_SCHEMA_VERSION = 12;
 
 function characterSlug(name) {
   return String(name || 'personagem')
@@ -93,7 +93,7 @@ export async function installDemoCampaignsIfEmpty() {
     const seedIds = new Set(kagehama.checklist.map(item => item.id));
     await setDoc(doc(db, CAMPAIGNS, kagehama.id), {
       ...kagehama, ...savedKagehama, schemaVersion: KAGEHAMA_SCHEMA_VERSION,
-      classes: kagehama.classes, art: kagehama.art, progression: kagehama.progression, artDirection: kagehama.artDirection,
+      classes: kagehama.classes, art: kagehama.art, progression: kagehama.progression, artDirection: kagehama.artDirection, story:kagehama.story, bestiary:kagehama.bestiary, relics:kagehama.relics, npcBehaviorModel:kagehama.npcBehaviorModel,
       npcs: [...kagehama.npcs, ...(savedKagehama.npcs || []).filter(item => !kagehama.npcs.some(seed => seed.id === item.id))],
       scenes: [...kagehama.scenes, ...(savedKagehama.scenes || []).filter(item => !kagehama.scenes.some(seed => seed.id === item.id))],
       characters: migrateCharacterPortraits(savedKagehama.characters, kagehama.classes), progressionLog: savedKagehama.progressionLog || [],
@@ -204,8 +204,31 @@ export async function startNarration(code, hostId, scene) {
       createdAt: Date.now() + index,
     }));
     const actionCycle = { number: 1, requiredPlayerIds: players.map(player => player.id), openedAt: Date.now(), status: 'collecting' };
-    transaction.update(roomRef, { status: 'narration', scene, messages, actionCycle, startedAt: serverTimestamp(), updatedAt: serverTimestamp() });
-    return { ...room, status: 'narration', scene, messages, actionCycle };
+    transaction.update(roomRef, { status: 'narration', scene, sceneIndex: 0, beatIndex: 0, messages, actionCycle, startedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    return { ...room, status: 'narration', scene, sceneIndex: 0, beatIndex: 0, messages, actionCycle };
+  });
+}
+
+export async function advanceNarrativeBeat(code, hostId, next) {
+  assertReady();
+  const roomRef = doc(db, ROOMS, code.toUpperCase());
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(roomRef);
+    if (!snapshot.exists()) throw new Error('Não encontrei a sala.');
+    const room = snapshot.data();
+    if (room.hostId !== hostId) throw new Error('Somente o anfitrião pode avançar os quadros.');
+    if (room.status !== 'narration') throw new Error('A narração ainda não começou.');
+    const currentScene = room.scene || {}, beats = currentScene.beats || [];
+    const currentBeat = Number(room.beatIndex || 0), sceneIndex = Number(room.sceneIndex || 0);
+    const cycle = room.actionCycle || { number: 1, requiredPlayerIds: (room.players || []).map(player => player.id) };
+    const acted = new Set((room.messages || []).filter(item => item.type === 'player-action' && Number(item.cycle) === Number(cycle.number)).map(item => item.playerId));
+    if ((cycle.requiredPlayerIds || []).some(id => !acted.has(id))) throw new Error('Aguarde uma ação de cada jogador antes de avançar o quadro.');
+    const expectedSceneIndex = currentBeat >= beats.length - 1 ? sceneIndex + 1 : sceneIndex;
+    if (Number(next.sceneIndex) !== expectedSceneIndex || !next.scene || !Number.isInteger(Number(next.beatIndex))) throw new Error('O quadro mudou; atualize a sala e tente de novo.');
+    const players = room.players || [];
+    const actionCycle = { number: Number(room.actionCycle?.number || 1) + 1, requiredPlayerIds: players.map(player => player.id), openedAt: Date.now(), status: 'collecting' };
+    transaction.update(roomRef, { scene: next.scene, sceneIndex: Number(next.sceneIndex), beatIndex: Number(next.beatIndex), actionCycle, updatedAt: serverTimestamp() });
+    return { ...room, scene: next.scene, sceneIndex: Number(next.sceneIndex), beatIndex: Number(next.beatIndex), actionCycle };
   });
 }
 
