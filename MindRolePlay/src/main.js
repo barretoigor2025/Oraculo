@@ -803,6 +803,7 @@ function renderGame(room){
   const turnKey=canSubmit?[room.code,scene.id,beatIndex,cycle.number,me.id].join(':'):'';
   if(turnKey!==activeComposerTurnKey){activeComposerTurnKey=turnKey;selectedTurnMode='';}
   playerCanSubmitTurn=canSubmit;
+  document.querySelector('#message-form').classList.toggle('hidden',!canSubmit);
   const turnPicker=document.querySelector('#turn-mode-picker');
   turnPicker.classList.toggle('hidden',!canSubmit);
   const activeCharacter=(campaign.characters||[]).find(character=>character.id===me?.characterId)||chosenCharacter||{};
