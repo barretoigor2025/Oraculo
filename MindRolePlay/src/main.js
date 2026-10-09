@@ -193,9 +193,9 @@ function visibleCampaigns(list = campaigns) {
 function renderCampaigns() {
   const visible = visibleCampaigns();
   const playCards=visible.map(campaign => '<button class="campaign-card manga-card" data-play-campaign="'+escapeAttr(campaign.id)+'"><span class="number">KAGEHAMA · '+escapeHtml(campaign.genre||'Aventura')+'</span><strong>'+escapeHtml(campaign.title)+'</strong><span>'+escapeHtml(campaign.premise||'Uma campanha narrativa pronta para receber personagens.')+'</span><b>CRIAR PERSONAGEM →</b></button>').join('');
-  const dbCards=visible.map(campaign => '<button class="campaign-card manga-card" data-open-campaign="'+escapeAttr(campaign.id)+'"><span class="number">KAGEHAMA · PACOTE ATIVO</span><strong>'+escapeHtml(campaign.title)+'</strong><span>'+countCampaignContent(campaign)+' elementos preparados · abrir Mind Database →</span></button>').join('');
+  const dbCards=visible.map(campaign => '<button class="campaign-card manga-card" data-open-campaign="'+escapeAttr(campaign.id)+'"><span class="number">KAGEHAMA · PACOTE ATIVO</span><strong>'+escapeHtml(campaign.title)+'</strong><span>'+countCampaignContent(campaign)+' elementos preparados · abrir arquivo da campanha →</span></button>').join('');
   const grid=document.querySelector('#campaign-grid');if(grid)grid.innerHTML=dbCards;
-  const home=document.querySelector('#home-campaign-grid');if(home)home.innerHTML=playCards||'<p class="empty-state">Nenhuma campanha instalada ainda. Abra o Mind Database para preparar a primeira.</p>';
+  const home=document.querySelector('#home-campaign-grid');if(home)home.innerHTML=playCards||'<p class="empty-state">A campanha de Kagehama está sendo carregada.</p>';
   document.querySelectorAll('[data-play-campaign]').forEach(button=>button.addEventListener('click',()=>openCharacterBuilder(button.dataset.playCampaign)));
   document.querySelectorAll('[data-open-campaign]').forEach(button=>button.addEventListener('click',()=>openCampaign(button.dataset.openCampaign)));
 }
