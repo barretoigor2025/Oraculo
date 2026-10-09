@@ -871,7 +871,7 @@ function openTravelMap(campaign=currentCampaign(),origin=liveRoom?.scene,destina
   if(!liveRoom||liveRoom.hostId!==localPlayerId()||!destination)return;
   const beat=origin?.beats?.[Number(liveRoom.beatIndex||0)],cycle=liveRoom.actionCycle||{},players=liveRoom.players||[],acted=new Set((liveRoom.messages||[]).filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
   if(Number(liveRoom.beatIndex||0)!==(origin?.beats?.length||1)-1||(beat?.type==='prompt'&&(cycle.requiredPlayerIds||[]).some(id=>!acted.has(id))))return notice('Terminem as falas deste quadro antes de escolher uma rota.');
-  document.querySelector('#travel-origin'.textContent=(origin?.title||'LOCAL ATUAL').toLocaleUpperCase('pt-BR');
+  document.querySelector('#travel-origin').textContent=(origin?.title||'LOCAL ATUAL').toLocaleUpperCase('pt-BR');
   document.querySelector('#travel-destination').textContent=(destination.title||'DESTINO REVELADO').toLocaleUpperCase('pt-BR');
   document.querySelector('#travel-destination-context').textContent='A próxima pista confirmada leva a este local. Os demais pontos permanecem fechados até o grupo descobrir como alcançá-los.';
   selectedTravelRoute='road';
