@@ -231,12 +231,14 @@ export async function advanceNarrativeBeat(code, hostId, next) {
     const currentBeatData = beats[currentBeat] || {};
     const acted = new Set((room.messages || []).filter(item => item.type === 'player-action' && Number(item.cycle) === Number(cycle.number)).map(item => item.playerId));
     if (currentBeatData.type === 'prompt' && (cycle.requiredPlayerIds || []).some(id => !acted.has(id))) throw new Error('Aguarde uma ação de cada jogador antes de avançar o quadro.');
+    const startsTravel = next.travelStart === true && currentBeat >= beats.length - 1 && Number(next.sceneIndex) === sceneIndex && next.travelState?.phase === 'in-transit';
     const expectedSceneIndex = currentBeat >= beats.length - 1 ? sceneIndex + 1 : sceneIndex;
-    if (Number(next.sceneIndex) !== expectedSceneIndex || !next.scene || !Number.isInteger(Number(next.beatIndex))) throw new Error('O quadro mudou; atualize a sala e tente de novo.');
+    if ((!startsTravel && Number(next.sceneIndex) !== expectedSceneIndex) || !next.scene || !Number.isInteger(Number(next.beatIndex))) throw new Error('O quadro mudou; atualize a sala e tente de novo.');
     const players = room.players || [];
     const actionCycle = { number: Number(room.actionCycle?.number || 1) + 1, requiredPlayerIds: players.map(player => player.id), openedAt: Date.now(), status: 'collecting' };
-    transaction.update(roomRef, { scene: next.scene, sceneIndex: Number(next.sceneIndex), beatIndex: Number(next.beatIndex), dialoguePage: 0, displayMessageId: '', actionCycle, updatedAt: serverTimestamp() });
-    return { ...room, scene: next.scene, sceneIndex: Number(next.sceneIndex), beatIndex: Number(next.beatIndex), dialoguePage: 0, displayMessageId: '', actionCycle };
+    const travelState = startsTravel ? next.travelState : next.clearTravelState ? null : (room.travelState || null);
+    transaction.update(roomRef, { scene: next.scene, sceneIndex: Number(next.sceneIndex), beatIndex: Number(next.beatIndex), dialoguePage: 0, displayMessageId: '', actionCycle, travelState, updatedAt: serverTimestamp() });
+    return { ...room, scene: next.scene, sceneIndex: Number(next.sceneIndex), beatIndex: Number(next.beatIndex), dialoguePage: 0, displayMessageId: '', actionCycle, travelState };
   });
 }
 

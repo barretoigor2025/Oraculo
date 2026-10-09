@@ -780,15 +780,16 @@ function renderGame(room){
   const rollSummary=activeLine?.mode==='action'&&Array.isArray(activeLine.dice)?('3d6 · '+activeLine.dice.join(' + ')+' = '+activeLine.total+' · '+(activeLine.success?'SUCESSO':'FALHA')):'';
   document.querySelector('#dialogue-page-label').textContent=[pageLabel,rollSummary].filter(Boolean).join(' · ');
   const nextBeat=document.querySelector('#advance-narrative-beat');
-  nextBeat.textContent=pageIndex<pages.length-1?'Continuar fala →':beatIndex<beats.length-1?'Próximo quadro →':sceneIndex<campaign.scenes.length-1?'Próximo capítulo →':'Fechar crônica';
+  nextBeat.textContent=pageIndex<pages.length-1?'Continuar fala →':beatIndex<beats.length-1?'Próximo quadro →':room.travelState?.phase==='in-transit'?'Concluir deslocamento →':sceneIndex<campaign.scenes.length-1?'Escolher rota no mapa →':'Fechar crônica';
   nextBeat.disabled=room.status!=='narration'||room.hostId!==localPlayerId()||(isPrompt&&!allActed);
   nextBeat.title=isPrompt&&!allActed?'Aguarde a ação de todos antes de avançar.':room.hostId!==localPlayerId()?'Aguarde o anfitrião.':'';
   const stage=document.querySelector('#narrative-stage');
   const diceMarkup='<div class="dice-row">'+Array.from({length:3},()=>'<div class="die">'+'<span></span>'.repeat(9)+'</div>').join('')+'</div>';
-  stage.innerHTML=`${room.hostId===localPlayerId()?'<details class="npc-engine"><summary>⚙ Narrador / NPCs</summary><label>NPC da vez<select id="game-npc-select" class="input">'+(campaign.npcs||[]).filter(npc=>(scene.presentNpcIds||[]).includes(npc.id)).map(npc=>'<option value="'+escapeAttr(npc.id)+'">'+escapeHtml((npc.title||npc.name||'NPC').replace(/^NPC — /,''))+'</option>').join('')+'</select></label><input id="npc-directive" class="input" maxlength="240" placeholder="O que este NPC ouviu?"><button id="generate-npc-line" class="mini-button" '+(allActed?'':'disabled')+'>✦ Gerar resposta</button><button id="configure-narrator-ai" class="mini-button">Chave de narração</button></details>':''}<div class="scene-tools"><button id="scene-perception" class="mini-button" type="button">◉ Percepção · 3d6</button><div id="scene-dice-stage" class="scene-dice-stage hidden">${diceMarkup}<output id="scene-dice-result"></output></div></div>`;
+  stage.innerHTML=`${room.hostId===localPlayerId()?'<details class="npc-engine"><summary>⚙ Narrador / NPCs</summary><label>NPC da vez<select id="game-npc-select" class="input">'+(campaign.npcs||[]).filter(npc=>(scene.presentNpcIds||[]).includes(npc.id)).map(npc=>'<option value="'+escapeAttr(npc.id)+'">'+escapeHtml((npc.title||npc.name||'NPC').replace(/^NPC — /,''))+'</option>').join('')+'</select></label><input id="npc-directive" class="input" maxlength="240" placeholder="O que este NPC ouviu?"><button id="generate-npc-line" class="mini-button" '+(allActed?'':'disabled')+'>✦ Gerar resposta</button><button id="configure-narrator-ai" class="mini-button">Chave de narração</button></details>':''}<div class="scene-tools"><button id="scene-perception" class="mini-button" type="button">◉ Percepção · 3d6</button><button id="open-travel-map" class="mini-button ${(beatIndex===beats.length-1&&pageIndex===pages.length-1&&sceneIndex<campaign.scenes.length-1&&room.travelState?.phase!=='in-transit'&&(!isPrompt||allActed))?'':'hidden'}" type="button">⌖ Mapa / viajar</button><div id="scene-dice-stage" class="scene-dice-stage hidden">${diceMarkup}<output id="scene-dice-result"></output></div></div>`;
   const generateNpcButton=stage.querySelector('#generate-npc-line');if(generateNpcButton)generateNpcButton.addEventListener('click',generateNpcReply);
   const configureNpcAI=stage.querySelector('#configure-narrator-ai');if(configureNpcAI)configureNpcAI.addEventListener('click',configureNarratorAI);
   const perceptionRollButton=stage.querySelector('#scene-perception');perceptionRollButton.addEventListener('click',rollScenePerception);
+  const mapButton=stage.querySelector('#open-travel-map');if(mapButton)mapButton.addEventListener('click',()=>openTravelMap(campaign,scene,campaign.scenes[sceneIndex+1]));
   const alreadyPerceived=messages.some(item=>item.type==='perception'&&item.sceneId===scene.id&&item.playerId===localPlayerId());
   const perceptionButton=document.querySelector('#scene-perception');perceptionButton.disabled=alreadyPerceived||room.status!=='narration';perceptionButton.textContent=alreadyPerceived?'Percepção já testada':'◉ Percepção · 3d6';
   const currentSpeaker=baseSpeaker,feed=document.querySelector('#game-messages');
@@ -803,11 +804,12 @@ function renderGame(room){
   document.querySelector('#action-player-status').innerHTML=players.map(player=>'<li class="'+(actedIds.has(player.id)?'acted':'waiting')+'"><span></span>'+escapeHtml(player.characterName||player.name||'Jogador')+' · '+(actedIds.has(player.id)?(cycleModeByPlayer.get(player.id)==='speech'?'FALOU':'AGIU'):'AGUARDA')+'</li>').join('');
   const me=players.find(player=>player.id===localPlayerId()),canSubmit=!!(room.status==='narration'&&isPrompt&&me&&required.includes(me.id)&&!actedIds.has(me.id)),input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]');
   const turnKey=canSubmit?[room.code,scene.id,beatIndex,cycle.number,me.id].join(':'):'';
-  if(turnKey!==activeComposerTurnKey){activeComposerTurnKey=turnKey;selectedTurnMode='';}
+  if(turnKey!==activeComposerTurnKey){activeComposerTurnKey=turnKey;selectedTurnMode='';closeTurnComposer();}
   playerCanSubmitTurn=canSubmit;
   document.querySelector('#message-form').classList.toggle('hidden',!canSubmit);
   const turnPicker=document.querySelector('#turn-mode-picker');
   turnPicker.classList.toggle('hidden',!canSubmit);
+  if(!canSubmit)closeTurnComposer();
   const activeCharacter=(campaign.characters||[]).find(character=>character.id===me?.characterId)||chosenCharacter||{};
   const turnAvatar=document.querySelector('#turn-avatar');turnAvatar.src=activeCharacter.portrait||'';turnAvatar.alt=activeCharacter.name||'Retrato do personagem';
   document.querySelector('#turn-character').textContent=canSubmit?(activeCharacter.name||'SUA VEZ').toLocaleUpperCase('pt-BR'):'SUA VEZ';
@@ -839,14 +841,72 @@ async function advanceNarrativeBeat(){
     }
     const acted=new Set(messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
     if(beat.type==='prompt'&&(cycle.requiredPlayerIds||[]).some(id=>!acted.has(id)))return notice('Aguarde uma ação de cada jogador antes de avançar o quadro.');
-    const next=beatIndex+1>=beats.length?{sceneIndex:sceneIndex+1,beatIndex:0,scene:scenes[sceneIndex+1]}:{sceneIndex,beatIndex:beatIndex+1,scene};
-    if(!next.scene)return notice('A crônica chegou ao último capítulo.');
+    let next;
+    if(beatIndex<beats.length-1){
+      next={sceneIndex,beatIndex:beatIndex+1,scene};
+    }else if(liveRoom.travelState?.phase==='in-transit'){
+      const destinationIndex=Number(liveRoom.travelState.targetSceneIndex),destination=scenes[destinationIndex];
+      if(!destination)return notice('O destino da viagem não está disponível no roteiro.');
+      next={sceneIndex:destinationIndex,beatIndex:0,scene:destination,clearTravelState:true};
+    }else if(sceneIndex<scenes.length-1){
+      openTravelMap(campaign,scene,scenes[sceneIndex+1]);
+      return;
+    }else{
+      return notice('A crônica chegou ao último capítulo.');
+    }
     next.dialoguePage=0;next.displayMessageId='';
     if(firebaseMode){const room=await advanceNarrativeBeatRemote(liveRoom.code,localPlayerId(),next);renderGame(room);}
     else{
-      liveRoom={...liveRoom,...next,actionCycle:{number:Number(liveRoom.actionCycle?.number||1)+1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),openedAt:Date.now(),status:'collecting'}};
-      renderGame(liveRoom);notice(next.sceneIndex!==sceneIndex?'Novo capítulo aberto.':'Próximo quadro.');}
+      liveRoom={...liveRoom,...next,travelState:next.clearTravelState?null:(next.travelState||liveRoom.travelState||null),actionCycle:{number:Number(liveRoom.actionCycle?.number||1)+1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),openedAt:Date.now(),status:'collecting'}};
+      renderGame(liveRoom);notice(next.clearTravelState?'O grupo chegou ao destino.':'Próximo quadro.');}
   }catch(error){notice(error.message||'Não foi possível avançar a narração.');}
+}
+const TRAVEL_ROUTES={
+  road:{name:'Estrada principal',threshold:16,text:'A estrada principal contorna os postos de vigia. Há pegadas recentes junto à valeta; o grupo mantém formação e observa as lanternas de sinal.'},
+  forest:{name:'Atalho pela mata',threshold:12,text:'O atalho corta a mata por uma trilha estreita. Os galhos abafam os passos e também escondem quem espera adiante.'},
+  river:{name:'Rota fluvial',threshold:14,text:'A rota fluvial segue entre margens escuras. O barco precisa passar sob as pontes antes que a patrulha troque de turno.'}
+};
+let selectedTravelRoute='road';
+function openTravelMap(campaign=currentCampaign(),origin=liveRoom?.scene,destination=campaign?.scenes?.[Number(liveRoom?.sceneIndex||0)+1]){
+  if(!liveRoom||liveRoom.hostId!==localPlayerId()||!destination)return;
+  const beat=origin?.beats?.[Number(liveRoom.beatIndex||0)],cycle=liveRoom.actionCycle||{},players=liveRoom.players||[],acted=new Set((liveRoom.messages||[]).filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
+  if(Number(liveRoom.beatIndex||0)!==(origin?.beats?.length||1)-1||(beat?.type==='prompt'&&(cycle.requiredPlayerIds||[]).some(id=>!acted.has(id))))return notice('Terminem as falas deste quadro antes de escolher uma rota.');
+  document.querySelector('#travel-origin'.textContent=(origin?.title||'LOCAL ATUAL').toLocaleUpperCase('pt-BR');
+  document.querySelector('#travel-destination').textContent=(destination.title||'DESTINO REVELADO').toLocaleUpperCase('pt-BR');
+  document.querySelector('#travel-destination-context').textContent='A próxima pista confirmada leva a este local. Os demais pontos permanecem fechados até o grupo descobrir como alcançá-los.';
+  selectedTravelRoute='road';
+  document.querySelectorAll('.travel-route').forEach(button=>{const selected=button.dataset.route===selectedTravelRoute;button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));});
+  document.querySelector('#travel-countdown').classList.add('hidden');
+  const dialog=document.querySelector('#travel-dialog');if(!dialog.open)dialog.showModal();
+}
+function closeTurnComposer(){const dialog=document.querySelector('#turn-composer');if(dialog.open)dialog.close();}
+async function confirmTravel(){
+  if(!liveRoom||liveRoom.hostId!==localPlayerId())return;
+  const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign(),scene=liveRoom.scene||campaign?.scenes?.[Number(liveRoom.sceneIndex||0)],sceneIndex=Number(liveRoom.sceneIndex||0),destination=campaign?.scenes?.[sceneIndex+1],route=TRAVEL_ROUTES[selectedTravelRoute];
+  if(!destination||!route)return notice('Não há um destino descoberto nesta direção.');
+  const dialog=document.querySelector('#travel-dialog'),confirm=document.querySelector('#confirm-travel'),countdown=document.querySelector('#travel-countdown');
+  confirm.disabled=true;countdown.classList.remove('hidden');
+  const dice=roll3d6().dice,total=dice.reduce((sum,value)=>sum+value,0),ambush=total>=route.threshold;
+  for(let n=3;n>0;n--){countdown.textContent=String(n);await sleep(1000);}
+  countdown.textContent='3d6 · '+dice.join(' + ')+' = '+total+' · '+(ambush?'EMBOSCADA!':'CAMINHO LIVRE');
+  await sleep(550);dialog.close();confirm.disabled=false;
+  const travelText=route.text+' O grupo segue rumo a '+destination.title+'. Teste de perigo da rota: '+dice.join(' + ')+' = '+total+'; '+(ambush?'uma emboscada interrompe o deslocamento.':'ninguém consegue surpreender o grupo.');
+  const travelScene={
+    id:'travel-'+scene.id+'-'+destination.id+'-'+Date.now(),
+    chapter:'DESLOCAMENTO',
+    title:'No caminho · '+route.name,
+    description:'Destino: '+destination.title+'. A viagem usa um teste de risco 3d6 definido pela rota.',
+    image:scene.image||destination.image||'',
+    beats:[{type:'narration',text:travelText},...(ambush?[{type:'prompt',text:'Batedores mascarados saltam da margem e tentam separar quem protege a retaguarda. Cada personagem decide: enfrentar, distrair, proteger um aliado ou romper o cerco. Descrevam uma fala ou ação; ações podem exigir teste 3d6.'}]:[])],
+    presentNpcIds:ambush?(scene.presentNpcIds||[]):[]
+  };
+  const travelState={phase:'in-transit',targetSceneIndex:sceneIndex+1,destinationSceneId:destination.id,routeId:selectedTravelRoute,encounter:ambush,dice,total};
+  const next={sceneIndex,beatIndex:0,scene:travelScene,travelStart:true,travelState,dialoguePage:0,displayMessageId:''};
+  try{
+    if(firebaseMode){const room=await advanceNarrativeBeatRemote(liveRoom.code,localPlayerId(),next);renderGame(room);}
+    else{liveRoom={...liveRoom,...next,actionCycle:{number:Number(liveRoom.actionCycle?.number||1)+1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),openedAt:Date.now(),status:'collecting'}};renderGame(liveRoom);}
+    notice(ambush?'Emboscada na rota: o grupo precisa decidir como reage.':'Deslocamento iniciado; o grupo permanece junto no trajeto.');
+  }catch(error){notice(error.message||'Não foi possível iniciar a viagem.');}
 }
 async function rollScenePerception(){
   if(!liveRoom)return;
@@ -943,11 +1003,15 @@ async function setTurnMode(mode){
   const input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]'),skill=document.querySelector('#action-skill'),skillField=document.querySelector('.action-skill-field');
   input.disabled=false;
   input.placeholder=mode==='speech'?'Escreva a fala do personagem…':'Descreva a ação; ela será resolvida com um teste 3d6…';
+  document.querySelector('#turn-composer-mode').textContent=mode==='speech'?'FALA DO PERSONAGEM':'AÇÃO · TESTE 3D6';
+  document.querySelector('#turn-composer-title').textContent=mode==='speech'?'Escreva a fala do personagem':'Descreva a ação do personagem';
   skillField.classList.toggle('hidden',mode!=='action');
   if(skill)skill.disabled=mode!=='action';
   document.querySelector('#choose-speech').setAttribute('aria-pressed',String(mode==='speech'));
   document.querySelector('#choose-action').setAttribute('aria-pressed',String(mode==='action'));
-  submit.disabled=false;submit.textContent=mode==='speech'?'Enviar fala →':'Rolar 3d6 e agir →';
+  submit.disabled=false;submit.textContent=mode==='speech'?'Confirmar fala →':'Confirmar ação e rolar 3d6 →';
+  const dialog=document.querySelector('#turn-composer');if(!dialog.open)dialog.showModal();
+  input.focus();
 }
 async function sendPlayerAction(roll=null){
   const input=document.querySelector('#message-input'),text=input.value.trim(),mode=roll?.mode||selectedTurnMode;
@@ -974,8 +1038,27 @@ async function rollActionTest(){
 }
 document.querySelector('#choose-speech').addEventListener('click',()=>setTurnMode('speech'));
 document.querySelector('#choose-action').addEventListener('click',()=>setTurnMode('action'));
-document.querySelector('#message-form').addEventListener('submit',event=>{event.preventDefault();if(selectedTurnMode==='speech')sendPlayerAction({mode:'speech'});else if(selectedTurnMode==='action')rollActionTest();else notice('Escolha se vai falar ou agir.');});
-document.querySelector('#roll-action-test').addEventListener('click',rollActionTest);
+document.querySelector('#message-form').addEventListener('submit',async event=>{
+  event.preventDefault();
+  if(!selectedTurnMode)return notice('Escolha se vai falar ou agir.');
+  const input=document.querySelector('#message-input');
+  if(!input.value.trim())return notice(selectedTurnMode==='speech'?'Escreva a fala do personagem antes de enviar.':'Descreva a ação antes de rolar.');
+  const dialog=document.querySelector('#turn-composer'),countdown=document.querySelector('#turn-countdown'),submit=document.querySelector('#message-form button[type="submit"]');
+  submit.disabled=true;input.disabled=true;countdown.classList.remove('hidden');
+  for(let n=3;n>0;n--){countdown.textContent=String(n);await sleep(1000);}
+  countdown.textContent='AGORA';await sleep(180);countdown.classList.add('hidden');dialog.close();input.disabled=false;submit.disabled=false;
+  if(selectedTurnMode==='speech')await sendPlayerAction({mode:'speech'});else if(selectedTurnMode==='action')await rollActionTest();
+});
+document.querySelector('#close-turn-composer').addEventListener('click',()=>closeTurnComposer());
+document.querySelector('#choose-speech').addEventListener('click',()=>setTurnMode('speech'));
+document.querySelector('#choose-action').addEventListener('click',()=>setTurnMode('action'));
+document.querySelectorAll('.travel-route').forEach(button=>button.addEventListener('click',()=>{
+  selectedTravelRoute=button.dataset.route;
+  document.querySelectorAll('.travel-route').forEach(item=>{const selected=item===button;item.classList.toggle('selected',selected);item.setAttribute('aria-pressed',String(selected));});
+}));
+document.querySelector('#confirm-travel').addEventListener('click',confirmTravel);
+document.querySelector('#cancel-travel').addEventListener('click',()=>document.querySelector('#travel-dialog').close());
+document.querySelector('#close-travel-dialog').addEventListener('click',()=>document.querySelector('#travel-dialog').close());
 
 
 async function boot() {

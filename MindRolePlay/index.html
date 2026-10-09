@@ -91,15 +91,31 @@
               <form id="message-form" class="message-form">
                 <div id="turn-mode-picker" class="turn-mode-picker hidden" aria-label="Escolha como participar">
                   <img id="turn-avatar" class="turn-avatar" alt="">
-                  <div class="turn-choice-copy"><small id="turn-character">SUA VEZ</small><span>Você vai falar ou agir?</span></div>
+                  <div class="turn-choice-copy"><small id="turn-character">SUA VEZ</small></div>
                   <div class="turn-choice-buttons"><button id="choose-speech" type="button" aria-pressed="false">Falar</button><button id="choose-action" type="button" aria-pressed="false">Agir · teste</button></div>
                 </div>
-                <label class="composer-prompt" for="message-input">Sua fala ou ação</label>
-                <textarea id="message-input" class="input textarea" rows="2" maxlength="800" placeholder="Aguarde a convocação do narrador." disabled></textarea>
-                <label class="field action-skill-field hidden">Perícia<select id="action-skill" class="input" disabled></select></label>
+                <dialog id="turn-composer" class="turn-composer" aria-labelledby="turn-composer-title">
+                  <header class="turn-composer-heading"><div><small id="turn-composer-mode">SUA VEZ</small><h2 id="turn-composer-title">Escreva a fala do personagem</h2></div><button id="close-turn-composer" type="button" aria-label="Fechar">×</button></header>
+                  <label class="composer-prompt" for="message-input">Mensagem do personagem</label>
+                  <textarea id="message-input" class="input textarea" rows="4" maxlength="800" placeholder="Escreva a fala do personagem…" disabled></textarea>
+                  <label class="field action-skill-field hidden">Perícia<select id="action-skill" class="input" disabled></select></label>
+                  <output id="turn-countdown" class="turn-countdown hidden" aria-live="assertive"></output>
+                  <div class="action-submit-row"><button type="submit" class="button primary" disabled>Confirmar →</button></div>
+                </dialog>
                 <div id="action-dice-stage" class="scene-dice-stage hidden"><div class="dice-row"><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div><output id="action-dice-result"></output></div>
-                <div class="action-submit-row"><button id="roll-action-test" type="button" class="button hidden" tabindex="-1" aria-hidden="true">🎲 Rolar 3d6</button><button type="submit" class="button primary" disabled>Enviar →</button></div>
               </form>
+              <dialog id="travel-dialog" class="travel-dialog" aria-labelledby="travel-dialog-title">
+                <header class="travel-dialog-heading"><div><small>MAPA DE KAGEHAMA · DESLOCAMENTO</small><h2 id="travel-dialog-title">Escolham o próximo caminho</h2></div><button id="close-travel-dialog" type="button" aria-label="Fechar mapa">×</button></header>
+                <div class="travel-map-strip"><span id="travel-origin">LOCAL ATUAL</span><i aria-hidden="true">→</i><strong id="travel-destination">DESTINO REVELADO</strong></div>
+                <p id="travel-destination-context" class="travel-destination-context"></p>
+                <div class="travel-route-options" role="group" aria-label="Escolha a rota">
+                  <button type="button" class="travel-route selected" data-route="road" aria-pressed="true"><b>Estrada principal</b><span>Mais lenta e vigiada. Emboscada se 3d6 ≥ 16 (4,6%).</span><small>RISCO BAIXO</small></button>
+                  <button type="button" class="travel-route" data-route="forest" aria-pressed="false"><b>Atalho pela mata</b><span>Mais rápido, terreno fechado. Emboscada se 3d6 ≥ 12 (37,5%).</span><small>RISCO ALTO</small></button>
+                  <button type="button" class="travel-route" data-route="river" aria-pressed="false"><b>Rota fluvial</b><span>Exige embarcação. Emboscada se 3d6 ≥ 14 (16,2%).</span><small>RISCO MÉDIO</small></button>
+                </div>
+                <output id="travel-countdown" class="travel-countdown hidden" aria-live="assertive"></output>
+                <footer class="travel-dialog-actions"><button id="cancel-travel" type="button" class="button">Voltar à cena</button><button id="confirm-travel" type="button" class="button primary">Iniciar deslocamento →</button></footer>
+              </dialog>
               <p class="narrator-pending">A história e as falas ficam nesta tela; o histórico técnico permanece disponível para leitores de tela.</p>
             </section>
           </section>
