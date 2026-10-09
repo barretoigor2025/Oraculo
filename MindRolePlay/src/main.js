@@ -32,6 +32,9 @@ let chosenCharacter = null;
 let activeRoomCode = '';
 let liveRoom = null;
 let playerGender = 'male';
+let selectedTurnMode = '';
+let activeComposerTurnKey = '';
+let playerCanSubmitTurn = false;
 let returnRoomCode = new URLSearchParams(location.search).get('room')?.toUpperCase() || '';
 let toastTimer;
 
@@ -771,7 +774,7 @@ function renderGame(room){
   }else{actor.classList.add('hidden');actor.dataset.speakerKey='';}
   const lineText=dialogueTextFor(activeLine,beat,scene);
   const dialoguePage=Number(room.dialoguePage||0),pages=dialoguePages(lineText),pageIndex=Math.min(dialoguePage,pages.length-1);
-  document.querySelector('#dialogue-speaker').textContent=(activeSpeakerName||'Narrador').toLocaleUpperCase('pt-BR')+(activeLine?.type==='player-action'?' · SUA AÇÃO':activeLine?.type==='npc-line'?' · EM CENA':activeLine?.type==='perception'?(activeLine.success?' · PISTA ENCONTRADA':' · NADA PERCEBIDO'):'');
+  document.querySelector('#dialogue-speaker').textContent=(activeSpeakerName||'Narrador').toLocaleUpperCase('pt-BR')+(activeLine?.type==='player-action'?(activeLine.mode==='speech'?' · SUA FALA':' · SUA AÇÃO'):activeLine?.type==='npc-line'?' · EM CENA':activeLine?.type==='perception'?(activeLine.success?' · PISTA ENCONTRADA':' · NADA PERCEBIDO'):'');
   document.querySelector('#dialogue-text').textContent=pages[pageIndex];
   document.querySelector('#dialogue-page-label').textContent=pages.length>1?('FALA '+(pageIndex+1)+'/'+pages.length):'';
   const nextBeat=document.querySelector('#advance-narrative-beat');
@@ -796,12 +799,24 @@ function renderGame(room){
   document.querySelector('#action-cycle-label').textContent=isPrompt?'AÇÃO DO GRUPO · RODADA '+cycle.number:'NARRAÇÃO · QUADRO '+(beatIndex+1);
   document.querySelector('#action-cycle-summary').textContent=!isPrompt?'O anfitrião avança o diálogo.':allActed?'Todos responderam.':'Faltam '+(required.length-actedCount)+' jogador(es).';
   document.querySelector('#action-player-status').innerHTML=players.map(player=>'<li class="'+(actedIds.has(player.id)?'acted':'waiting')+'"><span></span>'+escapeHtml(player.characterName||player.name||'Jogador')+' · '+(actedIds.has(player.id)?'FALOU':'AGUARDA')+'</li>').join('');
-  const me=players.find(player=>player.id===localPlayerId()),canSubmit=room.status==='narration'&&isPrompt&&me&&required.includes(me.id)&&!actedIds.has(me.id),input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]');
-  input.disabled=!canSubmit;if(submit)submit.disabled=!canSubmit;
-  const rollButton=document.querySelector('#roll-action-test');rollButton.disabled=!canSubmit;
-  const activeCharacter=(campaign.characters||[]).find(character=>character.id===me?.characterId)||chosenCharacter||{},skillPicker=document.querySelector('#action-skill');
-  if(skillPicker){const skills=activeCharacter.skills||[];skillPicker.innerHTML=skills.map((item,index)=>'<option value="'+index+'" data-level="'+escapeAttr(item.level)+'">'+escapeHtml(item.name)+' · '+escapeHtml(item.level)+'</option>').join('')||'<option data-level="11">Atributo · 11</option>';skillPicker.disabled=!canSubmit;}
-  input.placeholder=canSubmit?'Fale ou descreva a ação do seu personagem…':'Aguarde a convocação do narrador.';
+  const me=players.find(player=>player.id===localPlayerId()),canSubmit=!!(room.status==='narration'&&isPrompt&&me&&required.includes(me.id)&&!actedIds.has(me.id)),input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]');
+  const turnKey=canSubmit?[room.code,scene.id,beatIndex,cycle.number,me.id].join(':'):'';
+  if(turnKey!==activeComposerTurnKey){activeComposerTurnKey=turnKey;selectedTurnMode='';}
+  playerCanSubmitTurn=canSubmit;
+  const turnPicker=document.querySelector('#turn-mode-picker');
+  turnPicker.classList.toggle('hidden',!canSubmit);
+  const activeCharacter=(campaign.characters||[]).find(character=>character.id===me?.characterId)||chosenCharacter||{};
+  const turnAvatar=document.querySelector('#turn-avatar');turnAvatar.src=activeCharacter.portrait||'';turnAvatar.alt=activeCharacter.name||'Retrato do personagem';
+  document.querySelector('#turn-character').textContent=canSubmit?(activeCharacter.name||'SUA VEZ').toLocaleUpperCase('pt-BR'):'SUA VEZ';
+  input.disabled=!canSubmit||!selectedTurnMode;
+  if(submit){submit.disabled=!canSubmit||!selectedTurnMode;submit.textContent=selectedTurnMode==='speech'?'Enviar fala →':selectedTurnMode==='action'?'Rolar 3d6 e agir →':'Escolha Falar ou Agir';}
+  const speechButton=document.querySelector('#choose-speech'),actionButton=document.querySelector('#choose-action');
+  speechButton.setAttribute('aria-pressed',String(selectedTurnMode==='speech'));actionButton.setAttribute('aria-pressed',String(selectedTurnMode==='action'));
+  const rollButton=document.querySelector('#roll-action-test');if(rollButton){rollButton.disabled=true;rollButton.hidden=true;}
+  const skillPicker=document.querySelector('#action-skill'),skillField=document.querySelector('.action-skill-field');
+  if(skillPicker){const skills=activeCharacter.skills||[];skillPicker.innerHTML=skills.map((item,index)=>'<option value="'+index+'" data-level="'+escapeAttr(item.level)+'">'+escapeHtml(item.name)+' · '+escapeHtml(item.level)+'</option>').join('')||'<option data-level="11">Atributo · 11</option>';skillPicker.disabled=!canSubmit||selectedTurnMode!=='action';}
+  skillField.classList.toggle('hidden',selectedTurnMode!=='action');
+  input.placeholder=!canSubmit?'Aguarde sua vez.':selectedTurnMode==='speech'?'Escreva a fala do personagem…':selectedTurnMode==='action'?'Descreva a ação; ela será resolvida com um teste 3d6…':'Escolha se vai falar ou agir.';
   const actionAdvance=document.querySelector('#advance-action-cycle');actionAdvance.hidden=true;actionAdvance.disabled=true;
   showScreen('game');
 }
@@ -919,27 +934,44 @@ document.querySelector('#copy-room-code').addEventListener('click',async()=>{
   const url=document.querySelector('#copy-room-code').dataset.shareUrl||roomShareUrl(activeRoomCode,currentCampaignId);
   try{await navigator.clipboard.writeText(url);notice('Link da sala copiado.');}catch{notice(url);}
 });
+async function setTurnMode(mode){
+  if(!playerCanSubmitTurn||!['speech','action'].includes(mode))return;
+  selectedTurnMode=mode;
+  const input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]'),skill=document.querySelector('#action-skill'),skillField=document.querySelector('.action-skill-field');
+  input.disabled=false;
+  input.placeholder=mode==='speech'?'Escreva a fala do personagem…':'Descreva a ação; ela será resolvida com um teste 3d6…';
+  skillField.classList.toggle('hidden',mode!=='action');
+  if(skill)skill.disabled=mode!=='action';
+  document.querySelector('#choose-speech').setAttribute('aria-pressed',String(mode==='speech'));
+  document.querySelector('#choose-action').setAttribute('aria-pressed',String(mode==='action'));
+  submit.disabled=false;submit.textContent=mode==='speech'?'Enviar fala →':'Rolar 3d6 e agir →';
+}
 async function sendPlayerAction(roll=null){
-  const input=document.querySelector('#message-input'),text=input.value.trim();
-  if(!text||!liveRoom||input.disabled)return notice('Escreva sua ação antes de registrar.');
+  const input=document.querySelector('#message-input'),text=input.value.trim(),mode=roll?.mode||selectedTurnMode;
+  if(!playerCanSubmitTurn||!mode)return notice('Escolha primeiro se vai falar ou agir.');
+  if(!text)return notice(mode==='speech'?'Escreva a fala do personagem antes de enviar.':'Descreva a ação antes de rolar.');
+  if(mode==='action'&&!roll?.dice)return notice('Uma ação precisa ser resolvida com o teste de 3d6.');
+  if(!liveRoom||input.disabled)return;
   const cycle=liveRoom.actionCycle||{number:1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),status:'collecting'};
-  const message={id:crypto.randomUUID(),type:'player-action',cycle:Number(cycle.number),playerId:localPlayerId(),playerName:document.querySelector('#player-name').value.trim()||'Jogador',characterName:chosenCharacter?.name||'Personagem',className:chosenCharacter?.className||'',portrait:chosenCharacter?.portrait||'',text,...(roll||{}),createdAt:Date.now()};
+  const message={id:crypto.randomUUID(),type:'player-action',mode,cycle:Number(cycle.number),playerId:localPlayerId(),playerName:document.querySelector('#player-name').value.trim()||'Jogador',characterName:chosenCharacter?.name||'Personagem',className:chosenCharacter?.className||'',portrait:chosenCharacter?.portrait||'',text,...(roll||{}),createdAt:Date.now()};
   input.value='';
   if(!firebaseMode){const messages=[...(liveRoom.messages||[]),message].slice(-150),required=cycle.requiredPlayerIds||[],acted=new Set(messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));liveRoom={...liveRoom,messages,dialoguePage:0,displayMessageId:message.id,actionCycle:{...cycle,status:required.length&&required.every(id=>acted.has(id))?'complete':'collecting'}};renderGame(liveRoom);return;}
   try{await postRoomMessage(liveRoom.code,message);}catch(error){notice(error.message||'A ação não sincronizou. Confira o acesso online à sala.');}
 }
 async function rollActionTest(){
-  if(!liveRoom)return;
+  if(!liveRoom||selectedTurnMode!=='action'||!playerCanSubmitTurn)return;
   const action=document.querySelector('#message-input').value.trim(),character=chosenCharacter||{};
-  if(!action)return notice('Escreva a ação antes de rolar.');
+  if(!action)return notice('Descreva a ação antes de rolar.');
   const select=document.querySelector('#action-skill'),selected=select?.selectedOptions?.[0],skill=Number(selected?.dataset.level||11),name=selected?.textContent||'Percepção';
   const dice=roll3d6().dice,result=resolveSuccessTest({dice,skill}),stage=document.querySelector('#action-dice-stage'),diceEls=[...stage.querySelectorAll('.die')],out=document.querySelector('#action-dice-result');
   stage.classList.remove('hidden');out.textContent='Os dados caem…';diceEls.forEach(die=>{die.classList.remove('rolling');void die.offsetWidth;die.classList.add('rolling');});
   for(let tick=0;tick<8;tick++){diceEls.forEach((die,i)=>renderDie(die,dice[(tick+i)%3]));await sleep(75);}diceEls.forEach((die,i)=>renderDie(die,dice[i]));
   const total=dice.reduce((sum,value)=>sum+value,0);out.innerHTML='<b>'+dice.join(' · ')+' = '+total+' · '+(result.success?'SUCESSO':'FALHA')+'</b>';
-  await sendPlayerAction({dice,total,skillName:name,effectiveSkill:skill,success:result.success,criticalSuccess:result.criticalSuccess,criticalFailure:result.criticalFailure});
+  await sendPlayerAction({mode:'action',dice,total,skillName:name,effectiveSkill:skill,success:result.success,criticalSuccess:result.criticalSuccess,criticalFailure:result.criticalFailure});
 }
-document.querySelector('#message-form').addEventListener('submit',event=>{event.preventDefault();sendPlayerAction();});
+document.querySelector('#choose-speech').addEventListener('click',()=>setTurnMode('speech'));
+document.querySelector('#choose-action').addEventListener('click',()=>setTurnMode('action'));
+document.querySelector('#message-form').addEventListener('submit',event=>{event.preventDefault();if(selectedTurnMode==='speech')sendPlayerAction({mode:'speech'});else if(selectedTurnMode==='action')rollActionTest();else notice('Escolha se vai falar ou agir.');});
 document.querySelector('#roll-action-test').addEventListener('click',rollActionTest);
 
 

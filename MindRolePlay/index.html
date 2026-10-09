@@ -68,14 +68,20 @@
             <div class="game-topline"><button class="back" data-nav="home">← Sair</button><span id="game-room-code"></span><span id="game-player-count"></span></div>
             <div class="story-panel-heading"><div><small id="scene-chapter">CENA 01</small><h2 id="game-campaign-title">As Sete Lanternas de Kagehama</h2></div><span class="ink-seal">M</span></div>
             <div class="scene-caption"><h1 id="scene-title">O começo</h1><p id="scene-description">A história aguarda o primeiro movimento.</p></div>
+            <svg class="sprite-filter-defs" aria-hidden="true" focusable="false">
+              <defs><filter id="opaque-manga-alpha" color-interpolation-filters="sRGB" x="-10%" y="-5%" width="120%" height="110%">
+                <feColorMatrix type="saturate" values="0"></feColorMatrix>
+                <feComponentTransfer><feFuncA type="gamma" amplitude="1" exponent="0.14" offset="0"></feFuncA></feComponentTransfer>
+              </filter></defs>
+            </svg>
             <figure class="scene-actor hidden" id="scene-actor"><img class="scene-avatar" id="scene-avatar" alt=""><figcaption id="scene-speaker-name"></figcaption></figure>
+            <article id="stage-dialogue" class="stage-dialogue" aria-live="polite">
+              <small id="dialogue-speaker">NARRADOR</small>
+              <p id="dialogue-text"></p>
+              <div class="dialogue-footer"><span id="dialogue-page-label"></span><button id="advance-narrative-beat" class="continue-button" type="button">Continuar →</button></div>
+            </article>
             <section class="story-panel" aria-label="Cena em andamento">
               <div id="narrative-stage" class="narrative-stage" aria-live="polite"></div>
-              <article id="stage-dialogue" class="stage-dialogue" aria-live="polite">
-                <small id="dialogue-speaker">NARRADOR</small>
-                <p id="dialogue-text"></p>
-                <div class="dialogue-footer"><span id="dialogue-page-label"></span><button id="advance-narrative-beat" class="continue-button" type="button">Continuar →</button></div>
-              </article>
               <div id="game-messages" class="game-messages" aria-live="polite"></div>
               <section class="action-cycle" aria-live="polite">
                 <div><small id="action-cycle-label">QUADRO 1</small><strong id="action-cycle-summary">Aguardando</strong></div>
@@ -83,11 +89,16 @@
                 <button id="advance-action-cycle" class="mini-button hidden" type="button" disabled>Próxima rodada →</button>
               </section>
               <form id="message-form" class="message-form">
+                <div id="turn-mode-picker" class="turn-mode-picker hidden" aria-label="Escolha como participar">
+                  <img id="turn-avatar" class="turn-avatar" alt="">
+                  <div class="turn-choice-copy"><small id="turn-character">SUA VEZ</small><span>Você vai falar ou agir?</span></div>
+                  <div class="turn-choice-buttons"><button id="choose-speech" type="button" aria-pressed="false">Falar</button><button id="choose-action" type="button" aria-pressed="false">Agir · teste</button></div>
+                </div>
                 <label class="composer-prompt" for="message-input">Sua fala ou ação</label>
-                <textarea id="message-input" class="input textarea" rows="2" maxlength="800" placeholder="O que seu personagem diz ou faz?"></textarea>
-                <label class="field action-skill-field">Perícia<select id="action-skill" class="input"></select></label>
+                <textarea id="message-input" class="input textarea" rows="2" maxlength="800" placeholder="Aguarde a convocação do narrador." disabled></textarea>
+                <label class="field action-skill-field hidden">Perícia<select id="action-skill" class="input" disabled></select></label>
                 <div id="action-dice-stage" class="scene-dice-stage hidden"><div class="dice-row"><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div><output id="action-dice-result"></output></div>
-                <div class="action-submit-row"><button id="roll-action-test" type="button" class="button">🎲 Rolar 3d6</button><button type="submit" class="button primary">Dizer / agir →</button></div>
+                <div class="action-submit-row"><button id="roll-action-test" type="button" class="button hidden" tabindex="-1" aria-hidden="true">🎲 Rolar 3d6</button><button type="submit" class="button primary" disabled>Enviar →</button></div>
               </form>
               <p class="narrator-pending">A história e as falas ficam nesta tela; o histórico técnico permanece disponível para leitores de tela.</p>
             </section>

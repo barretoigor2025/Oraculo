@@ -416,3 +416,45 @@ body:has(#screen-game.active) main{width:100%;max-width:none;height:100dvh;margi
 @media(prefers-reduced-motion:reduce){
  #screen-game .scene-actor.enter-from-left,#screen-game .scene-actor.enter-from-right{animation:none}
 }
+
+/* Palco de fala e personagem: sprite íntegro, opaco e ancorado na margem. */
+#screen-game .scene-actor{z-index:5;bottom:clamp(210px,25vh,250px);width:min(27vw,330px);height:min(42vh,440px);filter:none;mix-blend-mode:normal}
+#screen-game .scene-actor[data-side="left"]{left:clamp(-64px,-5vw,-24px)}
+#screen-game .scene-actor[data-side="right"]{right:clamp(-64px,-5vw,-24px)}
+#screen-game .scene-avatar{filter:url(#opaque-manga-alpha) drop-shadow(0 3px 8px #080705a6)}
+#screen-game .scene-avatar[data-side="left"]{object-position:left bottom}
+#screen-game .scene-avatar[data-side="right"]{object-position:right bottom}
+#screen-game .scene-actor figcaption{display:none}
+#screen-game .stage-dialogue{position:absolute;z-index:9;top:clamp(130px,15vh,190px);left:clamp(250px,25vw,360px);right:clamp(250px,25vw,360px);width:auto;max-width:900px;max-height:19vh;margin:0 auto;padding:10px 14px 8px}
+#screen-game .stage-dialogue>p{max-height:9vh;margin:4px 0;font-size:clamp(.86rem,1.25vw,1.02rem);line-height:1.32}
+#screen-game .story-panel{max-height:32vh}
+#screen-game .message-form{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"picker picker" "input input" "skill actions";gap:6px;padding:7px}
+#screen-game .turn-mode-picker{grid-area:picker;display:flex;align-items:center;gap:9px;min-height:48px;padding:5px 7px;background:#eee8d9;border:1px solid #171613}
+#screen-game .turn-mode-picker.hidden{display:none!important}
+#screen-game .turn-avatar{width:42px;height:42px;flex:0 0 42px;object-fit:contain;object-position:center bottom;filter:url(#opaque-manga-alpha);background:#fffdf6;border:1px solid #171613}
+#screen-game .turn-choice-copy{display:grid;gap:2px;min-width:0;flex:1;color:#171613}
+#screen-game .turn-choice-copy small{font-size:.52rem;font-weight:900;letter-spacing:.1em}
+#screen-game .turn-choice-copy span{font-size:.7rem}
+#screen-game .turn-choice-buttons{display:flex;gap:5px}
+#screen-game .turn-choice-buttons button{min-height:32px;padding:4px 10px;border:1px solid #171613;background:#fffdf6;color:#171613;font:700 .66rem var(--sans);cursor:pointer}
+#screen-game .turn-choice-buttons button[aria-pressed="true"]{background:#171613;color:#fff8e9}
+#screen-game .action-skill-field.hidden{display:none!important}
+#screen-game .action-submit-row{grid-area:actions;display:flex;gap:5px}
+#screen-game #roll-action-test[hidden]{display:none!important}
+@media(max-width:720px){
+ #screen-game .scene-actor{bottom:clamp(230px,25vh,330px);width:min(45vw,230px);height:36vh}
+ #screen-game .scene-actor[data-side="left"]{left:clamp(-44px,-7vw,-24px)}
+ #screen-game .scene-actor[data-side="right"]{right:clamp(-44px,-7vw,-24px)}
+ #screen-game .stage-dialogue{top:clamp(130px,16vh,190px);left:9px;right:9px;max-height:19vh;padding:9px 11px 7px}
+ #screen-game .stage-dialogue>p{max-height:9.5vh;font-size:clamp(.82rem,3.4vw,.98rem);line-height:1.28}
+ #screen-game .story-panel{left:7px;right:7px;bottom:max(5px,env(safe-area-inset-bottom));max-height:32vh;gap:4px}
+ #screen-game .action-cycle{padding:4px 6px}
+ #screen-game .turn-mode-picker{gap:6px;min-height:42px;padding:4px}
+ #screen-game .turn-avatar{width:36px;height:36px;flex-basis:36px}
+ #screen-game .turn-choice-copy span{font-size:.62rem}
+ #screen-game .turn-choice-buttons button{min-height:30px;padding:3px 7px;font-size:.6rem}
+ #screen-game .message-form{gap:4px;padding:5px}
+ #screen-game #message-input{height:40px;min-height:40px;max-height:40px}
+ #screen-game .action-skill-field{min-width:100px}
+ #screen-game .action-submit-row .button{min-height:36px;padding:0 8px;font-size:.55rem}
+}
