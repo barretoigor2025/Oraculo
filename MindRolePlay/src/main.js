@@ -750,6 +750,22 @@ function dialoguePages(text, limit = 190) {
   return pages;
 }
 
+const SCENE_GROUNDLINES = {
+  'kagehama-scene-0': 0.51,
+  'kagehama-scene-1': 0.72,
+  'kagehama-scene-2': 0.78,
+  'kagehama-scene-3': 0.73,
+  'kagehama-scene-4': 0.75,
+  'kagehama-scene-5': 0.77,
+  'kagehama-scene-6': 0.73,
+  'kagehama-scene-7': 0.78,
+  'kagehama-scene-8': 0.72,
+  'kagehama-scene-9': 0.73,
+  'kagehama-scene-10': 0.78,
+  'kagehama-scene-11': 0.68,
+  'kagehama-scene-12': 0.77,
+};
+
 function renderGame(room){
   const campaign=campaigns.find(item=>item.id===room.campaignId)||currentCampaign();if(!campaign)return;
   document.querySelector('#game-campaign-title').textContent=campaign.title;
@@ -780,6 +796,7 @@ function renderGame(room){
   const activeSpeakerName=activeLine?.characterName||npcDisplayName(activeNpc)||(activeLine?.type==='perception'?linePlayer?.characterName:'')||npcDisplayName(baseSpeaker)||'Narrador';
   const activeSpeakerKey=activeLine?.id||baseSpeaker?.id||'narrator';
   const actor=document.querySelector('#scene-actor'),avatar=document.querySelector('#scene-avatar'),actorName=document.querySelector('#scene-speaker-name');
+  actor.dataset.sceneId=scene.id||'';actor.style.setProperty('--actor-ground-y',`${(SCENE_GROUNDLINES[scene.id]||0.76)*100}svh`);
   if(activePortrait){
     const side=[...activeSpeakerKey].reduce((sum,char)=>sum+char.charCodeAt(0),0)%2?'right':'left';
     const changed=actor.dataset.speakerKey!==activeSpeakerKey;
