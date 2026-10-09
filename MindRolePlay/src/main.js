@@ -18,6 +18,7 @@ import {
 const STORE_KEY = 'mindRolePlay.demo.v1';
 const PLAYER_KEY = 'mindRolePlay.playerId';
 const KAGEHAMA_SCHEMA_VERSION = 12;
+const canonicalNpcsByCampaign = new Map(createDemoCampaigns().map(item => [item.id, item.npcs || []]));
 const screens = [...document.querySelectorAll('.screen')];
 const toast = document.querySelector('#toast');
 const storageLabel = document.querySelector('#storage-label');
@@ -697,6 +698,17 @@ REGRAS: Português brasileiro, primeira pessoa, no máximo 3 frases. Responda à
   finally{const fresh=document.querySelector('#generate-npc-line');if(fresh){fresh.disabled=false;fresh.textContent='✦ Gerar resposta do NPC';}}
 }
 
+function getCampaignNpc(campaign, npcId) {
+  if (!npcId) return null;
+  const saved = (campaign.npcs || []).find(npc => npc.id === npcId);
+  const seeded = (canonicalNpcsByCampaign.get(campaign.id) || []).find(npc => npc.id === npcId);
+  return saved && seeded ? { ...seeded, ...saved, title: saved.title || seeded.title, portrait: saved.portrait || seeded.portrait } : saved || seeded || null;
+}
+
+function npcDisplayName(npc) {
+  return npc?.name || (npc?.title || '').replace(/^NPC — /, '') || '';
+}
+
 function dialogueTextFor(message, beat, scene) {
   if (message?.type === 'perception') return message.success ? (message.successText || 'A pista se revela.') : (message.failureText || 'O detalhe passa despercebido.');
   return message?.text || beat?.text || scene?.description || 'A cena começa.';
@@ -741,12 +753,12 @@ function renderGame(room){
   const pinned=room.displayMessageId?messages.find(item=>item.id===room.displayMessageId):null;
   const latestEvent=currentEvents.at(-1)||null;
   const activeLine=pinned&&pinned.id===latestEvent?.id?pinned:latestEvent||pinned||null;
-  const baseSpeaker=(campaign.npcs||[]).find(npc=>npc.id===beat?.speakerId);
-  const lineNpc=activeLine?.speakerId?(campaign.npcs||[]).find(npc=>npc.id===activeLine.speakerId):null;
+  const baseSpeaker=getCampaignNpc(campaign,beat?.speakerId);
+  const lineNpc=activeLine?.speakerId?getCampaignNpc(campaign,activeLine.speakerId):null;
   const linePlayer=activeLine?.playerId?players.find(player=>player.id===activeLine.playerId):null;
   const activeNpc=activeLine?.type==='npc-line'?lineNpc:null;
   const activePortrait=activeNpc?.portrait||(activeLine&&(activeLine.type==='player-action'||activeLine.type==='perception')?(activeLine.portrait||linePlayer?.portrait||''):baseSpeaker?.portrait||'');
-  const activeSpeakerName=activeLine?.characterName||activeNpc?.name||(activeLine?.type==='perception'?linePlayer?.characterName:'')||baseSpeaker?.name||'Narrador';
+  const activeSpeakerName=activeLine?.characterName||npcDisplayName(activeNpc)||(activeLine?.type==='perception'?linePlayer?.characterName:'')||npcDisplayName(baseSpeaker)||'Narrador';
   const activeSpeakerKey=activeLine?.id||baseSpeaker?.id||'narrator';
   const actor=document.querySelector('#scene-actor'),avatar=document.querySelector('#scene-avatar'),actorName=document.querySelector('#scene-speaker-name');
   if(activePortrait){
