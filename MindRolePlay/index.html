@@ -60,32 +60,37 @@
         </div>
       </section>
 
-      <section class="screen" id="screen-game">
-        <div class="game-topline"><button class="back" data-nav="home">← Sair</button><span id="game-room-code"></span><span id="game-player-count"></span></div>
+      <section class="screen story-screen" id="screen-game">
         <div class="game-layout">
-          <section class="scene-frame manga-frame">
+          <section class="scene-frame manga-frame" id="story-world">
             <div class="scene-background" id="scene-background"></div>
             <div class="scene-overlay"></div>
-            <img class="scene-avatar" id="scene-avatar" alt="">
-            <div class="scene-caption"><small id="scene-chapter">CENA 01</small><h1 id="scene-title">O começo</h1><p id="scene-description">A história aguarda o primeiro movimento.</p></div>
-          </section>
-          <section class="story-panel panel">
-            <div class="story-panel-heading"><div><small>DIÁRIO DA SESSÃO</small><h2 id="game-campaign-title">Campanha</h2></div><span class="ink-seal">M</span></div>
-            <div id="narrative-stage" class="narrative-stage" aria-live="polite"></div>
-            <div id="game-messages" class="game-messages" aria-live="polite"></div>
-            <section class="action-cycle" aria-live="polite">
-              <div><small id="action-cycle-label">RODADA 1</small><strong id="action-cycle-summary">Aguardando ações dos jogadores</strong></div>
-              <ul id="action-player-status" class="action-player-status"></ul>
-              <button id="advance-action-cycle" class="mini-button" type="button" disabled>Todos agiram · próxima rodada →</button>
+            <div class="game-topline"><button class="back" data-nav="home">← Sair</button><span id="game-room-code"></span><span id="game-player-count"></span></div>
+            <div class="story-panel-heading"><div><small id="scene-chapter">CENA 01</small><h2 id="game-campaign-title">As Sete Lanternas de Kagehama</h2></div><span class="ink-seal">M</span></div>
+            <div class="scene-caption"><h1 id="scene-title">O começo</h1><p id="scene-description">A história aguarda o primeiro movimento.</p></div>
+            <figure class="scene-actor hidden" id="scene-actor"><img class="scene-avatar" id="scene-avatar" alt=""><figcaption id="scene-speaker-name"></figcaption></figure>
+            <section class="story-panel" aria-label="Cena em andamento">
+              <div id="narrative-stage" class="narrative-stage" aria-live="polite"></div>
+              <article id="stage-dialogue" class="stage-dialogue" aria-live="polite">
+                <small id="dialogue-speaker">NARRADOR</small>
+                <p id="dialogue-text"></p>
+                <div class="dialogue-footer"><span id="dialogue-page-label"></span><button id="advance-narrative-beat" class="continue-button" type="button">Continuar →</button></div>
+              </article>
+              <div id="game-messages" class="game-messages" aria-live="polite"></div>
+              <section class="action-cycle" aria-live="polite">
+                <div><small id="action-cycle-label">QUADRO 1</small><strong id="action-cycle-summary">Aguardando</strong></div>
+                <ul id="action-player-status" class="action-player-status"></ul>
+                <button id="advance-action-cycle" class="mini-button hidden" type="button" disabled>Próxima rodada →</button>
+              </section>
+              <form id="message-form" class="message-form">
+                <label class="composer-prompt" for="message-input">Sua fala ou ação</label>
+                <textarea id="message-input" class="input textarea" rows="2" maxlength="800" placeholder="O que seu personagem diz ou faz?"></textarea>
+                <label class="field action-skill-field">Perícia<select id="action-skill" class="input"></select></label>
+                <div id="action-dice-stage" class="scene-dice-stage hidden"><div class="dice-row"><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div><output id="action-dice-result"></output></div>
+                <div class="action-submit-row"><button id="roll-action-test" type="button" class="button">🎲 Rolar 3d6</button><button type="submit" class="button primary">Dizer / agir →</button></div>
+              </form>
+              <p class="narrator-pending">A história e as falas ficam nesta tela; o histórico técnico permanece disponível para leitores de tela.</p>
             </section>
-            <form id="message-form" class="message-form">
-              <label for="message-input">O que você tenta fazer?</label>
-              <textarea id="message-input" class="input textarea" rows="3" maxlength="800" placeholder="O que seu personagem diz ou tenta fazer nesta rodada?"></textarea>
-              <label class="field action-skill-field">Perícia para o teste opcional<select id="action-skill" class="input"></select></label>
-              <div id="action-dice-stage" class="scene-dice-stage hidden"><div class="dice-row"><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div><output id="action-dice-result"></output></div>
-              <div class="action-submit-row"><button type="submit" class="button primary">Registrar sem teste →</button><button id="roll-action-test" type="button" class="button">Rolar 3d6 e registrar →</button></div>
-            </form>
-            <p class="narrator-pending">O anfitrião conduz o próximo quadro; ações e testes ficam sincronizados para toda a mesa. NPCs têm objetivos, segredos e reações definidos no arquivo.</p>
           </section>
         </div>
       </section>

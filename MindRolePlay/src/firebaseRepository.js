@@ -204,8 +204,8 @@ export async function startNarration(code, hostId, scene) {
       createdAt: Date.now() + index,
     }));
     const actionCycle = { number: 1, requiredPlayerIds: players.map(player => player.id), openedAt: Date.now(), status: 'collecting' };
-    transaction.update(roomRef, { status: 'narration', scene, sceneIndex: 0, beatIndex: 0, messages, actionCycle, startedAt: serverTimestamp(), updatedAt: serverTimestamp() });
-    return { ...room, status: 'narration', scene, sceneIndex: 0, beatIndex: 0, messages, actionCycle };
+    transaction.update(roomRef, { status: 'narration', scene, sceneIndex: 0, beatIndex: 0, dialoguePage: 0, displayMessageId: '', messages, actionCycle, startedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    return { ...room, status: 'narration', scene, sceneIndex: 0, beatIndex: 0, dialoguePage: 0, displayMessageId: '', messages, actionCycle };
   });
 }
 
@@ -214,21 +214,29 @@ export async function advanceNarrativeBeat(code, hostId, next) {
   const roomRef = doc(db, ROOMS, code.toUpperCase());
   return runTransaction(db, async transaction => {
     const snapshot = await transaction.get(roomRef);
-    if (!snapshot.exists()) throw new Error('Não encontrei a sala.');
+    if (!snapshot.exists()) throw new Error('Não encontrei uma sala.');
     const room = snapshot.data();
     if (room.hostId !== hostId) throw new Error('Somente o anfitrião pode avançar os quadros.');
     if (room.status !== 'narration') throw new Error('A narração ainda não começou.');
     const currentScene = room.scene || {}, beats = currentScene.beats || [];
     const currentBeat = Number(room.beatIndex || 0), sceneIndex = Number(room.sceneIndex || 0);
+    if (next.pageOnly) {
+      if (Number(next.sceneIndex) !== sceneIndex || Number(next.beatIndex) !== currentBeat || !next.scene || !Number.isInteger(Number(next.dialoguePage)) || Number(next.dialoguePage) !== Number(room.dialoguePage || 0) + 1) throw new Error('A fala mudou; atualize a cena e tente novamente.');
+      const pinnedId = String(next.displayMessageId || '');
+      if (pinnedId && !(room.messages || []).some(item => item.id === pinnedId)) throw new Error('A fala já não está no histórico da cena.');
+      transaction.update(roomRef, { dialoguePage: Number(next.dialoguePage), displayMessageId: pinnedId, updatedAt: serverTimestamp() });
+      return { ...room, dialoguePage: Number(next.dialoguePage), displayMessageId: pinnedId };
+    }
     const cycle = room.actionCycle || { number: 1, requiredPlayerIds: (room.players || []).map(player => player.id) };
+    const currentBeatData = beats[currentBeat] || {};
     const acted = new Set((room.messages || []).filter(item => item.type === 'player-action' && Number(item.cycle) === Number(cycle.number)).map(item => item.playerId));
-    if ((cycle.requiredPlayerIds || []).some(id => !acted.has(id))) throw new Error('Aguarde uma ação de cada jogador antes de avançar o quadro.');
+    if (currentBeatData.type === 'prompt' && (cycle.requiredPlayerIds || []).some(id => !acted.has(id))) throw new Error('Aguarde uma ação de cada jogador antes de avançar o quadro.');
     const expectedSceneIndex = currentBeat >= beats.length - 1 ? sceneIndex + 1 : sceneIndex;
     if (Number(next.sceneIndex) !== expectedSceneIndex || !next.scene || !Number.isInteger(Number(next.beatIndex))) throw new Error('O quadro mudou; atualize a sala e tente de novo.');
     const players = room.players || [];
     const actionCycle = { number: Number(room.actionCycle?.number || 1) + 1, requiredPlayerIds: players.map(player => player.id), openedAt: Date.now(), status: 'collecting' };
-    transaction.update(roomRef, { scene: next.scene, sceneIndex: Number(next.sceneIndex), beatIndex: Number(next.beatIndex), actionCycle, updatedAt: serverTimestamp() });
-    return { ...room, scene: next.scene, sceneIndex: Number(next.sceneIndex), beatIndex: Number(next.beatIndex), actionCycle };
+    transaction.update(roomRef, { scene: next.scene, sceneIndex: Number(next.sceneIndex), beatIndex: Number(next.beatIndex), dialoguePage: 0, displayMessageId: '', actionCycle, updatedAt: serverTimestamp() });
+    return { ...room, scene: next.scene, sceneIndex: Number(next.sceneIndex), beatIndex: Number(next.beatIndex), dialoguePage: 0, displayMessageId: '', actionCycle };
   });
 }
 
@@ -259,8 +267,8 @@ export async function postRoomMessage(code, message) {
     if (savedMessage.type === 'player-action') {
       const acted = new Set(messages.filter(item => item.type === 'player-action' && Number(item.cycle) === Number(actionCycle.number)).map(item => item.playerId));
       actionCycle = { ...actionCycle, status: actionCycle.requiredPlayerIds.every(id => acted.has(id)) ? 'complete' : 'collecting' };
-      transaction.update(roomRef, { messages, actionCycle, updatedAt: serverTimestamp() });
-    } else transaction.update(roomRef, { messages, updatedAt: serverTimestamp() });
+      transaction.update(roomRef, { messages, actionCycle, dialoguePage: 0, displayMessageId: savedMessage.id, updatedAt: serverTimestamp() });
+    } else transaction.update(roomRef, { messages, dialoguePage: 0, displayMessageId: savedMessage.id, updatedAt: serverTimestamp() });
     return messages;
   });
 }
