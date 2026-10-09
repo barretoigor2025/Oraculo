@@ -17,7 +17,7 @@ import {
 
 const STORE_KEY = 'mindRolePlay.demo.v1';
 const PLAYER_KEY = 'mindRolePlay.playerId';
-const KAGEHAMA_SCHEMA_VERSION = 12;
+const KAGEHAMA_SCHEMA_VERSION = 13;
 const canonicalNpcsByCampaign = new Map(createDemoCampaigns().map(item => [item.id, item.npcs || []]));
 const screens = [...document.querySelectorAll('.screen')];
 const toast = document.querySelector('#toast');
@@ -84,6 +84,22 @@ function migrateCharacters(characters, classes) {
   });
 }
 
+function mergeKagehamaScenes(seedScenes=[], savedScenes=[]){
+  const seedIds=new Set(seedScenes.map(scene=>scene.id));
+  return seedScenes.map(seed=>{
+    const saved=savedScenes.find(scene=>scene.id===seed.id);
+    if(!saved)return seed;
+    if(seed.id!=='kagehama-scene-0')return saved;
+    const lead=(seed.beats||[]).find(beat=>beat.id==='sayo-lead-to-shrine');
+    const hasLead=(saved.beats||[]).some(beat=>beat.id==='sayo-lead-to-shrine');
+    return {
+      ...saved,
+      ...(lead&&!hasLead?{beats:[...(saved.beats||[]),lead]}:{}),
+      presentNpcIds:[...new Set([...(saved.presentNpcIds||[]),'kagehama-npc-4'])]
+    };
+  }).concat(savedScenes.filter(scene=>!seedIds.has(scene.id)));
+}
+
 function needsKagehamaUpgrade(saved, seed) {
   if (Number(saved.schemaVersion || 1) < KAGEHAMA_SCHEMA_VERSION) return true;
   if ((saved.classes || []).length !== seed.classes.length) return true;
@@ -140,7 +156,7 @@ function localCampaigns() {
             ...sample, ...old, schemaVersion: KAGEHAMA_SCHEMA_VERSION,
             classes: sample.classes, art: sample.art, progression: sample.progression, artDirection: sample.artDirection,
             npcs: [...sample.npcs, ...(old.npcs || []).filter(item => !sample.npcs.some(seed => seed.id === item.id))],
-            scenes: [...sample.scenes, ...(old.scenes || []).filter(item => !sample.scenes.some(seed => seed.id === item.id))],
+            scenes: mergeKagehamaScenes(sample.scenes, old.scenes || []),
             progressionLog: old.progressionLog || [], characters: migrateCharacters(old.characters, sample.classes),
             checklist: [...sample.checklist, ...(old.checklist || []).filter(item => !sample.checklist.some(seed => seed.id === item.id))],
           };
@@ -1085,7 +1101,7 @@ async function boot() {
         classes: kagehamaSeed.classes, art: kagehamaSeed.art, progression: kagehamaSeed.progression, artDirection: kagehamaSeed.artDirection, bestiary: kagehamaSeed.bestiary, relics: kagehamaSeed.relics,
         story: kagehamaSeed.story, npcBehaviorModel: kagehamaSeed.npcBehaviorModel,
         npcs: [...kagehamaSeed.npcs, ...(saved.npcs || []).filter(item => !kagehamaSeed.npcs.some(seed => seed.id === item.id))],
-        scenes: [...kagehamaSeed.scenes, ...(saved.scenes || []).filter(item => !kagehamaSeed.scenes.some(seed => seed.id === item.id))],
+        scenes: mergeKagehamaScenes(kagehamaSeed.scenes, saved.scenes || []),
         characters: migrateCharacters(saved.characters, kagehamaSeed.classes), progressionLog: saved.progressionLog || [],
         checklist: [...kagehamaSeed.checklist, ...(saved.checklist || []).filter(item => !seededChecklistIds.has(item.id))],
       };
