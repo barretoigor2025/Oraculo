@@ -444,77 +444,77 @@ export const KAGEHAMA_CAMPAIGN = {
       "id": "artcheck-ronin-female",
       "title": "Criar avatar feminino · Rōnin de vanguarda",
       "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/ronin/ronin_feminino.png",
-      "done": false,
+      "done": true,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-samurai-male",
       "title": "Criar avatar masculino · Samurai juramentado",
       "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/samurai/samurai_masculino.png",
-      "done": false,
+      "done": true,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-samurai-female",
       "title": "Criar avatar feminino · Samurai juramentado",
       "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/samurai/samurai_feminino.png",
-      "done": false,
+      "done": true,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-kyudoka-male",
       "title": "Criar avatar masculino · Kyūdōka",
       "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/kyudoka/kyudoka_masculino.png",
-      "done": false,
+      "done": true,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-kyudoka-female",
       "title": "Criar avatar feminino · Kyūdōka",
       "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/kyudoka/kyudoka_feminino.png",
-      "done": false,
+      "done": true,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-shinobi-male",
       "title": "Criar avatar masculino · Shinobi",
       "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/shinobi/shinobi_masculino.png",
-      "done": false,
+      "done": true,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-shinobi-female",
       "title": "Criar avatar feminino · Shinobi",
       "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/shinobi/shinobi_feminino.png",
-      "done": false,
+      "done": true,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-onmyoji-male",
       "title": "Criar avatar masculino · Onmyōji elemental",
       "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/onmyoji/onmyoji_masculino.png",
-      "done": false,
+      "done": true,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-onmyoji-female",
       "title": "Criar avatar feminino · Onmyōji elemental",
       "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/onmyoji/onmyoji_feminino.png",
-      "done": false,
+      "done": true,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-miko-male",
       "title": "Criar avatar masculino · Miko yamabushi",
       "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/miko/miko_masculino.png",
-      "done": false,
+      "done": true,
       "category": "Arte das classes"
     },
     {
       "id": "artcheck-miko-female",
       "title": "Criar avatar feminino · Miko yamabushi",
       "description": "Recorte transparente vertical em mangá preto e branco. Arquivo-alvo: assets/campaigns/kagehama/classes/miko/miko_feminino.png",
-      "done": false,
+      "done": true,
       "category": "Arte das classes"
     },
     {

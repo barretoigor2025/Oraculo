@@ -239,6 +239,12 @@ export async function postRoomMessage(code, message) {
     const snapshot = await transaction.get(roomRef);
     if (!snapshot.exists()) throw new Error('Não encontrei a sala.');
     const room = snapshot.data();
+    if (message.type === 'perception') {
+      if (room.status !== 'narration') throw new Error('A narração ainda não começou.');
+      if (!(room.players || []).some(player => player.id === message.playerId)) throw new Error('Este jogador não está nesta sala.');
+      if (message.sceneId !== room.scene?.id) throw new Error('A cena mudou. Atualize a tela antes de testar Percepção.');
+      if ((room.messages || []).some(item => item.type === 'perception' && item.sceneId === message.sceneId && item.playerId === message.playerId)) throw new Error('Você já testou Percepção nesta cena.');
+    }
     let savedMessage = message;
     let actionCycle = room.actionCycle || { number: 1, requiredPlayerIds: (room.players || []).map(player => player.id), status: 'collecting' };
     if (message.type === 'player-action') {

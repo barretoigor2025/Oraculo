@@ -819,6 +819,7 @@ document.querySelector('#lobby-campaign')?.addEventListener('change', renderLobb
 document.querySelector('#test-skill').addEventListener('change', updateTestFactors);
 document.querySelector('#roll-button').addEventListener('click', performTest);
 document.querySelector('#open-test').addEventListener('click', () => openTest());
+document.querySelector('#launch-story').addEventListener('click', () => openCharacterBuilder(currentCampaignId));
 
 document.querySelector('#class-select').addEventListener('change',event=>{selectedClassId=event.target.value;renderClassDetails();});
 document.querySelector('#prev-class')?.addEventListener('click',()=>cycleClass(-1));
