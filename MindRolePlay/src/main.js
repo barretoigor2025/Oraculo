@@ -745,7 +745,7 @@ function renderGame(room){
   document.querySelector('#scene-chapter').textContent=(scene.chapter||('CAPÍTULO '+String(sceneIndex+1).padStart(2,'0')))+' · QUADRO '+(beatIndex+1)+'/'+beats.length;
   document.querySelector('#scene-background').style.backgroundImage=scene.image?'url("'+scene.image+'")':'';
   const messages=room.messages||[],cycle=room.actionCycle||{number:1,requiredPlayerIds:players.map(player=>player.id),status:'collecting'},required=cycle.requiredPlayerIds?.length?cycle.requiredPlayerIds:players.map(player=>player.id);
-  const cycleActions=messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)),actedIds=new Set(cycleActions.map(item=>item.playerId));
+  const cycleActions=messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)),actedIds=new Set(cycleActions.map(item=>item.playerId)),cycleModeByPlayer=new Map(cycleActions.map(item=>[item.playerId,item.mode||'action']));
   const actedCount=required.filter(id=>actedIds.has(id)).length,allActed=required.length>0&&actedCount===required.length;
   const isPrompt=beat?.type==='prompt';
   const currentEvents=messages.filter(item=>{
@@ -774,9 +774,11 @@ function renderGame(room){
   }else{actor.classList.add('hidden');actor.dataset.speakerKey='';}
   const lineText=dialogueTextFor(activeLine,beat,scene);
   const dialoguePage=Number(room.dialoguePage||0),pages=dialoguePages(lineText),pageIndex=Math.min(dialoguePage,pages.length-1);
-  document.querySelector('#dialogue-speaker').textContent=(activeSpeakerName||'Narrador').toLocaleUpperCase('pt-BR')+(activeLine?.type==='player-action'?(activeLine.mode==='speech'?' · SUA FALA':' · SUA AÇÃO'):activeLine?.type==='npc-line'?' · EM CENA':activeLine?.type==='perception'?(activeLine.success?' · PISTA ENCONTRADA':' · NADA PERCEBIDO'):'');
+  document.querySelector('#dialogue-speaker').textContent=(activeSpeakerName||'Narrador').toLocaleUpperCase('pt-BR')+(activeLine?.type==='player-action'?(activeLine.mode==='speech'?' · SUA FALA':activeLine.mode==='action'?' · TESTE '+(activeLine.success?'SUCESSO':'FALHA'):' · SUA AÇÃO'):activeLine?.type==='npc-line'?' · EM CENA':activeLine?.type==='perception'?(activeLine.success?' · PISTA ENCONTRADA':' · NADA PERCEBIDO'):'');
   document.querySelector('#dialogue-text').textContent=pages[pageIndex];
-  document.querySelector('#dialogue-page-label').textContent=pages.length>1?('FALA '+(pageIndex+1)+'/'+pages.length):'';
+  const pageLabel=pages.length>1?((activeLine?.mode==='action'?'PÁGINA ':'FALA ')+(pageIndex+1)+'/'+pages.length):'';
+  const rollSummary=activeLine?.mode==='action'&&Array.isArray(activeLine.dice)?('3d6 · '+activeLine.dice.join(' + ')+' = '+activeLine.total+' · '+(activeLine.success?'SUCESSO':'FALHA')):'';
+  document.querySelector('#dialogue-page-label').textContent=[pageLabel,rollSummary].filter(Boolean).join(' · ');
   const nextBeat=document.querySelector('#advance-narrative-beat');
   nextBeat.textContent=pageIndex<pages.length-1?'Continuar fala →':beatIndex<beats.length-1?'Próximo quadro →':sceneIndex<campaign.scenes.length-1?'Próximo capítulo →':'Fechar crônica';
   nextBeat.disabled=room.status!=='narration'||room.hostId!==localPlayerId()||(isPrompt&&!allActed);
@@ -798,7 +800,7 @@ function renderGame(room){
   }).join(''):'';
   document.querySelector('#action-cycle-label').textContent=isPrompt?'AÇÃO DO GRUPO · RODADA '+cycle.number:'NARRAÇÃO · QUADRO '+(beatIndex+1);
   document.querySelector('#action-cycle-summary').textContent=!isPrompt?'O anfitrião avança o diálogo.':allActed?'Todos responderam.':'Faltam '+(required.length-actedCount)+' jogador(es).';
-  document.querySelector('#action-player-status').innerHTML=players.map(player=>'<li class="'+(actedIds.has(player.id)?'acted':'waiting')+'"><span></span>'+escapeHtml(player.characterName||player.name||'Jogador')+' · '+(actedIds.has(player.id)?'FALOU':'AGUARDA')+'</li>').join('');
+  document.querySelector('#action-player-status').innerHTML=players.map(player=>'<li class="'+(actedIds.has(player.id)?'acted':'waiting')+'"><span></span>'+escapeHtml(player.characterName||player.name||'Jogador')+' · '+(actedIds.has(player.id)?(cycleModeByPlayer.get(player.id)==='speech'?'FALOU':'AGIU'):'AGUARDA')+'</li>').join('');
   const me=players.find(player=>player.id===localPlayerId()),canSubmit=!!(room.status==='narration'&&isPrompt&&me&&required.includes(me.id)&&!actedIds.has(me.id)),input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]');
   const turnKey=canSubmit?[room.code,scene.id,beatIndex,cycle.number,me.id].join(':'):'';
   if(turnKey!==activeComposerTurnKey){activeComposerTurnKey=turnKey;selectedTurnMode='';}
