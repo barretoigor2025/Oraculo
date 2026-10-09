@@ -16,7 +16,7 @@ import {
 
 const STORE_KEY = 'mindRolePlay.demo.v1';
 const PLAYER_KEY = 'mindRolePlay.playerId';
-const KAGEHAMA_SCHEMA_VERSION = 9;
+const KAGEHAMA_SCHEMA_VERSION = 10;
 const screens = [...document.querySelectorAll('.screen')];
 const toast = document.querySelector('#toast');
 const storageLabel = document.querySelector('#storage-label');
@@ -778,6 +778,7 @@ async function boot() {
       const upgraded = {
         ...kagehamaSeed, ...saved, schemaVersion: KAGEHAMA_SCHEMA_VERSION,
         classes: kagehamaSeed.classes, art: kagehamaSeed.art, progression: kagehamaSeed.progression, artDirection: kagehamaSeed.artDirection,
+        story: kagehamaSeed.story, npcBehaviorModel: kagehamaSeed.npcBehaviorModel,
         npcs: [...kagehamaSeed.npcs, ...(saved.npcs || []).filter(item => !kagehamaSeed.npcs.some(seed => seed.id === item.id))],
         scenes: [...kagehamaSeed.scenes, ...(saved.scenes || []).filter(item => !kagehamaSeed.scenes.some(seed => seed.id === item.id))],
         characters: migrateCharacters(saved.characters, kagehamaSeed.classes), progressionLog: saved.progressionLog || [],
