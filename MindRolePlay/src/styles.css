@@ -419,7 +419,7 @@ body:has(#screen-game.active) main{width:100%;max-width:none;height:100dvh;margi
 }
 
 /* Palco de fala e personagem: sprite íntegro, opaco e ancorado na margem. */
-#screen-game .scene-actor{z-index:5;bottom:clamp(210px,25vh,250px);width:min(27vw,330px);height:min(42vh,440px);filter:none;mix-blend-mode:normal}
+#screen-game .scene-actor{z-index:5;bottom:calc(100svh - var(--actor-ground-y, 76svh));width:min(25vw,255px);height:min(36svh,350px);filter:none;mix-blend-mode:normal}
 #screen-game .scene-actor[data-side="left"]{left:clamp(-64px,-5vw,-24px)}
 #screen-game .scene-actor[data-side="right"]{right:clamp(-64px,-5vw,-24px)}
 #screen-game .scene-avatar{filter:url(#opaque-manga-alpha) drop-shadow(0 3px 8px #080705a6)}
@@ -443,7 +443,7 @@ body:has(#screen-game.active) main{width:100%;max-width:none;height:100dvh;margi
 #screen-game .action-submit-row{grid-area:actions;display:flex;gap:5px}
 #screen-game #roll-action-test[hidden]{display:none!important}
 @media(max-width:720px){
- #screen-game .scene-actor{bottom:clamp(230px,25vh,330px);width:min(45vw,230px);height:36vh}
+ #screen-game .scene-actor{bottom:calc(100svh - var(--actor-ground-y, 76svh));width:min(36vw,210px);height:min(30svh,255px)}
  #screen-game .scene-actor[data-side="left"]{left:clamp(-44px,-7vw,-24px)}
  #screen-game .scene-actor[data-side="right"]{right:clamp(-44px,-7vw,-24px)}
  #screen-game .stage-dialogue{top:clamp(130px,16vh,190px);left:9px;right:9px;max-height:19vh;padding:9px 11px 7px}
