@@ -106,8 +106,31 @@
               </form>
               <dialog id="travel-dialog" class="travel-dialog" aria-labelledby="travel-dialog-title">
                 <header class="travel-dialog-heading"><div><small>MAPA DE KAGEHAMA · DESLOCAMENTO</small><h2 id="travel-dialog-title">Escolham o próximo caminho</h2></div><button id="close-travel-dialog" type="button" aria-label="Fechar mapa">×</button></header>
-                <div class="travel-map-strip"><span id="travel-origin">LOCAL ATUAL</span><i aria-hidden="true">→</i><strong id="travel-destination">DESTINO REVELADO</strong></div>
-                <p id="travel-destination-context" class="travel-destination-context"></p>
+                <div class="world-map-board" aria-label="Mapa-múndi de Kagehama">
+                  <svg class="world-map-art" viewBox="0 0 1000 620" role="img" aria-label="Mapa ilustrado da região de Kagehama">
+                    <defs>
+                      <pattern id="map-paper-grain" width="38" height="38" patternUnits="userSpaceOnUse"><circle cx="4" cy="8" r="1" fill="#514b3f" opacity=".15"/><circle cx="27" cy="26" r=".8" fill="#514b3f" opacity=".12"/><path d="M10 31l8-2" stroke="#514b3f" stroke-width=".7" opacity=".12"/></pattern>
+                      <pattern id="map-forest-hatch" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M0 14L7 0l7 14" fill="none" stroke="#343c2c" stroke-width="1" opacity=".28"/></pattern>
+                    </defs>
+                    <rect width="1000" height="620" fill="#e9dfc7"/>
+                    <rect width="1000" height="620" fill="url(#map-paper-grain)"/>
+                    <path class="map-coast" d="M72 350l36-94 74-28 32-91 111-39 59-71 108 30 57-12 49 54 95 5 57 70 104 23 49 91-16 75 44 70-55 64-90 20-39 68-87 22-70-31-82 32-100-34-76 13-82-42-93 11-70-40-85 10-54-57z"/>
+                    <path class="map-waterway" d="M147 388c98-34 113-89 202-103s122 48 211 25 116-96 245-70 93 102 111 157"/>
+                    <path class="map-forest" d="M344 154l35-67 55 8 33 55-19 55-64 12zM514 221l35-57 67 13 20 52-35 38-66-7zM210 300l37-56 59 14 21 48-36 37-64-8z"/>
+                    <path class="map-ridge" d="M434 121l45-87 39 77 56-91 45 96M589 137l51-78 39 89 55-63 44 82"/>
+                    <path class="map-road-locked" d="M148 471L285 403L412 477L548 347L825 428L786 291L866 304L443 236L285 353L353 140L520 149L708 211L855 136"/>
+                    <path id="world-route-known" class="map-road-known" d=""/><path id="world-route-selected" class="map-road-selected" d=""/>
+                    <text class="map-region-label" x="460" y="300">PROVÍNCIA DE AKITSURU</text>
+                    <text class="map-water-label" x="748" y="550">MAR DAS SETE LANTERNAS</text>
+                    <text class="map-compass" x="916" y="92">北</text><path class="map-compass-line" d="M926 105v38m-8-9 8 9 8-9"/>
+                    <g class="map-pine-mark" transform="translate(265 340)"><path d="M0 20L12 0l12 20zm4 10L12 10l14 20zm3 8l5-13 7 13z"/></g>
+                    <g class="map-pine-mark" transform="translate(565 183)"><path d="M0 20L12 0l12 20zm4 10L12 10l14 20zm3 8l5-13 7 13z"/></g>
+                    <path class="map-bridge-mark" d="M103 487q46-36 92 0m-46-34v36"/>
+                  </svg>
+                  <div id="world-map-nodes" class="world-map-nodes"></div>
+                  <div class="world-map-stamp">KAGEHAMA<br><small>道 · CAMINHOS CONHECIDOS</small></div>
+                </div>
+                <div class="world-map-selection" aria-live="polite"><span id="travel-origin">LOCAL ATUAL</span><i aria-hidden="true">→</i><strong id="travel-destination">ESCOLHA UM DESTINO</strong><p id="travel-destination-context" class="travel-destination-context"></p></div>
                 <div class="travel-route-options" role="group" aria-label="Escolha a rota">
                   <button type="button" class="travel-route selected" data-route="road" aria-pressed="true"><b>Estrada principal</b><span>Mais lenta e vigiada. Emboscada se 3d6 ≥ 16 (4,6%).</span><small>RISCO BAIXO</small></button>
                   <button type="button" class="travel-route" data-route="forest" aria-pressed="false"><b>Atalho pela mata</b><span>Mais rápido, terreno fechado. Emboscada se 3d6 ≥ 12 (37,5%).</span><small>RISCO ALTO</small></button>

@@ -784,7 +784,7 @@ function renderGame(room){
     const side=[...activeSpeakerKey].reduce((sum,char)=>sum+char.charCodeAt(0),0)%2?'right':'left';
     const changed=actor.dataset.speakerKey!==activeSpeakerKey;
     actor.classList.remove('hidden','enter-from-left','enter-from-right');
-    actor.dataset.side=side;avatar.dataset.side=side;avatar.src=activePortrait;avatar.alt=activeSpeakerName;
+    actor.dataset.side=side;actor.dataset.sceneId=scene.id||'';actor.style.setProperty('--actor-ground',scene.id==='kagehama-scene-0'?'12vh':['kagehama-scene-1','kagehama-scene-8'].includes(scene.id)?'9vh':['kagehama-scene-2','kagehama-scene-6'].includes(scene.id)?'14vh':'8vh');avatar.dataset.side=side;avatar.src=activePortrait;avatar.alt=activeSpeakerName;
     actorName.textContent=activeSpeakerName;actor.dataset.speakerKey=activeSpeakerKey;
     if(changed){actor.classList.add(side==='right'?'enter-from-right':'enter-from-left');}
   }else{actor.classList.add('hidden');actor.dataset.speakerKey='';}
@@ -882,23 +882,72 @@ const TRAVEL_ROUTES={
   forest:{name:'Atalho pela mata',threshold:12,text:'O atalho corta a mata por uma trilha estreita. Os galhos abafam os passos e também escondem quem espera adiante.'},
   river:{name:'Rota fluvial',threshold:14,text:'A rota fluvial segue entre margens escuras. O barco precisa passar sob as pontes antes que a patrulha troque de turno.'}
 };
-let selectedTravelRoute='road';
+const KAGEHAMA_MAP_SPOTS=[
+  {x:14.8,y:76,icon:'橋',ground:'shore'},
+  {x:28.5,y:65,icon:'⛩',ground:'steps'},
+  {x:41.2,y:77,icon:'▤',ground:'stone'},
+  {x:54.8,y:56,icon:'森',ground:'earth'},
+  {x:82.5,y:69,icon:'村',ground:'earth'},
+  {x:78.6,y:47,icon:'城',ground:'stone'},
+  {x:86.6,y:49,icon:'⚓',ground:'dock'},
+  {x:44.3,y:38,icon:'茶',ground:'floor'},
+  {x:28.5,y:57,icon:'⛩',ground:'steps'},
+  {x:35.3,y:22.5,icon:'山',ground:'earth'},
+  {x:52,y:24,icon:'御',ground:'floor'},
+  {x:70.8,y:34,icon:'織',ground:'floor'},
+  {x:85.5,y:22,icon:'殿',ground:'floor'}
+];
+let selectedTravelRoute='road',selectedTravelDestinationIndex=-1;
+function mapPathThrough(index){
+  return KAGEHAMA_MAP_SPOTS.slice(0,Math.max(1,index+1)).map((spot,i)=>(i?'L':'M')+' '+(spot.x*10)+' '+(spot.y*6.2)).join(' ');
+}
+function mapPathBetween(from,to){
+  const direction=from<=to?1:-1,indices=[];for(let index=from;;index+=direction){indices.push(index);if(index===to)break;}
+  return indices.map((index,i)=>{const spot=KAGEHAMA_MAP_SPOTS[index];return spot?(i?'L':'M')+' '+(spot.x*10)+' '+(spot.y*6.2):'';}).filter(Boolean).join(' ');
+}
+function selectWorldDestination(index){
+  const campaign=campaigns.find(item=>item.id===liveRoom?.campaignId)||currentCampaign(),sceneIndex=Number(liveRoom?.sceneIndex||0),destination=campaign?.scenes?.[index];
+  if(!destination||index===sceneIndex||index>sceneIndex+1)return;
+  selectedTravelDestinationIndex=index;
+  document.querySelectorAll('.world-map-node').forEach(node=>{const selected=Number(node.dataset.sceneIndex)===index;node.classList.toggle('selected',selected);node.setAttribute('aria-pressed',String(selected));});
+  const currentIndex=Number(liveRoom.sceneIndex||0);
+  document.querySelector('#world-route-known').setAttribute('d',mapPathThrough(currentIndex));
+  document.querySelector('#world-route-selected').setAttribute('d',mapPathBetween(currentIndex,index));
+  document.querySelector('#travel-origin').textContent=(liveRoom.scene?.title||campaign.scenes[sceneIndex]?.title||'LOCAL ATUAL').toLocaleUpperCase('pt-BR');
+  document.querySelector('#travel-destination').textContent=(destination.title||'DESTINO').toLocaleUpperCase('pt-BR');
+  document.querySelector('#travel-destination-context').textContent=index<=sceneIndex?'Local já visitado. Vocês podem voltar por uma rota conhecida.':'Pista descoberta: este é o próximo local alcançável. Toque em outro ponto claro para rever uma visita anterior.';
+}
+function renderWorldMap(campaign,sceneIndex,selectedIndex){
+  const nodes=document.querySelector('#world-map-nodes');if(!nodes)return;
+  nodes.innerHTML=(campaign.scenes||[]).map((scene,index)=>{
+    const spot=KAGEHAMA_MAP_SPOTS[index]||{x:50,y:50,icon:'•'},visited=index<sceneIndex,available=index===sceneIndex+1,current=index===sceneIndex,locked=index>sceneIndex+1,selected=index===selectedIndex;
+    const label=locked?'Local ainda desconhecido: não há pista para chegar até lá.':(scene.title||'Local');
+    return '<button type="button" class="world-map-node '+(visited?'visited ':'')+(available?'available ':'')+(current?'current ':'')+(locked?'locked ':'')+(selected?'selected':'')+'" data-scene-index="'+index+'" style="--map-x:'+spot.x+'%;--map-y:'+spot.y+'%" aria-label="'+escapeAttr(label)+'" aria-pressed="'+selected+'" '+(locked||current?'disabled':'')+'><span class="map-node-icon">'+(locked?'?':visited?'✓':spot.icon)+'</span><small>'+(index===0?'P':String(index+1).padStart(2,'0'))+'</small></button>';
+  }).join('');
+  document.querySelector('#world-route-known').setAttribute('d',mapPathThrough(sceneIndex));
+  document.querySelector('#world-route-selected').setAttribute('d',mapPathBetween(sceneIndex,selectedIndex>=0?selectedIndex:sceneIndex));
+  nodes.querySelectorAll('.world-map-node:not(:disabled)').forEach(node=>node.addEventListener('click',()=>selectWorldDestination(Number(node.dataset.sceneIndex))));
+}
+
 function openTravelMap(campaign=currentCampaign(),origin=liveRoom?.scene,destination=campaign?.scenes?.[Number(liveRoom?.sceneIndex||0)+1]){
   if(!liveRoom||liveRoom.hostId!==localPlayerId()||!destination)return;
-  const beat=origin?.beats?.[Number(liveRoom.beatIndex||0)],cycle=liveRoom.actionCycle||{},players=liveRoom.players||[],acted=new Set((liveRoom.messages||[]).filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
+  const beat=origin?.beats?.[Number(liveRoom.beatIndex||0)],cycle=liveRoom.actionCycle||{},acted=new Set((liveRoom.messages||[]).filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
   if(Number(liveRoom.beatIndex||0)!==(origin?.beats?.length||1)-1||(beat?.type==='prompt'&&(cycle.requiredPlayerIds||[]).some(id=>!acted.has(id))))return notice('Terminem as falas deste quadro antes de escolher uma rota.');
-  document.querySelector('#travel-origin').textContent=(origin?.title||'LOCAL ATUAL').toLocaleUpperCase('pt-BR');
-  document.querySelector('#travel-destination').textContent=(destination.title||'DESTINO REVELADO').toLocaleUpperCase('pt-BR');
-  document.querySelector('#travel-destination-context').textContent='A próxima pista confirmada leva a este local. Os demais pontos permanecem fechados até o grupo descobrir como alcançá-los.';
+  selectedTravelDestinationIndex=Number(liveRoom.sceneIndex||0)+1;
   selectedTravelRoute='road';
   document.querySelectorAll('.travel-route').forEach(button=>{const selected=button.dataset.route===selectedTravelRoute;button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));});
+  document.querySelector('#world-route-known').setAttribute('d',mapPathThrough(Number(liveRoom.sceneIndex||0)));
+  renderWorldMap(campaign,Number(liveRoom.sceneIndex||0),selectedTravelDestinationIndex);
+  document.querySelector('#travel-origin').textContent=(origin?.title||'LOCAL ATUAL').toLocaleUpperCase('pt-BR');
+  document.querySelector('#travel-destination').textContent=(destination.title||'DESTINO REVELADO').toLocaleUpperCase('pt-BR');
+  document.querySelector('#travel-destination-context').textContent='A pista da cena abriu este destino. Os outros pontos permanecem cobertos até o grupo descobrir como chegar.';
   document.querySelector('#travel-countdown').classList.add('hidden');
   const dialog=document.querySelector('#travel-dialog');if(!dialog.open)dialog.showModal();
 }
 function closeTurnComposer(){const dialog=document.querySelector('#turn-composer');if(dialog.open)dialog.close();}
 async function confirmTravel(){
   if(!liveRoom||liveRoom.hostId!==localPlayerId())return;
-  const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign(),scene=liveRoom.scene||campaign?.scenes?.[Number(liveRoom.sceneIndex||0)],sceneIndex=Number(liveRoom.sceneIndex||0),destination=campaign?.scenes?.[sceneIndex+1],route=TRAVEL_ROUTES[selectedTravelRoute];
+  const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign(),scene=liveRoom.scene||campaign?.scenes?.[Number(liveRoom.sceneIndex||0)],sceneIndex=Number(liveRoom.sceneIndex||0),targetSceneIndex=selectedTravelDestinationIndex>=0?selectedTravelDestinationIndex:sceneIndex+1,destination=campaign?.scenes?.[targetSceneIndex],route=TRAVEL_ROUTES[selectedTravelRoute];
   if(!destination||!route)return notice('Não há um destino descoberto nesta direção.');
   const dialog=document.querySelector('#travel-dialog'),confirm=document.querySelector('#confirm-travel'),countdown=document.querySelector('#travel-countdown');
   confirm.disabled=true;countdown.classList.remove('hidden');
@@ -916,7 +965,7 @@ async function confirmTravel(){
     beats:[{type:'narration',text:travelText},...(ambush?[{type:'prompt',text:'Batedores mascarados saltam da margem e tentam separar quem protege a retaguarda. Cada personagem decide: enfrentar, distrair, proteger um aliado ou romper o cerco. Descrevam uma fala ou ação; ações podem exigir teste 3d6.'}]:[])],
     presentNpcIds:ambush?(scene.presentNpcIds||[]):[]
   };
-  const travelState={phase:'in-transit',targetSceneIndex:sceneIndex+1,destinationSceneId:destination.id,routeId:selectedTravelRoute,encounter:ambush,dice,total};
+  const travelState={phase:'in-transit',targetSceneIndex,destinationSceneId:destination.id,routeId:selectedTravelRoute,encounter:ambush,dice,total};
   const next={sceneIndex,beatIndex:0,scene:travelScene,travelStart:true,travelState,dialoguePage:0,displayMessageId:''};
   try{
     if(firebaseMode){const room=await advanceNarrativeBeatRemote(liveRoom.code,localPlayerId(),next);renderGame(room);}
