@@ -923,11 +923,22 @@ function renderGame(room){
 }
 async function advanceNarrativeBeat(){
   if(!liveRoom||liveRoom.hostId!==localPlayerId())return;
-  const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign(),scenes=campaign?.scenes||[],sceneIndex=Number(liveRoom.sceneIndex||0),scene=liveRoom.scene||scenes[sceneIndex],beatIndex=Number(liveRoom.beatIndex||0),beats=scene?.beats||[],beat=beats[beatIndex]||{};
-  const cycle=liveRoom.actionCycle||{number:1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id)},messages=liveRoom.messages||[];
-  const events=messages.filter(item=>Number(item.cycle||cycle.number)===Number(cycle.number)&&['player-action','npc-line','perception'].includes(item.type)&&(item.type!=='perception'||item.sceneId===scene.id&&Number(item.beatIndex??beatIndex)===beatIndex));
+  const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign();
+  const scenes=campaign?.scenes||[];
+  const sceneIndex=Number(liveRoom.sceneIndex||0);
+  const scene=liveRoom.scene||scenes[sceneIndex];
+  const beatIndex=Number(liveRoom.beatIndex||0);
+  const beat=(scene?.beats||[])[beatIndex]||{};
+  const cycle=liveRoom.actionCycle||{number:1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id)};
+  const messages=liveRoom.messages||[];
+  const events=messages.filter(item=>
+    Number(item.cycle||cycle.number)===Number(cycle.number)
+    && ['player-action','npc-line','narrator-line','perception'].includes(item.type)
+    && (item.type!=='perception'||item.sceneId===scene?.id&&Number(item.beatIndex??beatIndex)===beatIndex)
+  );
   const active=liveRoom.displayMessageId?messages.find(item=>item.id===liveRoom.displayMessageId):events.at(-1)||null;
-  const text=dialogueTextFor(active,beat,scene),pages=dialoguePages(text),page=Number(liveRoom.dialoguePage||0);
+  const pages=dialoguePages(dialogueTextFor(active,beat,scene));
+  const page=Number(liveRoom.dialoguePage||0);
   try{
     if(page<pages.length-1){
       const next={sceneIndex,beatIndex,scene,dialoguePage:page+1,displayMessageId:active?.id||'',pageOnly:true};
@@ -935,37 +946,21 @@ async function advanceNarrativeBeat(){
       else{liveRoom={...liveRoom,dialoguePage:next.dialoguePage,displayMessageId:next.displayMessageId};renderGame(liveRoom);}
       return;
     }
+    const required=cycle.requiredPlayerIds||[];
     const acted=new Set(messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
-    if((cycle.requiredPlayerIds||[]).some(id=>!acted.has(id)))return notice('Aguarde uma fala ou ação de cada jogador antes da resposta da IA.');
+    if(!required.length||!required.every(id=>acted.has(id)))return notice('Aguarde uma fala ou ação de cada jogador; a cena continua neste local.');
     const hasResponse=messages.some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(cycle.number));
     if(!hasResponse)return generateNarrativeResponse();
     if(liveRoom.travelState?.phase==='in-transit'){
-      const destination=scenes[Number(liveRoom.travelState.targetSceneIndex)];
-      if(!destination)return notice('O destino da viagem não está disponível no roteiro.');
-      const arrival={sceneIndex:Number(liveRoom.travelState.targetSceneIndex),beatIndex:0,scene:destination,dialoguePage:0,displayMessageId:''};
-      if(firebaseMode){const room=await advanceNarrativeBeatRemote(liveRoom.code,localPlayerId(),{...arrival,clearTravelState:true});renderGame(room);}
+      const destinationIndex=Number(liveRoom.travelState.targetSceneIndex);
+      const destination=scenes[destinationIndex];
+      if(!destination)return notice('O destino desta viagem não está disponível no roteiro.');
+      const arrival={sceneIndex:destinationIndex,beatIndex:0,scene:destination,dialoguePage:0,displayMessageId:'',clearTravelState:true};
+      if(firebaseMode){const room=await advanceNarrativeBeatRemote(liveRoom.code,localPlayerId(),arrival);renderGame(room);}
       else{liveRoom={...liveRoom,...arrival,travelState:null,actionCycle:{number:Number(cycle.number)+1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),openedAt:Date.now(),status:'collecting'}};renderGame(liveRoom);}
       return;
     }
     return advanceActionRound();
-    let next;
-    if(beatIndex<beats.length-1){
-      next={sceneIndex,beatIndex:beatIndex+1,scene};
-    }else if(liveRoom.travelState?.phase==='in-transit'){
-      const destinationIndex=Number(liveRoom.travelState.targetSceneIndex),destination=scenes[destinationIndex];
-      if(!destination)return notice('O destino da viagem não está disponível no roteiro.');
-      next={sceneIndex:destinationIndex,beatIndex:0,scene:destination,clearTravelState:true};
-    }else if(sceneIndex<scenes.length-1){
-      openTravelMap(campaign,scene,scenes[sceneIndex+1]);
-      return;
-    }else{
-      return notice('A crônica chegou ao último capítulo.');
-    }
-    next.dialoguePage=0;next.displayMessageId='';
-    if(firebaseMode){const room=await advanceNarrativeBeatRemote(liveRoom.code,localPlayerId(),next);renderGame(room);}
-    else{
-      liveRoom={...liveRoom,...next,travelState:next.clearTravelState?null:(next.travelState||liveRoom.travelState||null),actionCycle:{number:Number(liveRoom.actionCycle?.number||1)+1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),openedAt:Date.now(),status:'collecting'}};
-      renderGame(liveRoom);notice(next.clearTravelState?'O grupo chegou ao destino.':'Próximo quadro.');}
   }catch(error){notice(error.message||'Não foi possível avançar a narração.');}
 }
 const TRAVEL_ROUTES={
@@ -1023,7 +1018,10 @@ function renderWorldMap(campaign,sceneIndex,selectedIndex){
 function openTravelMap(campaign=currentCampaign(),origin=liveRoom?.scene,destination=campaign?.scenes?.[Number(liveRoom?.sceneIndex||0)+1]){
   if(!liveRoom||liveRoom.hostId!==localPlayerId()||!destination)return;
   const beat=origin?.beats?.[Number(liveRoom.beatIndex||0)],cycle=liveRoom.actionCycle||{},acted=new Set((liveRoom.messages||[]).filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
-  if(Number(liveRoom.beatIndex||0)!==(origin?.beats?.length||1)-1||(beat?.type==='prompt'&&(cycle.requiredPlayerIds||[]).some(id=>!acted.has(id))))return notice('Terminem as falas deste quadro antes de escolher uma rota.');
+  const required=cycle.requiredPlayerIds||[];
+  const allActed=required.length>0&&required.every(id=>acted.has(id));
+  const narrated=(liveRoom.messages||[]).some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(cycle.number));
+  if(!allActed||!narrated)return notice('Primeiro concluam a rodada e leiam a resposta do narrador; depois escolham uma rota.');
   selectedTravelDestinationIndex=Number(liveRoom.sceneIndex||0)+1;
   selectedTravelRoute='road';
   document.querySelectorAll('.travel-route').forEach(button=>{const selected=button.dataset.route===selectedTravelRoute;button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));});
@@ -1111,7 +1109,7 @@ async function beginNarration(){
   try{await startNarration(liveRoom.code,localPlayerId(),scene);}
   catch(error){
     if(!firebaseMode&&liveRoom.hostId===localPlayerId()){
-      renderRoomSummary({...liveRoom,status:'narration',scene,messages:scene.openingMessages||[]},'Aventura solo local iniciada.');
+      renderRoomSummary({...liveRoom,status:'narration',scene,dynamicNarration:true,messages:scene.openingMessages||[]},'Aventura solo local iniciada.');
       return;
     }
     notice(error.message||'Não foi possível iniciar a narração.');
