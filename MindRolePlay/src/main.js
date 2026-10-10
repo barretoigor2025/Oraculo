@@ -92,9 +92,12 @@ function mergeKagehamaScenes(seedScenes=[], savedScenes=[]){
     if(seed.id!=='kagehama-scene-0')return saved;
     const lead=(seed.beats||[]).find(beat=>beat.id==='sayo-lead-to-shrine');
     const hasLead=(saved.beats||[]).some(beat=>beat.id==='sayo-lead-to-shrine');
+    const savedBeats=saved.beats||[];
     return {
       ...saved,
-      ...(lead&&!hasLead?{beats:[...(saved.beats||[]),lead]}:{}),
+      description:seed.description,playerContext:seed.playerContext,objective:seed.objective,
+      openingPrompt:seed.openingPrompt,openingMessages:seed.openingMessages,
+      beats:[...(seed.beats||[]).slice(0,1),...savedBeats.slice(1),...(lead&&!hasLead?[lead]:[])],
       presentNpcIds:[...new Set([...(saved.presentNpcIds||[]),'kagehama-npc-4'])]
     };
   }).concat(savedScenes.filter(scene=>!seedIds.has(scene.id)));
@@ -155,6 +158,7 @@ function localCampaigns() {
           stored[index] = {
             ...sample, ...old, schemaVersion: KAGEHAMA_SCHEMA_VERSION,
             classes: sample.classes, art: sample.art, progression: sample.progression, artDirection: sample.artDirection,
+            story: sample.story, npcBehaviorModel: sample.npcBehaviorModel, bestiary: sample.bestiary, relics: sample.relics,
             npcs: [...sample.npcs, ...(old.npcs || []).filter(item => !sample.npcs.some(seed => seed.id === item.id))],
             scenes: mergeKagehamaScenes(sample.scenes, old.scenes || []),
             progressionLog: old.progressionLog || [], characters: migrateCharacters(old.characters, sample.classes),
