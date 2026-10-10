@@ -15,7 +15,7 @@ import { createDemoCampaigns } from './campaigns.js';
 
 const CAMPAIGNS = 'mindCampaigns';
 const ROOMS = 'mindRooms';
-const KAGEHAMA_SCHEMA_VERSION = 12;
+const KAGEHAMA_SCHEMA_VERSION = 13;
 
 function characterSlug(name) {
   return String(name || 'personagem')
