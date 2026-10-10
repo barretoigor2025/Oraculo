@@ -196,6 +196,7 @@ export async function startNarration(code, hostId, scene) {
     if (!players.length || players.some(player => !player.ready)) throw new Error('Todos os jogadores presentes precisam estar prontos.');
     const messages = (scene.openingMessages || []).map((message, index) => ({
       id: message.id || 'opening-' + index,
+      type: message.type || 'narrator-line',
       playerId: message.playerId || 'narrator',
       playerName: message.playerName || 'Narrador',
       characterName: message.characterName || 'Mind',
@@ -204,8 +205,8 @@ export async function startNarration(code, hostId, scene) {
       createdAt: Date.now() + index,
     }));
     const actionCycle = { number: 1, requiredPlayerIds: players.map(player => player.id), openedAt: Date.now(), status: 'collecting' };
-    transaction.update(roomRef, { status: 'narration', scene, sceneIndex: 0, beatIndex: 0, dialoguePage: 0, displayMessageId: '', messages, actionCycle, startedAt: serverTimestamp(), updatedAt: serverTimestamp() });
-    return { ...room, status: 'narration', scene, sceneIndex: 0, beatIndex: 0, dialoguePage: 0, displayMessageId: '', messages, actionCycle };
+    transaction.update(roomRef, { status: 'narration', dynamicNarration: true, scene, sceneIndex: 0, beatIndex: 0, dialoguePage: 0, displayMessageId: '', messages, actionCycle, startedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    return { ...room, status: 'narration', dynamicNarration: true, scene, sceneIndex: 0, beatIndex: 0, dialoguePage: 0, displayMessageId: '', messages, actionCycle };
   });
 }
 
@@ -231,9 +232,11 @@ export async function advanceNarrativeBeat(code, hostId, next) {
     const currentBeatData = beats[currentBeat] || {};
     const acted = new Set((room.messages || []).filter(item => item.type === 'player-action' && Number(item.cycle) === Number(cycle.number)).map(item => item.playerId));
     if (currentBeatData.type === 'prompt' && (cycle.requiredPlayerIds || []).some(id => !acted.has(id))) throw new Error('Aguarde uma ação de cada jogador antes de avançar o quadro.');
-    const startsTravel = next.travelStart === true && currentBeat >= beats.length - 1 && Number(next.sceneIndex) === sceneIndex && next.travelState?.phase === 'in-transit';
-    const expectedSceneIndex = currentBeat >= beats.length - 1 ? sceneIndex + 1 : sceneIndex;
-    if ((!startsTravel && Number(next.sceneIndex) !== expectedSceneIndex) || !next.scene || !Number.isInteger(Number(next.beatIndex))) throw new Error('O quadro mudou; atualize a sala e tente de novo.');
+    const dynamicNarration = room.dynamicNarration === true;
+    const startsTravel = next.travelStart === true && (dynamicNarration || currentBeat >= beats.length - 1) && Number(next.sceneIndex) === sceneIndex && next.travelState?.phase === 'in-transit';
+    const completesTravel = dynamicNarration && next.clearTravelState === true && room.travelState?.phase === 'in-transit' && Number(next.sceneIndex) === Number(room.travelState.targetSceneIndex) && next.scene?.id === room.travelState.destinationSceneId;
+    const expectedSceneIndex = dynamicNarration ? sceneIndex : currentBeat >= beats.length - 1 ? sceneIndex + 1 : sceneIndex;
+    if ((!startsTravel && !completesTravel && Number(next.sceneIndex) !== expectedSceneIndex) || !next.scene || !Number.isInteger(Number(next.beatIndex))) throw new Error('A cena mudou; atualize a sala e tente de novo.');
     const players = room.players || [];
     const actionCycle = { number: Number(room.actionCycle?.number || 1) + 1, requiredPlayerIds: players.map(player => player.id), openedAt: Date.now(), status: 'collecting' };
     const travelState = startsTravel ? next.travelState : next.clearTravelState ? null : (room.travelState || null);
