@@ -17,7 +17,7 @@ import {
 
 const STORE_KEY = 'mindRolePlay.demo.v1';
 const PLAYER_KEY = 'mindRolePlay.playerId';
-const KAGEHAMA_SCHEMA_VERSION = 13;
+const KAGEHAMA_SCHEMA_VERSION = 14;
 const canonicalNpcsByCampaign = new Map(createDemoCampaigns().map(item => [item.id, item.npcs || []]));
 const screens = [...document.querySelectorAll('.screen')];
 const toast = document.querySelector('#toast');
