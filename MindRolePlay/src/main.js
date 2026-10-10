@@ -847,6 +847,7 @@ function renderGame(room){
   const messages=room.messages||[],cycle=room.actionCycle||{number:1,requiredPlayerIds:players.map(player=>player.id),status:'collecting'},required=cycle.requiredPlayerIds?.length?cycle.requiredPlayerIds:players.map(player=>player.id);
   const cycleActions=messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)),actedIds=new Set(cycleActions.map(item=>item.playerId)),cycleModeByPlayer=new Map(cycleActions.map(item=>[item.playerId,item.mode||'action']));
   const actedCount=required.filter(id=>actedIds.has(id)).length,allActed=required.length>0&&actedCount===required.length;
+  const aiReplyExists=messages.some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(cycle.number));
   const isPrompt=true;
   const currentEvents=messages.filter(item=>{
     if(Number(item.cycle||cycle.number)!==Number(cycle.number))return false;
@@ -903,7 +904,6 @@ function renderGame(room){
     return '<article class="story-message '+(item.playerId===localPlayerId()?'mine':isNarrator?'narrator':'')+'"><small>'+escapeHtml(item.characterName||item.playerName||'Narrador')+' · '+label+'</small>'+result+'</article>';
   }).join(''):'';
   document.querySelector('#action-cycle-label').textContent='CENA AO VIVO · RODADA '+cycle.number;
-  const aiReplyExists=messages.some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(cycle.number));
   document.querySelector('#action-cycle-summary').textContent=aiReplyExists?'O mundo respondeu.':allActed?'Aguardando o narrador.':'Faltam '+(required.length-actedCount)+' jogador(es).';
   document.querySelector('#action-player-status').innerHTML=players.map(player=>'<li class="'+(actedIds.has(player.id)?'acted':'waiting')+'"><span></span>'+escapeHtml(player.characterName||player.name||'Jogador')+' · '+(actedIds.has(player.id)?(cycleModeByPlayer.get(player.id)==='speech'?'FALOU':'AGIU'):'AGUARDA')+'</li>').join('');
   const me=players.find(player=>player.id===localPlayerId()),canSubmit=!!(room.status==='narration'&&isPrompt&&me&&required.includes(me.id)&&!actedIds.has(me.id)),input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]');
