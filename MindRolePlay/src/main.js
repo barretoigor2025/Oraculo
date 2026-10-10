@@ -683,6 +683,84 @@ function configureNarratorAI(){
   if(key.trim())localStorage.setItem('oraculo.groqKey',key.trim());else localStorage.removeItem('oraculo.groqKey');
   notice(key.trim()?'Chave de narração salva neste navegador.':'Chave removida.');
 }
+async function generateNarrativeResponse(){
+  if(!liveRoom||liveRoom.hostId!==localPlayerId())return;
+  const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign();
+  const scene=liveRoom.scene||campaign?.scenes?.[Number(liveRoom.sceneIndex||0)]||{};
+  const cycle=liveRoom.actionCycle||{number:1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id)};
+  const messages=liveRoom.messages||[];
+  const required=cycle.requiredPlayerIds||[];
+  const actions=messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number));
+  const acted=new Set(actions.map(item=>item.playerId));
+  if(!required.length||!required.every(id=>acted.has(id)))return notice('Aguarde todos enviarem uma fala ou ação antes da resposta do narrador.');
+  if(messages.some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(cycle.number)))return notice('A resposta desta rodada já foi narrada.');
+  if(!localStorage.getItem('oraculo.groqKey')){configureNarratorAI();if(!localStorage.getItem('oraculo.groqKey'))return;}
+  const present=(scene.presentNpcIds||[]).map(id=>(campaign.npcs||[]).find(npc=>npc.id===id)).filter(Boolean);
+  const npcContext=present.map(npc=>{
+    const p=npc.behaviorProfile||{};
+    return JSON.stringify({id:npc.id,name:(npc.title||npc.name||'').replace(/^NPC — /,''),description:npc.description||'',voice:p.voice||'',goal:p.goal||'',fear:p.fear||'',methods:p.methods||'',tell:p.tell||'',ifPressured:p.ifPressured||'',secret:p.secret||'',knowledgeLimit:p.narratorGuardrail||''});
+  }).join('\n');
+  const history=messages.slice(-18).map(item=>{
+    const name=item.characterName||item.playerName||'Narrador';
+    const roll=item.mode==='action'?(' · '+(item.skillName||'teste 3d6')+' '+(item.dice||[]).join('+')+'='+item.total+' · '+(item.success?'sucesso':'falha')):'';
+    return name+': '+(item.text||'')+roll;
+  }).join('\n');
+  const sceneGuide=(scene.beats||[]).slice(0,5).map((beat,index)=>'Nota '+(index+1)+' ('+(beat.type||'narrativa')+'): '+(beat.text||'')).join('\n').slice(0,2600);
+  const system=`Você é o narrador de “As Sete Lanternas de Kagehama”, uma campanha de RPG jogada ao vivo. Conduza uma história contínua e improvisada a partir das decisões reais dos jogadores. As notas de cena abaixo são referências e possibilidades, não falas obrigatórias nem uma sequência de slides. Nunca avance de local apenas porque uma nota vem depois da outra.
+
+CAMPANHA E CONTINUIDADE:
+${String(campaign.story||'').slice(0,8500)}
+ESTADO DA CENA:
+Local: ${scene.title||'Kagehama'}.
+Contexto: ${scene.description||''}
+Objetivo dramático: ${scene.objective||''}
+Notas possíveis desta cena (use só se fizerem sentido diante das ações):
+${sceneGuide||'Nenhuma nota pré-escrita.'}
+NPCs presentes e suas vontades:
+${npcContext||'Nenhum NPC está definido como presente; narre apenas o ambiente e os efeitos plausíveis.'}
+
+REGRAS DE MESTRAGEM:
+- Responda ao conjunto das falas e ações desta rodada; seja específico sobre o que mudou e o que os personagens podem perceber.
+- Trate as rolagens já feitas como definitivas. Nunca invente ou refaça dados. Interprete sucesso, falha, sucesso crítico e falha crítica conforme o resultado e a ficção.
+- Fala simples não exige teste. Persuasão, blefe, ameaça ou negociação só têm resultado automático quando a disposição e as evidências tornam isso plausível; não faça uma pessoa ceder só porque o jogador pediu.
+- Não determine pensamentos, falas, decisões ou movimentos dos personagens dos jogadores. Descreva apenas resultados externos e convide a próxima ação com uma pergunta concreta.
+- NPCs agem segundo seus próprios objetivos, conhecimento, medo e limites. Podem recusar, negociar, mentir, interromper, discordar e falar entre si sem esperar uma pergunta direta. Proteja segredos até que a conversa, prova ou ação os justifique.
+- Mantenha a continuidade do que já foi dito e feito. Não repita exposição, não salte para outra cena, não force viagem nem batalha. A mudança de local só ocorre quando o grupo a escolhe no mapa após conhecer um caminho.
+- Se uma situação de risco ainda não foi testada, descreva o risco e peça que o grupo declare como age; não invente um resultado.
+- Escreva em português brasileiro, com detalhe sensorial conciso e diálogo natural. Faça a cena avançar, não dê opções de menu nem fale sobre regras.
+- Retorne somente JSON válido no formato: {"speakerId":"ID de um NPC presente ou narrator","text":"uma resposta de 1 a 5 frases"}. Escolha um NPC como speakerId quando ele fala; use narrator para ambiente, consequências ou pergunta de cena. Quando um NPC responder, pode incluir gesto no formato [ACAO: descrição]. Um NPC pode dirigir a fala a outro NPC presente pelo nome.
+- Não crie IDs. NPCs disponíveis são os listados acima; se não houver um que deva falar, use narrator.`;
+  const user=`Cena atual: ${scene.title||'Kagehama'}; rodada ${cycle.number}.
+Ações e falas registradas nesta rodada:
+${actions.map(item=>JSON.stringify({personagem:item.characterName||item.playerName,modo:item.mode==='speech'?'fala':'ação',texto:item.text,perícia:item.skillName||null,dados:item.dice||null,total:item.total??null,sucesso:item.success??null})).join('\n')}
+Histórico recente:
+${history||'(a cena acabou de começar)'}
+Narre agora a consequência imediata e deixe uma abertura clara para a próxima decisão.`;
+  const button=document.querySelector('#generate-scene-response');
+  if(button){button.disabled=true;button.textContent='A IA está narrando…';}
+  try{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
+    let response;
+    try{
+      response=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',signal:controller.signal,headers:{'Authorization':'Bearer '+localStorage.getItem('oraculo.groqKey'),'content-type':'application/json'},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:500,temperature:.78,response_format:{type:'json_object'},messages:[{role:'system',content:system},{role:'user',content:user}]})});
+    }finally{clearTimeout(timer);}
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error?.message||'A IA não conseguiu responder.');
+    const raw=data.choices?.[0]?.message?.content?.trim();
+    if(!raw)throw new Error('A IA não retornou uma narração.');
+    let result;
+    try{result=JSON.parse(raw);}catch{result={speakerId:'narrator',text:raw};}
+    const npc=present.find(item=>item.id===result.speakerId);
+    const message={id:crypto.randomUUID(),type:npc?'npc-line':'narrator-line',speakerId:npc?.id||'narrator',playerId:localPlayerId(),characterName:npc?(npc.title||npc.name||'NPC').replace(/^NPC — /,''):'Narrador',cycle:Number(cycle.number),sceneId:scene.id,text:String(result.text||raw).trim(),createdAt:Date.now()};
+    if(firebaseMode){
+      const updated=await postRoomMessage(liveRoom.code,message);
+      liveRoom={...liveRoom,messages:updated,dialoguePage:0,displayMessageId:message.id};
+    }else liveRoom={...liveRoom,messages:[...messages,message].slice(-150),dialoguePage:0,displayMessageId:message.id};
+    renderGame(liveRoom);
+  }catch(error){notice('Falha na narração: '+(error.message||'verifique a chave e a conexão.'));}
+  finally{const fresh=document.querySelector('#generate-scene-response');if(fresh){fresh.disabled=false;fresh.textContent='✦ Narrar resposta da IA';}}
+}
+
 async function generateNpcReply(){
   if(!liveRoom||liveRoom.hostId!==localPlayerId())return;
   const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign(),select=document.querySelector('#game-npc-select'),npc=(campaign.npcs||[]).find(item=>item.id===select?.value);
@@ -758,25 +836,25 @@ function renderGame(room){
   const scene=room.scene||campaign.scenes?.[0]||{},sceneIndex=Number(room.sceneIndex||0),beats=scene.beats||[{type:'narration',text:scene.openingPrompt||scene.description||'A história começa.'}],beatIndex=Math.min(Number(room.beatIndex||0),beats.length-1),beat=beats[beatIndex]||beats[0];
   document.querySelector('#scene-title').textContent=scene.title||'O começo';
   document.querySelector('#scene-description').textContent=scene.description||'A história aguarda o primeiro movimento.';
-  document.querySelector('#scene-chapter').textContent=(scene.chapter||('CAPÍTULO '+String(sceneIndex+1).padStart(2,'0')))+' · QUADRO '+(beatIndex+1)+'/'+beats.length;
+  document.querySelector('#scene-chapter').textContent=(scene.chapter||('CAPÍTULO '+String(sceneIndex+1).padStart(2,'0')))+' · CENA AO VIVO';
   document.querySelector('#scene-background').style.backgroundImage=scene.image?'url("'+scene.image+'")':'';
   const messages=room.messages||[],cycle=room.actionCycle||{number:1,requiredPlayerIds:players.map(player=>player.id),status:'collecting'},required=cycle.requiredPlayerIds?.length?cycle.requiredPlayerIds:players.map(player=>player.id);
   const cycleActions=messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)),actedIds=new Set(cycleActions.map(item=>item.playerId)),cycleModeByPlayer=new Map(cycleActions.map(item=>[item.playerId,item.mode||'action']));
   const actedCount=required.filter(id=>actedIds.has(id)).length,allActed=required.length>0&&actedCount===required.length;
-  const isPrompt=beat?.type==='prompt';
+  const isPrompt=true;
   const currentEvents=messages.filter(item=>{
     if(Number(item.cycle||cycle.number)!==Number(cycle.number))return false;
     if(item.type==='perception')return item.sceneId===scene.id&&Number(item.beatIndex??beatIndex)===beatIndex;
-    return item.type==='player-action'||item.type==='npc-line';
+    return item.type==='player-action'||item.type==='npc-line'||item.type==='narrator-line'||(!item.type&&item.playerId==='narrator');
   });
   const pinned=room.displayMessageId?messages.find(item=>item.id===room.displayMessageId):null;
   const latestEvent=currentEvents.at(-1)||null;
-  const activeLine=pinned&&pinned.id===latestEvent?.id?pinned:latestEvent||pinned||null;
+  const activeLine=pinned||latestEvent||null;
   const baseSpeaker=getCampaignNpc(campaign,beat?.speakerId);
   const lineNpc=activeLine?.speakerId?getCampaignNpc(campaign,activeLine.speakerId):null;
   const linePlayer=activeLine?.playerId?players.find(player=>player.id===activeLine.playerId):null;
   const activeNpc=activeLine?.type==='npc-line'?lineNpc:null;
-  const activePortrait=activeNpc?.portrait||(activeLine&&(activeLine.type==='player-action'||activeLine.type==='perception')?(activeLine.portrait||linePlayer?.portrait||''):baseSpeaker?.portrait||'');
+  const activePortrait=activeLine?.type==='narrator-line'||(!activeLine?.type&&activeLine?.playerId==='narrator')?'':activeNpc?.portrait||(activeLine&&(activeLine.type==='player-action'||activeLine.type==='perception')?(activeLine.portrait||linePlayer?.portrait||''):baseSpeaker?.portrait||'');
   const activeSpeakerName=activeLine?.characterName||npcDisplayName(activeNpc)||(activeLine?.type==='perception'?linePlayer?.characterName:'')||npcDisplayName(baseSpeaker)||'Narrador';
   const activeSpeakerKey=activeLine?.id||baseSpeaker?.id||'narrator';
   const actor=document.querySelector('#scene-actor'),avatar=document.querySelector('#scene-avatar'),actorName=document.querySelector('#scene-speaker-name');
@@ -797,13 +875,13 @@ function renderGame(room){
   const rollSummary=activeLine?.mode==='action'&&Array.isArray(activeLine.dice)?('3d6 · '+activeLine.dice.join(' + ')+' = '+activeLine.total+' · '+(activeLine.success?'SUCESSO':'FALHA')):'';
   document.querySelector('#dialogue-page-label').textContent=[pageLabel,rollSummary].filter(Boolean).join(' · ');
   const nextBeat=document.querySelector('#advance-narrative-beat');
-  nextBeat.textContent=pageIndex<pages.length-1?'Continuar fala →':beatIndex<beats.length-1?'Próximo quadro →':room.travelState?.phase==='in-transit'?'Concluir deslocamento →':sceneIndex<campaign.scenes.length-1?'Escolher rota no mapa →':'Fechar crônica';
-  nextBeat.disabled=room.status!=='narration'||room.hostId!==localPlayerId()||(isPrompt&&!allActed);
-  nextBeat.title=isPrompt&&!allActed?'Aguarde a ação de todos antes de avançar.':room.hostId!==localPlayerId()?'Aguarde o anfitrião.':'';
+  nextBeat.textContent=pageIndex<pages.length-1?'Continuar fala →':!allActed?'Aguardando ações do grupo…':!aiReplyExists?'✦ Narrar resposta da IA →':room.travelState?.phase==='in-transit'?'Concluir deslocamento →':'Próxima rodada →';
+  nextBeat.disabled=room.status!=='narration'||room.hostId!==localPlayerId()||(pageIndex===pages.length-1&&!allActed);
+  nextBeat.title=pageIndex===pages.length-1&&!allActed?'Aguarde a fala ou ação de todos; o lugar e a cena não avançam sozinhos.':room.hostId!==localPlayerId()?'Aguarde o anfitrião narrar a resposta.':'';
   const stage=document.querySelector('#narrative-stage');
   const diceMarkup='<div class="dice-row">'+Array.from({length:3},()=>'<div class="die">'+'<span></span>'.repeat(9)+'</div>').join('')+'</div>';
-  stage.innerHTML=`${room.hostId===localPlayerId()?'<details class="npc-engine"><summary>⚙ Narrador / NPCs</summary><label>NPC da vez<select id="game-npc-select" class="input">'+(campaign.npcs||[]).filter(npc=>(scene.presentNpcIds||[]).includes(npc.id)).map(npc=>'<option value="'+escapeAttr(npc.id)+'">'+escapeHtml((npc.title||npc.name||'NPC').replace(/^NPC — /,''))+'</option>').join('')+'</select></label><input id="npc-directive" class="input" maxlength="240" placeholder="O que este NPC ouviu?"><button id="generate-npc-line" class="mini-button" '+(allActed?'':'disabled')+'>✦ Gerar resposta</button><button id="configure-narrator-ai" class="mini-button">Chave de narração</button></details>':''}<div class="scene-tools"><button id="scene-perception" class="mini-button" type="button">◉ Percepção · 3d6</button><button id="open-travel-map" class="mini-button ${(beatIndex===beats.length-1&&pageIndex===pages.length-1&&sceneIndex<campaign.scenes.length-1&&room.travelState?.phase!=='in-transit'&&(!isPrompt||allActed))?'':'hidden'}" type="button">⌖ Mapa / viajar</button><div id="scene-dice-stage" class="scene-dice-stage hidden">${diceMarkup}<output id="scene-dice-result"></output></div></div>`;
-  const generateNpcButton=stage.querySelector('#generate-npc-line');if(generateNpcButton)generateNpcButton.addEventListener('click',generateNpcReply);
+  stage.innerHTML=`${room.hostId===localPlayerId()?'<details class="npc-engine"><summary>⚙ Narrador / NPCs</summary><p class="muted">A IA recebe as ações do grupo, considera a cena e os NPCs presentes e narra a consequência sem trocar o local por conta própria.</p><button id="generate-scene-response" class="mini-button" ${allActed&&!aiReplyExists?'':'disabled'}>${aiReplyExists?'Resposta da rodada registrada':'✦ Narrar resposta da IA'}</button><button id="configure-narrator-ai" class="mini-button">Chave de narração</button></details>':''}<div class="scene-tools"><button id="scene-perception" class="mini-button" type="button">◉ Percepção · 3d6</button><button id="open-travel-map" class="mini-button ${(pageIndex===pages.length-1&&aiReplyExists&&sceneIndex<campaign.scenes.length-1&&room.travelState?.phase!=='in-transit')?'':'hidden'}" type="button">⌖ Mapa / viajar</button><div id="scene-dice-stage" class="scene-dice-stage hidden">${diceMarkup}<output id="scene-dice-result"></output></div></div>`;
+  const generateResponseButton=stage.querySelector('#generate-scene-response');if(generateResponseButton)generateResponseButton.addEventListener('click',generateNarrativeResponse);
   const configureNpcAI=stage.querySelector('#configure-narrator-ai');if(configureNpcAI)configureNpcAI.addEventListener('click',configureNarratorAI);
   const perceptionRollButton=stage.querySelector('#scene-perception');perceptionRollButton.addEventListener('click',rollScenePerception);
   const mapButton=stage.querySelector('#open-travel-map');if(mapButton)mapButton.addEventListener('click',()=>openTravelMap(campaign,scene,campaign.scenes[sceneIndex+1]));
@@ -816,8 +894,9 @@ function renderGame(room){
     const result=isRoll?'<p><b>'+escapeHtml(item.dice.join(' · '))+' = '+escapeHtml(item.total)+' vs. '+escapeHtml(item.effectiveSkill)+'</b><br>'+escapeHtml(item.success?item.successText:item.failureText)+'</p>':rollDetail+'<p>'+escapeHtml(item.text)+'</p>';
     return '<article class="story-message '+(item.playerId===localPlayerId()?'mine':isNarrator?'narrator':'')+'"><small>'+escapeHtml(item.characterName||item.playerName||'Narrador')+' · '+label+'</small>'+result+'</article>';
   }).join(''):'';
-  document.querySelector('#action-cycle-label').textContent=isPrompt?'AÇÃO DO GRUPO · RODADA '+cycle.number:'NARRAÇÃO · QUADRO '+(beatIndex+1);
-  document.querySelector('#action-cycle-summary').textContent=!isPrompt?'O anfitrião avança o diálogo.':allActed?'Todos responderam.':'Faltam '+(required.length-actedCount)+' jogador(es).';
+  document.querySelector('#action-cycle-label').textContent='CENA AO VIVO · RODADA '+cycle.number;
+  const aiReplyExists=messages.some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(cycle.number));
+  document.querySelector('#action-cycle-summary').textContent=aiReplyExists?'O mundo respondeu.':allActed?'Aguardando o narrador.':'Faltam '+(required.length-actedCount)+' jogador(es).';
   document.querySelector('#action-player-status').innerHTML=players.map(player=>'<li class="'+(actedIds.has(player.id)?'acted':'waiting')+'"><span></span>'+escapeHtml(player.characterName||player.name||'Jogador')+' · '+(actedIds.has(player.id)?(cycleModeByPlayer.get(player.id)==='speech'?'FALOU':'AGIU'):'AGUARDA')+'</li>').join('');
   const me=players.find(player=>player.id===localPlayerId()),canSubmit=!!(room.status==='narration'&&isPrompt&&me&&required.includes(me.id)&&!actedIds.has(me.id)),input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]');
   const turnKey=canSubmit?[room.code,scene.id,beatIndex,cycle.number,me.id].join(':'):'';
@@ -857,7 +936,18 @@ async function advanceNarrativeBeat(){
       return;
     }
     const acted=new Set(messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
-    if(beat.type==='prompt'&&(cycle.requiredPlayerIds||[]).some(id=>!acted.has(id)))return notice('Aguarde uma ação de cada jogador antes de avançar o quadro.');
+    if((cycle.requiredPlayerIds||[]).some(id=>!acted.has(id)))return notice('Aguarde uma fala ou ação de cada jogador antes da resposta da IA.');
+    const hasResponse=messages.some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(cycle.number));
+    if(!hasResponse)return generateNarrativeResponse();
+    if(liveRoom.travelState?.phase==='in-transit'){
+      const destination=scenes[Number(liveRoom.travelState.targetSceneIndex)];
+      if(!destination)return notice('O destino da viagem não está disponível no roteiro.');
+      const arrival={sceneIndex:Number(liveRoom.travelState.targetSceneIndex),beatIndex:0,scene:destination,dialoguePage:0,displayMessageId:''};
+      if(firebaseMode){const room=await advanceNarrativeBeatRemote(liveRoom.code,localPlayerId(),{...arrival,clearTravelState:true});renderGame(room);}
+      else{liveRoom={...liveRoom,...arrival,travelState:null,actionCycle:{number:Number(cycle.number)+1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),openedAt:Date.now(),status:'collecting'}};renderGame(liveRoom);}
+      return;
+    }
+    return advanceActionRound();
     let next;
     if(beatIndex<beats.length-1){
       next={sceneIndex,beatIndex:beatIndex+1,scene};
