@@ -21,7 +21,7 @@ import { KAGEHAMA_RELICS } from './campaigns/kagehama/relics.js';
 
 export const KAGEHAMA_CAMPAIGN = {
   "id": "demo-kagehama",
-  "schemaVersion": 13,
+  "schemaVersion": 14,
   "title": "As Sete Lanternas de Kagehama",
   "genre": "Medieval samurai · fantasia histórica",
   "status": "ready-for-play",
