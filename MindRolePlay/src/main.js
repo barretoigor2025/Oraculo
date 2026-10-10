@@ -37,6 +37,7 @@ let activeComposerTurnKey = '';
 let playerCanSubmitTurn = false;
 let returnRoomCode = new URLSearchParams(location.search).get('room')?.toUpperCase() || '';
 let toastTimer;
+let aiNarrationPending=false;
 
 function characterSlug(name) {
   return String(name || 'personagem')
@@ -688,7 +689,7 @@ function configureNarratorAI(){
   notice(key.trim()?'Chave de narração salva neste navegador.':'Chave removida.');
 }
 async function generateNarrativeResponse(){
-  if(!liveRoom||liveRoom.hostId!==localPlayerId())return;
+  if(aiNarrationPending||!liveRoom||liveRoom.hostId!==localPlayerId())return;
   const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign();
   const scene=liveRoom.scene||campaign?.scenes?.[Number(liveRoom.sceneIndex||0)]||{};
   const cycle=liveRoom.actionCycle||{number:1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id)};
@@ -740,6 +741,7 @@ ${actions.map(item=>JSON.stringify({personagem:item.characterName||item.playerNa
 Histórico recente:
 ${history||'(a cena acabou de começar)'}
 Narre agora a consequência imediata e deixe uma abertura clara para a próxima decisão.`;
+  aiNarrationPending=true;
   const button=document.querySelector('#generate-scene-response');
   if(button){button.disabled=true;button.textContent='A IA está narrando…';}
   try{
@@ -762,7 +764,7 @@ Narre agora a consequência imediata e deixe uma abertura clara para a próxima 
     }else liveRoom={...liveRoom,messages:[...messages,message].slice(-150),dialoguePage:0,displayMessageId:message.id};
     renderGame(liveRoom);
   }catch(error){notice('Falha na narração: '+(error.message||'verifique a chave e a conexão.'));}
-  finally{const fresh=document.querySelector('#generate-scene-response');if(fresh){fresh.disabled=false;fresh.textContent='✦ Narrar resposta da IA';}}
+  finally{aiNarrationPending=false;const fresh=document.querySelector('#generate-scene-response');if(fresh){const recorded=(liveRoom?.messages||[]).some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(liveRoom?.actionCycle?.number));fresh.disabled=recorded;fresh.textContent=recorded?'Resposta da rodada registrada':'✦ Narrar resposta da IA';}}
 }
 
 async function generateNpcReply(){
