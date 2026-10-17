@@ -168,3 +168,43 @@ s=s.replace('</style>', '''
 s=s.replace("      elImagem.src = imgSrc;", "      elImagem.src = _imgBust(imgSrc);\n      if(elImagem.complete && elImagem.naturalWidth)onImagemCarregada();")
 s=s.replace('v46', 'Mind v3')
 p.write_text(s)
+
+# Reveal actors only as they speak; one interlocutor per side, common scale.
+p=base/'narration.html';s=p.read_text()
+s=re.sub(r"requestAnimationFrame\(\(\)\s*=>\s*div.classList.add\('dentro'\)\);",lambda m:"div.classList.add('arte-pronta');if(div.classList.contains('em-cena'))requestAnimationFrame(()=>div.classList.add('dentro'));",s)
+# No blanket entrance when one NPC takes the floor.
+s=s.replace("    _dialNpcEls.forEach(({ par }) => {\n      if (!par.classList.contains('dentro')) par.classList.add('dentro');\n    });", "    _mindMostrarAtor('npc',oradorId);")
+s=s.replace("  } else if (tipo === 'jogador') {\n    const CLASS_AVATAR", "  } else if (tipo === 'jogador') {\n    _mindMostrarAtor('jogador',beat.authorId||oradorId);\n    const CLASS_AVATAR")
+where=s.index('function _dialFocarNpc(npcId)')
+s=s[:where]+'''function _mindMostrarAtor(tipo,id){
+  const npc=tipo==='npc';
+  const actors=npc?_dialNpcEls.map(e=>({el:e.par,id:e.npc.id}))
+    :Array.from(document.querySelectorAll('#dial-personagens .dial-hero')).map(el=>({el,id:el.dataset.playerId}));
+  for(const actor of actors){
+    const visible=actor.id===id;
+    actor.el.classList.toggle('em-cena',visible);
+    if(!visible)actor.el.classList.remove('dentro');
+    else if(actor.el.classList.contains('arte-pronta'))requestAnimationFrame(()=>actor.el.classList.add('dentro'));
+  }
+}
+
+''' +s[where:]
+s=s.replace('</style>', '''
+/* Left: one player; right: one NPC. Equal canvas height and ground line. */
+#dial-personagens{height:41dvh;overflow:visible}
+#dial-personagens .dial-npc,#dial-personagens .dial-hero{
+  height:40dvh!important;max-width:44vw;bottom:0;visibility:hidden;opacity:1!important;
+  pointer-events:none;transition:transform .45s ease,visibility .45s;
+}
+#dial-personagens .dial-npc{left:auto!important;right:1%!important;transform:translateX(115%)}
+#dial-personagens .dial-hero{left:1%!important;right:auto!important;transform:translateX(-115%)}
+#dial-personagens .em-cena{visibility:visible;transition:transform .45s ease}
+#dial-personagens .dentro.em-cena{transform:translateX(0)}
+#dial-personagens .dial-npc canvas,#dial-personagens .dial-hero canvas{
+ height:100%;width:auto;max-width:44vw;object-fit:contain;object-position:bottom;
+}
+#dial-personagens .dial-hero canvas{transform:none}
+@media(max-height:520px){#dial-personagens{height:42dvh}#dial-personagens .dial-npc,#dial-personagens .dial-hero{height:41dvh!important}}
+</style>''',1)
+s=s.replace('Mind v3','Mind v4')
+p.write_text(s)
