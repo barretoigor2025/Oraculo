@@ -1,3 +1,4 @@
+import { pendingAction, nextSpeaker, applyNarration } from './narratorEngine.js';
 import {
   arrayUnion,
   collection,
@@ -160,8 +161,11 @@ export async function joinRoom(code, playerId, playerName, character = null) {
     const snapshot = await transaction.get(roomRef);
     if (!snapshot.exists()) throw new Error('Não encontrei uma sala com esse código.');
     const room = snapshot.data();
-    if (room.status !== 'waiting') throw new Error('Esta sala já iniciou a narração.');
     const players = Array.isArray(room.players) ? room.players : [];
+    if (room.status !== 'waiting') {
+      if(players.some(player=>player.id===playerId)) return {code:normalizedCode,...room,players};
+      throw new Error('Esta sala já iniciou a narração.');
+    }
     const player = { id: playerId, name: playerName || 'Jogador', characterId: character?.id || '', characterName: character?.name || '', className: character?.className || '', gender: character?.gender || '', portrait: character?.portrait || '', ready: false };
     const index = players.findIndex(item => item.id === playerId);
     if (index >= 0) players[index] = { ...players[index], ...player };
@@ -266,6 +270,7 @@ export async function postRoomMessage(code, message) {
       if (Number(message.cycle) !== Number(actionCycle.number)) throw new Error('A rodada mudou. Atualize a tela antes de enviar outra ação.');
       const alreadyActed = (room.messages || []).some(item => item.type === 'player-action' && Number(item.cycle) === Number(actionCycle.number) && item.playerId === message.playerId);
       if (alreadyActed) throw new Error('Sua ação desta rodada já foi registrada.');
+      if (nextSpeaker(room) !== message.playerId) throw new Error('Aguarde a resposta do NPC e a sua vez.');
       savedMessage = { ...message, cycle: actionCycle.number };
     }
     const messages = [...(room.messages || []), savedMessage].slice(-150);
@@ -298,8 +303,54 @@ export async function advanceActionCycle(code, hostId) {
     if (room.status !== 'narration') throw new Error('A narração ainda não começou.');
     const acted = new Set((room.messages || []).filter(item => item.type === 'player-action' && Number(item.cycle) === Number(cycle.number)).map(item => item.playerId));
     if (!cycle.requiredPlayerIds.length || !cycle.requiredPlayerIds.every(id => acted.has(id))) throw new Error('Ainda falta a ação de um ou mais jogadores.');
+    if (pendingAction(room)) throw new Error('O mundo ainda precisa responder à última ação.');
     const nextCycle = { number: Number(cycle.number) + 1, requiredPlayerIds: (room.players || []).map(player => player.id), openedAt: Date.now(), status: 'collecting' };
     transaction.update(roomRef, { actionCycle: nextCycle, updatedAt: serverTimestamp() });
     return { ...room, actionCycle: nextCycle };
+  });
+}
+
+// Claim per action, including between two host tabs. Completion is a single transaction.
+export async function claimNarration(code, hostId, actionId, token) {
+  const ref = doc(db, ROOMS, code.toUpperCase());
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref), room = snapshot.data();
+    if (!room || room.hostId !== hostId || pendingAction(room)?.id !== actionId) return null;
+    if (room.narrationJob?.expiresAt > Date.now()) return null;
+    const narrationJob = { actionId, token, expiresAt: Date.now() + 40000 };
+    transaction.update(ref, { narrationJob, updatedAt: serverTimestamp() });
+    return { ...room, narrationJob };
+  });
+}
+
+export async function finishNarration(code, hostId, token, action, lines, memory) {
+  const ref = doc(db, ROOMS, code.toUpperCase());
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref), room = snapshot.data();
+    if (!room || room.hostId !== hostId || room.narrationJob?.token !== token)
+      throw new Error('Outra resposta assumiu esta ação.');
+    const next = applyNarration(room, action, lines, memory);
+    transaction.update(ref, { messages: next.messages, worldState: next.worldState,
+      narrationJob: null, dialoguePage: 0, displayMessageId: next.displayMessageId, updatedAt: serverTimestamp() });
+    return next;
+  });
+}
+
+export async function releaseNarration(code, token) {
+  const ref = doc(db, ROOMS, code.toUpperCase());
+  await runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref);
+    if (snapshot.data()?.narrationJob?.token === token) transaction.update(ref, { narrationJob: null });
+  });
+}
+
+export async function showDialogueMessage(code, hostId, messageId) {
+  const ref = doc(db, ROOMS, code.toUpperCase());
+  return runTransaction(db, async transaction => {
+    const snapshot = await transaction.get(ref), room = snapshot.data();
+    if (room?.hostId !== hostId || !(room.messages || []).some(m => m.id === messageId))
+      throw new Error('Esta fala não está disponível.');
+    transaction.update(ref, { displayMessageId: messageId, dialoguePage: 0 });
+    return { ...room, displayMessageId: messageId, dialoguePage: 0 };
   });
 }

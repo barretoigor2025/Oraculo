@@ -1,3 +1,4 @@
+import { pendingAction, nextSpeaker, normalizeNarration, applyNarration, buildNarratorMessages, requestNarration } from './narratorEngine.js';
 import './styles.css';
 import { CAMPAIGN_SECTIONS, createDemoCampaigns } from './campaigns.js';
 import { roll3d6, resolveSuccessTest } from './gurps.js';
@@ -13,6 +14,7 @@ import {
   setPlayerReady,
   startNarration,
   postRoomMessage,
+  claimNarration, finishNarration, releaseNarration, showDialogueMessage,
 } from './firebaseRepository.js';
 
 const STORE_KEY = 'mindRolePlay.demo.v1';
@@ -687,84 +689,47 @@ function configureNarratorAI(){
   if(key===null)return;
   if(key.trim())localStorage.setItem('oraculo.groqKey',key.trim());else localStorage.removeItem('oraculo.groqKey');
   notice(key.trim()?'Chave de narração salva neste navegador.':'Chave removida.');
+  if(key.trim()) { failedNarrationAction=''; queueMicrotask(()=>generateNarrativeResponse(false)); }
 }
-async function generateNarrativeResponse(){
-  if(aiNarrationPending||!liveRoom||liveRoom.hostId!==localPlayerId())return;
-  const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign();
-  const scene=liveRoom.scene||campaign?.scenes?.[Number(liveRoom.sceneIndex||0)]||{};
-  const cycle=liveRoom.actionCycle||{number:1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id)};
-  const messages=liveRoom.messages||[];
-  const required=cycle.requiredPlayerIds||[];
-  const actions=messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number));
-  const acted=new Set(actions.map(item=>item.playerId));
-  if(!required.length||!required.every(id=>acted.has(id)))return notice('Aguarde todos enviarem uma fala ou ação antes da resposta do narrador.');
-  if(messages.some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(cycle.number)))return notice('A resposta desta rodada já foi narrada.');
-  if(!localStorage.getItem('oraculo.groqKey')){configureNarratorAI();if(!localStorage.getItem('oraculo.groqKey'))return;}
-  const present=(scene.presentNpcIds||[]).map(id=>(campaign.npcs||[]).find(npc=>npc.id===id)).filter(Boolean);
-  const npcContext=present.map(npc=>{
-    const p=npc.behaviorProfile||{};
-    return JSON.stringify({id:npc.id,name:(npc.title||npc.name||'').replace(/^NPC — /,''),description:npc.description||'',voice:p.voice||'',goal:p.goal||'',fear:p.fear||'',methods:p.methods||'',tell:p.tell||'',ifPressured:p.ifPressured||'',secret:p.secret||'',knowledgeLimit:p.narratorGuardrail||''});
-  }).join('\n');
-  const history=messages.slice(-18).map(item=>{
-    const name=item.characterName||item.playerName||'Narrador';
-    const roll=item.mode==='action'?(' · '+(item.skillName||'teste 3d6')+' '+(item.dice||[]).join('+')+'='+item.total+' · '+(item.success?'sucesso':'falha')):'';
-    return name+': '+(item.text||'')+roll;
-  }).join('\n');
-  const sceneGuide=(scene.beats||[]).slice(0,5).map((beat,index)=>'Nota '+(index+1)+' ('+(beat.type||'narrativa')+'): '+(beat.text||'')).join('\n').slice(0,2600);
-  const system=`Você é o narrador de “As Sete Lanternas de Kagehama”, uma campanha de RPG jogada ao vivo. Conduza uma história contínua e improvisada a partir das decisões reais dos jogadores. As notas de cena abaixo são referências e possibilidades, não falas obrigatórias nem uma sequência de slides. Nunca avance de local apenas porque uma nota vem depois da outra.
-
-CAMPANHA E CONTINUIDADE:
-${String(campaign.story||'').slice(0,8500)}
-ESTADO DA CENA:
-Local: ${scene.title||'Kagehama'}.
-Contexto: ${scene.description||''}
-Objetivo dramático: ${scene.objective||''}
-Notas possíveis desta cena (use só se fizerem sentido diante das ações):
-${sceneGuide||'Nenhuma nota pré-escrita.'}
-NPCs presentes e suas vontades:
-${npcContext||'Nenhum NPC está definido como presente; narre apenas o ambiente e os efeitos plausíveis.'}
-
-REGRAS DE MESTRAGEM:
-- Responda ao conjunto das falas e ações desta rodada; seja específico sobre o que mudou e o que os personagens podem perceber.
-- Trate as rolagens já feitas como definitivas. Nunca invente ou refaça dados. Interprete sucesso, falha, sucesso crítico e falha crítica conforme o resultado e a ficção.
-- Fala simples não exige teste. Persuasão, blefe, ameaça ou negociação só têm resultado automático quando a disposição e as evidências tornam isso plausível; não faça uma pessoa ceder só porque o jogador pediu.
-- Não determine pensamentos, falas, decisões ou movimentos dos personagens dos jogadores. Descreva apenas resultados externos e convide a próxima ação com uma pergunta concreta.
-- NPCs agem segundo seus próprios objetivos, conhecimento, medo e limites. Podem recusar, negociar, mentir, interromper, discordar e falar entre si sem esperar uma pergunta direta. Proteja segredos até que a conversa, prova ou ação os justifique.
-- Mantenha a continuidade do que já foi dito e feito. Não repita exposição, não salte para outra cena, não force viagem nem batalha. A mudança de local só ocorre quando o grupo a escolhe no mapa após conhecer um caminho.
-- Se uma situação de risco ainda não foi testada, descreva o risco e peça que o grupo declare como age; não invente um resultado.
-- Escreva em português brasileiro, com detalhe sensorial conciso e diálogo natural. Faça a cena avançar, não dê opções de menu nem fale sobre regras.
-- Retorne somente JSON válido no formato: {"speakerId":"ID de um NPC presente ou narrator","text":"uma resposta de 1 a 5 frases"}. Escolha um NPC como speakerId quando ele fala; use narrator para ambiente, consequências ou pergunta de cena. Quando um NPC responder, pode incluir gesto no formato [ACAO: descrição]. Um NPC pode dirigir a fala a outro NPC presente pelo nome.
-- Não crie IDs. NPCs disponíveis são os listados acima; se não houver um que deva falar, use narrator.`;
-  const user=`Cena atual: ${scene.title||'Kagehama'}; rodada ${cycle.number}.
-Ações e falas registradas nesta rodada:
-${actions.map(item=>JSON.stringify({personagem:item.characterName||item.playerName,modo:item.mode==='speech'?'fala':'ação',texto:item.text,perícia:item.skillName||null,dados:item.dice||null,total:item.total??null,sucesso:item.success??null})).join('\n')}
-Histórico recente:
-${history||'(a cena acabou de começar)'}
-Narre agora a consequência imediata e deixe uma abertura clara para a próxima decisão.`;
-  aiNarrationPending=true;
-  const button=document.querySelector('#generate-scene-response');
-  if(button){button.disabled=true;button.textContent='A IA está narrando…';}
-  try{
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
-    let response;
-    try{
-      response=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',signal:controller.signal,headers:{'Authorization':'Bearer '+localStorage.getItem('oraculo.groqKey'),'content-type':'application/json'},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:500,temperature:.78,response_format:{type:'json_object'},messages:[{role:'system',content:system},{role:'user',content:user}]})});
-    }finally{clearTimeout(timer);}
-    const data=await response.json();
-    if(!response.ok)throw new Error(data.error?.message||'A IA não conseguiu responder.');
-    const raw=data.choices?.[0]?.message?.content?.trim();
-    if(!raw)throw new Error('A IA não retornou uma narração.');
-    let result;
-    try{result=JSON.parse(raw);}catch{result={speakerId:'narrator',text:raw};}
-    const npc=present.find(item=>item.id===result.speakerId);
-    const message={id:crypto.randomUUID(),type:npc?'npc-line':'narrator-line',speakerId:npc?.id||'narrator',playerId:localPlayerId(),characterName:npc?(npc.title||npc.name||'NPC').replace(/^NPC — /,''):'Narrador',cycle:Number(cycle.number),sceneId:scene.id,text:String(result.text||raw).trim(),createdAt:Date.now()};
-    if(firebaseMode){
-      const updated=await postRoomMessage(liveRoom.code,message);
-      liveRoom={...liveRoom,messages:updated,dialoguePage:0,displayMessageId:message.id};
-    }else liveRoom={...liveRoom,messages:[...messages,message].slice(-150),dialoguePage:0,displayMessageId:message.id};
-    renderGame(liveRoom);
-  }catch(error){notice('Falha na narração: '+(error.message||'verifique a chave e a conexão.'));}
-  finally{aiNarrationPending=false;const fresh=document.querySelector('#generate-scene-response');if(fresh){const recorded=(liveRoom?.messages||[]).some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(liveRoom?.actionCycle?.number));fresh.disabled=recorded;fresh.textContent=recorded?'Resposta da rodada registrada':'✦ Narrar resposta da IA';}}
+let failedNarrationAction = '';
+async function generateNarrativeResponse(manual = true){
+  if(aiNarrationPending || !liveRoom || liveRoom.hostId !== localPlayerId()) return;
+  const action = pendingAction(liveRoom);
+  if(!action) return;
+  if(!manual && failedNarrationAction === action.id) return;
+  if(!localStorage.getItem('oraculo.groqKey')){
+    if(!manual) return;
+    configureNarratorAI();
+    if(!localStorage.getItem('oraculo.groqKey')) return;
+  }
+  aiNarrationPending = true;
+  const token = crypto.randomUUID(), code = liveRoom.code;
+  let claimed = false;
+  try {
+    const room = firebaseMode ? await claimNarration(code, localPlayerId(), action.id, token) : structuredClone(liveRoom);
+    if(!room) {
+      failedNarrationAction=action.id;
+      setTimeout(()=>{if(liveRoom?.code===code && pendingAction(liveRoom)?.id===action.id){failedNarrationAction='';generateNarrativeResponse(false);}},41000);
+      return;
+    }
+    claimed = true;
+    const campaign = campaigns.find(c => c.id === room.campaignId) || currentCampaign();
+    const result = await requestNarration({ key: localStorage.getItem('oraculo.groqKey'), messages: buildNarratorMessages(campaign, room, action) });
+    const lines = normalizeNarration(result, room.scene?.presentNpcIds || []);
+    if(liveRoom?.code !== code) return;
+    const next = firebaseMode ? await finishNarration(code, localPlayerId(), token, action, lines, result.memory || {})
+      : applyNarration(liveRoom, action, lines, result.memory || {});
+    liveRoom = next;
+    failedNarrationAction = '';
+    renderGame(next);
+  } catch(error) {
+    failedNarrationAction = action.id;
+    notice('Falha na narração: '+(error.message || 'verifique a conexão.'));
+  } finally {
+    if(claimed && firebaseMode) await releaseNarration(code, token).catch(()=>{});
+    aiNarrationPending = false;
+    if(liveRoom?.code === code) renderGame(liveRoom);
+  }
 }
 
 async function generateNpcReply(){
@@ -835,6 +800,8 @@ function dialoguePages(text, limit = 190) {
 }
 
 function renderGame(room){
+  liveRoom=room;
+  if(!firebaseMode) localStorage.setItem('mindRolePlay.localRoom',JSON.stringify(room));
   const campaign=campaigns.find(item=>item.id===room.campaignId)||currentCampaign();if(!campaign)return;
   document.querySelector('#game-campaign-title').textContent=campaign.title;
   document.querySelector('#game-room-code').textContent='SALA '+room.code;
@@ -847,7 +814,7 @@ function renderGame(room){
   const messages=room.messages||[],cycle=room.actionCycle||{number:1,requiredPlayerIds:players.map(player=>player.id),status:'collecting'},required=cycle.requiredPlayerIds?.length?cycle.requiredPlayerIds:players.map(player=>player.id);
   const cycleActions=messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)),actedIds=new Set(cycleActions.map(item=>item.playerId)),cycleModeByPlayer=new Map(cycleActions.map(item=>[item.playerId,item.mode||'action']));
   const actedCount=required.filter(id=>actedIds.has(id)).length,allActed=required.length>0&&actedCount===required.length;
-  const aiReplyExists=messages.some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(cycle.number));
+  const aiReplyExists=cycleActions.length>0&&!pendingAction(room);
   const isPrompt=true;
   const currentEvents=messages.filter(item=>{
     if(Number(item.cycle||cycle.number)!==Number(cycle.number))return false;
@@ -862,7 +829,7 @@ function renderGame(room){
   const linePlayer=activeLine?.playerId?players.find(player=>player.id===activeLine.playerId):null;
   const activeNpc=activeLine?.type==='npc-line'?lineNpc:null;
   const activePortrait=activeLine?.type==='narrator-line'||(!activeLine?.type&&activeLine?.playerId==='narrator')?'':activeNpc?.portrait||(activeLine&&(activeLine.type==='player-action'||activeLine.type==='perception')?(activeLine.portrait||linePlayer?.portrait||''):baseSpeaker?.portrait||'');
-  const activeSpeakerName=activeLine?.characterName||npcDisplayName(activeNpc)||(activeLine?.type==='perception'?linePlayer?.characterName:'')||npcDisplayName(baseSpeaker)||'Narrador';
+  const activeSpeakerName=npcDisplayName(activeNpc)||activeLine?.characterName||(activeLine?.type==='perception'?linePlayer?.characterName:'')||npcDisplayName(baseSpeaker)||'Narrador';
   const activeSpeakerKey=activeLine?.id||baseSpeaker?.id||'narrator';
   const actor=document.querySelector('#scene-actor'),avatar=document.querySelector('#scene-avatar'),actorName=document.querySelector('#scene-speaker-name');
 
@@ -881,13 +848,14 @@ function renderGame(room){
   const pageLabel=pages.length>1?((activeLine?.mode==='action'?'PÁGINA ':'FALA ')+(pageIndex+1)+'/'+pages.length):'';
   const rollSummary=activeLine?.mode==='action'&&Array.isArray(activeLine.dice)?('3d6 · '+activeLine.dice.join(' + ')+' = '+activeLine.total+' · '+(activeLine.success?'SUCESSO':'FALHA')):'';
   document.querySelector('#dialogue-page-label').textContent=[pageLabel,rollSummary].filter(Boolean).join(' · ');
+  const hasNextLine=currentEvents.findIndex(item=>item.id===activeLine?.id)<currentEvents.length-1;
   const nextBeat=document.querySelector('#advance-narrative-beat');
-  nextBeat.textContent=pageIndex<pages.length-1?'Continuar fala →':!allActed?'Aguardando ações do grupo…':!aiReplyExists?'✦ Narrar resposta da IA →':room.travelState?.phase==='in-transit'?'Concluir deslocamento →':'Próxima rodada →';
-  nextBeat.disabled=room.status!=='narration'||room.hostId!==localPlayerId()||(pageIndex===pages.length-1&&!allActed);
+  nextBeat.textContent=pageIndex<pages.length-1||hasNextLine?'Continuar fala →':pendingAction(room)?'Responder à ação →':!allActed?'Aguardando a próxima fala…':room.travelState?.phase==='in-transit'?'Concluir deslocamento →':'Próxima rodada →';
+  nextBeat.disabled=room.status!=='narration'||room.hostId!==localPlayerId()||aiNarrationPending||(pageIndex>=pages.length-1&&!hasNextLine&&!allActed&&!pendingAction(room));
   nextBeat.title=pageIndex===pages.length-1&&!allActed?'Aguarde a fala ou ação de todos; o lugar e a cena não avançam sozinhos.':room.hostId!==localPlayerId()?'Aguarde o anfitrião narrar a resposta.':'';
   const stage=document.querySelector('#narrative-stage');
   const diceMarkup='<div class="dice-row">'+Array.from({length:3},()=>'<div class="die">'+'<span></span>'.repeat(9)+'</div>').join('')+'</div>';
-  const narratorPanel=room.hostId===localPlayerId()?'<details class="npc-engine"><summary>⚙ Narrador / NPCs</summary><p class="muted">A IA recebe as ações do grupo, considera a cena e os NPCs presentes e narra a consequência sem trocar o local por conta própria.</p><button id="generate-scene-response" class="mini-button" '+(allActed&&!aiReplyExists?'':'disabled')+'>'+(aiReplyExists?'Resposta da rodada registrada':'✦ Narrar resposta da IA')+'</button><button id="configure-narrator-ai" class="mini-button">Chave de narração</button></details>':'';
+  const narratorPanel=room.hostId===localPlayerId()?'<details class="npc-engine"><summary>⚙ Narrador / NPCs</summary><p class="muted">A IA recebe as ações do grupo, considera a cena e os NPCs presentes e narra a consequência sem trocar o local por conta própria.</p><button id="generate-scene-response" class="mini-button" '+(pendingAction(room)&&!aiNarrationPending?'':'disabled')+'>'+(pendingAction(room)?'✦ Responder / tentar novamente':'Resposta automática ativa')+'</button><button id="configure-narrator-ai" class="mini-button">Chave de narração</button></details>':'';
   const travelVisible=pageIndex===pages.length-1&&aiReplyExists&&sceneIndex<campaign.scenes.length-1&&room.travelState?.phase!=='in-transit';
   stage.innerHTML=narratorPanel+'<div class="scene-tools"><button id="scene-perception" class="mini-button" type="button">◉ Percepção · 3d6</button><button id="open-travel-map" class="mini-button '+(travelVisible?'':'hidden')+'" type="button">⌖ Mapa / viajar</button><div id="scene-dice-stage" class="scene-dice-stage hidden">'+diceMarkup+'<output id="scene-dice-result"></output></div></div>';
   const generateResponseButton=stage.querySelector('#generate-scene-response');if(generateResponseButton)generateResponseButton.addEventListener('click',generateNarrativeResponse);
@@ -904,9 +872,9 @@ function renderGame(room){
     return '<article class="story-message '+(item.playerId===localPlayerId()?'mine':isNarrator?'narrator':'')+'"><small>'+escapeHtml(item.characterName||item.playerName||'Narrador')+' · '+label+'</small>'+result+'</article>';
   }).join(''):'';
   document.querySelector('#action-cycle-label').textContent='CENA AO VIVO · RODADA '+cycle.number;
-  document.querySelector('#action-cycle-summary').textContent=aiReplyExists?'O mundo respondeu.':allActed?'Aguardando o narrador.':'Faltam '+(required.length-actedCount)+' jogador(es).';
+  document.querySelector('#action-cycle-summary').textContent=pendingAction(room)?(localStorage.getItem('oraculo.groqKey')?'O mundo está respondendo…':'O anfitrião precisa configurar a chave de narração.') : allActed?'O mundo respondeu.': 'Vez de '+(players.find(p=>p.id===nextSpeaker(room))?.characterName||'jogador')+'.';
   document.querySelector('#action-player-status').innerHTML=players.map(player=>'<li class="'+(actedIds.has(player.id)?'acted':'waiting')+'"><span></span>'+escapeHtml(player.characterName||player.name||'Jogador')+' · '+(actedIds.has(player.id)?(cycleModeByPlayer.get(player.id)==='speech'?'FALOU':'AGIU'):'AGUARDA')+'</li>').join('');
-  const me=players.find(player=>player.id===localPlayerId()),canSubmit=!!(room.status==='narration'&&isPrompt&&me&&required.includes(me.id)&&!actedIds.has(me.id)),input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]');
+  const me=players.find(player=>player.id===localPlayerId()),canSubmit=!!(room.status==='narration'&&isPrompt&&me&&nextSpeaker(room)===me.id),input=document.querySelector('#message-input'),submit=document.querySelector('#message-form button[type="submit"]');
   const turnKey=canSubmit?[room.code,scene.id,beatIndex,cycle.number,me.id].join(':'):'';
   if(turnKey!==activeComposerTurnKey){activeComposerTurnKey=turnKey;selectedTurnMode='';closeTurnComposer();}
   playerCanSubmitTurn=canSubmit;
@@ -928,6 +896,7 @@ function renderGame(room){
   input.placeholder=!canSubmit?'Aguarde sua vez.':selectedTurnMode==='speech'?'Escreva a fala do personagem…':selectedTurnMode==='action'?'Descreva a ação; ela será resolvida com um teste 3d6…':'Escolha se vai falar ou agir.';
   const actionAdvance=document.querySelector('#advance-action-cycle');actionAdvance.hidden=true;actionAdvance.disabled=true;
   showScreen('game');
+  if(room.hostId===localPlayerId() && pendingAction(room) && !aiNarrationPending) queueMicrotask(()=>generateNarrativeResponse(false));
 }
 async function advanceNarrativeBeat(){
   if(!liveRoom||liveRoom.hostId!==localPlayerId())return;
@@ -946,6 +915,7 @@ async function advanceNarrativeBeat(){
   );
   const active=liveRoom.displayMessageId?messages.find(item=>item.id===liveRoom.displayMessageId):events.at(-1)||null;
   const pages=dialoguePages(dialogueTextFor(active,beat,scene));
+  const nextLine=events[events.findIndex(item=>item.id===active?.id)+1];
   const page=Number(liveRoom.dialoguePage||0);
   try{
     if(page<pages.length-1){
@@ -954,10 +924,15 @@ async function advanceNarrativeBeat(){
       else{liveRoom={...liveRoom,dialoguePage:next.dialoguePage,displayMessageId:next.displayMessageId};renderGame(liveRoom);}
       return;
     }
+    if(nextLine){
+      liveRoom=firebaseMode?await showDialogueMessage(liveRoom.code,localPlayerId(),nextLine.id):{...liveRoom,displayMessageId:nextLine.id,dialoguePage:0};
+      renderGame(liveRoom);return;
+    }
     const required=cycle.requiredPlayerIds||[];
     const acted=new Set(messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
+    if(pendingAction(liveRoom))return generateNarrativeResponse();
     if(!required.length||!required.every(id=>acted.has(id)))return notice('Aguarde uma fala ou ação de cada jogador; a cena continua neste local.');
-    const hasResponse=messages.some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(cycle.number));
+    const hasResponse=!pendingAction(liveRoom);
     if(!hasResponse)return generateNarrativeResponse();
     if(liveRoom.travelState?.phase==='in-transit'){
       const destinationIndex=Number(liveRoom.travelState.targetSceneIndex);
@@ -1028,7 +1003,7 @@ function openTravelMap(campaign=currentCampaign(),origin=liveRoom?.scene,destina
   const beat=origin?.beats?.[Number(liveRoom.beatIndex||0)],cycle=liveRoom.actionCycle||{},acted=new Set((liveRoom.messages||[]).filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));
   const required=cycle.requiredPlayerIds||[];
   const allActed=required.length>0&&required.every(id=>acted.has(id));
-  const narrated=(liveRoom.messages||[]).some(item=>['narrator-line','npc-line'].includes(item.type)&&Number(item.cycle)===Number(cycle.number));
+  const narrated=!pendingAction(liveRoom);
   if(!allActed||!narrated)return notice('Primeiro concluam a rodada e leiam a resposta do narrador; depois escolham uma rota.');
   selectedTravelDestinationIndex=Number(liveRoom.sceneIndex||0)+1;
   selectedTravelRoute='road';
@@ -1112,12 +1087,14 @@ async function advanceActionRound(){
   }catch(error){notice(error.message||'Não foi possível abrir a próxima rodada.');}
 }
 async function beginNarration(){
-  if(!liveRoom)return;const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign();
+  if(!liveRoom)return;
+  if(!localStorage.getItem('oraculo.groqKey')) { configureNarratorAI(); if(!localStorage.getItem('oraculo.groqKey')) return notice('Configure a narração para iniciar a campanha com NPCs vivos.'); }
+  const campaign=campaigns.find(item=>item.id===liveRoom.campaignId)||currentCampaign();
   const scene=campaign?.scenes?.[0]||{title:'A primeira cena',description:campaign?.premise||'A história começa.'};
   try{await startNarration(liveRoom.code,localPlayerId(),scene);}
   catch(error){
     if(!firebaseMode&&liveRoom.hostId===localPlayerId()){
-      renderRoomSummary({...liveRoom,status:'narration',scene,dynamicNarration:true,messages:scene.openingMessages||[]},'Aventura solo local iniciada.');
+      renderRoomSummary({...liveRoom,status:'narration',scene,dynamicNarration:true,actionCycle:{number:1,requiredPlayerIds:(liveRoom.players||[]).map(p=>p.id),status:'collecting'},messages:scene.openingMessages||[]},'Aventura solo local iniciada.');
       return;
     }
     notice(error.message||'Não foi possível iniciar a narração.');
@@ -1182,7 +1159,7 @@ async function sendPlayerAction(roll=null){
   if(mode==='action'&&!roll?.dice)return notice('Uma ação precisa ser resolvida com o teste de 3d6.');
   if(!liveRoom||input.disabled)return;
   const cycle=liveRoom.actionCycle||{number:1,requiredPlayerIds:(liveRoom.players||[]).map(player=>player.id),status:'collecting'};
-  const message={id:crypto.randomUUID(),type:'player-action',mode,cycle:Number(cycle.number),playerId:localPlayerId(),playerName:document.querySelector('#player-name').value.trim()||'Jogador',characterName:chosenCharacter?.name||'Personagem',className:chosenCharacter?.className||'',portrait:chosenCharacter?.portrait||'',text,...(roll||{}),createdAt:Date.now()};
+  const message={id:crypto.randomUUID(),type:'player-action',sceneId:liveRoom.scene?.id||'',mode,cycle:Number(cycle.number),playerId:localPlayerId(),playerName:document.querySelector('#player-name').value.trim()||'Jogador',characterName:chosenCharacter?.name||'Personagem',className:chosenCharacter?.className||'',portrait:chosenCharacter?.portrait||'',text,...(roll||{}),createdAt:Date.now()};
   input.value='';
   if(!firebaseMode){const messages=[...(liveRoom.messages||[]),message].slice(-150),required=cycle.requiredPlayerIds||[],acted=new Set(messages.filter(item=>item.type==='player-action'&&Number(item.cycle)===Number(cycle.number)).map(item=>item.playerId));liveRoom={...liveRoom,messages,dialoguePage:0,displayMessageId:message.id,actionCycle:{...cycle,status:required.length&&required.every(id=>acted.has(id))?'complete':'collecting'}};renderGame(liveRoom);return;}
   try{await postRoomMessage(liveRoom.code,message);}catch(error){notice(error.message||'A ação não sincronizou. Confira o acesso online à sala.');}
@@ -1192,11 +1169,12 @@ async function rollActionTest(){
   const action=document.querySelector('#message-input').value.trim(),character=chosenCharacter||{};
   if(!action)return notice('Descreva a ação antes de rolar.');
   const select=document.querySelector('#action-skill'),selected=select?.selectedOptions?.[0],skill=Number(selected?.dataset.level||11),name=selected?.textContent||'Percepção';
-  const dice=roll3d6().dice,result=resolveSuccessTest({dice,skill}),stage=document.querySelector('#action-dice-stage'),diceEls=[...stage.querySelectorAll('.die')],out=document.querySelector('#action-dice-result');
+  const conditionModifier=(character.conditions||[]).filter(c=>!c.scope||c.scope==='all'||String(name).toLowerCase().includes(String(c.scope).toLowerCase())).reduce((sum,c)=>sum+Number(c.modifier||0),0);
+  const dice=roll3d6().dice,result=resolveSuccessTest({dice,skill,conditionModifier}),stage=document.querySelector('#action-dice-stage'),diceEls=[...stage.querySelectorAll('.die')],out=document.querySelector('#action-dice-result');
   stage.classList.remove('hidden');out.textContent='Os dados caem…';diceEls.forEach(die=>{die.classList.remove('rolling');void die.offsetWidth;die.classList.add('rolling');});
   for(let tick=0;tick<8;tick++){diceEls.forEach((die,i)=>renderDie(die,dice[(tick+i)%3]));await sleep(75);}diceEls.forEach((die,i)=>renderDie(die,dice[i]));
   const total=dice.reduce((sum,value)=>sum+value,0);out.innerHTML='<b>'+dice.join(' · ')+' = '+total+' · '+(result.success?'SUCESSO':'FALHA')+'</b>';
-  await sendPlayerAction({mode:'action',dice,total,skillName:name,effectiveSkill:skill,success:result.success,criticalSuccess:result.criticalSuccess,criticalFailure:result.criticalFailure});
+  await sendPlayerAction({mode:'action',dice,total,skillName:name,effectiveSkill:result.effectiveSkill,modifiers:result.modifiers,margin:result.margin,success:result.success,criticalSuccess:result.criticalSuccess,criticalFailure:result.criticalFailure});
 }
 document.querySelector('#choose-speech').addEventListener('click',()=>setTurnMode('speech'));
 document.querySelector('#choose-action').addEventListener('click',()=>setTurnMode('action'));

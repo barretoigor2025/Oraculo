@@ -9,7 +9,7 @@ export function roll3d6(random = Math.random) {
 }
 
 export function resolveSuccessTest({ dice, skill, conditionModifier = 0, situationalModifier = 0 }) {
-  if (!Array.isArray(dice) || dice.length !== 3 || dice.some(die => die < 1 || die > 6)) {
+  if (!Array.isArray(dice) || dice.length !== 3 || dice.some(die => !Number.isInteger(die) || die < 1 || die > 6)) {
     throw new TypeError('A jogada precisa ter exatamente três dados de seis faces.');
   }
 
@@ -27,9 +27,9 @@ export function resolveSuccessTest({ dice, skill, conditionModifier = 0, situati
   const criticalFailure =
     total === 18 ||
     (total === 17 && effectiveSkill <= 15) ||
-    total >= effectiveSkill + 10;
+    (!criticalSuccess && total >= effectiveSkill + 10);
 
-  const success = !criticalFailure && total <= effectiveSkill;
+  const success = criticalSuccess || (!criticalFailure && total < 17 && total <= effectiveSkill);
   const margin = success ? effectiveSkill - total : total - effectiveSkill;
 
   return {
