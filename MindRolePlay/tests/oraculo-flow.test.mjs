@@ -96,6 +96,13 @@ for(const file of ['narration.html','mapa.html','catalog.html']){
  assert.equal(d.window.document.querySelectorAll('#dial-personagens .dial-hero').length,1);
  assert.ok(d.window.document.querySelector('#dial-overlay').classList.contains('ativo'));
  assert.match(d.window.document.querySelector('#dial-cena-bg').style.backgroundImage,/ponte-sete-lanternas/);
- console.log('PASS dialogue scene activation: registry-only NPCs, background, four NPC actors and player actor');
+ assert.equal(d.window.document.querySelectorAll('#dial-personagens .em-cena').length,0);
+ vm.runInContext(`_mindMostrarAtor('npc','kagehama-npc-0');`,d.getInternalVMContext());
+ assert.equal(d.window.document.querySelectorAll('.dial-npc.em-cena').length,1);
+ vm.runInContext(`_mindMostrarAtor('npc','kagehama-npc-1');_mindMostrarAtor('jogador','test-hero');`,d.getInternalVMContext());
+ assert.equal(d.window.document.querySelectorAll('.dial-npc.em-cena').length,1);
+ assert.equal(d.window.document.querySelectorAll('.dial-hero.em-cena').length,1);
+ assert.ok(d.window.document.querySelector('.dial-npc.em-cena')===d.window.document.querySelectorAll('.dial-npc')[0]);
+ console.log('PASS scene activation and sequential actor reveal: no crowd, one NPC and one player');
  d.window.close();
 }

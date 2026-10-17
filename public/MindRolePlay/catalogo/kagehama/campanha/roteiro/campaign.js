@@ -5,7 +5,7 @@ export const CENAS = {
     "titulo": "Ponte das Sete Lanternas",
     "subtitulo": "PRÓLOGO",
     "tipo": "dialogo",
-    "textoIntro": "Kagehama, capital de Akitsuru. Após anos de conflito, três casas senhoriais enviaram seus representantes à cidade para assinar um armistício. Nesta noite, a Festa das Sete Lanternas celebra a promessa de paz. Barcos iluminados atravessam os canais enquanto a comitiva segue em direção ao palácio.\n\nVocês estão na Ponte das Sete Lanternas, entre os moradores que acompanham a procissão. Ainda não se conhecem. Diante de vocês, o mensageiro Jiro carrega o estojo lacrado que contém os documentos do acordo. A mediadora Akiho Senda acompanha a comitiva.\n\nDe repente, as lanternas da ponte se apagam. Uma flecha atinge Jiro, que perde o equilíbrio e cai no canal. O estojo escapa de suas mãos e desliza sobre as tábuas molhadas, parando junto à borda. Entre os pilares da ponte, uma figura se move na água. A multidão recua em pânico; os guardas procuram o atirador nos telhados.\n\nO mensageiro luta contra a corrente. O estojo ainda está ao alcance, mas alguém sob a ponte tenta puxá-lo. Há poucos instantes para agir.",
+    "textoIntro": "A cidade de Kagehama se prepara para encerrar uma guerra. Representantes de três famílias que governam a região chegaram para assinar um acordo de paz. Nesta noite, a população acompanha a passagem da comitiva pela Ponte das Sete Lanternas.\n\nVocês estão entre as pessoas reunidas na ponte. À frente, o mensageiro Jiro caminha ao lado da mediadora Akiho Senda. Ele carrega uma pequena caixa quadrada de madeira, fechada com um selo oficial. Dentro dela estão os documentos que serão assinados no palácio.\n\nUma flecha disparada de um dos telhados atinge o ombro de Jiro. Ele solta a caixa, cambaleia contra a lateral da ponte e cai na água. A caixa bate nas tábuas e desliza até a borda, perto de vocês.\n\nA multidão começa a fugir. Enquanto os guardas procuram o atirador, Jiro tenta manter a cabeça fora da água. Sob a ponte, uma pessoa estende a mão para alcançar a caixa. Vocês podem ajudar o mensageiro, proteger os documentos ou tentar encontrar quem disparou.",
     "npcsPresentes": [
       "kagehama-npc-1",
       "kagehama-npc-0",
@@ -13,7 +13,7 @@ export const CENAS = {
       "kagehama-npc-4"
     ],
     "npcEntrada": "kagehama-npc-0",
-    "falaEntrada": "[ACAO: Akiho afasta duas pessoas da borda e se volta para vocês.] O mensageiro está no canal! Quem puder ajudá-lo, venha comigo. O estojo precisa ficar longe da água. Depressa!",
+    "falaEntrada": "[ACAO: Akiho afasta duas pessoas da borda e se volta para vocês.] O mensageiro está no canal! Quem puder ajudá-lo, venha comigo. Não deixem que levem a caixa com os documentos! Depressa!",
     "semIntro": false,
     "avancarEmGrupo": true,
     "imgExterior": "catalogo/kagehama/assets/ponte-sete-lanternas.jpg",

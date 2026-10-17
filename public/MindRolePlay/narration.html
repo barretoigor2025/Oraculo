@@ -1075,6 +1075,22 @@ html,body{
 #dial-npc-chips{overflow-x:auto;flex-wrap:nowrap;flex-shrink:0}
 #dial-input-bar,#dial-turno-bar{flex-shrink:0}
 @media(max-height:520px){#dial-personagens{bottom:130px;height:35dvh}.dial-npc{height:32dvh!important}.dial-npc.inativo{height:27dvh!important}.dial-hero{height:32dvh}#dial-balao{max-height:32dvh;top:35px}}
+
+/* Left: one player; right: one NPC. Equal canvas height and ground line. */
+#dial-personagens{height:41dvh;overflow:visible}
+#dial-personagens .dial-npc,#dial-personagens .dial-hero{
+  height:40dvh!important;max-width:44vw;bottom:0;visibility:hidden;opacity:1!important;
+  pointer-events:none;transition:transform .45s ease,visibility .45s;
+}
+#dial-personagens .dial-npc{left:auto!important;right:1%!important;transform:translateX(115%)}
+#dial-personagens .dial-hero{left:1%!important;right:auto!important;transform:translateX(-115%)}
+#dial-personagens .em-cena{visibility:visible;transition:transform .45s ease}
+#dial-personagens .dentro.em-cena{transform:translateX(0)}
+#dial-personagens .dial-npc canvas,#dial-personagens .dial-hero canvas{
+ height:100%;width:auto;max-width:44vw;object-fit:contain;object-position:bottom;
+}
+#dial-personagens .dial-hero canvas{transform:none}
+@media(max-height:520px){#dial-personagens{height:42dvh}#dial-personagens .dial-npc,#dial-personagens .dial-hero{height:41dvh!important}}
 </style>
 </head>
 <body>
@@ -3003,13 +3019,13 @@ function _dialActivar(campCenaId) {
     const canvas = document.createElement('canvas');
     _dialLoadCanvas(npc.img, canvas, () => {
       div.appendChild(canvas);
-      requestAnimationFrame(() => div.classList.add('dentro'));
+      div.classList.add('arte-pronta');if(div.classList.contains('em-cena'))requestAnimationFrame(()=>div.classList.add('dentro'));
     }, () => {
       const fb = document.createElement('span');
       fb.style.cssText = 'font-size:48px;display:flex;align-items:flex-start;padding-top:16px;';
       fb.textContent = npc.avatar || '👤';
       div.appendChild(fb);
-      requestAnimationFrame(() => div.classList.add('dentro'));
+      div.classList.add('arte-pronta');if(div.classList.contains('em-cena'))requestAnimationFrame(()=>div.classList.add('dentro'));
     });
     container.appendChild(div);
     _dialNpcEls.push({ par: div, npc, idx: i });
@@ -3023,7 +3039,7 @@ function _dialActivar(campCenaId) {
     div.dataset.playerId=pid;
     div.style.right=(index*13)+'%';
     const canvas=document.createElement('canvas');
-    _dialLoadCanvas(src,canvas,()=>{div.append(canvas);requestAnimationFrame(()=>div.classList.add('dentro'));},()=>{});
+    _dialLoadCanvas(src,canvas,()=>{div.append(canvas);div.classList.add('arte-pronta');if(div.classList.contains('em-cena'))requestAnimationFrame(()=>div.classList.add('dentro'));},()=>{});
     const label=document.createElement('span');label.textContent=player.nome||player.name||'Aventureiro';div.append(label);
     container.append(div);
   });
@@ -3156,6 +3172,18 @@ function _dialSelecionarNpc(idx) {
   if (input && npcAtivo) input.placeholder = `O que você diz para ${npcAtivo.nome.split(' ')[0]}…`;
 }
 
+function _mindMostrarAtor(tipo,id){
+  const npc=tipo==='npc';
+  const actors=npc?_dialNpcEls.map(e=>({el:e.par,id:e.npc.id}))
+    :Array.from(document.querySelectorAll('#dial-personagens .dial-hero')).map(el=>({el,id:el.dataset.playerId}));
+  for(const actor of actors){
+    const visible=actor.id===id;
+    actor.el.classList.toggle('em-cena',visible);
+    if(!visible)actor.el.classList.remove('dentro');
+    else if(actor.el.classList.contains('arte-pronta'))requestAnimationFrame(()=>actor.el.classList.add('dentro'));
+  }
+}
+
 function _dialFocarNpc(npcId) {
   const idx = _dialNpcEls.findIndex(({ npc }) => npc.id === npcId || (npcId || '').includes(npc.id));
   if (idx >= 0) _dialSelecionarNpc(idx);
@@ -3271,9 +3299,7 @@ async function _dialRenderBeat(beat) {
     await _dialDelay(120);
     _dialFocarNpc(oradorId);
     // Entrar NPC se ainda não entrou
-    _dialNpcEls.forEach(({ par }) => {
-      if (!par.classList.contains('dentro')) par.classList.add('dentro');
-    });
+    _mindMostrarAtor('npc',oradorId);
     await _dialDelay(300);
     _dialMostrarBalaoNPC(oradorNome, acao, fala || texto, true);
     _dialHistoricoLocal.push({ tipo: 'npc', quem: oradorNome, texto: fala || texto });
@@ -3281,6 +3307,7 @@ async function _dialRenderBeat(beat) {
     _dialAwaitingCont = true;
 
   } else if (tipo === 'jogador') {
+    _mindMostrarAtor('jogador',beat.authorId||oradorId);
     const CLASS_AVATAR = { mago:'🔮', guerreiro:'⚔️', ladino:'🗡️', clerigo:'✝️', arqueiro:'🏹', druida:'🌿', barbaro:'🪓' };
     const avatar = CLASS_AVATAR[beat.classId] || '⚔️';
     const ehMinha = beat.authorId === _pid;
@@ -3845,6 +3872,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v3</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v4</div>
 </body>
 </html>
