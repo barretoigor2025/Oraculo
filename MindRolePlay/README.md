@@ -1,5 +1,9 @@
 # Mind RolePlay
 
+O ciclo de conversa agora responde automaticamente após cada fala/ação individual,
+com intervenções de NPCs presentes e memória persistente. Veja
+[RECONSTRUCAO.md](RECONSTRUCAO.md) para arquitetura, testes e limites de paridade.
+
 Mind RolePlay é a casa onde várias campanhas narrativas ficam organizadas. O sistema é independente do Oráculo, mas reaproveita sua configuração de Firebase/Firestore e o fluxo simples de sala online.
 
 ## O esqueleto implementado
@@ -41,7 +45,8 @@ Se a leitura ou gravação remota falhar, o protótipo abre em modo local neste 
 - [ ] Definir atributos, lista de perícias, vantagens/desvantagens e efeitos de condições com mais detalhe.
 - [ ] Expandir as fichas e permitir múltiplas perícias e modelos de personagem.
 - [ ] Construir a importação de campanha e o checklist automático.
-- [ ] Conectar IA para sugerir perícia/modificadores e narrar efeitos, sempre sob autoridade do narrador.
+- [x] Conectar a narração Groq a cada fala/ação, com perfis e memória de NPCs.
+- [ ] Completar seleção contextual de perícia/modificadores e demais regras GURPS.
 - [ ] Migrar textos/listas extensos para subcoleções e arte para Storage quando necessário.
 
 Veja [CONCEITO.md](CONCEITO.md) para o fluxo completo e as decisões de design.
