@@ -124,3 +124,47 @@ s=s.replace("function classSpriteUrl(id, gender){", "function classSpriteUrl(id,
 s=s.replace('`catalogo/kagehama/classes/${id}/retrato/${id}_${gender}_retrato.png`', "CLASSES_DATA[id.replace(/_f$/,'')+(gender==='f'?'_f':'')]?.portrait||''")
 s=s.replace('`catalogo/kagehama/classes/${id}/peca_tabuleiro/${id}_${g}${r}_peca.png`', "CLASSES_DATA[id.replace(/_f$/,'')+(g==='f'?'_f':'')]?.standee||''")
 p.write_text(s)
+
+# Kagehama scenes map directly to narration scenes; registry-only NPCs need no
+# optional curated `cenas` list. Never fail the entire scene on its absence.
+p=base/'narration.html';s=p.read_text()
+s=s.replace('return npc.cenas[0];', 'return npc.cenas?.[0] || campCenaId;')
+s=s.replace('_dialNpcs.filter(n => n.cenas.includes(narracaoCena))', '_dialNpcs.filter(n => n.cenas?.includes(narracaoCena))')
+s=s.replace("  _dialChroma(tctx, W, H);", "  /* Existing Kagehama PNG transparency is preserved; no chromakey erasure. */")
+# Spread NPCs on a common ground line, rather than stacking them at left=0.
+s=s.replace('left:${npc.offsetPx || 0}px;height:${npcVh}vh;', 'left:${i*16}%;height:${npcVh}vh;')
+# Same scene also renders all player characters from their actual selected class.
+s=s.replace('  // Selecionar primeiro NPC ativo\n', '''  Object.entries(_lastRoom?.players||{}).forEach(([pid,player],index)=>{
+    const cls=CLASSES_DATA[player.classId];
+    const src=player.standee||cls?.standee;
+    if(!src)return;
+    const div=document.createElement('div');div.className='dial-hero';
+    div.dataset.playerId=pid;
+    div.style.right=(index*13)+'%';
+    const canvas=document.createElement('canvas');
+    _dialLoadCanvas(src,canvas,()=>{div.append(canvas);requestAnimationFrame(()=>div.classList.add('dentro'));},()=>{});
+    const label=document.createElement('span');label.textContent=player.nome||player.name||'Aventureiro';div.append(label);
+    container.append(div);
+  });
+  // Selecionar primeiro NPC ativo
+''')
+s=s.replace('</style>', '''
+/* Scene-first portrait layout: full background, opaque actors at ground level. */
+#dial-overlay{height:100dvh;max-height:100dvh;overflow:hidden;background:#080808}
+#dial-personagens{bottom:190px;height:37dvh;z-index:4;overflow:hidden}
+.dial-npc{max-width:30vw;height:33dvh!important;opacity:1!important;filter:drop-shadow(0 5px 10px #0008)!important}
+.dial-npc.inativo{opacity:1!important;filter:drop-shadow(0 5px 10px #0008)!important;height:28dvh!important}
+.dial-npc canvas{height:100%;max-width:30vw;object-fit:contain;object-position:bottom}
+.dial-hero{position:absolute;bottom:0;height:34dvh;max-width:32vw;transform:translateX(120%);transition:transform .5s;z-index:9}
+.dial-hero.dentro{transform:none}.dial-hero canvas{height:100%;max-width:32vw;object-fit:contain;object-position:bottom}
+.dial-hero span{position:absolute;bottom:0;left:0;right:0;text-align:center;background:#111d;color:#fff;font:10px sans-serif;padding:3px}
+#dial-balao,#dial-player-card{z-index:15;max-height:32dvh}
+#dial-cena-bg::after{background:linear-gradient(0deg,#0008,transparent 65%)}
+#dial-npc-chips{overflow-x:auto;flex-wrap:nowrap;flex-shrink:0}
+#dial-input-bar,#dial-turno-bar{flex-shrink:0}
+@media(max-height:520px){#dial-personagens{bottom:130px;height:35dvh}.dial-npc{height:32dvh!important}.dial-npc.inativo{height:27dvh!important}.dial-hero{height:32dvh}#dial-balao{max-height:32dvh;top:35px}}
+</style>''',1)
+# Cached image events must not leave a valid background hidden.
+s=s.replace("      elImagem.src = imgSrc;", "      elImagem.src = _imgBust(imgSrc);\n      if(elImagem.complete && elImagem.naturalWidth)onImagemCarregada();")
+s=s.replace('v46', 'Mind v3')
+p.write_text(s)

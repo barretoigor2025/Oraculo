@@ -80,3 +80,22 @@ for(const file of ['narration.html','mapa.html','catalog.html']){
  await assert.rejects(context.startNarration('ABCDE'),/anfitrião/);
  console.log('PASS room ownership, duplicate names, stable membership, resume without reset and invalid room rejection');
 }
+
+// Regression: registry NPCs have no optional curated `cenas` array. Scene
+// activation must render a background, every present NPC and the player's art.
+{
+ const html=fs.readFileSync(root+'public/MindRolePlay/narration.html','utf8'),d=dom(html);
+ Object.assign(d.window,mocks);
+ d.window.localStorage.setItem('mindRolePlay.playerId','test-hero');
+ d.window.localStorage.setItem('mindRolePlay.classId','samurai');
+ const source=[...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(s=>s.includes('import { NPCS }'))
+   .replace(/^import[^;]+;\n/gm,'').replace(/^init\(\);$/m,'');
+ vm.runInContext(source,d.getInternalVMContext());
+ vm.runInContext(`_cenaAtual='kagehama-scene-0';_lastRoom={players:{'test-hero':{id:'test-hero',nome:'Teste Samurai',classId:'samurai'}}};_dialActivar(_cenaAtual);`,d.getInternalVMContext());
+ assert.equal(d.window.document.querySelectorAll('#dial-personagens .dial-npc').length,4);
+ assert.equal(d.window.document.querySelectorAll('#dial-personagens .dial-hero').length,1);
+ assert.ok(d.window.document.querySelector('#dial-overlay').classList.contains('ativo'));
+ assert.match(d.window.document.querySelector('#dial-cena-bg').style.backgroundImage,/ponte-sete-lanternas/);
+ console.log('PASS dialogue scene activation: registry-only NPCs, background, four NPC actors and player actor');
+ d.window.close();
+}
