@@ -104,5 +104,46 @@ for(const file of ['narration.html','mapa.html','catalog.html']){
  assert.equal(d.window.document.querySelectorAll('.dial-hero.em-cena').length,1);
  assert.ok(d.window.document.querySelector('.dial-npc.em-cena')===d.window.document.querySelectorAll('.dial-npc')[0]);
  console.log('PASS scene activation and sequential actor reveal: no crowd, one NPC and one player');
+ // Exercise the actual static-page dialogue engine, including remote NPC target.
+ await vm.runInContext(`(async()=>{
+
+   _dialogoLog=[{tipo:'jogador',authorId:_pid,oradorId:_pid,oradorNome:'Teste',texto:'Quem é você?',npcId:'kagehama-npc-0',ts:100}];
+   _dialReadIdx=0;_dialAnimBeat=false;_dialAwaitingCont=false;
+   await _dialRenderBeat(_dialogoLog[0]);
+ })()`,d.getInternalVMContext());
+ assert.match(d.window.document.querySelector('#dial-player-card button').textContent,/Continuar/);
+ assert.equal(vm.runInContext('_dialReadIdx',d.getInternalVMContext()),0);
+ await vm.runInContext(`(async()=>{
+   window.testReplies=[];window.testCalls=[];_dialVerificarReacao=async()=>{};
+   _dialChamarIA=async(idx,text)=>{testCalls.push(_dialNpcEls[idx].npc.id);return 'Sou Akiho.';};
+   window._fbAddDialogue=async beat=>{testReplies.push(beat);_dialogoLog.push(beat);};
+   await Promise.all([_dialFluxoTurnos(),_dialFluxoTurnos()]);
+ })()`,d.getInternalVMContext());
+ assert.equal(d.window.testReplies.length,1);
+ assert.equal(d.window.testCalls[0],'kagehama-npc-0');
+ d.window.document.querySelector('#dial-player-card button').click();
+ assert.equal(vm.runInContext('_dialReadIdx',d.getInternalVMContext()),1);
+ await vm.runInContext(`(async()=>{
+   _dialogoLog=[{tipo:'jogador',authorId:'guest',texto:'Olá',npcId:'kagehama-npc-1',ts:200}];
+   _dialChamarIA=async()=>{throw new Error('Serviço indisponível');};
+   await _dialFluxoTurnos();
+ })()`,d.getInternalVMContext());
+ assert.match(d.window.document.querySelector('#dial-ia-pensando').textContent,/Serviço indisponível/);
+ assert.match(d.window.document.querySelector('#dial-ia-pensando button').textContent,/Tentar novamente/);
+ await vm.runInContext(`(async()=>{
+   _dialChamarIA=async(idx)=>{testCalls.push(_dialNpcEls[idx].npc.id);return 'Sou Ren.';};
+   document.querySelector('#dial-ia-pensando button').click();
+   await new Promise(resolve=>setTimeout(resolve,0));
+ })()`,d.getInternalVMContext());
+ assert.equal(d.window.testReplies.length,2);
+ assert.equal(d.window.testCalls.at(-1),'kagehama-npc-1');
+ assert.equal(d.window.document.querySelector('#dial-ia-pensando').parentElement.id,'dial-overlay');
+ vm.runInContext(`window._fbListenRoom=()=>{};
+ _lastRoom={players:{'test-hero':{nome:'Teste'},guest:{nome:'Convidado'}},narration:{dialLido:{'test-hero':2,guest:2}}};`,d.getInternalVMContext());
+ assert.equal(vm.runInContext('_dialVezPid()',d.getInternalVMContext()),'test-hero');
+ vm.runInContext(`_lastRoom.narration.dialLido.guest=1;`,d.getInternalVMContext());
+ assert.equal(vm.runInContext('_dialVezPid()',d.getInternalVMContext()),null);
+ console.log('PASS explicit Continue, single host response, guest NPC target and retry after AI failure');
+
  d.window.close();
 }

@@ -208,3 +208,73 @@ s=s.replace('</style>', '''
 </style>''',1)
 s=s.replace('Mind v3','Mind v4')
 p.write_text(s)
+
+# One shared response path for host/guests, explicit reading, recoverable AI errors.
+p=base/'narration.html';s=p.read_text()
+a=s.index('    const ehMinha = beat.authorId === _pid;');b=s.index('\n  } else {\n    // narrador / sistema',a)
+s=s[:a]+'''    _dialMostrarCardPlayer(oradorNome || 'Jogador', avatar, texto || '', true);
+    _dialHistoricoLocal.push({ tipo: 'jogador', quem: oradorNome || 'Jogador', texto: texto || '' });
+    _dialAnimBeat = false;
+    _dialAwaitingCont = true;
+''' +s[b:]
+s=s.replace("okBtn.textContent = '✔ OK';", "okBtn.textContent = '▶ Continuar';")
+s=s.replace("if (!key) return null;\n  const npc", "if (!key) throw new Error('Configure a chave Groq no aparelho do anfitrião.');\n  const npc")
+s=s.replace("    if (data.error) throw new Error(data.error.message);", "    if (!resp.ok || data.error) throw new Error(data.error?.message || 'Serviço de IA indisponível ('+resp.status+').');")
+s=s.replace("    return reply;\n  } catch (_) { return null; }", "    if(!reply)throw new Error('A IA não retornou uma resposta.');\n    return reply;\n  } catch (error) { throw new Error(error.name==='AbortError'?'A IA demorou demais para responder.':error.message); }")
+a=s.index('async function _dialFluxoTurnos(){');b=s.index('// ── Helpers',a)
+s=s[:a]+'''let _mindRespostaEmCurso=false;
+function _mindErroResposta(error){
+ const status=document.getElementById('dial-ia-pensando');
+ status.replaceChildren();status.style.display='block';
+ const text=document.createElement('span');text.textContent='Não foi possível obter a resposta: '+error.message+' ';
+ const retry=document.createElement('button');retry.textContent='Tentar novamente';
+ retry.onclick=()=>{_dialIaRespondTs=null;_dialFluxoTurnos();};
+ status.append(text,retry);
+}
+async function _dialFluxoTurnos(){
+ if(!_isHost||!_dialAtivo||_mindRespostaEmCurso)return;
+ const ult=_dialogoLog.at(-1);
+ if(!ult||ult.tipo!=='jogador'||_dialIaRespondTs===ult.ts)return;
+ _mindRespostaEmCurso=true;_dialIaRespondTs=ult.ts;
+ const status=document.getElementById('dial-ia-pensando');
+ status.textContent='Preparando a resposta…';status.style.display='block';
+ try{
+  const idx=ult.npcId?_dialNpcEls.findIndex(e=>e.npc.id===ult.npcId):_dialNpcAtivoIdx;
+  const npc=_dialNpcEls[idx]?.npc;
+  if(!npc)throw new Error('O NPC escolhido não está nesta cena.');
+  const resposta=await _dialChamarIA(idx,ult.texto);
+  if(_dialogoLog.at(-1)?.ts!==ult.ts)return;
+  const beat={tipo:'npc',oradorId:npc.id,oradorNome:npc.nome,texto:resposta,respondeA:ult.ts,ts:Date.now()};
+  if(window._fbAddDialogue)await window._fbAddDialogue(beat);
+  else{_dialogoLog=[..._dialogoLog,beat];renderDialogo();_dialTickDisplay();}
+  status.style.display='none';
+  try{await _dialVerificarReacao(idx);}catch(error){console.warn('Reação opcional indisponível:',error.message);}
+ }catch(error){_mindErroResposta(error);}
+ finally{_mindRespostaEmCurso=false;_dialAtualizarVezUI();}
+}
+
+''' +s[b:]
+s=s.replace("texto, classId: jogador.classId, authorId: _pid, ts: Date.now(),", "texto, classId: jogador.classId, authorId: _pid, npcId:_dialNpcEls[_dialNpcAtivoIdx]?.npc.id||null, ts: Date.now(),")
+a=s.index('  // Guest: para aqui');b=s.index('// ── Navegação e histórico',a)
+s=s[:a]+'''  // Only the host generates replies; both local and remote speech use this path.
+  await _dialFluxoTurnos();
+  _dialAtualizarVezUI();
+};
+
+''' +s[b:]
+s=s.replace('Mind v4','Mind v5')
+p.write_text(s)
+
+# Use the shared log, including unread guest speech, as the NPC context.
+p=base/'narration.html';s=p.read_text()
+s=s.replace("const historicoTexto = _dialHistoricoLocal.length\n    ? _dialHistoricoLocal.map(e => `${e.quem}: \"${e.texto}\"`).join('\\n')", "const historicoTexto = _dialogoLog.length\n    ? _dialogoLog.slice(-40).map(e => `${e.oradorNome}: \"${e.texto}\"`).join('\\n')")
+p.write_text(s)
+# Response status must remain visible while the player's card hides the NPC balloon.
+p=base/'narration.html';s=p.read_text()
+s=s.replace('    <div id="dial-ia-pensando">✨ Pensando…</div>\n','')
+s=s.replace('  <div id="dial-player-card"></div>', '  <div id="dial-player-card"></div>\n  <div id="dial-ia-pensando" role="status" aria-live="polite">Preparando a resposta…</div>')
+s=s.replace('</style>', '''
+#dial-ia-pensando{position:absolute;bottom:220px;left:3%;right:3%;z-index:25;background:#161616ed;color:#fff;padding:10px 14px;border-radius:9px;font:14px sans-serif;max-height:20dvh;overflow:auto}
+#dial-ia-pensando button{padding:8px 12px;margin:5px;color:#fff;background:#433057;border:1px solid #b594cb;border-radius:7px}
+</style>''')
+p.write_text(s)
