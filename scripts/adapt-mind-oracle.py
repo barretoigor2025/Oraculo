@@ -278,3 +278,14 @@ s=s.replace('</style>', '''
 #dial-ia-pensando button{padding:8px 12px;margin:5px;color:#fff;background:#433057;border:1px solid #b594cb;border-radius:7px}
 </style>''')
 p.write_text(s)
+# Resolve supported models for this Groq account for every narration/AI request.
+p=base/'narration.html';s=p.read_text()
+s=s.replace("import { test3d6, resolveSuccessTest }", "import { groqFetch } from './groq.js?v=6';\nimport { test3d6, resolveSuccessTest }")
+s=s.replace("await fetch('https://api.groq.com/openai/v1/chat/completions'", "await groqFetch('https://api.groq.com/openai/v1/chat/completions'")
+s=s.replace('Mind v5','Mind v6')
+s=s.replace('</style>', '''
+#dial-ia-pensando{box-sizing:border-box;min-width:0;width:auto;max-width:94%;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-height:26dvh}
+#dial-ia-pensando button{display:block;white-space:normal;max-width:100%;margin:8px 0 0}
+@media(max-height:520px){#dial-ia-pensando{bottom:170px;max-height:28dvh}}
+</style>''')
+p.write_text(s)

@@ -1094,6 +1094,10 @@ html,body{
 
 #dial-ia-pensando{position:absolute;bottom:220px;left:3%;right:3%;z-index:25;background:#161616ed;color:#fff;padding:10px 14px;border-radius:9px;font:14px sans-serif;max-height:20dvh;overflow:auto}
 #dial-ia-pensando button{padding:8px 12px;margin:5px;color:#fff;background:#433057;border:1px solid #b594cb;border-radius:7px}
+
+#dial-ia-pensando{box-sizing:border-box;min-width:0;width:auto;max-width:94%;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-height:26dvh}
+#dial-ia-pensando button{display:block;white-space:normal;max-width:100%;margin:8px 0 0}
+@media(max-height:520px){#dial-ia-pensando{bottom:170px;max-height:28dvh}}
 </style>
 </head>
 <body>
@@ -1311,6 +1315,7 @@ html,body{
 </div>
 
 <script type="module">
+import { groqFetch } from './groq.js?v=6';
 import { test3d6, resolveSuccessTest } from './gurps.js';
 import { CLASSES_DATA } from './catalogo/kagehama/classes.js';
 import { NPCS } from './catalogo/kagehama/loader.js?v=2';
@@ -1990,7 +1995,7 @@ async function triggerTestePercepcao(gatilho, tipoTrigger, cenaDestino) {
 
 async function _gerarAtmosferaPercepcao(gatilho, cena, apiKey) {
   try {
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const resp = await groqFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -2217,7 +2222,7 @@ window.confirmarPercepcao = confirmarPercepcao;
 async function _gerarRevealPercepcao(percepcao, passaram, apiKey) {
   try {
     const nomes = passaram.map(p => _getNomeJogador(p)).join(' e ');
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const resp = await groqFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -2744,7 +2749,7 @@ REGRAS ABSOLUTAS:
   btnGer.classList.add('carregando');
 
   try {
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const resp = await groqFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -3377,7 +3382,7 @@ async function _dialChamarIA(npcIdx, mensagemJogador) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 18000);
   try {
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const resp = await groqFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST', signal: controller.signal,
       headers: { 'Authorization': `Bearer ${key}`, 'content-type': 'application/json' },
       body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 200, messages }),
@@ -3798,7 +3803,7 @@ async function _invAdjudicarAcao(acaoTexto, roll){
   if (apiKey) {
     try {
       const outrosTxt = outros.length ? `Outros presentes: ${outros.join(', ')}.` : 'Ninguém mais está presente.';
-      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const resp = await groqFetch('https://api.groq.com/openai/v1/chat/completions', {
         method:'POST',
         headers:{ 'Authorization':`Bearer ${apiKey}`, 'content-type':'application/json' },
         body: JSON.stringify({
@@ -3865,6 +3870,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v5</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v6</div>
 </body>
 </html>
