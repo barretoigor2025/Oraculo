@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,viewport-fit=cover">
+<title>Mind RolePlay — Mapa</title>
+<script>(function(){try{var c=localStorage.getItem('mindRolePlay.fbConfig'),r=localStorage.getItem('mindRolePlay.roomId');if(!c||!r){location.replace('index.html?v=8');}}catch(e){location.replace("index.html?v=8");}})();</script>
+<script type="module">
+import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import{getFirestore,doc,onSnapshot,updateDoc,getDoc,arrayUnion}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+const _cfg=JSON.parse(localStorage.getItem('mindRolePlay.fbConfig')||'null');
+const _rid=localStorage.getItem('mindRolePlay.roomId');
+if(_cfg&&_rid){
+  try{
+    const app=getApps().find(a=>a.name==='mapa')||initializeApp(_cfg,'mapa');
+    const db=getFirestore(app);
+    const rd=doc(db,'mindRooms',_rid);
+    window._fbUpdate=async(fields)=>{
+      const u={};
+      for(const[k,v]of Object.entries(fields)) u[`mapa.${k}`]=v;
+      u['mapa.ts']=Date.now();
+      await updateDoc(rd,u);
+    };
+    // Atualiza campos de narração diretamente (sem prefixo mapa.)
+    window._fbUpdateNarration=async(fields)=>{
+      const u={'narration.ts':Date.now()};
+      for(const[k,v]of Object.entries(fields)) u[`narration.${k}`]=v;
+      await updateDoc(rd,u);
+    };
+    // Define status da sala (ex.: 'battle') + campos extras em um único write atômico
+    window._fbSetStatus=async(status,extra={})=>{
+      await updateDoc(rd,{status,...extra});
+    };
+    window._fbListen=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
+    window._fbInit=async(estado)=>{
+      const snap=await getDoc(rd);
+      if(!snap.exists())return;
+      const atual=snap.data().mapa || {};
+      // Mescla apenas os campos ausentes — preserva localAtual já gravado pelo
+      // handoff da narração (status='map' + mapa.localAtual = cena atual).
+      const merged={};
+      for(const k of Object.keys(estado)){
+        if(atual[k]===undefined) merged[`mapa.${k}`]=estado[k];
+      }
+      if(Object.keys(merged).length){ merged['mapa.ts']=Date.now(); await updateDoc(rd,merged); }
+    };
+  }catch(e){console.warn('Mapa Firebase:',e);}
+}
+window._fbMapaReady=true;
+window.dispatchEvent(new Event('fbMapaReady'));
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0a0806;color:#e8d5a8;font-family:'Georgia',serif;user-select:none;-webkit-user-select:none;}
+
+/* ── LAYOUT ── */
+#mapa-wrap{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;}
+
+/* ── HEADER ── */
+#mapa-header{
+  flex-shrink:0;display:flex;align-items:center;gap:10px;
+  padding:max(8px,calc(4px+env(safe-area-inset-top))) 14px 8px;
+  background:linear-gradient(180deg,#0d0b08 0%,rgba(13,11,8,0) 100%);
+  border-bottom:1px solid rgba(190,135,35,0.20);
+  min-height:46px;
+}
+#mapa-titulo{flex:1;font-size:13px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(210,175,90,0.85);}
+#mapa-local-label{font-size:11px;color:rgba(190,155,70,0.65);letter-spacing:.5px;}
+.mapa-nav-btn{
+  background:rgba(30,18,5,0.9);border:1px solid rgba(190,140,35,0.3);
+  border-radius:8px;padding:5px 10px;color:rgba(210,175,90,0.8);font-size:11px;
+  cursor:pointer;white-space:nowrap;
+}
+.mapa-nav-btn:active{opacity:0.7;}
+
+/* ── ÁREA DO MAPA (SVG único) ── */
+#mapa-scroll{
+  flex:1;min-height:0;
+  overflow-x:auto;overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  position:relative;
+  background:#0a0806;
+}
+#mapa-scroll::-webkit-scrollbar{display:none;}
+/* O SVG inteiro escala junto: imagem + caminhos + nós + standees
+   vivem no mesmo sistema de coordenadas (viewBox). Sem cálculo de pixel. */
+#mapa-svg{
+  display:block;height:100%;width:auto;
+}
+
+/* ── CAMINHOS ── */
+.caminho-linha{stroke:rgba(190,140,35,0.32);stroke-width:3;stroke-dasharray:8 6;fill:none;}
+.caminho-linha.perigo-alto{stroke:rgba(180,60,40,0.38);}
+.caminho-linha.ativo{stroke:rgba(190,140,35,0.75);stroke-dasharray:none;stroke-width:4;}
+
+/* ── NÓS DO MAPA ── */
+.no-g{cursor:pointer;}
+.no-circ{
+  fill:rgba(12,8,3,0.88);
+  stroke:rgba(190,140,35,0.65);stroke-width:3;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.7));
+}
+.no-emoji{font-size:30px;}
+.no-lbl{
+  font-family:Georgia,serif;font-size:18px;font-weight:700;
+  letter-spacing:.5px;fill:rgba(225,195,115,0.95);
+  paint-order:stroke;stroke:rgba(8,5,2,0.95);stroke-width:4;stroke-linejoin:round;
+}
+.no-g.atual .no-circ{stroke:#f0c83c;stroke-width:5;filter:drop-shadow(0 0 10px rgba(240,200,60,0.6));}
+.no-g.selecionado .no-circ{stroke:rgba(240,200,60,0.95);stroke-width:4;}
+.no-g.desconhecido .no-circ{fill:rgba(8,5,2,0.92);stroke:rgba(90,68,32,0.45);}
+.no-g.desconhecido .no-emoji{opacity:0.45;}
+.no-g.desconhecido .no-lbl{fill:rgba(120,95,50,0.55);letter-spacing:3px;}
+.no-g.ouviu_falar .no-circ{stroke:rgba(130,108,55,0.55);}
+.no-g.ouviu_falar .no-lbl{fill:rgba(170,140,70,0.7);font-style:italic;}
+
+/* ── STANDEES ── */
+.st-g{transition:transform 1.5s cubic-bezier(0.4,0,0.2,1);}
+.st-circ{
+  fill:rgba(20,12,4,0.96);
+  stroke:rgba(240,200,60,0.9);stroke-width:3;
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,0.8));
+}
+.st-base{ fill:rgba(0,0,0,0.45); }
+.st-img{ filter:drop-shadow(0 3px 5px rgba(0,0,0,0.85)); }
+.st-emoji{font-size:22px;}
+.st-lbl{
+  font-family:Georgia,serif;font-size:14px;fill:rgba(230,200,110,0.92);
+  paint-order:stroke;stroke:rgba(8,5,2,0.92);stroke-width:3.5;stroke-linejoin:round;
+}
+
+/* ── Transição de emboscada ── */
+#mapa-fade{
+  position:fixed;inset:0;z-index:1000;
+  background:#000;opacity:0;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .55s ease;
+}
+#mapa-fade.ativo{opacity:1;pointer-events:all;}
+#mapa-fade-txt{
+  color:rgba(225,200,130,0.95);font-family:Georgia,serif;font-style:italic;
+  font-size:clamp(16px,5vw,22px);text-align:center;padding:0 30px;
+  letter-spacing:.5px;transition:opacity .5s ease;
+}
+
+/* ── TOOLTIP DO NÓ ── */
+#no-tooltip{
+  position:fixed;z-index:100;
+  background:rgba(14,10,4,0.97);border:1px solid rgba(190,140,35,0.45);
+  border-radius:10px;padding:10px 13px;max-width:220px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.7);
+  pointer-events:none;display:none;
+}
+#no-tooltip.visivel{display:block;}
+#tt-titulo{font-size:13px;font-weight:700;color:#f0c83c;margin-bottom:2px;}
+#tt-sub{font-size:10px;color:rgba(170,140,70,0.70);letter-spacing:.4px;margin-bottom:6px;}
+#tt-desc{font-size:11px;color:rgba(210,185,120,0.85);line-height:1.5;margin-bottom:8px;}
+#tt-perigo{font-size:10px;color:rgba(200,120,60,0.80);}
+#tt-btn{
+  display:none;width:100%;padding:7px;border:1px solid rgba(190,140,35,0.5);
+  border-radius:7px;background:rgba(30,18,5,0.9);color:#f0c83c;
+  font-size:11px;font-weight:700;cursor:pointer;pointer-events:all;
+  margin-top:6px;
+}
+#tt-btn:active{opacity:0.75;}
+
+/* ── PAINEL INFERIOR ── */
+#mapa-painel{
+  flex-shrink:0;
+  border-top:1px solid rgba(190,135,35,0.20);
+  background:rgba(10,7,3,0.97);
+  display:flex;flex-direction:column;
+  max-height:42vh;min-height:160px;
+}
+
+/* Botão propor rota — proeminente, acima do chat */
+#propor-rota-btn{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin:8px 12px 0;
+  padding:9px 16px;
+  background:rgba(190,140,35,0.12);
+  border:1px solid rgba(190,140,35,0.35);
+  border-radius:10px;color:rgba(220,185,80,0.90);
+  font-size:12px;font-weight:700;letter-spacing:.6px;
+  cursor:pointer;
+}
+#propor-rota-btn:active{background:rgba(190,140,35,0.25);}
+#propor-rota-btn span{font-size:15px;}
+
+/* Votação ativa */
+#votacao-bar{
+  display:none;
+  flex-shrink:0;flex-direction:column;gap:6px;
+  padding:8px 12px;
+  background:rgba(40,20,5,0.98);
+  border-bottom:1px solid rgba(190,140,35,0.30);
+}
+#votacao-bar.ativa{display:flex;}
+#vot-texto{font-size:11px;color:rgba(210,175,90,0.90);line-height:1.4;}
+#vot-acoes{display:flex;align-items:center;gap:8px;}
+#vot-acoes span{flex:1;font-size:10px;color:rgba(160,130,60,0.60);}
+#vot-timer{font-size:13px;font-weight:700;color:#f0c83c;min-width:30px;text-align:right;}
+.vot-btn{
+  padding:7px 18px;border-radius:8px;border:1px solid;font-size:12px;font-weight:700;cursor:pointer;
+}
+#vot-sim{background:rgba(40,90,40,0.85);border-color:rgba(80,160,80,0.60);color:#90e090;}
+#vot-nao{background:rgba(90,30,30,0.85);border-color:rgba(160,60,60,0.60);color:#e08080;}
+#vot-sim:active,#vot-nao:active{opacity:0.7;}
+
+/* Chat */
+#mapa-chat{
+  flex:1;overflow-y:auto;padding:6px 12px 2px;display:flex;flex-direction:column;gap:4px;
+  min-height:60px;
+}
+#mapa-chat::-webkit-scrollbar{width:3px;}
+#mapa-chat::-webkit-scrollbar-thumb{background:rgba(190,140,35,0.25);border-radius:2px;}
+.chat-msg{font-size:11px;line-height:1.5;}
+.chat-nome{font-weight:700;color:rgba(240,200,60,0.85);margin-right:4px;}
+.chat-texto{color:rgba(210,185,130,0.85);}
+.chat-sistema{color:rgba(160,130,70,0.55);font-style:italic;font-size:10px;}
+#chat-placeholder{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:rgba(130,100,45,0.45);font-style:italic;
+  pointer-events:none;
+}
+
+#mapa-input-row{
+  flex-shrink:0;display:flex;gap:6px;padding:6px 10px max(8px,env(safe-area-inset-bottom));
+  border-top:1px solid rgba(190,135,35,0.10);
+}
+#mapa-input{
+  flex:1;background:rgba(18,12,4,0.90);border:1px solid rgba(190,140,35,0.22);
+  border-radius:20px;padding:8px 12px;color:#e8d5a8;font-size:12px;
+  outline:none;font-family:Georgia,serif;
+}
+#mapa-input::placeholder{color:rgba(150,120,55,0.45);}
+#mapa-send{
+  background:rgba(190,140,35,0.18);border:1px solid rgba(190,140,35,0.38);
+  border-radius:20px;padding:8px 16px;color:#f0c83c;font-size:12px;font-weight:700;cursor:pointer;
+}
+#mapa-send:active{opacity:0.7;}
+#mapa-clear-chat{
+  flex-shrink:0;background:transparent;border:none;
+  color:rgba(160,130,60,0.50);font-size:16px;cursor:pointer;padding:4px 6px;
+}
+#mapa-clear-chat:active{color:rgba(200,80,60,0.80);}
+
+/* ── MODAL DE SELEÇÃO DE ROTA ── */
+#modal-rota{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,0.75);align-items:flex-end;justify-content:center;
+}
+#modal-rota.aberto{display:flex;}
+#modal-rota-inner{
+  background:rgba(14,10,4,0.99);border:1px solid rgba(190,140,35,0.40);
+  border-radius:16px 16px 0 0;width:100%;max-width:500px;
+  padding:16px 14px max(16px,env(safe-area-inset-bottom));
+  max-height:60vh;overflow-y:auto;
+}
+#modal-rota-titulo{font-size:13px;font-weight:700;letter-spacing:1px;color:#f0c83c;margin-bottom:12px;text-transform:uppercase;}
+.rota-opcao{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border:1px solid rgba(190,140,35,0.20);
+  border-radius:10px;margin-bottom:6px;cursor:pointer;
+  background:rgba(20,13,4,0.80);
+}
+.rota-opcao:active{background:rgba(40,28,8,0.90);}
+.rota-opcao-icon{font-size:20px;flex-shrink:0;}
+.rota-opcao-info{flex:1;}
+.rota-opcao-nome{font-size:12px;font-weight:700;color:rgba(220,190,110,0.95);}
+.rota-opcao-perigo{font-size:10px;color:rgba(180,100,50,0.75);margin-top:2px;}
+#modal-rota-cancelar{
+  width:100%;padding:10px;margin-top:8px;border:1px solid rgba(190,140,35,0.25);
+  border-radius:10px;background:transparent;color:rgba(180,150,70,0.60);
+  font-size:12px;cursor:pointer;
+}
+
+/* ── VOTAÇÃO OVERLAY (aparece para todos quando há proposta ativa) ── */
+#votacao-overlay{
+  display:none;position:fixed;
+  bottom:0;left:0;right:0;z-index:250;
+  background:rgba(8,5,2,0.97);
+  border-top:2px solid rgba(190,140,35,0.60);
+  border-radius:16px 16px 0 0;
+  padding:16px 16px max(16px,env(safe-area-inset-bottom));
+  box-shadow:0 -8px 32px rgba(0,0,0,0.80);
+  animation:vot-subir 0.3s ease;
+}
+@keyframes vot-subir{from{transform:translateY(100%);}to{transform:translateY(0);}}
+#votacao-overlay.ativo{display:block;}
+
+#vot-ov-titulo{
+  font-size:10px;text-transform:uppercase;letter-spacing:1.4px;
+  color:rgba(190,140,35,0.60);margin-bottom:6px;
+}
+#vot-ov-destino{
+  font-size:17px;font-weight:700;color:#f0c83c;margin-bottom:4px;
+}
+#vot-ov-proponente{
+  font-size:11px;color:rgba(180,150,70,0.65);margin-bottom:14px;
+}
+#vot-ov-info{
+  font-size:11px;color:rgba(160,130,60,0.55);margin-bottom:14px;
+  display:flex;align-items:center;gap:12px;
+}
+#vot-ov-timer{
+  font-size:22px;font-weight:700;color:#f0c83c;
+  min-width:40px;text-align:center;
+}
+#vot-ov-contagem{flex:1;}
+#vot-ov-btns{display:flex;gap:10px;}
+#vot-ov-sim{
+  flex:2;padding:14px;border-radius:12px;
+  background:rgba(40,100,40,0.85);border:1px solid rgba(80,180,80,0.55);
+  color:#90e890;font-size:16px;font-weight:700;cursor:pointer;
+}
+#vot-ov-nao{
+  flex:1;padding:14px;border-radius:12px;
+  background:rgba(80,25,25,0.85);border:1px solid rgba(160,50,50,0.55);
+  color:#e08080;font-size:14px;font-weight:700;cursor:pointer;
+}
+#vot-ov-sim:active{opacity:0.75;}
+#vot-ov-nao:active{opacity:0.75;}
+#vot-ov-meu-voto{
+  text-align:center;margin-top:10px;
+  font-size:11px;color:rgba(150,130,70,0.55);font-style:italic;
+}
+
+/* ── ENCONTRO OVERLAY ── */
+#encontro-overlay{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,0.88);align-items:center;justify-content:center;flex-direction:column;
+  gap:16px;
+}
+#encontro-overlay.ativo{display:flex;}
+#encontro-icon{font-size:64px;animation:enc-aparecer 0.4s ease;}
+@keyframes enc-aparecer{from{transform:scale(0.3);opacity:0;}to{transform:scale(1);opacity:1;}}
+#encontro-titulo{font-size:20px;font-weight:700;color:#f0c83c;letter-spacing:1px;}
+#encontro-desc{font-size:13px;color:rgba(210,185,120,0.85);text-align:center;max-width:280px;line-height:1.6;}
+#encontro-btn{
+  padding:12px 32px;background:rgba(190,140,35,0.20);border:1px solid rgba(190,140,35,0.55);
+  border-radius:24px;color:#f0c83c;font-size:14px;font-weight:700;cursor:pointer;
+}
+</style>
+</head>
+<body>
+<div id="mapa-wrap">
+
+  <!-- Header -->
+  <div id="mapa-header">
+    <div>
+      <div id="mapa-titulo">🗺 Mapa do Mundo</div>
+      <div id="mapa-local-label">—</div>
+    </div>
+    <button class="mapa-nav-btn" id="btn-voltar-narracao" onclick="window._voltarNarracao()">← Voltar à cena</button>
+    <button class="mapa-nav-btn" onclick="location.href='catalog.html'">📚 Catálogo</button>
+  </div>
+
+  <!-- Mapa com scroll horizontal — tudo dentro de um SVG único -->
+  <div id="mapa-scroll">
+    <svg id="mapa-svg" xmlns="http://www.w3.org/2000/svg"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+
+  <!-- Tooltip do nó (posicionado via JS) -->
+  <div id="no-tooltip">
+    <div id="tt-titulo">—</div>
+    <div id="tt-sub">—</div>
+    <div id="tt-desc"></div>
+    <div id="tt-perigo"></div>
+    <button id="tt-btn" onclick="window._proporRota(_tooltipNoId)">🗺 Propor rota aqui</button>
+  </div>
+
+  <!-- Painel inferior -->
+  <div id="mapa-painel">
+
+    <!-- Botão propor rota — visível quando não há votação ativa -->
+    <button id="propor-rota-btn" onclick="window._abrirModalRota()">
+      <span>🗺</span> PROPOR ROTA
+    </button>
+
+    <!-- Chat -->
+    <div id="mapa-chat">
+      <div id="chat-placeholder">Converse aqui para planejar a rota…</div>
+    </div>
+
+    <!-- Input -->
+    <div id="mapa-input-row">
+      <input id="mapa-input" placeholder="Diga algo ao grupo…" onkeydown="if(event.key==='Enter')window._enviarChat()">
+      <button id="mapa-send" onclick="window._enviarChat()">Enviar</button>
+      <button id="mapa-clear-chat" onclick="window._limparChat()" title="Limpar chat">🗑</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Overlay de votação — aparece para TODOS quando há proposta ativa -->
+<div id="votacao-overlay">
+  <div id="vot-ov-titulo">🗺 Proposta de rota</div>
+  <div id="vot-ov-destino">—</div>
+  <div id="vot-ov-proponente">—</div>
+  <div id="vot-ov-info">
+    <div id="vot-ov-contagem">— votos</div>
+    <div id="vot-ov-timer">10</div>
+  </div>
+  <div id="vot-ov-btns">
+    <button id="vot-ov-sim" onclick="window._votar(true)">✓ Vamos!</button>
+    <button id="vot-ov-nao" onclick="window._votar(false)">✕ Não</button>
+  </div>
+  <div id="vot-ov-meu-voto"></div>
+</div>
+
+<!-- Modal de seleção de rota -->
+<div id="modal-rota">
+  <div id="modal-rota-inner">
+    <div id="modal-rota-titulo">Para onde ir?</div>
+    <div id="modal-rota-lista"></div>
+    <button id="modal-rota-cancelar" onclick="window._fecharModalRota()">Cancelar</button>
+  </div>
+</div>
+
+<!-- Transição de emboscada (fade preto + texto datilografado) -->
+<div id="mapa-fade"><div id="mapa-fade-txt"></div></div>
+
+<!-- Encontro overlay -->
+<div id="encontro-overlay">
+  <div id="encontro-icon">⚔️</div>
+  <div id="encontro-titulo">Encontro!</div>
+  <div id="encontro-desc"></div>
+  <button id="encontro-btn" onclick="window._fecharEncontro()">Continuar →</button>
+</div>
+
+<script type="module">
+import { CLASSES_DATA } from './catalogo/kagehama/classes.js';
+import { MAPA_IMG, NOS, CAMINHOS } from './catalogo/kagehama/mapa.js';
+
+// ── Estado local ──────────────────────────────────────────
+const _pid  = localStorage.getItem('mindRolePlay.playerId') || crypto.randomUUID();
+const _nome = localStorage.getItem('mindRolePlay.playerName') || 'Aventureiro';
+const _cls  = localStorage.getItem('mindRolePlay.classId') || 'guerreiro';
+localStorage.setItem('mindRolePlay.playerId', _pid);
+
+const CLASS_ICON = {guerreiro:'⚔️',mago:'🔮',ladino:'🗡️',clerigo:'✝️',druida:'🌿',ranger:'🏹',paladino:'🛡️',bardo:'🎵'};
+
+const _isHost = localStorage.getItem('mindRolePlay.isHost') !== '0';
+let _state = null;        // snapshot do Firebase mapa
+let _noSelecionado = null;
+let _votacaoTimer = null;
+let _viagemTimeout = null;
+let _viajando = false;    // true durante a animação local de viagem (evita re-render que reseta os bonecos)
+let _viagemRemotaTs = null; // ts da viagem iniciada por OUTRO aparelho já animada aqui
+let _autoIniciado = false;// guard p/ a viagem automática (vinda do handoff da narração) só disparar 1x
+
+window._tooltipNoId = null;
+
+// ── Helpers ───────────────────────────────────────────────
+const DIST_MS = { curta: 1800, media: 3200, longa: 5000 };
+const PERIGO_LABEL = ['Seguro','Leve','Moderado','Perigoso','Muito Perigoso','Extremo'];
+
+function _estadoNo(id) {
+  if (!_state) return NOS[id]?.estadoInicial || 'desconhecido';
+  const desc = _state.descobertos || [];
+  const ouv  = _state.ouviuFalar  || [];
+  if (desc.includes(id)) return 'descoberto';
+  if (ouv.includes(id))  return 'ouviu_falar';
+  return NOS[id]?.estadoInicial || 'desconhecido';
+}
+
+function _caminhoEntre(a, b) {
+  return CAMINHOS.find(c => (c.de===a&&c.ate===b)||(c.de===b&&c.ate===a)) || null;
+}
+
+function _nosAlcancaveis(origem) {
+  return CAMINHOS
+    .filter(c => c.de===origem || c.ate===origem)
+    .map(c => c.de===origem ? c.ate : c.de);
+}
+
+// ── Renderizar mapa (SVG único — imagem + caminhos + nós + standees) ──
+// Coordenadas nativas da imagem do mapa. Tudo vive neste sistema de
+// coordenadas via viewBox; nada depende de offsetWidth nem timing de load.
+const MAP_NW = 1774, MAP_NH = 887;
+
+function _esc(s){ return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function _renderMapa() {
+  const svg = document.getElementById('mapa-svg');
+  if (!svg) return;
+  svg.setAttribute('viewBox', `0 0 ${MAP_NW} ${MAP_NH}`);
+
+  // Tamanho explícito em px (altura = área disponível; largura mantém proporção)
+  const scroll = document.getElementById('mapa-scroll');
+  const h = scroll ? scroll.clientHeight : 0;
+  if (h > 0) {
+    svg.style.height = h + 'px';
+    svg.style.width  = Math.round(h * MAP_NW / MAP_NH) + 'px';
+  }
+
+  const localAtual = _state?.localAtual || 'kagehama-scene-0';
+  const alcancaveis = _nosAlcancaveis(localAtual);
+
+  // ── Caminhos ──
+  let caminhos = '';
+  for (const c of CAMINHOS) {
+    const na = NOS[c.de], nb = NOS[c.ate];
+    if (!na || !nb) continue;
+    const x1 = na.x/100*MAP_NW, y1 = na.y/100*MAP_NH;
+    const x2 = nb.x/100*MAP_NW, y2 = nb.y/100*MAP_NH;
+    const cls = 'caminho-linha'
+      + (c.perigo >= 4 ? ' perigo-alto' : '')
+      + ((alcancaveis.includes(c.de)||alcancaveis.includes(c.ate)) ? ' ativo' : '');
+    caminhos += `<line class="${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+  }
+
+  // ── Nós ──
+  let nos = '';
+  for (const [id, no] of Object.entries(NOS)) {
+    const estado = _estadoNo(id);
+    const cx = no.x/100*MAP_NW, cy = no.y/100*MAP_NH;
+    const cls = `no-g ${estado}${id===localAtual?' atual':''}${id===_noSelecionado?' selecionado':''}`;
+    const emoji = estado==='desconhecido' ? '🌫️' : no.icon;
+    const nome  = estado==='desconhecido' ? '???' : no.titulo;
+    nos += `<g class="${cls}" data-id="${id}">`
+      + `<circle class="no-circ" cx="${cx}" cy="${cy}" r="26"/>`
+      + `<text class="no-emoji" x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central">${emoji}</text>`
+      + `<text class="no-lbl" x="${cx}" y="${cy+46}" text-anchor="middle">${_esc(nome)}</text>`
+      + `</g>`;
+  }
+
+  // ── Standees ──
+  const standees = _standeesSVG();
+
+  // Montar SVG completo (imagem ao fundo)
+  svg.innerHTML =
+      `<image href="${MAPA_IMG}" xlink:href="${MAPA_IMG}" x="0" y="0" width="${MAP_NW}" height="${MAP_NH}" preserveAspectRatio="none"/>`
+    + caminhos + nos + standees;
+
+  // Cliques nos nós
+  svg.querySelectorAll('.no-g').forEach(g => {
+    g.addEventListener('click', (e) => { e.stopPropagation(); _clicarNo(g.dataset.id, e); });
+  });
+
+  // Label local atual
+  const lbl = document.getElementById('mapa-local-label');
+  if (lbl) lbl.textContent = `📍 ${NOS[localAtual]?.titulo || localAtual}`;
+}
+
+// Grupo em viagem = jogadores + NPCs que acompanham (companheiros), todos juntinhos.
+function _partyList() {
+  let players = _state?.players || {};
+  if (!Object.keys(players).length) players = { [_pid]: { nome:_nome, classId:_cls } };
+  const list = Object.entries(players).map(([pid, p]) => {
+    const cid = p.classId || 'guerreiro';
+    return { key: pid, nome: p.nome || '?', icon: CLASS_ICON[cid] || '⚔️',
+      img: CLASSES_DATA[cid]?.standee||'' };
+  });
+  (_state?.companheiros || []).forEach(c => {
+    if (!c || !c.id) return;
+    list.push({ key: 'npc-'+c.id, nome: c.nome || c.id, icon: '🤝',
+      img: c.img || `catalogo/kagehama/npcs/${c.id}/peca_tabuleiro/${c.id}_peca.png` });
+  });
+  return list;
+}
+
+// Formação de pinos de boliche: 1 na frente; linha de trás com r+1 unidades,
+// afastando-se para cima. Mantém o grupo compacto e organizado.
+function _formacaoBoliche(i) {
+  let r = 0, base = 0;
+  while (i >= base + r + 1) { base += r + 1; r++; }
+  const pos = i - base;              // 0..r dentro da linha
+  const DX = 30, DY = 26;
+  return { dx: (pos - r/2) * DX, dy: -r * DY };
+}
+
+function _standeeGrupoHTML(u, cx, cy) {
+  return `<g class="st-g" id="st-${u.key}" transform="translate(${cx},${cy})">`
+    + `<ellipse class="st-base" cx="0" cy="14" rx="17" ry="5"/>`
+    + `<text class="st-emoji" x="0" y="2" text-anchor="middle" dominant-baseline="central">${u.icon}</text>`
+    + `<image class="st-img" href="${u.img}" xlink:href="${u.img}" x="-28" y="-44" width="56" height="56" preserveAspectRatio="xMidYMid meet"/>`
+    + `<text class="st-lbl" x="0" y="28" text-anchor="middle">${_esc((u.nome||'?').split(' ')[0])}</text>`
+    + `</g>`;
+}
+
+function _standeesSVG() {
+  const localAtual = _state?.localAtual || 'kagehama-scene-0';
+  const no = NOS[localAtual];
+  if (!no) return '';
+  const baseX = no.x/100*MAP_NW, baseY = no.y/100*MAP_NH - 34;   // flutua acima do nó
+  const itens = _partyList().map((u, i) => {
+    const { dx, dy } = _formacaoBoliche(i);
+    return { dy, html: _standeeGrupoHTML(u, baseX + dx, baseY + dy) };
+  });
+  itens.sort((a, b) => a.dy - b.dy);   // linhas de trás primeiro (z: frente por cima)
+  return itens.map(it => it.html).join('');
+}
+
+// ── Tooltip ───────────────────────────────────────────────
+function _clicarNo(id, ev) {
+  const estado = _estadoNo(id);
+  _noSelecionado = id;
+  window._tooltipNoId = id;
+  _renderMapa();
+  _mostrarTooltip(id, estado, ev);
+}
+
+function _mostrarTooltip(id, estado, ev) {
+  const no = NOS[id];
+  const tt = document.getElementById('no-tooltip');
+  const localAtual = _state?.localAtual || 'kagehama-scene-0';
+  const alcancavel = _caminhoEntre(localAtual, id) !== null;
+
+  document.getElementById('tt-titulo').textContent =
+    estado === 'desconhecido' ? '??? Local Desconhecido' :
+    estado === 'ouviu_falar' ? `${no.titulo} (ouviu falar)` : no.titulo;
+  document.getElementById('tt-sub').textContent =
+    estado === 'desconhecido' ? 'Nenhuma informação disponível.' : no.subtitulo;
+  document.getElementById('tt-desc').textContent =
+    estado === 'desconhecido' ? '' :
+    estado === 'ouviu_falar' ? (no.desc || 'Informações vagas sobre este local.') : (no.desc || '');
+
+  const caminho = _caminhoEntre(localAtual, id);
+  document.getElementById('tt-perigo').textContent =
+    caminho ? `⚠ ${PERIGO_LABEL[caminho.perigo]} · Distância: ${caminho.dist}` : '';
+
+  const btn = document.getElementById('tt-btn');
+  // Mostra "viajar" para qualquer nó ADJACENTE — inclusive desconhecido (fog of war).
+  btn.style.display = (alcancavel && id !== localAtual) ? 'block' : 'none';
+
+  // Posicionar tooltip
+  const rect = document.getElementById('mapa-scroll').getBoundingClientRect();
+  const x = Math.min(ev.clientX + 10, window.innerWidth - 240);
+  const y = Math.min(ev.clientY - 10, window.innerHeight - 200);
+  tt.style.left = x + 'px';
+  tt.style.top  = y + 'px';
+  tt.classList.add('visivel');
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.no-g') && !e.target.closest('#no-tooltip')) {
+    document.getElementById('no-tooltip').classList.remove('visivel');
+    _noSelecionado = null;
+    window._tooltipNoId = null;
+    _renderMapa();
+  }
+});
+
+// ── Modal de rota ─────────────────────────────────────────
+window._abrirModalRota = function() {
+  const localAtual = _state?.localAtual || 'kagehama-scene-0';
+  // Inclui trilhas para nós DESCONHECIDOS (fog of war): você escolhe o caminho,
+  // descobre o lugar ao chegar.
+  const destinos = _nosAlcancaveis(localAtual).filter(id => id !== localAtual);
+  const lista = document.getElementById('modal-rota-lista');
+  lista.innerHTML = '';
+  if (!destinos.length) {
+    lista.innerHTML = '<div class="chat-sistema">Nenhuma trilha parte daqui.</div>';
+  }
+  for (const id of destinos) {
+    const no = NOS[id];
+    const c  = _caminhoEntre(localAtual, id);
+    const conhecido = _estadoNo(id) !== 'desconhecido';
+    const icon = conhecido ? no.icon : '🧭';
+    const nome = conhecido ? no.titulo : 'Rumo desconhecido';
+    const div = document.createElement('div');
+    div.className = 'rota-opcao';
+    div.innerHTML = `<div class="rota-opcao-icon">${icon}</div>
+      <div class="rota-opcao-info">
+        <div class="rota-opcao-nome">${nome}</div>
+        <div class="rota-opcao-perigo">⚠ ${PERIGO_LABEL[c?.perigo||0]} · ${c?.dist||'?'}</div>
+      </div>`;
+    div.onclick = () => { window._proporRota(id); window._fecharModalRota(); };
+    lista.appendChild(div);
+  }
+  document.getElementById('modal-rota').classList.add('aberto');
+};
+
+window._fecharModalRota = () => document.getElementById('modal-rota').classList.remove('aberto');
+
+window._proporRota = async function(destino) {
+  document.getElementById('no-tooltip').classList.remove('visivel');
+  if (!destino) return;
+  const localAtual = _state?.localAtual || 'kagehama-scene-0';
+  if (!_caminhoEntre(localAtual, destino)) return;
+
+  // Solo (1 jogador): viaja na hora, sem votação.
+  const nJogadores = Object.keys(_state?.players || {}).length;
+  if (nJogadores <= 1) { _addChatSistema(`🗺 Partindo para ${ _estadoNo(destino)!=='desconhecido' ? NOS[destino]?.titulo : 'o desconhecido' }…`); _iniciarViagem(destino); return; }
+
+  const votacao = {
+    destino,
+    proponente: _pid,
+    proponenteNome: _nome,
+    votos: { [_pid]: true },
+    expiresAt: Date.now() + 10000,
+    iniciouEm: Date.now(),
+  };
+  if (window._fbUpdate) await window._fbUpdate({ votacao });
+  _addChatSistema(`🗺 ${_nome} propõe viajar para ${NOS[destino]?.titulo}. Vote!`);
+};
+
+// ── Votação ───────────────────────────────────────────────
+window._votar = async function(sim) {
+  if (!_state?.votacao) return;
+  const votos = { ..._state.votacao.votos, [_pid]: sim };
+  if (window._fbUpdate) await window._fbUpdate({ 'votacao.votos': votos });
+};
+
+function _renderVotacao() {
+  const ov = document.getElementById('votacao-overlay');
+  const proporBtn = document.getElementById('propor-rota-btn');
+  const v = _state?.votacao;
+
+  if (!v) {
+    ov.classList.remove('ativo');
+    if (proporBtn) proporBtn.style.display = '';
+    clearInterval(_votacaoTimer);
+    return;
+  }
+
+  ov.classList.add('ativo');
+  if (proporBtn) proporBtn.style.display = 'none';
+
+  const no = NOS[v.destino];
+  const votos = v.votos || {};
+  const sim = Object.values(votos).filter(Boolean).length;
+  const nao = Object.values(votos).filter(x => x === false).length;
+  const meuVoto = votos[_pid];
+
+  document.getElementById('vot-ov-destino').textContent = no?.titulo || v.destino;
+  document.getElementById('vot-ov-proponente').textContent =
+    v.proponente === _pid ? 'Você propôs esta rota' : `Proposta por ${v.proponenteNome}`;
+  document.getElementById('vot-ov-contagem').textContent =
+    `✓ ${sim} a favor  ·  ✕ ${nao} contra`;
+  document.getElementById('vot-ov-meu-voto').textContent =
+    meuVoto === true ? '✓ Você votou a favor' :
+    meuVoto === false ? '✕ Você votou contra' : 'Aguardando seu voto…';
+
+  // Destacar botão já votado
+  document.getElementById('vot-ov-sim').style.opacity = meuVoto === true  ? '1' : (meuVoto === false ? '0.4' : '1');
+  document.getElementById('vot-ov-nao').style.opacity = meuVoto === false ? '1' : (meuVoto === true  ? '0.4' : '1');
+
+  clearInterval(_votacaoTimer);
+  _votacaoTimer = setInterval(() => {
+    const restante = Math.max(0, Math.ceil((v.expiresAt - Date.now()) / 1000));
+    document.getElementById('vot-ov-timer').textContent = restante;
+    if (restante <= 0) { clearInterval(_votacaoTimer); _resolverVotacao(); }
+  }, 500);
+}
+
+async function _resolverVotacao() {
+  if (!_state?.votacao) return;
+  const v = _state.votacao;
+  const votos = v.votos || {};
+  const sim = Object.values(votos).filter(Boolean).length;
+  const nao = Object.values(votos).filter(x=>x===false).length;
+  const total = sim + nao;
+  const venceu = total === 0 ? false : sim > nao;
+
+  if (window._fbUpdate) await window._fbUpdate({ votacao: null });
+
+  if (venceu) {
+    _addChatSistema(`✅ Votação aprovada! Viajando para ${NOS[v.destino]?.titulo}…`);
+    _iniciarViagem(v.destino);
+  } else {
+    _addChatSistema(`❌ Rota não aprovada. Permanecendo em ${NOS[_state?.localAtual]?.titulo}.`);
+  }
+}
+
+// ── Viagem ────────────────────────────────────────────────
+async function _iniciarViagem(destino) {
+  const localAtual = _state?.localAtual || 'kagehama-scene-0';
+  const caminho = _caminhoEntre(localAtual, destino);
+  if (!caminho) return;
+  const duracao = 5000;  // viagem dura sempre 5s, independente da distância (pedido do jogo)
+
+  _viajando = true;  // segura o re-render para a animação dos bonecos não ser resetada
+  // Transmite o DESTINO no início: os outros aparelhos animam a MESMA travessia
+  // de 5s (antes recebiam só o fim e viam um teleporte).
+  if (window._fbUpdate) await window._fbUpdate({ viagemEmAndamento: { destino, ts: Date.now() } });
+
+  // Animar standees — os bonecos caminham até o destino durante os 5s
+  _animarStandeesParaNo(destino, duracao);
+
+  clearTimeout(_viagemTimeout);
+  _viagemTimeout = setTimeout(async () => {
+    const encontro = _rolarEncontros(caminho);
+    const combate = encontro && encontro.tipo === 'combate';
+    const novoDesc = [...(_state?.descobertos || [])];
+    if (!novoDesc.includes(destino)) novoDesc.push(destino);
+
+    if (combate) {
+      // ── Emboscada → batalha real. O grupo JÁ chegou ao destino (os bonecos
+      // caminharam até lá nos 5s) — a emboscada estoura na chegada. Vencendo, a
+      // Arena abre direto a cena do destino. Sem voltar ao ponto de origem.
+      const battleKey = '_emboscada:' + (caminho.perigo || 1);
+      _addChatSistema(`⚔️ Emboscada na chegada a ${NOS[destino]?.titulo}!`);
+      await _transicaoEmboscada();   // fade preto + "Algo no caminho aconteceu…"
+      if (window._fbSetStatus) {
+        await window._fbSetStatus('battle', {
+          'mapa.localAtual': destino,           // já chegou ao destino
+          'mapa.descobertos': novoDesc,
+          'mapa.viagemEmAndamento': false,
+          'mapa.ts': Date.now(),
+          'narration.cenaId': destino,
+          'narration.battleKey': battleKey,
+          postBattleConfirmados: {}, batalha: {},
+          currentTurnPlayerId: null, turnOrder: [], enemies: [],
+        });
+        // _onState detecta status='battle' e redireciona todos
+      } else {
+        // Solo
+        localStorage.setItem('mindRolePlay.battleCena', battleKey);
+        localStorage.setItem('mindRolePlay.soloNarrCena', destino);
+        window.location.href = 'arena.html?v=8';
+      }
+      return;
+    }
+
+    // ── Chegada normal ── status='narration' num único write: a narração
+    // abre a cena do destino e NÃO devolve o grupo ao mapa (sem bounce).
+    if (window._fbSetStatus) {
+      await window._fbSetStatus('narration', {
+        'mapa.localAtual': destino,
+        'mapa.descobertos': novoDesc,
+        'mapa.viagemEmAndamento': false,
+        'mapa.ts': Date.now(),
+        'narration.cenaId': destino,
+        'narration.modoImagem': 'exterior',
+        'narration.introConfirmados': {},
+        'narration.introIdx': 0,
+        'narration.percepcao': { ativo: false },
+        'narration.dialogo': [],
+        'narration.viagemConfirmados': {},
+        'narration.ts': Date.now(),
+      });
+      // _onState detecta status='narration' e leva todos à narração (com pausa p/ ver a chegada)
+    } else {
+      localStorage.setItem('mindRolePlay.soloNarrCena', destino);
+      setTimeout(() => { window.location.href = 'narration.html?v=8'; }, 1800);
+    }
+    _addChatSistema(`📍 Chegaram em ${NOS[destino]?.titulo}.`);
+    if (encontro) _mostrarEncontro(encontro, caminho); // roubo/diálogo = overlay narrativo
+  }, duracao + 200);
+}
+
+// Fade pra preto + texto datilografado antes de cair na Arena (emboscada).
+function _transicaoEmboscada() {
+  return new Promise(resolve => {
+    const ov  = document.getElementById('mapa-fade');
+    const txt = document.getElementById('mapa-fade-txt');
+    if (!ov || !txt) { resolve(); return; }
+    txt.textContent = ''; txt.style.opacity = '1';
+    ov.classList.add('ativo');                 // fade-in pra preto (0.55s)
+    const full = 'Algo no caminho aconteceu…';
+    setTimeout(() => {
+      let i = 0;
+      const iv = setInterval(() => {
+        txt.textContent = full.slice(0, ++i);
+        if (i >= full.length) {
+          clearInterval(iv);
+          setTimeout(() => { txt.style.opacity = '0'; }, 950);   // segura, some o texto
+          setTimeout(resolve, 1500);                              // tela fica preta → vai p/ Arena
+        }
+      }, 48);
+    }, 600);
+  });
+}
+
+function _animarStandeesParaNo(destino, duracao) {
+  const no = NOS[destino];
+  if (!no) return;
+  const baseX = no.x/100*MAP_NW, baseY = no.y/100*MAP_NH - 34;
+  _partyList().forEach((u, i) => {
+    const g = document.getElementById(`st-${u.key}`);
+    if (!g) return;
+    const { dx, dy } = _formacaoBoliche(i);
+    g.style.transitionDuration = duracao + 'ms';
+    g.setAttribute('transform', `translate(${baseX + dx},${baseY + dy})`);
+  });
+}
+
+function _rolarEncontros(caminho) {
+  for (const enc of (caminho.encontros || [])) {
+    if (Math.random() < enc.chance) return enc;
+  }
+  return null;
+}
+
+function _mostrarEncontro(enc, caminho) {
+  const tipos = {
+    combate: { icon:'⚔️', titulo:'Emboscada!', desc:`Inimigos bloqueiam o caminho! Nível de perigo: ${PERIGO_LABEL[caminho.perigo]}.` },
+    roubo:   { icon:'🗡️', titulo:'Tentativa de Roubo!', desc:'Um grupo suspeito cerca o grupo exigindo seus pertences.' },
+    dialogo: { icon:'🧙', titulo:'Encontro Inesperado!', desc:'Uma figura aparece no caminho. Suas intenções são incertas.' },
+  };
+  const t = tipos[enc.tipo] || tipos.dialogo;
+  document.getElementById('encontro-icon').textContent = t.icon;
+  document.getElementById('encontro-titulo').textContent = t.titulo;
+  document.getElementById('encontro-desc').textContent  = t.desc;
+  document.getElementById('encontro-overlay').classList.add('ativo');
+}
+
+window._fecharEncontro = () => {
+  document.getElementById('encontro-overlay').classList.remove('ativo');
+  if (_redirectPendente) { _redirectPendente = false; window.location.href = 'narration.html?v=8'; }
+};
+
+// ← Voltar à cena: retorna o grupo à conversa de onde o mapa foi aberto, SEM viajar.
+// Define status='narration' (todos seguem) preservando o diálogo já trocado.
+window._voltarNarracao = async function() {
+  if (_viajando) return; // não interrompe uma viagem em andamento
+  const cena = _state?.cenaOrigem || _state?.localAtual || 'kagehama-scene-0';
+  if (window._fbSetStatus) {
+    await window._fbSetStatus('narration', {
+      'narration.cenaId': cena,
+      'narration.modoImagem': 'exterior',
+      'narration.percepcao': { ativo: false },
+      'narration.pularIntro': true,   // abre direto no diálogo (não reabre a introdução)
+      'mapa.autoViagem': null,
+      'mapa.viagemEmAndamento': false,
+    });
+    // _onState (status='narration') leva todos de volta à narração
+  } else {
+    localStorage.setItem('mindRolePlay.soloNarrCena', cena);
+    window.location.href = 'narration.html?v=8';
+  }
+};
+
+// ── Chat ──────────────────────────────────────────────────
+window._limparChat = async function() {
+  if (!confirm('Limpar todo o chat?')) return;
+  if (!_state) _state = {};
+  _state.chat = [];
+  _renderChat();
+  if (window._fbUpdate) window._fbUpdate({ chat: [] });
+};
+
+window._enviarChat = async function() {
+  const input = document.getElementById('mapa-input');
+  const texto = (input?.value || '').trim();
+  if (!texto) return;
+  input.value = '';
+  const msg = { pid:_pid, nome:_nome, texto, ts:Date.now() };
+  // Update local imediato para não depender do round-trip Firebase
+  if (!_state) _state = {};
+  _state.chat = [...(_state.chat || []), msg].slice(-60);
+  _renderChat();
+  if (window._fbUpdate) window._fbUpdate({ chat: _state.chat });
+};
+
+function _renderChat() {
+  const el = document.getElementById('mapa-chat');
+  const msgs = _state?.chat || [];
+  el.innerHTML = '';
+  if (!msgs.length) {
+    el.innerHTML = '<div id="chat-placeholder">Converse aqui para planejar a rota…</div>';
+    return;
+  }
+  for (const m of msgs) {
+    const div = document.createElement('div');
+    if (m.sistema) {
+      div.className = 'chat-sistema';
+      div.textContent = m.texto;
+    } else {
+      div.className = 'chat-msg';
+      div.innerHTML = `<span class="chat-nome">${m.nome}:</span><span class="chat-texto"> ${m.texto}</span>`;
+    }
+    el.appendChild(div);
+  }
+  el.scrollTop = el.scrollHeight;
+}
+
+async function _addChatSistema(texto) {
+  const msg = { sistema: true, texto, ts: Date.now() };
+  if (!_state) _state = {};
+  _state.chat = [...(_state.chat || []), msg].slice(-60);
+  _renderChat();
+  if (window._fbUpdate) window._fbUpdate({ chat: _state.chat });
+}
+
+// ── Firebase sync ─────────────────────────────────────────
+function _onState(data) {
+  // Emboscada na viagem → todos os jogadores do mapa vão à Arena
+  if (data?.status === 'battle') {
+    localStorage.setItem('mindRolePlay.battleCena', data.narration?.battleKey || data.narration?.cenaId || '');
+    window.location.href = 'arena.html?v=8';
+    return;
+  }
+  // Chegada concluída → narração da cena de destino (pausa p/ ver o grupo chegar)
+  if (data?.status === 'narration') {
+    _viajando = false;
+    _state = data?.mapa || _state;
+    _renderMapa();
+    _agendarRedirectNarracao();
+    return;
+  }
+  // Durante a viagem local: não re-renderiza (rebuild resetaria os bonecos em animação)
+  if (_viajando && data?.status === 'map') { _state = data?.mapa || _state; return; }
+
+  const prev = _state;
+  _state = data?.mapa || null;
+
+  // Resolver votação expirada
+  if (_state?.votacao && Date.now() > _state.votacao.expiresAt) {
+    _resolverVotacao();
+    return;
+  }
+
+  _renderMapa();
+  _renderVotacao();
+  _renderChat();
+
+  // VIAGEM REMOTA: outro aparelho iniciou a travessia — anima a MESMA jornada
+  // de 5s aqui (antes só o fim chegava e os bonecos teleportavam).
+  const vEA = _state?.viagemEmAndamento;
+  if (vEA && vEA.destino && vEA.ts !== _viagemRemotaTs && !_viajando) {
+    _viagemRemotaTs = vEA.ts;
+    _viajando = true;                       // segura o re-render durante a animação
+    _animarStandeesParaNo(vEA.destino, 5000);
+    setTimeout(() => { _viajando = false; }, 5200);
+  }
+
+  // Viagem AUTOMÁTICA (handoff da narração com destino vizinho): o anfitrião
+  // inicia a jornada sozinho, com uma pausinha para o grupo ver o mapa.
+  if (_isHost && !_autoIniciado && !_viajando && _state?.autoViagem
+      && _caminhoEntre(_state.localAtual, _state.autoViagem)) {
+    _autoIniciado = true;
+    const dest = _state.autoViagem;
+    if (window._fbUpdate) window._fbUpdate({ autoViagem: null });
+    _addChatSistema(`🧭 O grupo segue viagem para ${ _estadoNo(dest)!=='desconhecido' ? NOS[dest]?.titulo : 'o desconhecido' }…`);
+    setTimeout(() => _iniciarViagem(dest), 900);
+  }
+
+  // Detecção de viagem concluída — anima standees e leva TODOS à narração
+  if (prev?.localAtual && _state?.localAtual && prev.localAtual !== _state.localAtual) {
+    _animarStandeesParaNo(_state.localAtual, 1200);
+    _agendarRedirectNarracao();
+  }
+}
+
+// Fecha o ciclo: ao chegar, todos os jogadores vão para a narração da cena.
+// Se houver overlay de encontro, espera o jogador fechar antes de navegar.
+let _redirectPendente = false;
+function _agendarRedirectNarracao() {
+  const encAberto = document.getElementById('encontro-overlay')?.classList.contains('ativo');
+  if (encAberto) { _redirectPendente = true; return; }
+  setTimeout(() => { window.location.href = 'narration.html?v=8'; }, 1600);
+}
+
+// ── Init ──────────────────────────────────────────────────
+async function init() {
+  // Render imediato — o SVG não depende do carregamento do raster
+  _renderMapa();
+
+  // Estado inicial do Firebase
+  const estadoInicial = {
+    localAtual: 'kagehama-scene-0',
+    descobertos: Object.entries(NOS).filter(([,n])=>n.estadoInicial==='descoberto').map(([id])=>id),
+    ouviuFalar:  Object.entries(NOS).filter(([,n])=>n.estadoInicial==='ouviu_falar').map(([id])=>id),
+    chat: [],
+    votacao: null,
+    viagemEmAndamento: false,
+    players: { [_pid]: { nome: _nome, classId: _cls } },
+  };
+
+  const boot = async () => {
+    if (window._fbInit) await window._fbInit(estadoInicial);
+    if (window._fbUpdate) await window._fbUpdate({ [`players.${_pid}`]: { nome: _nome, classId: _cls } });
+    if (window._fbListen) window._fbListen(_onState);
+    else _onState(null);
+  };
+
+  if (window._fbMapaReady) boot();
+  else window.addEventListener('fbMapaReady', boot);
+
+  // Re-render ao redimensionar + algumas passadas para pegar a altura final do layout
+  window.addEventListener('resize', _renderMapa);
+  requestAnimationFrame(_renderMapa);
+  setTimeout(_renderMapa, 120);
+  setTimeout(_renderMapa, 500);
+}
+
+init();
+</script>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v21</div>
+</body>
+</html>

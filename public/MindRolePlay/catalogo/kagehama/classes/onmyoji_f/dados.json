@@ -1,0 +1,102 @@
+{
+  "id": "onmyoji_f",
+  "nome": "Onmyōji elemental · Feminino",
+  "name": "Onmyōji elemental",
+  "icon": "☯",
+  "gender": "f",
+  "maxHp": 9,
+  "sp": 10,
+  "mov": 5,
+  "movement": 5,
+  "attack": 14,
+  "attrs": {
+    "ST": 9,
+    "DX": 11,
+    "IQ": 14,
+    "HT": 10,
+    "STR": 9,
+    "DEX": 11,
+    "INT": 14,
+    "CON": 10,
+    "WIS": 14,
+    "CHA": 14
+  },
+  "attributes": {
+    "ST": 9,
+    "DX": 11,
+    "IQ": 14,
+    "HT": 10
+  },
+  "skills": [
+    {
+      "name": "Ataque inato: projétil",
+      "attribute": "DX",
+      "level": 14,
+      "description": "Acertar rajadas, selos lançados e descargas elementais."
+    },
+    {
+      "name": "Ritual Magic: Onmyōdō",
+      "attribute": "IQ",
+      "level": 14,
+      "description": "Preparar ofuda, círculos, invocações e efeitos ritualizados."
+    },
+    {
+      "name": "Taumatologia",
+      "attribute": "IQ",
+      "level": 13,
+      "description": "Entender limites, custos e natureza de magia hostil."
+    },
+    {
+      "name": "Ocultismo",
+      "attribute": "IQ",
+      "level": 13,
+      "description": "Reconhecer espíritos, maldições, presságios e tabus."
+    }
+  ],
+  "feat": "Mago DPS de inspiração onmyōdō: talismãs, elementos, shikigami e ataques espirituais de alcance curto ou médio.",
+  "habs": [
+    {
+      "icon": "🎲",
+      "nome": "Ataque inato: projétil",
+      "desc": "Acertar rajadas, selos lançados e descargas elementais. · NH 14",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Ritual Magic: Onmyōdō",
+      "desc": "Preparar ofuda, círculos, invocações e efeitos ritualizados. · NH 14",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Taumatologia",
+      "desc": "Entender limites, custos e natureza de magia hostil. · NH 13",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Ocultismo",
+      "desc": "Reconhecer espíritos, maldições, presságios e tabus. · NH 13",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    }
+  ],
+  "portrait": "catalogo/kagehama/assets/onmyoji_feminino.png",
+  "standee": "catalogo/kagehama/assets/onmyoji_feminino.png",
+  "cor": "#aaa",
+  "color": "#aaa",
+  "ia": {
+    "voice": "Vocabulário de sinais e correspondências; explica incerteza sem fingir certeza.",
+    "want": "Provar que magia pode vencer sem virar massacre.",
+    "fear": "Perder o controle do shikigami ou atingir inocentes no fogo cruzado.",
+    "narratorGuidance": "Magia usa alvo 3d6 como qualquer perícia: alcance, cobertura, fadiga, preparo e consequência importam."
+  },
+  "descricao": "Mago DPS de inspiração onmyōdō: talismãs, elementos, shikigami e ataques espirituais de alcance curto ou médio."
+}

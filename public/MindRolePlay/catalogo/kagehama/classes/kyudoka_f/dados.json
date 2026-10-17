@@ -1,0 +1,88 @@
+{
+  "id": "kyudoka_f",
+  "nome": "Kyūdōka · Feminino",
+  "name": "Kyūdōka",
+  "icon": "弓",
+  "gender": "f",
+  "maxHp": 11,
+  "sp": 11,
+  "mov": 6,
+  "movement": 6,
+  "attack": 14,
+  "attrs": {
+    "ST": 11,
+    "DX": 14,
+    "IQ": 12,
+    "HT": 11,
+    "STR": 11,
+    "DEX": 14,
+    "INT": 12,
+    "CON": 11,
+    "WIS": 12,
+    "CHA": 12
+  },
+  "attributes": {
+    "ST": 11,
+    "DX": 14,
+    "IQ": 12,
+    "HT": 11
+  },
+  "skills": [
+    {
+      "name": "Arco longo",
+      "attribute": "DX",
+      "level": 14,
+      "description": "Atirar com arco, ajustar distância e considerar vento."
+    },
+    {
+      "name": "Rastreamento",
+      "attribute": "IQ",
+      "level": 13,
+      "description": "Seguir rastros e estimar direção, tamanho e tempo."
+    },
+    {
+      "name": "Percepção",
+      "attribute": "Per",
+      "level": 13,
+      "description": "Notar movimento, detalhes ou sinais de perigo."
+    }
+  ],
+  "feat": "Arqueiro e sentinela que lê vento, terreno, pegadas e movimentos distantes antes de agir.",
+  "habs": [
+    {
+      "icon": "🎲",
+      "nome": "Arco longo",
+      "desc": "Atirar com arco, ajustar distância e considerar vento. · NH 14",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Rastreamento",
+      "desc": "Seguir rastros e estimar direção, tamanho e tempo. · NH 13",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Percepção",
+      "desc": "Notar movimento, detalhes ou sinais de perigo. · NH 13",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    }
+  ],
+  "portrait": "catalogo/kagehama/assets/kyudoka_feminino.png",
+  "standee": "catalogo/kagehama/assets/kyudoka_feminino.png",
+  "cor": "#aaa",
+  "color": "#aaa",
+  "ia": {
+    "voice": "Observações curtas sobre vento, terreno e distância; fala depois de observar.",
+    "want": "Manter a rota segura e provar que consegue agir sem desperdiçar uma flecha.",
+    "fear": "Disparar contra uma pessoa cuja intenção não compreendeu.",
+    "narratorGuidance": "Pede posição e linha de visão antes de agir; mede risco a aliados e não resolve todo obstáculo com ataque."
+  },
+  "descricao": "Arqueiro e sentinela que lê vento, terreno, pegadas e movimentos distantes antes de agir."
+}

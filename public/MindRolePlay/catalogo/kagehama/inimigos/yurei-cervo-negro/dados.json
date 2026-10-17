@@ -1,0 +1,20 @@
+{
+  "id": "yurei-cervo-negro",
+  "nome": "Yūrei do Cervo Negro",
+  "tipo": "espírito guardião corrompido",
+  "descricao": "Pegadas que surgem em chão seco; cervo sem sombra conduz soldados mortos. Protege o último mensageiro que jurou guardar a fronteira. Reage a juramentos quebrados e interrompe o ataque para ouvir um compromisso sincero.",
+  "habilidades": [
+    {
+      "nome": "espírito guardião corrompido",
+      "desc": "Protege o último mensageiro que jurou guardar a fronteira. Reage a juramentos quebrados e interrompe o ataque para ouvir um compromisso sincero."
+    }
+  ],
+  "fraqueza": "Armas encantadas podem atingir sua forma. Para derrotá-lo de vez, rompa o chamado da torre, revele a falsificação que distorceu seu juramento e marque o chão com sal consagrado.",
+  "nivel": 3,
+  "maxHp": 14,
+  "hp": 14,
+  "atkMod": 14,
+  "mov": 4,
+  "sp": 10,
+  "ac": 0
+}

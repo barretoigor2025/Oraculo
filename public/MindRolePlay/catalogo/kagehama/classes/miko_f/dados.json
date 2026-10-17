@@ -1,0 +1,102 @@
+{
+  "id": "miko_f",
+  "nome": "Miko yamabushi · Feminino",
+  "name": "Miko yamabushi",
+  "icon": "✧",
+  "gender": "f",
+  "maxHp": 10,
+  "sp": 12,
+  "mov": 5,
+  "movement": 5,
+  "attack": 14,
+  "attrs": {
+    "ST": 10,
+    "DX": 11,
+    "IQ": 13,
+    "HT": 12,
+    "STR": 10,
+    "DEX": 11,
+    "INT": 13,
+    "CON": 12,
+    "WIS": 13,
+    "CHA": 13
+  },
+  "attributes": {
+    "ST": 10,
+    "DX": 11,
+    "IQ": 13,
+    "HT": 12
+  },
+  "skills": [
+    {
+      "name": "Primeiros socorros",
+      "attribute": "IQ",
+      "level": 14,
+      "description": "Estancar, estabilizar e orientar cuidados imediatos."
+    },
+    {
+      "name": "Medicina",
+      "attribute": "IQ",
+      "level": 12,
+      "description": "Diagnóstico, recuperação e tratamento fora do combate."
+    },
+    {
+      "name": "Empatia",
+      "attribute": "Per",
+      "level": 13,
+      "description": "Escutar, ler necessidades e apoiar negociações delicadas."
+    },
+    {
+      "name": "Sobrevivência",
+      "attribute": "HT",
+      "level": 12,
+      "description": "Orientar-se em trilhas, identificar plantas úteis e montar abrigo."
+    }
+  ],
+  "feat": "Curandeira e guia de montanha: suporte, medicina, proteção espiritual e sobrevivência em rota longa.",
+  "habs": [
+    {
+      "icon": "🎲",
+      "nome": "Primeiros socorros",
+      "desc": "Estancar, estabilizar e orientar cuidados imediatos. · NH 14",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Medicina",
+      "desc": "Diagnóstico, recuperação e tratamento fora do combate. · NH 12",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Empatia",
+      "desc": "Escutar, ler necessidades e apoiar negociações delicadas. · NH 13",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Sobrevivência",
+      "desc": "Orientar-se em trilhas, identificar plantas úteis e montar abrigo. · NH 12",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    }
+  ],
+  "portrait": "catalogo/kagehama/assets/miko_feminino.png",
+  "standee": "catalogo/kagehama/assets/miko_feminino.png",
+  "cor": "#aaa",
+  "color": "#aaa",
+  "ia": {
+    "voice": "Tom calmo e prático; pergunta onde dói e quem ficou para trás.",
+    "want": "Manter vivos os feridos de todos os lados e preservar o santuário de Aokiri.",
+    "fear": "Um paciente salvo pode ser o responsável por uma atrocidade que ela presenciou.",
+    "narratorGuidance": "Trata primeiro o que ameaça a vida, explica limites do cuidado e depois pergunta sobre causas e responsabilidade."
+  },
+  "descricao": "Curandeira e guia de montanha: suporte, medicina, proteção espiritual e sobrevivência em rota longa."
+}

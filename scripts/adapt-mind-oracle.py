@@ -1,0 +1,126 @@
+from pathlib import Path
+import re,json
+r=Path(__file__).resolve().parent.parent
+base=r/'public/MindRolePlay'
+p=r/'MindRolePlay/src/oraculoEntry.js';s=p.read_text()
+s=s.replace("      session.playerName = c.name;", "      session.playerName = c.name;\n      localStorage.setItem('mindRolePlay.character',JSON.stringify(c));")
+s=s.replace("  chars.push(character);", "  localStorage.setItem('mindRolePlay.character',JSON.stringify(character));\n  chars.push(character);")
+s=s.replace("      session.classId = localStorage.getItem('mindRolePlay.classId') ?? 'ronin';", "      session.classId = localStorage.getItem('mindRolePlay.classId') ?? 'ronin';\n      session.onlineMode=true;")
+# Pass server ownership as source of truth; rejoin must never reinitialise narration.
+s=s.replace("    const skipRedirect = _firstSnapshot && isHost;", "    const skipRedirect = false;")
+s=s.replace("  session.isHost = isHost;", "  session.isHost = isHost;")
+s=s.replace("  try {\n    // Prólogo", "  try {\n    if(!localStorage.getItem('oraculo.groqKey')) { const key=prompt('Chave Groq para o narrador e os NPCs (salva somente neste navegador):'); if(!key?.trim())return;localStorage.setItem('oraculo.groqKey',key.trim()); }\n    // Prólogo")
+# Remove irrelevant disabled direct-arena/simulation flows from the visible home.
+p.write_text(s)
+# Original catalogue, with the single installed cartridge and original tabs/checklist.
+p=base/'catalog.html';s=p.read_text().replace("'mhoried'","'kagehama'").replace('mhoried:', 'kagehama:').replace('Mhoried','Kagehama')
+s=s.replace("'./catalogo/death-note/data.js'", "'../catalogo/death-note/data.js'").replace("'./catalogo/fantasma/data.js'", "'../catalogo/fantasma/data.js'")
+s=re.sub(r'<div class="camp-menu-item[^\"]*" data-camp="(?:death-note|fantasma)"[^>]*>.*?</div>', '', s)
+s=s.replace("const _CATALOG_VERSION", "const _CATALOG_VERSION")
+p.write_text(s)
+# Map pieces use the cartridge's real art and original movement/vote/fog engine.
+p=base/'mapa.html';s=p.read_text().replace("import { MAPA_IMG, NOS, CAMINHOS }", "import { CLASSES_DATA } from './catalogo/kagehama/classes.js';\nimport { MAPA_IMG, NOS, CAMINHOS }")
+s=s.replace('`catalogo/kagehama/classes/${cid}/peca_tabuleiro/${cid}_peca.png`', "CLASSES_DATA[cid]?.standee||''")
+p.write_text(s)
+# Narrator: retain original dialogue engine, turn/read gates, reactions and handoff.
+p=base/'narration.html';s=p.read_text()
+s=s.replace("import { NPCS }", "import { test3d6, resolveSuccessTest } from './gurps.js';\nimport { CLASSES_DATA } from './catalogo/kagehama/classes.js';\nimport { NPCS }")
+start=s.index('  const GRUPOS = [');end=s.index('\n  ];',start)+len('\n  ];')
+s=s[:start]+"  const GRUPOS = [1,2,3,4].map(ato=>({ato,label:'Ato '+ato+' — Kagehama',ids:CENAS_ORDEM.filter(id=>CENAS[id].ato===ato)}));"+s[end:]
+# Actual three six-sided dice, no d20-shaped 3D model or reverse-success rule.
+a=s.index('const PercDiceOverlay=(function(){');b=s.index('\n})();',a)+len('\n})();')
+s=s[:a]+'''let _lastGurpsRoll=null;
+function _gurpsSkill(name='Percepção') {
+ const sheet=JSON.parse(localStorage.getItem('mindRolePlay.character')||'null');
+ const player=_lastRoom?.players?.[_pid]||sheet||{};
+ const cls=CLASSES_DATA[player.classId||localStorage.getItem('mindRolePlay.classId')];
+ const skill=(player.skills||cls?.skills||[]).find(s=>s.name.toLowerCase()===name.toLowerCase());
+ return Number(skill?.level||player.attributes?.IQ||cls?.attrs?.IQ||10);
+}
+const PercDiceOverlay={rolar(onResult){
+ const result=test3d6(_gurpsSkill());_lastGurpsRoll=result;
+ const wrap=document.getElementById('perc-dado-wrap');
+ if(wrap){wrap.innerHTML='<div style="display:flex;gap:12px;justify-content:center;padding:30px">'+result.dice.map(d=>'<span style="background:white;color:black;border:2px solid #555;border-radius:9px;width:52px;height:52px;display:grid;place-items:center;font:bold 30px serif">'+['','⚀','⚁','⚂','⚃','⚄','⚅'][d]+'</span>').join('')+'</div>';}
+ setTimeout(()=>onResult(result.total),450);
+}};
+''' +s[b:]
+s=s.replace("const resposta = { aceito: true, resultado: roll };", "const resposta = { aceito: true, resultado: roll, dados:_lastGurpsRoll.dice, sucesso:_lastGurpsRoll.success, nivel:_lastGurpsRoll.effectiveSkill };")
+s=s.replace("const sucesso = roll >= (_percLocal.dc || 12);", "const sucesso = _lastGurpsRoll.success;")
+s=s.replace("const passaram  = efetivos.filter(p => (respostas[p]?.resultado || 0) >= dc);", "const passaram  = efetivos.filter(p => respostas[p]?.sucesso === true);")
+s=s.replace("percepcao.dc || 12;", "_gurpsSkill();")
+# Investigator's chosen skill/attribute is explicit, never decided retroactively by AI.
+s=s.replace("  const roll = Math.floor(Math.random() * 20) + 1;", "  const chosen=prompt('Perícia ou atributo GURPS para esta ação:', 'Percepção');\n  if(chosen===null)return;\n  const cls=CLASSES_DATA[localStorage.getItem('mindRolePlay.classId')], player=_lastRoom?.players?.[_pid]||{};\n  const skills=player.skills||cls?.skills||[];\n  const level=skills.find(s=>s.name.toLowerCase()===chosen.toLowerCase())?.level||(player.attributes||cls?.attributes||{})[chosen.toUpperCase()];\n  if(!Number.isFinite(Number(level))){inp.value=texto;alert('Escolha uma perícia da ficha ou ST, DX, IQ, HT.');return;}\n  const result=test3d6(Number(level));_lastGurpsRoll=result;\n  const roll=result.total;")
+s=s.replace("let verdito = roll >= 11 ? 'SUCESSO' : 'FALHA';", "let verdito = _lastGurpsRoll.success ? 'SUCESSO' : 'FALHA';")
+s=s.replace('${ator} tenta uma ação e rolou 1d20 = ${roll}. VOCÊ decide a dificuldade (DC) coerente com a ousadia/complexidade da ação (trivial ~6, comum ~10, difícil ~15, muito difícil ~18+) e compara com a rolagem para decidir SUCESSO ou FALHA.', '${ator} tenta uma ação. GURPS 3d6: ${_lastGurpsRoll.dice.join("+")} = ${roll}, nível efetivo ${_lastGurpsRoll.effectiveSkill}, resultado definitivo ${verdito}. Narre esse resultado sem modificar os dados ou decidir sucesso novamente.')
+s=s.replace('Rolagem 1d20 = ${roll}. Decida a dificuldade, o resultado e narre.', 'Rolagem GURPS 3d6 = ${roll}; resultado definitivo ${verdito}. Narre a consequência.')
+s=s.replace("if (m) { verdito = m[1].toUpperCase(); narr = raw.slice(m[0].length).trim() || narr; }", "if (m) { narr = raw.slice(m[0].length).trim() || narr; }")
+s=s.replace('1d20','3d6')
+# Full-sheet rule context and cumulative per-NPC memory, preserving the source prompt.
+s=s.replace('const contextoCena = `LOCAL:', 'const memoria=_lastRoom?.narration?.memorias?.[npc.id]||[];\n  const contextoCena = `MEMÓRIA ESTABELECIDA: ${JSON.stringify(memoria)}\\nLOCAL:')
+s=s.replace("    return data.choices?.[0]?.message?.content?.trim() || null;", "    const reply=data.choices?.[0]?.message?.content?.trim()||null;\n    if(reply && window._fbUpdateNarration){\n      const saved=[...memoria,{jogador:_pname,pergunta:mensagemJogador,resposta:reply}].slice(-40);\n      await window._fbUpdateNarration({['memorias.'+npc.id]:saved});\n    }\n    return reply;")
+p.write_text(s)
+
+# Install the art at the canonical Oráculo paths used by catalogue and standees.
+import shutil
+cart=base/'catalogo/kagehama'
+for file in (cart/'classes').glob('*/dados.json'):
+ data=json.loads(file.read_text());id=data['id'];asset=base/data['portrait']
+ for rel in [f'classes/{id}/retrato/{id}_retrato.png',f'classes/{id}/retrato/{id}_m_retrato.png',f'classes/{id}/retrato/{id}_f_retrato.png',f'classes/{id}/peca_tabuleiro/{id}_peca.png',f'classes/{id}/peca_tabuleiro/{id}_m_peca.png',f'classes/{id}/peca_tabuleiro/{id}_f_peca.png']:
+  dest=cart/rel;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(asset,dest)
+for file in (cart/'npcs').glob('*/dados.json'):
+ data=json.loads(file.read_text());id=data['id'];asset=base/data['img']
+ for rel in [f'npcs/{id}/retrato/{id}_retrato.png',f'npcs/{id}/peca_tabuleiro/{id}_peca.png']:
+  dest=cart/rel;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(asset,dest)
+
+# Keep Falar/Agir within the original dialogue composer; the engine still owns turns.
+p=base/'narration.html';s=p.read_text()
+s=s.replace('  <div id="dial-input-bar">', '''  <div style="display:flex;gap:6px;padding:5px 12px;background:#121212;align-items:center">
+    <button id="mind-fala" onclick="window._mindModo(false)" aria-pressed="true">Falar</button>
+    <button id="mind-acao" onclick="window._mindModo(true)" aria-pressed="false">Agir · 3d6</button>
+    <select id="mind-skill" aria-label="Perícia GURPS" style="display:none;max-width:55%;background:#222;color:white"></select>
+  </div>
+  <div id="dial-input-bar">''')
+pos=s.index('// ── Estado local')
+s=s[:pos]+'''let _mindAcao=false;
+window._mindModo=function(acao){
+ _mindAcao=acao;
+ const player=_lastRoom?.players?.[_pid]||JSON.parse(localStorage.getItem('mindRolePlay.character')||'null')||{};
+ const cls=CLASSES_DATA[player.classId||localStorage.getItem('mindRolePlay.classId')];
+ const select=document.getElementById('mind-skill');
+ select.replaceChildren();
+ for(const skill of [...(player.skills||cls?.skills||[]),...Object.entries(player.attributes||cls?.attributes||{}).map(([name,level])=>({name,level}))]){
+  const option=document.createElement('option');option.value=String(skill.level);option.textContent=skill.name+' · '+skill.level;select.append(option);
+ }
+ select.style.display=acao?'':'none';
+ document.getElementById('mind-fala').setAttribute('aria-pressed',String(!acao));
+ document.getElementById('mind-acao').setAttribute('aria-pressed',String(acao));
+ document.getElementById('dial-msg-input').placeholder=acao?'Descreva sua ação…':'O que você diz…';
+};
+
+''' +s[pos:]
+a=s.index('window._dialEnviar = async function ()');b=s.index('// ── Navegação e histórico',a)
+block=s[a:b].replace("  const texto = (input?.value || '').trim();", "  let texto = (input?.value || '').trim();")
+block=block.replace("  if (!texto) return;", """  if (!texto) return;
+  if(_mindAcao){
+    const select=document.getElementById('mind-skill');
+    if(!select.options.length)window._mindModo(true);
+    const result=test3d6(Number(select.value));
+    texto='[GURPS 3d6: '+result.dice.join('+')+' = '+result.total+'; '+select.selectedOptions[0].textContent+'; '+result.outcome+'; margem '+result.margin+'] '+texto;
+  }""")
+s=s[:a]+block+s[b:]
+s=s.replace('REGRAS: Português brasileiro, 1ª pessoa.', 'REGRAS: Resultados GURPS 3d6 informados pelo programa são definitivos: narre a consequência sem refazer testes ou alterar sucesso, falha ou críticos. Fala comum não exige dado; não conceda persuasão contra interesses sem teste. Português brasileiro, 1ª pessoa.')
+s=s.replace("jogador:_pname,pergunta:mensagemJogador", "jogador:(_dialogoLog.filter(b=>b.tipo==='jogador').at(-1)?.oradorNome||_pname),pergunta:mensagemJogador")
+p.write_text(s)
+# Catalogue uses four GURPS attributes, not compatibility aliases for old UI code.
+p=base/'catalog.html';s=p.read_text().replace('Object.entries(cls.attrs)', 'Object.entries(cls.attributes||cls.attrs)').replace('CAMP_PALETTE.mhoried','CAMP_PALETTE.kagehama')
+p.write_text(s)
+
+# Preserve the catalogue layout while showing actual GURPS values and both artworks.
+p=base/'catalog.html';s=p.read_text().replace('⚔️ ATK d${cls.atk+4}','🎲 NH ${cls.attack}')\
+ .replace('🎲 d${cls.atk+4}','🎲 3d6').replace('Dado Atk','Teste GURPS').replace('SP Máx','PF Máx')\
+ .replace('<div class="am">${mod(v)}</div>','<div class="am">GURPS</div>')
+s=s.replace("function classSpriteUrl(id, gender){", "function classSpriteUrl(id, gender){")
+# Replace only the return paths, leaving original function/event boundaries intact.
+s=s.replace('`catalogo/kagehama/classes/${id}/retrato/${id}_${gender}_retrato.png`', "CLASSES_DATA[id.replace(/_f$/,'')+(gender==='f'?'_f':'')]?.portrait||''")
+s=s.replace('`catalogo/kagehama/classes/${id}/peca_tabuleiro/${id}_${g}${r}_peca.png`', "CLASSES_DATA[id.replace(/_f$/,'')+(g==='f'?'_f':'')]?.standee||''")
+p.write_text(s)

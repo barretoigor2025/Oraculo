@@ -1,0 +1,88 @@
+{
+  "id": "shinobi_f",
+  "nome": "Shinobi · Feminino",
+  "name": "Shinobi",
+  "icon": "忍",
+  "gender": "f",
+  "maxHp": 9,
+  "sp": 11,
+  "mov": 6,
+  "movement": 6,
+  "attack": 14,
+  "attrs": {
+    "ST": 9,
+    "DX": 14,
+    "IQ": 13,
+    "HT": 11,
+    "STR": 9,
+    "DEX": 14,
+    "INT": 13,
+    "CON": 11,
+    "WIS": 13,
+    "CHA": 13
+  },
+  "attributes": {
+    "ST": 9,
+    "DX": 14,
+    "IQ": 13,
+    "HT": 11
+  },
+  "skills": [
+    {
+      "name": "Furtividade",
+      "attribute": "DX",
+      "level": 14,
+      "description": "Mover-se sem ser visto ou ouvido; falhas podem deixar vestígios."
+    },
+    {
+      "name": "Disfarce",
+      "attribute": "IQ",
+      "level": 13,
+      "description": "Adotar aparência, papel e comportamento plausíveis."
+    },
+    {
+      "name": "Investigação",
+      "attribute": "IQ",
+      "level": 12,
+      "description": "Observar contradições, cruzar pistas e procurar entradas."
+    }
+  ],
+  "feat": "Infiltrador que vence com preparo, observação, disfarce e rotas discretas, evitando confronto desnecessário.",
+  "habs": [
+    {
+      "icon": "🎲",
+      "nome": "Furtividade",
+      "desc": "Mover-se sem ser visto ou ouvido; falhas podem deixar vestígios. · NH 14",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Disfarce",
+      "desc": "Adotar aparência, papel e comportamento plausíveis. · NH 13",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Investigação",
+      "desc": "Observar contradições, cruzar pistas e procurar entradas. · NH 12",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    }
+  ],
+  "portrait": "catalogo/kagehama/assets/shinobi_feminino.png",
+  "standee": "catalogo/kagehama/assets/shinobi_feminino.png",
+  "cor": "#aaa",
+  "color": "#aaa",
+  "ia": {
+    "voice": "Perguntas discretas, humor seco; evita responder tudo de imediato.",
+    "want": "Descobrir quem move as peças e deixar uma saída para o grupo.",
+    "fear": "Ser reconhecido por uma antiga operação que sacrificou inocentes.",
+    "narratorGuidance": "Prepara cobertura e rota de fuga, testa versões e relata o que é observado separando fato de suspeita."
+  },
+  "descricao": "Infiltrador que vence com preparo, observação, disfarce e rotas discretas, evitando confronto desnecessário."
+}

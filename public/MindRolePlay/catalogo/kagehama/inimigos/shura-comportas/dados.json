@@ -1,0 +1,20 @@
+{
+  "id": "shura-comportas",
+  "nome": "Shura das Comportas",
+  "tipo": "oni de canal",
+  "descricao": "Água sobe contra a gravidade e vozes de pessoas afogadas pedem para abrir a comporta. Não é a alma de uma vítima: nasceu de centenas de promessas quebradas e tenta afogar quem lucra com a escassez. Ataca primeiro os guardas que protegem o desvio.",
+  "habilidades": [
+    {
+      "nome": "oni de canal",
+      "desc": "Não é a alma de uma vítima: nasceu de centenas de promessas quebradas e tenta afogar quem lucra com a escassez. Ataca primeiro os guardas que protegem o desvio."
+    }
+  ],
+  "fraqueza": "Apenas arma consagrada, sal ritual ou um selo reparado pode feri-lo. Enquanto o selo permanecer na pedra votiva, ele retorna a cada rodada narrativa; retirar o selo expõe a comporta e exige uma escolha de risco.",
+  "nivel": 4,
+  "maxHp": 16,
+  "hp": 16,
+  "atkMod": 15,
+  "mov": 4,
+  "sp": 10,
+  "ac": 0
+}

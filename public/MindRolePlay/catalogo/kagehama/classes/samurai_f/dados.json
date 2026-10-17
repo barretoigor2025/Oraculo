@@ -1,0 +1,88 @@
+{
+  "id": "samurai_f",
+  "nome": "Samurai juramentado · Feminino",
+  "name": "Samurai juramentado",
+  "icon": "⛨",
+  "gender": "f",
+  "maxHp": 12,
+  "sp": 12,
+  "mov": 6,
+  "movement": 6,
+  "attack": 13,
+  "attrs": {
+    "ST": 12,
+    "DX": 12,
+    "IQ": 11,
+    "HT": 12,
+    "STR": 12,
+    "DEX": 12,
+    "INT": 11,
+    "CON": 12,
+    "WIS": 11,
+    "CHA": 11
+  },
+  "attributes": {
+    "ST": 12,
+    "DX": 12,
+    "IQ": 11,
+    "HT": 12
+  },
+  "skills": [
+    {
+      "name": "Katana",
+      "attribute": "DX",
+      "level": 13,
+      "description": "Atacar, aparar e reconhecer técnica de espada."
+    },
+    {
+      "name": "Etiqueta",
+      "attribute": "IQ",
+      "level": 12,
+      "description": "Ler hierarquia, protocolo, insultos e obrigações formais."
+    },
+    {
+      "name": "Tática",
+      "attribute": "IQ",
+      "level": 12,
+      "description": "Avaliar terreno, proteger aliados e antecipar manobras."
+    }
+  ],
+  "feat": "Defensor treinado, cuja armadura e brasão anunciam uma lealdade que pode entrar em conflito com a consciência.",
+  "habs": [
+    {
+      "icon": "🎲",
+      "nome": "Katana",
+      "desc": "Atacar, aparar e reconhecer técnica de espada. · NH 13",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Etiqueta",
+      "desc": "Ler hierarquia, protocolo, insultos e obrigações formais. · NH 12",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Tática",
+      "desc": "Avaliar terreno, proteger aliados e antecipar manobras. · NH 12",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    }
+  ],
+  "portrait": "catalogo/kagehama/assets/samurai_feminino.png",
+  "standee": "catalogo/kagehama/assets/samurai_feminino.png",
+  "cor": "#aaa",
+  "color": "#aaa",
+  "ia": {
+    "voice": "Frases formais, respostas medidas; chama as pessoas pelo título até ganhar confiança.",
+    "want": "Cumprir um juramento sem permitir que ele vire desculpa para crueldade.",
+    "fear": "Descobrir que seu próprio clã fabricou a ordem que deve obedecer.",
+    "narratorGuidance": "Diante de conflito, procura protocolo e testemunhas primeiro; se a violência começar, prioriza cobertura e evacuação."
+  },
+  "descricao": "Defensor treinado, cuja armadura e brasão anunciam uma lealdade que pode entrar em conflito com a consciência."
+}

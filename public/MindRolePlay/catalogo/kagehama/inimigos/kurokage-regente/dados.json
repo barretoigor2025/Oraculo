@@ -1,0 +1,20 @@
+{
+  "id": "kurokage-regente",
+  "nome": "Kurokage, a Sombra do Tratado",
+  "tipo": "oni de juramento",
+  "descricao": "Tinta se mexe antes da mão; sombra repete votos apagados do tratado. Tenta negociar usando verdades incompletas. Não deseja destruir o mundo: quer transformar cada juramento político em uma prisão literal.",
+  "habilidades": [
+    {
+      "nome": "oni de juramento",
+      "desc": "Tenta negociar usando verdades incompletas. Não deseja destruir o mundo: quer transformar cada juramento político em uma prisão literal."
+    }
+  ],
+  "fraqueza": "Armas sem encantamento apenas atrasam sua manifestação. Para vencê-lo é preciso expor o nome apagado, reunir as testemunhas do juramento original e quebrar o tratado junto à guarda de Hibari. Uma arma encantada abre a vulnerabilidade, mas não substitui a decisão moral.",
+  "nivel": 5,
+  "maxHp": 18,
+  "hp": 18,
+  "atkMod": 16,
+  "mov": 4,
+  "sp": 10,
+  "ac": 0
+}

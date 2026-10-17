@@ -1,0 +1,102 @@
+{
+  "id": "ronin",
+  "nome": "Rōnin de vanguarda · Masculino",
+  "name": "Rōnin de vanguarda",
+  "icon": "⚔",
+  "gender": "m",
+  "maxHp": 14,
+  "sp": 13,
+  "mov": 6,
+  "movement": 6,
+  "attack": 13,
+  "attrs": {
+    "ST": 14,
+    "DX": 12,
+    "IQ": 10,
+    "HT": 13,
+    "STR": 14,
+    "DEX": 12,
+    "INT": 10,
+    "CON": 13,
+    "WIS": 10,
+    "CHA": 10
+  },
+  "attributes": {
+    "ST": 14,
+    "DX": 12,
+    "IQ": 10,
+    "HT": 13
+  },
+  "skills": [
+    {
+      "name": "Espada de duas mãos",
+      "attribute": "DX",
+      "level": 13,
+      "description": "Ataque forte, aparo amplo e controle de corredor."
+    },
+    {
+      "name": "Briga",
+      "attribute": "DX",
+      "level": 12,
+      "description": "Empurrar, agarrar, derrubar e lutar quando a espada não cabe."
+    },
+    {
+      "name": "Intimidação",
+      "attribute": "Will",
+      "level": 12,
+      "description": "Quebrar hesitação inimiga sem transformar tudo em duelo."
+    },
+    {
+      "name": "Sobrevivência",
+      "attribute": "HT",
+      "level": 12,
+      "description": "Marcha, abrigo, frio, fome e estrada ruim."
+    }
+  ],
+  "feat": "Guerreiro errante de linha de frente: segura passagem, aguenta pancada e decide quando a lâmina precisa sair.",
+  "habs": [
+    {
+      "icon": "🎲",
+      "nome": "Espada de duas mãos",
+      "desc": "Ataque forte, aparo amplo e controle de corredor. · NH 13",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Briga",
+      "desc": "Empurrar, agarrar, derrubar e lutar quando a espada não cabe. · NH 12",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Intimidação",
+      "desc": "Quebrar hesitação inimiga sem transformar tudo em duelo. · NH 12",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    },
+    {
+      "icon": "🎲",
+      "nome": "Sobrevivência",
+      "desc": "Marcha, abrigo, frio, fome e estrada ruim. · NH 12",
+      "dano": "—",
+      "tipo": "teste",
+      "sp": 0
+    }
+  ],
+  "portrait": "catalogo/kagehama/assets/ronin_masculino.png",
+  "standee": "catalogo/kagehama/assets/ronin_masculino.png",
+  "cor": "#aaa",
+  "color": "#aaa",
+  "ia": {
+    "voice": "Fala direta, econômica; evita ostentar bravura.",
+    "want": "Proteger viajantes e recuperar um nome que perdeu.",
+    "fear": "Voltar a depender de um senhor que trate pessoas como peças.",
+    "narratorGuidance": "Não ataca por orgulho vazio: exige causa concreta, sinaliza o risco e para quando a proteção deixa de fazer sentido."
+  },
+  "descricao": "Guerreiro errante de linha de frente: segura passagem, aguenta pancada e decide quando a lâmina precisa sair."
+}
