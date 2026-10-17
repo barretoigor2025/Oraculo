@@ -5,15 +5,15 @@ export const CENAS = {
     "titulo": "Ponte das Sete Lanternas",
     "subtitulo": "PRÓLOGO",
     "tipo": "dialogo",
-    "textoIntro": "Na capital Kagehama, a Festa das Sete Lanternas enche os canais de música, fumaça de carvão e luz vermelha. A procissão celebra um armistício que pode impedir uma guerra entre três domínios. Vocês já estão reunidos no trecho central da ponte — a serviço, de passagem, investigando ou trabalhando — sem que precisem se conhecer. À frente, o mensageiro imperial leva ao conselho um estojo lacrado. Sete lanternas apagam em sequência. Uma flecha corta a faixa do cortejo; o mensageiro cai na água e o estojo desliza até a borda onde vocês estão. Sob a ponte, uma mão pálida o agarra. Guardas gritam ordens contraditórias e a multidão começa a correr. O homem e o estojo desaparecerão em instantes se ninguém agir. O que cada personagem faz?",
+    "textoIntro": "Kagehama, capital de Akitsuru. Após anos de conflito, três casas senhoriais enviaram seus representantes à cidade para assinar um armistício. Nesta noite, a Festa das Sete Lanternas celebra a promessa de paz. Barcos iluminados atravessam os canais enquanto a comitiva segue em direção ao palácio.\n\nVocês estão na Ponte das Sete Lanternas, entre os moradores que acompanham a procissão. Ainda não se conhecem. Diante de vocês, o mensageiro Jiro carrega o estojo lacrado que contém os documentos do acordo. A mediadora Akiho Senda acompanha a comitiva.\n\nDe repente, as lanternas da ponte se apagam. Uma flecha atinge Jiro, que perde o equilíbrio e cai no canal. O estojo escapa de suas mãos e desliza sobre as tábuas molhadas, parando junto à borda. Entre os pilares da ponte, uma figura se move na água. A multidão recua em pânico; os guardas procuram o atirador nos telhados.\n\nO mensageiro luta contra a corrente. O estojo ainda está ao alcance, mas alguém sob a ponte tenta puxá-lo. Há poucos instantes para agir.",
     "npcsPresentes": [
       "kagehama-npc-1",
       "kagehama-npc-0",
       "kagehama-npc-2",
       "kagehama-npc-4"
     ],
-    "npcEntrada": "kagehama-npc-1",
-    "falaEntrada": "Ren Kuroda ajeita a manga antes de olhar para o grupo. “Uma noite de paz depende de pessoas que sabem esperar. Digam: vieram proteger a ponte ou descobrir quem teme que ela permaneça aberta?”",
+    "npcEntrada": "kagehama-npc-0",
+    "falaEntrada": "[ACAO: Akiho afasta duas pessoas da borda e se volta para vocês.] O mensageiro está no canal! Quem puder ajudá-lo, venha comigo. O estojo precisa ficar longe da água. Depressa!",
     "semIntro": false,
     "avancarEmGrupo": true,
     "imgExterior": "catalogo/kagehama/assets/ponte-sete-lanternas.jpg",

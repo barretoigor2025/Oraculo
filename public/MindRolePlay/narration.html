@@ -1060,6 +1060,21 @@ html,body{
 @keyframes invMaisPulse{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(2px);} }
 #investig-card-dica{ font-size:8px; text-transform:uppercase; letter-spacing:1px; color:rgba(190,165,90,.4); text-align:right; margin-top:8px; }
 
+
+/* Scene-first portrait layout: full background, opaque actors at ground level. */
+#dial-overlay{height:100dvh;max-height:100dvh;overflow:hidden;background:#080808}
+#dial-personagens{bottom:190px;height:37dvh;z-index:4;overflow:hidden}
+.dial-npc{max-width:30vw;height:33dvh!important;opacity:1!important;filter:drop-shadow(0 5px 10px #0008)!important}
+.dial-npc.inativo{opacity:1!important;filter:drop-shadow(0 5px 10px #0008)!important;height:28dvh!important}
+.dial-npc canvas{height:100%;max-width:30vw;object-fit:contain;object-position:bottom}
+.dial-hero{position:absolute;bottom:0;height:34dvh;max-width:32vw;transform:translateX(120%);transition:transform .5s;z-index:9}
+.dial-hero.dentro{transform:none}.dial-hero canvas{height:100%;max-width:32vw;object-fit:contain;object-position:bottom}
+.dial-hero span{position:absolute;bottom:0;left:0;right:0;text-align:center;background:#111d;color:#fff;font:10px sans-serif;padding:3px}
+#dial-balao,#dial-player-card{z-index:15;max-height:32dvh}
+#dial-cena-bg::after{background:linear-gradient(0deg,#0008,transparent 65%)}
+#dial-npc-chips{overflow-x:auto;flex-wrap:nowrap;flex-shrink:0}
+#dial-input-bar,#dial-turno-bar{flex-shrink:0}
+@media(max-height:520px){#dial-personagens{bottom:130px;height:35dvh}.dial-npc{height:32dvh!important}.dial-npc.inativo{height:27dvh!important}.dial-hero{height:32dvh}#dial-balao{max-height:32dvh;top:35px}}
 </style>
 </head>
 <body>
@@ -1621,7 +1636,8 @@ function atualizarCena() {
     elImgWrap.classList.add('sem-imagem');
     elImagem.classList.add('oculto');
     if (imgSrc) {
-      elImagem.src = imgSrc;
+      elImagem.src = _imgBust(imgSrc);
+      if(elImagem.complete && elImagem.naturalWidth)onImagemCarregada();
     }
   }
 
@@ -2879,7 +2895,7 @@ function _dialGetNarracaoCena(campCenaId) {
   if (cena?.dialCena) return cena.dialCena;
   const presentes = cena?.npcsPresentes || [];
   for (const npc of _dialNpcs) {
-    if (presentes.some(id => id.includes(npc.id))) return npc.cenas[0];
+    if (presentes.some(id => id.includes(npc.id))) return npc.cenas?.[0] || campCenaId;
   }
   return null;
 }
@@ -2895,7 +2911,7 @@ function _dialLoadCanvas(src, canvas, onOk, onErr) {
       tmp.width = W; tmp.height = H;
       const tctx = tmp.getContext('2d');
       tctx.drawImage(img, 0, 0, W, H);
-      _dialChroma(tctx, W, H);
+      /* Existing Kagehama PNG transparency is preserved; no chromakey erasure. */
       const bb = _dialBbox(tctx, W, H);
       const cw = bb.r - bb.l + 1, ch = bb.b - bb.t + 1;
       canvas.width = cw; canvas.height = ch;
@@ -2973,7 +2989,7 @@ function _dialActivar(campCenaId) {
         const curated = _dialNpcs.find(n => n.id === id || id === n.id);
         return curated || NPCS_REGISTRY[id] || null;
       }).filter(Boolean)
-    : narracaoCena ? _dialNpcs.filter(n => n.cenas.includes(narracaoCena)) : [];
+    : narracaoCena ? _dialNpcs.filter(n => n.cenas?.includes(narracaoCena)) : [];
 
   // Escala proporcional à altura real do bicho (altura_cm). Reduzimos a referência
   // e o teto para que os balões não fiquem cobertos — mantendo grandões maiores.
@@ -2982,7 +2998,7 @@ function _dialActivar(campCenaId) {
     const div = document.createElement('div');
     div.className = 'dial-npc';
     const npcVh = Math.min((npc.altura_cm || _ALTURA_REF_CM) / _ALTURA_REF_CM * _ALTURA_REF_VH, 50).toFixed(1);
-    div.style.cssText = `z-index:${npc.zBase || 5};left:${npc.offsetPx || 0}px;height:${npcVh}vh;`;
+    div.style.cssText = `z-index:${npc.zBase || 5};left:${i*16}%;height:${npcVh}vh;`;
     if (i > 0) div.classList.add('inativo');
     const canvas = document.createElement('canvas');
     _dialLoadCanvas(npc.img, canvas, () => {
@@ -2999,6 +3015,18 @@ function _dialActivar(campCenaId) {
     _dialNpcEls.push({ par: div, npc, idx: i });
   });
 
+  Object.entries(_lastRoom?.players||{}).forEach(([pid,player],index)=>{
+    const cls=CLASSES_DATA[player.classId];
+    const src=player.standee||cls?.standee;
+    if(!src)return;
+    const div=document.createElement('div');div.className='dial-hero';
+    div.dataset.playerId=pid;
+    div.style.right=(index*13)+'%';
+    const canvas=document.createElement('canvas');
+    _dialLoadCanvas(src,canvas,()=>{div.append(canvas);requestAnimationFrame(()=>div.classList.add('dentro'));},()=>{});
+    const label=document.createElement('span');label.textContent=player.nome||player.name||'Aventureiro';div.append(label);
+    container.append(div);
+  });
   // Selecionar primeiro NPC ativo
   _dialNpcAtivoIdx = 0;
 
@@ -3817,6 +3845,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v46</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v3</div>
 </body>
 </html>
