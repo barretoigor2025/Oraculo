@@ -1091,6 +1091,9 @@ html,body{
 }
 #dial-personagens .dial-hero canvas{transform:none}
 @media(max-height:520px){#dial-personagens{height:42dvh}#dial-personagens .dial-npc,#dial-personagens .dial-hero{height:41dvh!important}}
+
+#dial-ia-pensando{position:absolute;bottom:220px;left:3%;right:3%;z-index:25;background:#161616ed;color:#fff;padding:10px 14px;border-radius:9px;font:14px sans-serif;max-height:20dvh;overflow:auto}
+#dial-ia-pensando button{padding:8px 12px;margin:5px;color:#fff;background:#433057;border:1px solid #b594cb;border-radius:7px}
 </style>
 </head>
 <body>
@@ -1264,11 +1267,11 @@ html,body{
     <div id="dial-balao-nome">—</div>
     <div id="dial-balao-acao"></div>
     <div id="dial-balao-texto">…</div>
-    <div id="dial-ia-pensando">✨ Pensando…</div>
     <button id="dial-btn-continuar" onclick="window._dialContinuar()">▶ Continuar</button>
   </div>
 
   <div id="dial-player-card"></div>
+  <div id="dial-ia-pensando" role="status" aria-live="polite">Preparando a resposta…</div>
 
   <button id="dial-btn-historico" onclick="window._dialAbrirHistorico()">📜</button>
 
@@ -2880,22 +2883,35 @@ function _dialGravarLido(){
   if(len>_dialLidoGravado){ _dialLidoGravado=len; window._fbDialLido?.(_pid,len); }
 }
 // HOST conduz: responde IA à fala de guest e passa a vez quando todos leram.
+let _mindRespostaEmCurso=false;
+function _mindErroResposta(error){
+ const status=document.getElementById('dial-ia-pensando');
+ status.replaceChildren();status.style.display='block';
+ const text=document.createElement('span');text.textContent='Não foi possível obter a resposta: '+error.message+' ';
+ const retry=document.createElement('button');retry.textContent='Tentar novamente';
+ retry.onclick=()=>{_dialIaRespondTs=null;_dialFluxoTurnos();};
+ status.append(text,retry);
+}
 async function _dialFluxoTurnos(){
-  if(!_isHost || !_dialAtivo) return;
-  const log=_dialogoLog, ult=log[log.length-1];
-  const ativos=_jogadoresAtivos(_lastRoom).sort();
-  // 1) Fala de guest sem resposta → host chama a IA (a chave vive no host)
-  if(ult && ult.tipo==='jogador' && ult.authorId!==_pid && _dialIaRespondTs!==ult.ts){
-    _dialIaRespondTs=ult.ts;
-    document.getElementById('dial-ia-pensando').style.display='block';
-    const resposta=await _dialChamarIA(_dialNpcAtivoIdx, ult.texto);
-    document.getElementById('dial-ia-pensando').style.display='none';
-    const npc=_dialNpcEls[_dialNpcAtivoIdx]?.npc;
-    if(resposta && npc){
-      await window._fbAddDialogue?.({tipo:'npc',oradorId:npc.id,oradorNome:npc.nome,texto:resposta,ts:Date.now()});
-    }
-  }
-  // (Rotação da vez: DERIVADA em _dialVezPid() — nada a gravar aqui.)
+ if(!_isHost||!_dialAtivo||_mindRespostaEmCurso)return;
+ const ult=_dialogoLog.at(-1);
+ if(!ult||ult.tipo!=='jogador'||_dialIaRespondTs===ult.ts)return;
+ _mindRespostaEmCurso=true;_dialIaRespondTs=ult.ts;
+ const status=document.getElementById('dial-ia-pensando');
+ status.textContent='Preparando a resposta…';status.style.display='block';
+ try{
+  const idx=ult.npcId?_dialNpcEls.findIndex(e=>e.npc.id===ult.npcId):_dialNpcAtivoIdx;
+  const npc=_dialNpcEls[idx]?.npc;
+  if(!npc)throw new Error('O NPC escolhido não está nesta cena.');
+  const resposta=await _dialChamarIA(idx,ult.texto);
+  if(_dialogoLog.at(-1)?.ts!==ult.ts)return;
+  const beat={tipo:'npc',oradorId:npc.id,oradorNome:npc.nome,texto:resposta,respondeA:ult.ts,ts:Date.now()};
+  if(window._fbAddDialogue)await window._fbAddDialogue(beat);
+  else{_dialogoLog=[..._dialogoLog,beat];renderDialogo();_dialTickDisplay();}
+  status.style.display='none';
+  try{await _dialVerificarReacao(idx);}catch(error){console.warn('Reação opcional indisponível:',error.message);}
+ }catch(error){_mindErroResposta(error);}
+ finally{_mindRespostaEmCurso=false;_dialAtualizarVezUI();}
 }
 
 // ── Helpers ───────────────────────────────────────────────
@@ -3270,7 +3286,7 @@ function _dialMostrarCardPlayer(nome, avatar, texto, comOk) {
   // jogador precisa do OK aqui dentro (senão o leitor fica preso no card).
   if (comOk) {
     const okBtn = document.createElement('button');
-    okBtn.textContent = '✔ OK';
+    okBtn.textContent = '▶ Continuar';
     okBtn.style.cssText = 'margin-top:9px;padding:8px 22px;font-family:inherit;'
       + 'font-size:13px;font-weight:700;background:rgba(190,140,35,.2);color:#e8c874;'
       + 'border:1px solid rgba(190,140,35,.5);border-radius:9px;cursor:pointer;display:block;margin-left:auto;';
@@ -3310,19 +3326,11 @@ async function _dialRenderBeat(beat) {
     _mindMostrarAtor('jogador',beat.authorId||oradorId);
     const CLASS_AVATAR = { mago:'🔮', guerreiro:'⚔️', ladino:'🗡️', clerigo:'✝️', arqueiro:'🏹', druida:'🌿', barbaro:'🪓' };
     const avatar = CLASS_AVATAR[beat.classId] || '⚔️';
-    const ehMinha = beat.authorId === _pid;
-    _dialMostrarCardPlayer(oradorNome || 'Jogador', avatar, texto || '', !ehMinha);
+    _dialMostrarCardPlayer(oradorNome || 'Jogador', avatar, texto || '', true);
     _dialHistoricoLocal.push({ tipo: 'jogador', quem: oradorNome || 'Jogador', texto: texto || '' });
-    // Se fui eu quem enviou → avança automaticamente; senão → ✔ OK no card
-    if (ehMinha) {
-      _dialReadIdx++;
-      _dialAnimBeat = false;
-      await _dialDelay(600);
-      _dialTickDisplay();
-    } else {
-      _dialAnimBeat = false;
-      _dialAwaitingCont = true;
-    }
+    _dialAnimBeat = false;
+    _dialAwaitingCont = true;
+
   } else {
     // narrador / sistema — avança sem exibir
     _dialReadIdx++;
@@ -3342,7 +3350,7 @@ window._dialContinuar = function () {
 // ── IA (Groq) ─────────────────────────────────────────────
 async function _dialChamarIA(npcIdx, mensagemJogador) {
   const key = localStorage.getItem('oraculo.groqKey');
-  if (!key) return null;
+  if (!key) throw new Error('Configure a chave Groq no aparelho do anfitrião.');
   const npc = _dialNpcEls[npcIdx]?.npc;
   if (!npc) return null;
 
@@ -3351,8 +3359,8 @@ async function _dialChamarIA(npcIdx, mensagemJogador) {
   const nomesPresentes = _dialNpcEls.map(e => e.npc.nome).join(', ');
   const local = cena?.titulo || _cenaAtual;
   const jogadoresNomes = Object.values(_lastRoom?.players || {}).map(p => p.nome).join(', ') || _pname;
-  const historicoTexto = _dialHistoricoLocal.length
-    ? _dialHistoricoLocal.map(e => `${e.quem}: "${e.texto}"`).join('\n')
+  const historicoTexto = _dialogoLog.length
+    ? _dialogoLog.slice(-40).map(e => `${e.oradorNome}: "${e.texto}"`).join('\n')
     : '(a cena acaba de começar)';
   const memoria=_lastRoom?.narration?.memorias?.[npc.id]||[];
   const contextoCena = `MEMÓRIA ESTABELECIDA: ${JSON.stringify(memoria)}\nLOCAL: ${local}.\nPRESENTES: ${nomesPresentes} e ${jogadoresNomes} (aventureiros).\n\nDIÁLOGOS RECENTES:\n${historicoTexto}`;
@@ -3375,14 +3383,15 @@ async function _dialChamarIA(npcIdx, mensagemJogador) {
       body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 200, messages }),
     });
     const data = await resp.json();
-    if (data.error) throw new Error(data.error.message);
+    if (!resp.ok || data.error) throw new Error(data.error?.message || 'Serviço de IA indisponível ('+resp.status+').');
     const reply=data.choices?.[0]?.message?.content?.trim()||null;
     if(reply && window._fbUpdateNarration){
       const saved=[...memoria,{jogador:(_dialogoLog.filter(b=>b.tipo==='jogador').at(-1)?.oradorNome||_pname),pergunta:mensagemJogador,resposta:reply}].slice(-40);
       await window._fbUpdateNarration({['memorias.'+npc.id]:saved});
     }
+    if(!reply)throw new Error('A IA não retornou uma resposta.');
     return reply;
-  } catch (_) { return null; }
+  } catch (error) { throw new Error(error.name==='AbortError'?'A IA demorou demais para responder.':error.message); }
   finally { clearTimeout(timer); }
 }
 
@@ -3435,7 +3444,7 @@ window._dialEnviar = async function () {
   const jogador = { id: _pid, nome: _pname, classId: localStorage.getItem('mindRolePlay.classId') || 'guerreiro' };
   const beatJogador = {
     tipo: 'jogador', oradorId: jogador.id, oradorNome: jogador.nome,
-    texto, classId: jogador.classId, authorId: _pid, ts: Date.now(),
+    texto, classId: jogador.classId, authorId: _pid, npcId:_dialNpcEls[_dialNpcAtivoIdx]?.npc.id||null, ts: Date.now(),
   };
   // (A vez trava sozinha: com fala de jogador no fim do log, _dialVezPid()=null)
   if (window._fbAddDialogue) await window._fbAddDialogue(beatJogador);
@@ -3444,25 +3453,9 @@ window._dialEnviar = async function () {
   input.disabled = false;
   document.getElementById('dial-btn-enviar').disabled = false;
 
-  // Guest: para aqui — o HOST vê o beat e chama a IA (_dialFluxoTurnos)
-  if (!_isHost) { _dialAtualizarVezUI(); return; }
-
-  // Host falando: chama a IA direto
-  document.getElementById('dial-ia-pensando').style.display = 'block';
-  const resposta = await _dialChamarIA(_dialNpcAtivoIdx, texto);
-  document.getElementById('dial-ia-pensando').style.display = 'none';
-
-  if (!resposta) return;
-  const npc = _dialNpcEls[_dialNpcAtivoIdx]?.npc;
-  if (!npc) return;
-
-  const beatNpc = { tipo: 'npc', oradorId: npc.id, oradorNome: npc.nome, texto: resposta, ts: Date.now() };
-  if (window._fbAddDialogue) await window._fbAddDialogue(beatNpc);
-  else { _dialogoLog = [..._dialogoLog, beatNpc].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
-
-  // Verificar reação espontânea de outros NPCs
-  await _dialDelay(400);
-  await _dialVerificarReacao(_dialNpcAtivoIdx);
+  // Only the host generates replies; both local and remote speech use this path.
+  await _dialFluxoTurnos();
+  _dialAtualizarVezUI();
 };
 
 // ── Navegação e histórico ──────────────────────────────────
@@ -3872,6 +3865,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v4</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v5</div>
 </body>
 </html>
