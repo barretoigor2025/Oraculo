@@ -1,0 +1,20 @@
+{
+  "id": "onibi-lanterna",
+  "nome": "Onibi das Sete Lanternas",
+  "tipo": "espírito errante",
+  "descricao": "Fogo frio paira sobre água ou trilhas e aponta para um objeto perdido. Imita vozes conhecidas para conduzir viajantes até o ponto onde morreu. Não persegue quem responde com o próprio nome e propósito.",
+  "habilidades": [
+    {
+      "nome": "espírito errante",
+      "desc": "Imita vozes conhecidas para conduzir viajantes até o ponto onde morreu. Não persegue quem responde com o próprio nome e propósito."
+    }
+  ],
+  "fraqueza": "Não pode ser ferido por aço. Apague as sete chamas em ordem inversa e devolva o objeto que o espírito procura; a chama pode então ser recolhida num talismã.",
+  "nivel": 1,
+  "maxHp": 10,
+  "hp": 10,
+  "atkMod": 12,
+  "mov": 4,
+  "sp": 10,
+  "ac": 0
+}

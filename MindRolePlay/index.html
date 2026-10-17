@@ -1,195 +1,119 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#090b10">
-  <meta name="description" content="Mind RolePlay — RPG narrativo multiplayer.">
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Mind RolePlay</title>
 </head>
 <body>
-  <div class="backdrop"><canvas id="stars" aria-hidden="true"></canvas></div>
-  <div class="app-shell">
-    <header class="topbar">
-      <button class="wordmark" data-nav="home" aria-label="Voltar ao início"><span class="sigil">M</span><span>Mind RolePlay</span></button>
-      <div class="top-status"><i></i><span id="storage-label">Conectando</span></div>
-    </header>
-    <main>
-      <section class="screen active" id="screen-home">
-        <div class="home manga-cover">
-          <div class="home-kicker">UM RPG DE HISTÓRIAS COMPARTILHADAS</div>
-          <h1 class="title">Mind <span>RolePlay</span></h1>
-          <p class="tagline">Uma crônica. Sete lanternas. Suas escolhas decidem o que permanece aceso.</p>
-          <div id="home-campaign-grid" class="campaign-grid home-campaign-grid"></div>
-          <button class="button database-link" data-nav="campaigns">Arquivo da campanha →</button>
-        </div>
-      </section>
 
-      <section class="screen" id="screen-character">
-        <div class="screen-heading"><button class="back" data-nav="home">←</button><div><small>ESCOLHA SEU PAPEL NA HISTÓRIA</small><h1 id="character-campaign-title">Personagem</h1></div></div>
-        <p id="character-campaign-premise" class="lead"></p>
-        <div class="character-builder panel">
-          <div class="character-art-frame"><img id="class-portrait" alt="Retrato de classe"></div>
-          <div class="character-controls">
-            <label class="field">Nome do personagem<input id="character-name" class="input" maxlength="24" placeholder="Como chamam você?"></label>
-            <div class="field"><span>Gênero do avatar</span><div class="gender-choice"><button class="gender-button active" data-gender="male">Masculino</button><button class="gender-button" data-gender="female">Feminino</button></div></div>
-            <div class="field"><span>Arquétipo</span><div class="class-stepper"><button id="prev-class" type="button" aria-label="Classe anterior">‹</button><strong id="class-stepper-name">Classe</strong><button id="next-class" type="button" aria-label="Próxima classe">›</button></div><select id="class-select" class="input hidden" aria-hidden="true" tabindex="-1"></select></div>
-            <div id="class-details" class="class-details"></div>
-            <button id="save-character" class="button primary wide">Salvar personagem e ir ao lobby →</button>
+  <!-- ══ INTRO OVERLAY ══ -->
+  <div id="intro-overlay">
+
+    <!-- Landing -->
+    <div id="isc-landing" class="intro-screen active">
+      <canvas id="isc-canvas"></canvas>
+      <div class="isc-logo-wrap">
+        <div class="isc-oraculo">MIND ROLEPLAY</div>
+        <div class="isc-rpg">RPG · GURPS</div>
+      </div>
+      <p class="isc-tagline">Campanha japonesa · Multiplayer · GURPS 3d6</p>
+
+      <!-- Seleção de campanha -->
+      <div class="camp-sel-wrap">
+        <div class="camp-sel-label">Escolha a Campanha</div>
+        <div class="camp-sel-grid">
+          <button class="camp-card camp-mhoried selecionado" id="camp-kagehama" data-camp="kagehama"><span class="camp-icon">⛩</span><span class="camp-name">Kagehama</span><span class="camp-sub">As Sete Lanternas</span></button>
+        </div>
+      </div>
+
+      <div class="isc-btns">
+        <button class="isc-btn-primary" id="btn-online">⚔ Jogar</button>
+      </div>
+      <div style="position:absolute;bottom:max(90px,calc(80px + env(safe-area-inset-bottom)));left:0;right:0;display:flex;justify-content:center;gap:12px;z-index:2">
+        <a href="catalog.html" style="color:rgba(200,160,64,0.75);font-size:13px;text-decoration:none;border:1px solid rgba(200,160,64,0.3);border-radius:20px;padding:7px 20px;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px)">📖 Catálogo</a>
+        <a href="catalog.html#checklist" style="color:rgba(200,160,64,0.75);font-size:13px;text-decoration:none;border:1px solid rgba(200,160,64,0.3);border-radius:20px;padding:7px 20px;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px)">✅ Checklist</a>
+      </div>
+      <div id="lnd-continuar-wrap" style="display:none;position:absolute;bottom:max(28px,calc(20px + env(safe-area-inset-bottom)));left:0;right:0;align-items:center;justify-content:center;z-index:2">
+        <button class="isc-btn-continue" id="btn-continuar">
+          <span>↩ Continuar Aventura</span>
+          <span class="isc-btn-continue-sub" id="lnd-continuar-lbl">sala …</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Slots de personagem -->
+    <div id="isc-slots" class="intro-screen isc-slots-screen">
+      <div class="isc-topbar" style="padding:14px 16px 0;flex-shrink:0">
+        <button class="isc-back" id="slots-back">←</button>
+        <span class="isc-section-title">Seus Aventureiros</span>
+      </div>
+      <div class="isc-slots-grid" id="isc-slots-grid"></div>
+    </div>
+
+    <!-- Criação de personagem -->
+    <div id="isc-create" class="intro-screen">
+      <div class="isc-topbar">
+        <button class="isc-back" id="create-back">←</button>
+        <span class="isc-section-title">Criar Aventureiro</span>
+      </div>
+      <div class="isc-create-body">
+        <span class="isc-field-lbl">Nome</span>
+        <input class="isc-nome-input" id="isc-nome" type="text" placeholder="Nome do personagem" maxlength="24">
+        <span class="isc-field-lbl">Classe</span>
+        <div class="isc-class-carousel" id="isc-class-carousel"></div>
+        <div class="isc-class-detail" id="isc-class-detail"></div>
+        <button class="isc-create-btn" id="btn-criar-personagem">Criar e Jogar →</button>
+      </div>
+    </div>
+
+    <!-- Lobby -->
+    <div id="isc-lobby" class="intro-screen">
+      <div class="isc-topbar">
+        <button class="isc-back" id="lobby-back">←</button>
+        <span class="isc-section-title">Jogar Online</span>
+      </div>
+      <div class="lob-body">
+        <div class="lob-inner">
+          <div class="lob-info">Crie uma sala e compartilhe o código com seus companheiros de aventura.</div>
+          <button class="isc-btn-primary" id="btn-criar-sala">✦ Criar Nova Sala</button>
+          <div class="lob-divider"><span>ou entre numa sala existente</span></div>
+          <input class="lob-code-input" id="lob-code-input" type="text" placeholder="CÓDIGO" maxlength="6">
+          <button class="lob-enter-btn" id="btn-entrar-sala">→ Entrar na Sala</button>
+          <div class="lob-err" id="lob-err"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room: sala de espera -->
+    <div id="isc-room" class="intro-screen">
+      <div class="isc-topbar">
+        <button class="isc-back" id="room-back">←</button>
+        <span class="isc-section-title">Sala de Aventureiros</span>
+      </div>
+      <div class="room-body">
+        <div class="room-inner">
+          <div class="room-code-display" id="room-code-display">
+            <div class="room-code-lbl">Código da Sala</div>
+            <div class="room-code-val" id="room-code-val">-----</div>
+            <div class="room-code-hint">Toque para copiar · compartilhe com seu companheiro</div>
           </div>
+          <div class="room-player-list" id="room-player-list"></div>
+          <div class="room-wait-msg" id="room-wait-msg">Aguardando jogadores…</div>
+          <button class="isc-btn-primary" id="btn-iniciar-simulacao" style="display:none">🎮 Iniciar Simulação de Diálogo</button>
+          <button class="isc-btn-primary" id="btn-iniciar-narracao" style="display:none">📖 Iniciar Narração</button>
+          <button class="isc-btn-secondary" id="btn-iniciar" style="display:none">⚔ Ir Direto para Batalha</button>
         </div>
-        <div id="saved-characters" class="saved-character-list"></div>
-      </section>
-      <section class="screen" id="screen-lobby">
-        <div class="screen-heading"><button class="back" data-nav="home">←</button><div><small>ANTES DA NARRAÇÃO</small><h1>Lobby da sala</h1></div></div>
-        <div class="panel narrow">
-          <div class="lobby-character-summary"><img id="lobby-avatar" alt=""><div><small>SEU PERSONAGEM</small><strong id="lobby-character-name">Escolha uma campanha</strong><span id="lobby-character-class"></span></div></div>
-          <label class="field">Nome do jogador<input id="player-name" class="input" maxlength="24" placeholder="Seu nome"></label>
-          <button id="create-room" class="button primary wide">Criar aventura solo →</button>
-          <div class="divider">ou entrar / virar multiplayer</div>
-          <label class="field">Código da sala<input id="room-code" class="input code" maxlength="6" placeholder="ABC123" autocomplete="off"></label>
-          <button id="join-room" class="button wide">Entrar na sala →</button>
-          <div id="room-result" class="result-box hidden">
-            <div class="room-code-label">CÓDIGO / LINK DA SALA <strong id="room-code-value"></strong></div>
-            <p id="room-message"></p>
-            <div id="room-player-list"></div>
-            <button id="copy-room-code" class="mini-button">Copiar convite</button>
-            <div class="lobby-actions"><button id="ready-button" class="button">Marcar como pronto</button><button id="start-narration" class="button primary" disabled>▶ Iniciar história</button></div>
-            <small id="ready-status" class="ready-status">Aguardando jogadores.</small>
-          </div>
-        </div>
-      </section>
+      </div>
+    </div>
 
-      <section class="screen story-screen" id="screen-game">
-        <div class="game-layout">
-          <section class="scene-frame manga-frame" id="story-world">
-            <div class="scene-background" id="scene-background"></div>
-            <div class="scene-overlay"></div>
-            <div class="game-topline"><button class="back" data-nav="home">← Sair</button><span id="game-room-code"></span><span id="game-player-count"></span></div>
-            <div class="story-panel-heading"><div><small id="scene-chapter">CENA 01</small><h2 id="game-campaign-title">As Sete Lanternas de Kagehama</h2></div><span class="ink-seal">M</span></div>
-            <div class="scene-caption"><h1 id="scene-title">O começo</h1><p id="scene-description">A história aguarda o primeiro movimento.</p></div>
-            <svg class="sprite-filter-defs" aria-hidden="true" focusable="false">
-              <defs><filter id="opaque-manga-alpha" color-interpolation-filters="sRGB" x="-10%" y="-5%" width="120%" height="110%">
-                <feColorMatrix type="saturate" values="0"></feColorMatrix>
-                <feComponentTransfer><feFuncA type="gamma" amplitude="1" exponent="0.14" offset="0"></feFuncA></feComponentTransfer>
-              </filter></defs>
-            </svg>
-            <figure class="scene-actor hidden" id="scene-actor"><img class="scene-avatar" id="scene-avatar" alt=""><figcaption id="scene-speaker-name"></figcaption></figure>
-            <article id="stage-dialogue" class="stage-dialogue" aria-live="polite">
-              <small id="dialogue-speaker">NARRADOR</small>
-              <p id="dialogue-text"></p>
-              <div class="dialogue-footer"><span id="dialogue-page-label"></span><button id="advance-narrative-beat" class="continue-button" type="button">Continuar →</button></div>
-            </article>
-            <section class="story-panel" aria-label="Cena em andamento">
-              <div id="narrative-stage" class="narrative-stage" aria-live="polite"></div>
-              <div id="game-messages" class="game-messages" aria-live="polite"></div>
-              <section class="action-cycle" aria-live="polite">
-                <div><small id="action-cycle-label">QUADRO 1</small><strong id="action-cycle-summary">Aguardando</strong></div>
-                <ul id="action-player-status" class="action-player-status"></ul>
-                <button id="advance-action-cycle" class="mini-button hidden" type="button" disabled>Próxima rodada →</button>
-              </section>
-              <form id="message-form" class="message-form">
-                <div id="turn-mode-picker" class="turn-mode-picker hidden" aria-label="Escolha como participar">
-                  <img id="turn-avatar" class="turn-avatar" alt="">
-                  <div class="turn-choice-copy"><small id="turn-character">SUA VEZ</small></div>
-                  <div class="turn-choice-buttons"><button id="choose-speech" type="button" aria-pressed="false">Falar</button><button id="choose-action" type="button" aria-pressed="false">Agir · teste</button></div>
-                </div>
-                <dialog id="turn-composer" class="turn-composer" aria-labelledby="turn-composer-title">
-                  <header class="turn-composer-heading"><div><small id="turn-composer-mode">SUA VEZ</small><h2 id="turn-composer-title">Escreva a fala do personagem</h2></div><button id="close-turn-composer" type="button" aria-label="Fechar">×</button></header>
-                  <label class="composer-prompt" for="message-input">Mensagem do personagem</label>
-                  <textarea id="message-input" class="input textarea" rows="4" maxlength="800" placeholder="Escreva a fala do personagem…" disabled></textarea>
-                  <label class="field action-skill-field hidden">Perícia<select id="action-skill" class="input" disabled></select></label>
-                  <output id="turn-countdown" class="turn-countdown hidden" aria-live="assertive"></output>
-                  <div class="action-submit-row"><button type="submit" class="button primary" disabled>Confirmar →</button></div>
-                </dialog>
-                <div id="action-dice-stage" class="scene-dice-stage hidden"><div class="dice-row"><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div><output id="action-dice-result"></output></div>
-              </form>
-              <dialog id="travel-dialog" class="travel-dialog" aria-labelledby="travel-dialog-title">
-                <header class="travel-dialog-heading"><div><small>MAPA DE KAGEHAMA · DESLOCAMENTO</small><h2 id="travel-dialog-title">Escolham o próximo caminho</h2></div><button id="close-travel-dialog" type="button" aria-label="Fechar mapa">×</button></header>
-                <div class="world-map-board" aria-label="Mapa-múndi de Kagehama">
-                  <svg class="world-map-art" viewBox="0 0 1000 620" role="img" aria-label="Mapa ilustrado da região de Kagehama">
-                    <defs>
-                      <pattern id="map-paper-grain" width="38" height="38" patternUnits="userSpaceOnUse"><circle cx="4" cy="8" r="1" fill="#514b3f" opacity=".15"/><circle cx="27" cy="26" r=".8" fill="#514b3f" opacity=".12"/><path d="M10 31l8-2" stroke="#514b3f" stroke-width=".7" opacity=".12"/></pattern>
-                      <pattern id="map-forest-hatch" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M0 14L7 0l7 14" fill="none" stroke="#343c2c" stroke-width="1" opacity=".28"/></pattern>
-                    </defs>
-                    <rect width="1000" height="620" fill="#e9dfc7"/>
-                    <rect width="1000" height="620" fill="url(#map-paper-grain)"/>
-                    <path class="map-coast" d="M72 350l36-94 74-28 32-91 111-39 59-71 108 30 57-12 49 54 95 5 57 70 104 23 49 91-16 75 44 70-55 64-90 20-39 68-87 22-70-31-82 32-100-34-76 13-82-42-93 11-70-40-85 10-54-57z"/>
-                    <path class="map-waterway" d="M147 388c98-34 113-89 202-103s122 48 211 25 116-96 245-70 93 102 111 157"/>
-                    <path class="map-forest" d="M344 154l35-67 55 8 33 55-19 55-64 12zM514 221l35-57 67 13 20 52-35 38-66-7zM210 300l37-56 59 14 21 48-36 37-64-8z"/>
-                    <path class="map-ridge" d="M434 121l45-87 39 77 56-91 45 96M589 137l51-78 39 89 55-63 44 82"/>
-                    <path class="map-road-locked" d="M148 471L285 403L412 477L548 347L825 428L786 291L866 304L443 236L285 353L353 140L520 149L708 211L855 136"/>
-                    <path id="world-route-known" class="map-road-known" d=""/><path id="world-route-selected" class="map-road-selected" d=""/>
-                    <text class="map-region-label" x="460" y="300">PROVÍNCIA DE AKITSURU</text>
-                    <text class="map-water-label" x="748" y="550">MAR DAS SETE LANTERNAS</text>
-                    <text class="map-compass" x="916" y="92">北</text><path class="map-compass-line" d="M926 105v38m-8-9 8 9 8-9"/>
-                    <g class="map-pine-mark" transform="translate(265 340)"><path d="M0 20L12 0l12 20zm4 10L12 10l14 20zm3 8l5-13 7 13z"/></g>
-                    <g class="map-pine-mark" transform="translate(565 183)"><path d="M0 20L12 0l12 20zm4 10L12 10l14 20zm3 8l5-13 7 13z"/></g>
-                    <path class="map-bridge-mark" d="M103 487q46-36 92 0m-46-34v36"/>
-                  </svg>
-                  <div id="world-map-nodes" class="world-map-nodes"></div>
-                  <div class="world-map-stamp">KAGEHAMA<br><small>道 · CAMINHOS CONHECIDOS</small></div>
-                </div>
-                <div class="world-map-selection" aria-live="polite"><span id="travel-origin">LOCAL ATUAL</span><i aria-hidden="true">→</i><strong id="travel-destination">ESCOLHA UM DESTINO</strong><p id="travel-destination-context" class="travel-destination-context"></p></div>
-                <div class="travel-route-options" role="group" aria-label="Escolha a rota">
-                  <button type="button" class="travel-route selected" data-route="road" aria-pressed="true"><b>Estrada principal</b><span>Mais lenta e vigiada. Emboscada se 3d6 ≥ 16 (4,6%).</span><small>RISCO BAIXO</small></button>
-                  <button type="button" class="travel-route" data-route="forest" aria-pressed="false"><b>Atalho pela mata</b><span>Mais rápido, terreno fechado. Emboscada se 3d6 ≥ 12 (37,5%).</span><small>RISCO ALTO</small></button>
-                  <button type="button" class="travel-route" data-route="river" aria-pressed="false"><b>Rota fluvial</b><span>Exige embarcação ou apoio no porto. Emboscada se 3d6 ≥ 14 (16,2%).</span><small>RISCO MÉDIO</small></button>
-                </div>
-                <output id="travel-countdown" class="travel-countdown hidden" aria-live="assertive"></output>
-                <div class="travel-dialog-actions"><button id="cancel-travel" type="button" class="button">Voltar à cena</button><button id="confirm-travel" type="button" class="button primary">Iniciar deslocamento →</button></div>
-              </dialog>
-              <p class="narrator-pending">A história e as falas ficam nesta tela; o histórico técnico permanece disponível para leitores de tela.</p>
-            </section>
-          </section>
-        </div>
-      </section>
-      <section class="screen" id="screen-campaigns">
-        <div class="screen-heading"><button class="back" data-nav="home">←</button><div><small>CAMPANHA ATIVA</small><h1>Arquivo de Kagehama</h1></div></div>
-        <p class="lead">Arquivo de produção de Kagehama: roteiro, fichas, NPCs, ameaças, locais, artes e checklist.</p>
-        <div id="campaign-grid" class="campaign-grid"></div>
-        <div class="panel fixed-campaign-note"><b>Campanha ativa: As Sete Lanternas de Kagehama</b><p>O roteiro e a estrutura são mantidos como uma única crônica. Novos capítulos, NPCs e ameaças entram no arquivo desta campanha.</p></div>      </section>
-
-      <section class="screen" id="screen-package">
-        <div class="screen-heading"><button class="back" data-nav="campaigns">←</button><div><small id="package-genre">PACOTE DE CAMPANHA</small><h1 id="package-title">Campanha</h1></div></div>
-        <p id="package-premise" class="lead">Este pacote começa vazio. Cada área tem o mesmo formato em todas as campanhas.</p>
-        <div id="package-sections" class="section-grid"></div>
-        <div class="panel package-play">
-          <div><small>SESSÃO NARRATIVA</small><h2>Uma cena. Um quadro por vez.</h2><p>O anfitrião abre o prólogo. As ações da mesa alimentam as respostas dos NPCs e liberam o próximo quadro; testes opcionais rodam em 3d6.</p></div>
-          <div class="package-actions"><button class="button primary" id="launch-story">▶ Iniciar história</button><button class="button" id="open-test">Testar uma ação · 3d6</button></div>
-        </div>
-      </section>
-
-      <section class="screen" id="screen-section">
-        <div class="screen-heading"><button class="back" data-nav="package">←</button><div><small id="section-kicker">PACOTE DE CAMPANHA</small><h1 id="section-title">Área</h1></div></div>
-        <p id="section-description" class="lead"></p>
-        <nav id="section-tabs" class="section-tabs" aria-label="Áreas da campanha Kagehama"></nav>
-        <div id="section-body"></div>
-      </section>
-
-      <section class="screen" id="screen-test">
-        <div class="screen-heading"><button class="back" data-nav="package">←</button><div><small>TESTE DE SUCESSO · 3D6</small><h1>Tentar uma ação</h1></div></div>
-        <p class="lead">Escreva a intenção do personagem. Cada tentativa gera um teste; a ficha e as condições ajustam o nível efetivo.</p>
-        <div class="panel test-panel">
-          <label class="field">Personagem<select id="test-character" class="input"></select></label>
-          <label class="field">O que ele tenta fazer?<textarea id="action-text" class="input textarea" rows="3" placeholder="Ex.: convencer o guarda a deixar o grupo passar"></textarea></label>
-          <div class="test-modifiers">
-            <label class="field">Perícia ou atributo<select id="test-skill" class="input"></select></label>
-            <label class="field">Ajuste da situação<input id="situational-modifier" class="input" type="number" value="0"></label>
-          </div>
-          <div id="character-factors" class="factors"></div>
-          <button id="roll-button" class="button primary wide">Rolar 3d6</button>
-          <div id="dice-stage" class="dice-stage hidden" aria-live="polite">
-            <div class="dice-row"><div class="die" aria-label="Dado 1"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die" aria-label="Dado 2"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="die" aria-label="Dado 3"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
-            <div id="roll-outcome" class="roll-outcome"></div>
-          </div>
-        </div>
-        <div class="note">O resultado dos dados é calculado pelo sistema. A interpretação da cena e os modificadores finais ficam sob controle do narrador.</div>
-      </section>
-    </main>
-    <footer><span>Mind RolePlay</span><span>Narrativa em primeiro lugar.</span></footer>
   </div>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./src/main.js"></script>
+
+  <div id="app" style="display:none"></div>
+  <div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.45);pointer-events:none">Mind · Oráculo v2</div>
+  <script type="module" src="./src/oraculoEntry.js"></script>
 </body>
 </html>

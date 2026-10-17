@@ -1,0 +1,3822 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,viewport-fit=cover">
+<title>Mind RolePlay — Narração</title>
+<script>(function(){try{var c=localStorage.getItem('mindRolePlay.fbConfig'),r=localStorage.getItem('mindRolePlay.roomId');if(!c||!r){location.replace('index.html?v=8');}}catch(e){location.replace("index.html?v=8");}})();</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script type="module">
+import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import{getFirestore,doc,onSnapshot,updateDoc,getDoc}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+const _cfg=JSON.parse(localStorage.getItem('mindRolePlay.fbConfig')||'null');
+const _rid=localStorage.getItem('mindRolePlay.roomId');
+if(_cfg&&_rid){
+  try{
+    const app=getApps().find(a=>a.name==='narracao')||initializeApp(_cfg,'narracao');
+    const db=getFirestore(app);
+    const rd=doc(db,'mindRooms',_rid);
+    window._fbUpdateNarration=async(fields)=>{
+      try{
+        const update={};
+        for(const[k,v]of Object.entries(fields)) update[`narration.${k}`]=v;
+        update['narration.ts']=Date.now();
+        await updateDoc(rd,update);
+      }catch(e){console.warn('fbUpdateNarration:',e);}
+    };
+    window._fbAddDialogue=async(linha)=>{
+      try{
+        const snap=await getDoc(rd);
+        if(!snap.exists())return;
+        const dialogo=[...(snap.data().narration?.dialogo??[]),linha].slice(-60);
+        await updateDoc(rd,{'narration.dialogo':dialogo,'narration.ts':Date.now()});
+      }catch(e){console.warn('fbAddDialogue:',e);}
+    };
+    window._fbSetStatus=async(status,extra={})=>{
+      try{
+        const d={status,updatedAt:Date.now()};
+        for(const[k,v]of Object.entries(extra))d[k]=v;
+        await updateDoc(rd,d);
+      }catch(e){console.warn('fbSetStatus:',e);}
+    };
+    window._fbAddIntroConfirm=async(playerId)=>{
+      try{await updateDoc(rd,{[`narration.introConfirmados.${playerId}`]:true,'narration.ts':Date.now()});}
+      catch(e){console.warn('fbAddIntroConfirm:',e);}
+    };
+    window._fbConfirmarViagem=async(playerId,cenaId)=>{
+      // Grava a CENA da confirmação (não true): lixo de viagem anterior não conta.
+      try{await updateDoc(rd,{[`narration.viagemConfirmados.${playerId}`]:cenaId||true,'narration.ts':Date.now()});}
+      catch(e){console.warn('fbConfirmarViagem:',e);}
+    };
+    window._fbDialLido=async(pid,n)=>{
+      try{await updateDoc(rd,{[`narration.dialLido.${pid}`]:n,'narration.ts':Date.now()});}catch(e){}
+    };
+    window._fbDialVez=async(pid)=>{
+      try{await updateDoc(rd,{'narration.dialVez':pid,'narration.ts':Date.now()});}catch(e){}
+    };
+    window._fbRespondPercepcao=async(pid,resposta)=>{
+      try{await updateDoc(rd,{[`narration.percepcao.respostas.${pid}`]:resposta,'narration.ts':Date.now()});}
+      catch(e){console.warn('fbRespondPercepcao:',e);}
+    };
+    window._fbAtualizarPercepcao=async(fields)=>{
+      try{
+        const u={'narration.ts':Date.now()};
+        for(const[k,v]of Object.entries(fields)) u[`narration.percepcao.${k}`]=v;
+        await updateDoc(rd,u);
+      }catch(e){console.warn('fbAtualizarPercepcao:',e);}
+    };
+    window._fbListenRoom=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
+    window._fbHeartbeat=async(pid,nome)=>{
+      try{await updateDoc(rd,{[`players.${pid}.nome`]:nome,[`players.${pid}.ts`]:Date.now()});}
+      catch(e){console.warn('fbHeartbeat:',e);}
+    };
+    window._fbMarcarVisitada=async(cenaId)=>{
+      try{
+        const snap=await getDoc(rd);
+        if(!snap.exists())return;
+        const visitadas=[...(snap.data().cenasVisitadas??[])];
+        if(!visitadas.includes(cenaId)){
+          visitadas.push(cenaId);
+          await updateDoc(rd,{'cenasVisitadas':visitadas,'narration.ts':Date.now()});
+        }
+      }catch(e){console.warn('fbMarcarVisitada:',e);}
+    };
+  }catch(e){console.warn('Narração Firebase init:',e);}
+}
+window._fbReady=true;
+window.dispatchEvent(new Event('fbReady'));
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  height:100%;overflow:hidden;
+  background:#0a0806;
+  color:#e8d5a8;
+  font-family:'Georgia',serif;
+  user-select:none;-webkit-user-select:none;
+}
+
+/* ── LAYOUT PRINCIPAL ── */
+#narracao-wrap{
+  position:fixed;top:0;left:0;right:0;
+  height:100dvh; /* encolhe quando teclado abre em browsers modernos */
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+
+/* ── HEADER ── */
+#narr-header{
+  flex-shrink:0;
+  display:flex;align-items:center;gap:8px;
+  padding:max(8px,calc(4px+env(safe-area-inset-top))) 12px 8px;
+  background:linear-gradient(180deg,#0d0b08 0%,rgba(13,11,8,0) 100%);
+  border-bottom:1px solid rgba(190,135,35,0.2);
+  min-height:48px;
+}
+#narr-titulo-wrap{flex:1;min-width:0;}
+#narr-titulo{
+  font-size:clamp(13px,3.5vw,17px);font-weight:700;
+  color:#f5d878;letter-spacing:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#narr-subtitulo{
+  font-size:10px;color:rgba(220,190,100,0.5);
+  letter-spacing:1.5px;text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#btn-voltar-lobby{
+  flex-shrink:0;background:rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.15);border-radius:6px;
+  color:rgba(255,255,255,.6);font-size:12px;
+  padding:6px 10px;cursor:pointer;font-family:inherit;
+  -webkit-tap-highlight-color:transparent;
+}
+#modo-imagem-btns{
+  flex-shrink:0;display:flex;gap:4px;
+}
+.btn-modo{
+  background:rgba(0,0,0,.4);border:1px solid rgba(190,135,35,.3);
+  border-radius:6px;color:rgba(220,190,100,.55);
+  font-size:11px;font-family:inherit;font-weight:600;
+  padding:5px 9px;cursor:pointer;letter-spacing:.5px;
+  -webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;
+}
+.btn-modo.ativo{
+  background:rgba(190,135,35,.2);border-color:rgba(190,135,35,.7);
+  color:#f5d878;
+}
+
+/* ── IMAGEM DA CENA ── */
+#cena-imagem-wrap{
+  flex-shrink:0;
+  position:relative;width:100%;
+  background:#0d0a07;
+  max-height:clamp(130px,30vh,240px);
+  overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  transition:max-height .25s ease, opacity .2s ease;
+}
+/* teclado aberto: imagem some pra liberar espaço pro diálogo */
+#narracao-wrap.teclado-aberto #cena-imagem-wrap{
+  max-height:0; opacity:0; pointer-events:none;
+}
+#cena-imagem{
+  width:100%;height:100%;
+  object-fit:cover;
+  transition:opacity .4s;
+}
+#cena-imagem.oculto{opacity:0;}
+/* Neblina leve à deriva sobre o cenário (bem sutil) */
+.neblina-layer{
+  position:absolute; inset:-25%; pointer-events:none; z-index:3;
+  background:
+    radial-gradient(55% 40% at 22% 32%, rgba(224,228,238,.07), transparent 62%),
+    radial-gradient(48% 34% at 74% 58%, rgba(210,216,230,.055), transparent 62%),
+    radial-gradient(42% 30% at 52% 84%, rgba(200,210,226,.05), transparent 60%);
+  mix-blend-mode:screen;
+  animation:neblinaDrift 38s ease-in-out infinite alternate;
+}
+@keyframes neblinaDrift{
+  0%{ transform:translate3d(-4%,1%,0) scale(1.06); }
+  100%{ transform:translate3d(4%,-2%,0) scale(1.14); }
+}
+@media (prefers-reduced-motion: reduce){ .neblina-layer{ animation:none; } }
+#cena-placeholder{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;
+  background:linear-gradient(135deg,#0f0c09 0%,#1a1208 50%,#0a0806 100%);
+}
+#cena-placeholder-icone{font-size:32px;opacity:.4;}
+#cena-placeholder-texto{
+  font-size:12px;color:rgba(200,160,48,.4);
+  letter-spacing:2px;text-transform:uppercase;
+}
+#cena-intro-overlay{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(0deg,rgba(10,8,6,.95) 0%,rgba(10,8,6,.0) 100%);
+  padding:20px 14px 10px;
+}
+#cena-intro-texto{
+  font-size:clamp(10px,2.5vw,12px);
+  color:rgba(220,190,130,.7);
+  font-style:italic;
+  line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+
+/* ── LOG DE DIÁLOGO ── */
+#dialogo-log{
+  flex:1;min-height:0;
+  overflow-y:auto;
+  padding:10px 12px;
+  display:flex;flex-direction:column;gap:10px;
+  scroll-behavior:smooth;
+}
+#dialogo-log::-webkit-scrollbar{width:3px;}
+#dialogo-log::-webkit-scrollbar-track{background:transparent;}
+#dialogo-log::-webkit-scrollbar-thumb{background:rgba(190,135,35,.3);border-radius:2px;}
+
+/* linha de narrador */
+.dialogo-narrador{
+  align-self:center;
+  text-align:center;
+  font-size:11px;color:rgba(220,190,100,.5);
+  font-style:italic;letter-spacing:.5px;
+  padding:4px 16px;
+  border-top:1px solid rgba(190,135,35,.12);
+  border-bottom:1px solid rgba(190,135,35,.12);
+  max-width:340px;
+}
+
+/* linha de NPC */
+.dialogo-npc{
+  display:flex;align-items:flex-end;gap:8px;
+  align-self:flex-start;max-width:88%;
+}
+.dialogo-npc-portrait{
+  flex-shrink:0;
+  border-radius:6px;overflow:hidden;
+  background:rgba(0,0,0,.3);
+  border:1px solid rgba(190,135,35,.25);
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.dialogo-npc-portrait img{
+  height:56px;width:auto;display:block;
+  image-rendering:auto;
+}
+.dialogo-npc-balao{
+  background:rgba(20,16,10,.85);
+  border:1px solid rgba(190,135,35,.25);
+  border-radius:0 10px 10px 10px;
+  padding:8px 11px;
+}
+.dialogo-npc-nome{
+  font-size:10px;color:#f5d878;
+  font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;margin-bottom:4px;
+}
+.dialogo-npc-texto{
+  font-size:clamp(12px,3vw,14px);
+  color:#e8d5a8;line-height:1.5;
+  font-style:italic;
+}
+
+/* linha de jogador */
+.dialogo-jogador{
+  display:flex;flex-direction:column;
+  align-items:flex-end;
+  align-self:flex-end;max-width:78%;
+}
+.dialogo-jogador-nome{
+  font-size:10px;color:rgba(140,200,255,.7);
+  letter-spacing:.5px;text-transform:uppercase;
+  margin-bottom:3px;
+}
+.dialogo-jogador-balao{
+  background:rgba(10,20,40,.85);
+  border:1px solid rgba(100,160,255,.2);
+  border-radius:10px 10px 0 10px;
+  padding:8px 11px;
+  font-size:clamp(12px,3vw,14px);
+  color:#c8dcf5;line-height:1.5;
+}
+
+/* linha de sistema */
+.dialogo-sistema{
+  align-self:center;
+  font-size:10px;color:rgba(200,190,160,.35);
+  text-align:center;letter-spacing:.5px;
+  font-style:italic;
+}
+
+/* ── Card de ATO (ação/reação separada da fala) ── */
+.dialogo-acao{
+  align-self:stretch;
+  background:rgba(200,150,30,.06);
+  border:1px solid rgba(190,140,30,.17);
+  border-radius:8px;
+  padding:6px 14px;
+  font-size:11px;
+  color:rgba(215,185,105,.58);
+  font-style:italic;
+  text-align:center;
+  letter-spacing:.3px;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  line-height:1.4;
+}
+.dialogo-acao-nome{
+  font-weight:700;font-style:normal;
+  color:rgba(240,200,80,.65);margin-right:2px;
+}
+
+/* ── NPC quick-pick chips ── */
+#npc-chips{
+  display:flex;gap:6px;flex-wrap:wrap;
+  padding:0 2px 2px;
+  min-height:0;
+}
+#npc-chips:empty{display:none;}
+.npc-chip{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 8px;border-radius:20px;
+  background:rgba(0,0,0,.4);
+  border:1px solid rgba(190,135,35,.25);
+  cursor:pointer;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  font-size:11px;color:rgba(230,200,110,.8);
+  font-family:'Georgia',serif;
+  transition:background .12s,border-color .12s;
+}
+.npc-chip:hover,.npc-chip.ativo{
+  background:rgba(190,135,35,.18);
+  border-color:rgba(190,135,35,.55);
+  color:#f5d878;
+}
+.npc-chip-img{
+  width:22px;height:28px;object-fit:cover;
+  object-position:top;border-radius:3px;
+  flex-shrink:0;
+}
+
+/* ── PAINEL DE CONTROLES (host) ── */
+#controles-host{
+  flex-shrink:0;
+  background:linear-gradient(0deg,#0f0c09 0%,rgba(15,12,9,0) 100%);
+  border-top:1px solid rgba(190,135,35,.2);
+  padding:8px 10px max(10px,calc(6px+env(safe-area-inset-bottom)));
+  display:flex;flex-direction:column;gap:6px;
+}
+#controles-row1{display:flex;gap:6px;align-items:center;}
+#sel-npc{
+  flex:1;min-width:0;
+  background:rgba(0,0,0,.55);
+  border:1px solid rgba(190,135,35,.3);
+  border-radius:6px;
+  color:#e8d5a8;font-family:'Georgia',serif;font-size:12px;
+  padding:7px 8px;cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+}
+#sel-npc option{background:#1a1208;color:#e8d5a8;}
+#btn-gerar-ia{
+  flex-shrink:0;
+  background:rgba(90,40,130,.35);
+  border:1px solid rgba(180,100,255,.4);
+  border-radius:6px;color:rgba(220,160,255,.85);
+  font-size:11px;font-family:inherit;font-weight:600;
+  padding:7px 10px;cursor:pointer;letter-spacing:.3px;
+  -webkit-tap-highlight-color:transparent;transition:background .15s;
+  white-space:nowrap;
+}
+#btn-gerar-ia:hover{background:rgba(90,40,130,.55);}
+#btn-gerar-ia.carregando{opacity:.5;pointer-events:none;}
+#controles-row2{display:flex;gap:6px;align-items:flex-end;}
+#input-texto{
+  flex:1;min-width:0;resize:none;height:48px;
+  background:rgba(0,0,0,.45);
+  border:1px solid rgba(190,135,35,.25);
+  border-radius:6px;
+  color:#e8d5a8;font-family:'Georgia',serif;font-size:13px;
+  padding:7px 9px;outline:none;
+  -webkit-tap-highlight-color:transparent;
+}
+#input-texto::placeholder{color:rgba(200,160,48,.3);}
+#btn-enviar{
+  flex-shrink:0;
+  background:rgba(190,135,35,.2);
+  border:1px solid rgba(190,135,35,.5);
+  border-radius:6px;color:#f5d878;
+  font-size:12px;font-family:inherit;font-weight:700;
+  padding:7px 12px;cursor:pointer;height:48px;
+  -webkit-tap-highlight-color:transparent;transition:background .15s;
+  white-space:nowrap;
+}
+#btn-enviar:hover{background:rgba(190,135,35,.35);}
+#controles-row3{display:flex;gap:6px;}
+.btn-cena{
+  flex:1;background:rgba(0,0,0,.35);
+  border:1px solid rgba(190,135,35,.2);
+  border-radius:6px;color:rgba(200,160,48,.6);
+  font-size:11px;font-family:inherit;
+  padding:7px 8px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background .15s;
+}
+.btn-cena:hover{background:rgba(190,135,35,.1);}
+.btn-cena:disabled{opacity:.3;cursor:not-allowed;}
+#btn-iniciar-batalha{
+  flex:2;
+  background:rgba(140,40,20,.35);
+  border:1px solid rgba(220,80,40,.5);
+  border-radius:6px;color:#ff8060;
+  font-size:12px;font-family:inherit;font-weight:700;
+  padding:7px 10px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background .15s;
+  letter-spacing:.5px;
+}
+#btn-iniciar-batalha:hover{background:rgba(180,50,20,.5);}
+#btn-seguir-viagem{
+  flex:2;
+  background:rgba(40,90,60,.35);
+  border:1px solid rgba(80,180,120,.5);
+  border-radius:6px;color:#7fe0a8;
+  font-size:12px;font-family:inherit;font-weight:700;
+  padding:7px 10px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background .15s;
+  letter-spacing:.5px;
+}
+#btn-seguir-viagem:hover{background:rgba(40,120,80,.5);}
+
+/* ── CONFIG (chave de API) ── */
+#cfg-overlay{
+  position:fixed;inset:0;z-index:800;
+  background:rgba(0,0,0,.85);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+#cfg-overlay.oculto{display:none;}
+#cfg-box{
+  background:#14100a;border:1px solid rgba(190,135,35,.4);
+  border-radius:12px;padding:20px;width:100%;max-width:360px;
+  display:flex;flex-direction:column;gap:12px;
+}
+#cfg-titulo{font-size:14px;font-weight:700;color:#f5d878;letter-spacing:.5px;}
+#cfg-descr{font-size:11px;color:rgba(200,180,120,.6);line-height:1.5;}
+#cfg-input{
+  width:100%;background:rgba(0,0,0,.5);
+  border:1px solid rgba(190,135,35,.3);border-radius:6px;
+  color:#e8d5a8;font-family:monospace;font-size:12px;
+  padding:8px 10px;outline:none;
+}
+#cfg-row{display:flex;gap:8px;}
+#cfg-salvar,#cfg-fechar{
+  flex:1;border-radius:6px;font-family:inherit;font-size:13px;
+  padding:9px;cursor:pointer;font-weight:600;
+  -webkit-tap-highlight-color:transparent;
+}
+#cfg-salvar{background:rgba(190,135,35,.25);border:1px solid rgba(190,135,35,.5);color:#f5d878;}
+#cfg-fechar{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);}
+
+/* ── INDICADOR DE CARREGAMENTO IA ── */
+#ia-loading{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:rgba(90,40,130,.9);border:1px solid rgba(180,100,255,.5);
+  border-radius:20px;padding:8px 18px;
+  color:rgba(220,160,255,.9);font-size:12px;letter-spacing:.5px;
+  z-index:600;transition:opacity .3s;
+}
+#ia-loading.oculto{opacity:0;pointer-events:none;}
+
+/* ── MODAL DE PERCEPÇÃO ── */
+#percepcao-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.80);
+  display:flex;align-items:center;justify-content:center;
+  z-index:500;
+  backdrop-filter:blur(5px);
+}
+#percepcao-overlay.oculto{display:none;}
+#percepcao-box{
+  background:linear-gradient(160deg,#1c1408,#0f0b05);
+  border:1px solid rgba(190,140,35,0.45);
+  border-radius:18px;
+  padding:28px 22px 24px;
+  max-width:370px;width:92%;
+  display:flex;flex-direction:column;gap:14px;
+  text-align:center;
+  box-shadow:0 0 50px rgba(190,140,35,0.18);
+}
+#percepcao-icon{font-size:34px;line-height:1;}
+#percepcao-atmosfera{
+  font-size:13.5px;color:rgba(225,195,115,0.92);
+  font-style:italic;line-height:1.65;white-space:pre-line;min-height:1.65em;
+}
+#percepcao-linha-dc{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-size:13px;color:#f5d878;font-weight:700;letter-spacing:.8px;
+}
+.perc-badge{
+  background:rgba(190,140,35,0.18);
+  border:1px solid rgba(190,140,35,0.45);
+  border-radius:6px;padding:2px 9px;font-size:11px;
+}
+.perc-fade{animation:perc-fade-in .45s ease;}
+@keyframes perc-fade-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+#percepcao-resultado{display:flex;flex-direction:column;gap:13px;}
+#perc-res-status{
+  font-size:15px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+}
+#perc-res-status.sucesso{color:#86e08c;}
+#perc-res-status.falha{color:#e08c86;}
+#perc-res-texto{
+  font-size:13.5px;color:rgba(228,200,120,0.95);font-style:italic;line-height:1.6;
+}
+#perc-res-ok{
+  margin-top:4px;padding:12px 0;width:100%;
+  background:rgba(190,140,35,0.18);border:1px solid rgba(190,140,35,0.55);
+  border-radius:12px;color:#f5d878;font-family:inherit;font-size:14px;font-weight:700;
+  letter-spacing:.6px;cursor:pointer;
+}
+#perc-res-ok:active{opacity:.75;}
+#percepcao-aguardando{font-size:12px;color:rgba(190,165,90,0.7);}
+#percepcao-count-text{font-style:italic;margin-bottom:8px;}
+#percepcao-respostas-list{
+  display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+}
+.perc-resp-chip{
+  padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;
+  background:rgba(0,0,0,0.3);border:1px solid rgba(190,140,35,0.2);
+  color:rgba(210,185,105,0.65);
+}
+.perc-resp-chip.sim{border-color:rgba(74,130,200,0.5);color:#a8d4f5;}
+.perc-resp-chip.nao{border-color:rgba(160,80,80,0.45);color:#d4a0a0;}
+.perc-resp-chip.rolou{border-color:rgba(90,190,80,0.5);color:#a0e08c;}
+#percepcao-rolar-div{display:flex;flex-direction:column;align-items:center;gap:6px;}
+#perc-dado-wrap{width:130px;height:130px;display:flex;align-items:center;justify-content:center;}
+#btn-rolar-perc{
+  padding:14px 0;width:100%;
+  background:rgba(60,110,170,0.22);
+  border:2px solid rgba(74,130,200,0.6);
+  border-radius:13px;
+  color:#a8d4f5;font-family:inherit;font-size:16px;font-weight:700;
+  cursor:pointer;letter-spacing:1px;transition:opacity .2s;
+}
+#btn-rolar-perc:disabled{opacity:.35;cursor:default;}
+#percepcao-dado-result{
+  font-size:32px;font-weight:900;color:#f5d878;
+  letter-spacing:3px;min-height:40px;
+}
+
+/* ── INDICADOR DE CENA SEM IMAGEM ── */
+.sem-imagem #cena-imagem{display:none;}
+.sem-imagem #cena-placeholder{display:flex;}
+
+/* ── STATUS BADGE ── */
+#narr-status{
+  position:fixed;top:max(8px,calc(4px+env(safe-area-inset-top)));right:10px;
+  z-index:200;
+  background:rgba(0,0,0,.6);border:1px solid rgba(190,135,35,.3);
+  border-radius:6px;padding:4px 8px;
+  font-size:10px;color:rgba(190,135,35,.6);letter-spacing:.5px;
+}
+
+@media(max-width:380px){
+  .dialogo-npc-portrait img{height:44px;}
+}
+/* ── INTRO CINEMATOGRÁFICO ── */
+#intro-cinematico{
+  position:fixed;inset:0;z-index:200;
+  display:flex;flex-direction:column;
+  background:#040302;
+  transition:opacity .6s;
+}
+#intro-cinematico.oculto{opacity:0;pointer-events:none;}
+#intro-bg{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  transition:opacity 0.65s;
+}
+#intro-grad{
+  position:absolute;inset:0;
+  background:linear-gradient(
+    to bottom,
+    rgba(0,0,0,.25) 0%,
+    rgba(0,0,0,.45) 35%,
+    rgba(0,0,0,.80) 65%,
+    rgba(0,0,0,.97) 100%
+  );
+}
+#intro-content{
+  position:relative;z-index:2;
+  flex:1;min-height:0;overflow-y:auto;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-start;
+  padding:max(46px,8vh) 22px 8px;
+  text-align:center;
+}
+/* centra o bloco mas permite rolar texto longo sem cortar o topo */
+#intro-content::before{content:'';margin-top:auto;}
+#intro-content::after{content:'';margin-bottom:auto;}
+#intro-content::-webkit-scrollbar{width:3px;}
+#intro-content::-webkit-scrollbar-thumb{background:rgba(190,140,35,.3);border-radius:2px;}
+#intro-subtitulo-cena{
+  font-size:11px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(220,190,100,.5);margin-bottom:10px;
+  text-align:center;width:100%;
+}
+#intro-titulo-cena{
+  font-size:clamp(24px,7vw,40px);font-weight:900;
+  color:#f5d878;letter-spacing:3px;text-transform:uppercase;
+  text-shadow:0 0 50px rgba(200,160,30,.9),0 2px 10px #000;
+  margin-bottom:28px;line-height:1.1;
+  text-align:center;width:100%;
+}
+#intro-texto-pag{
+  font-size:clamp(14px,3.8vw,18px);
+  color:rgba(235,215,165,.92);
+  font-style:italic;line-height:1.8;
+  max-width:600px;margin:0 auto;
+  white-space:pre-line; /* respeita as quebras de parágrafo (\n\n) */
+  text-shadow:0 1px 6px rgba(0,0,0,.95);
+  min-height:1.8em;
+}
+#intro-texto-pag.typing::after{
+  content:'▋';color:#f5d878;opacity:.65;margin-left:1px;
+  animation:introCursor .8s steps(1) infinite;
+}
+@keyframes introCursor{50%{opacity:0;}}
+/* Botão Pular — discreto, canto superior */
+#intro-pular{
+  position:absolute;z-index:6;
+  top:max(12px,calc(8px + env(safe-area-inset-top)));right:14px;
+  background:rgba(20,14,6,.62);border:1px solid rgba(190,140,35,.32);
+  border-radius:18px;color:rgba(222,192,112,.82);font-family:inherit;
+  font-size:12px;letter-spacing:1px;padding:6px 14px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#intro-pular:active{background:rgba(40,26,8,.9);}
+@keyframes fadePag{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+#intro-dots{
+  display:flex;gap:7px;justify-content:center;
+  margin-top:22px;min-height:8px;
+}
+.intro-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(190,135,35,.25);transition:background .3s;
+}
+.intro-dot.ativo{background:#f5d878;}
+#intro-btn-continuar{
+  position:relative;z-index:2;
+  margin:24px auto max(20px,calc(14px + env(safe-area-inset-bottom)));
+  background:rgba(190,135,35,.12);
+  border:1px solid rgba(190,135,35,.45);
+  border-radius:12px;
+  color:#f5d878;font-size:15px;font-weight:700;
+  padding:15px 48px;
+  cursor:pointer;font-family:inherit;letter-spacing:1.5px;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .15s,border-color .15s;
+}
+#intro-btn-continuar:active{background:rgba(190,135,35,.28);border-color:rgba(190,135,35,.8);}
+#intro-btn-continuar:disabled{opacity:.55;cursor:default;background:rgba(60,60,60,.15);border-color:rgba(150,150,150,.25);color:rgba(200,200,200,.5);}
+
+/* Reveal: image shows clean, then overlay + text fade in */
+#intro-grad{transition:opacity 1.1s ease;}
+#intro-content{transition:opacity 0.85s ease 0.15s;}
+#intro-btn-continuar{transition:background .15s,border-color .15s,opacity 0.85s ease 0.15s;}
+.intro-img-reveal #intro-grad,
+.intro-img-reveal #intro-content,
+.intro-img-reveal #intro-btn-continuar{opacity:0;pointer-events:none;}
+
+/* ── MAPA DE EXPLORAÇÃO ── */
+#mapa-overlay{
+  position:fixed;inset:0;z-index:800;
+  background:rgba(0,0,0,.88);
+  backdrop-filter:blur(6px);
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+  padding:20px 16px max(24px,env(safe-area-inset-bottom));
+}
+#mapa-overlay.oculto{display:none;}
+#mapa-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+#mapa-titulo{
+  font-size:16px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(220,185,80,1);
+}
+#mapa-fechar{
+  background:none;border:1px solid rgba(190,135,35,.4);
+  color:rgba(220,185,80,.8);
+  padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;
+}
+.mapa-ato{
+  margin-bottom:14px;
+}
+.mapa-ato-titulo{
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(155,130,65,.6);
+  margin-bottom:8px;padding-bottom:4px;
+  border-bottom:1px solid rgba(190,135,35,.15);
+}
+.mapa-cena-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+}
+.mapa-cena{
+  padding:10px 12px;border-radius:10px;
+  border:1px solid rgba(190,135,35,.25);
+  background:rgba(20,14,6,.6);
+  cursor:pointer;
+  transition:border-color .15s,background .15s;
+  position:relative;
+}
+.mapa-cena.visitada{
+  border-color:rgba(80,160,80,.5);
+  background:rgba(30,60,20,.4);
+}
+.mapa-cena.disponivel{
+  border-color:rgba(190,135,35,.5);
+  background:rgba(40,28,8,.7);
+}
+.mapa-cena.disponivel:hover{
+  border-color:rgba(220,185,80,.8);
+  background:rgba(55,38,10,.85);
+}
+.mapa-cena.atual{
+  border-color:rgba(220,185,80,1) !important;
+  background:rgba(60,42,10,.9) !important;
+}
+.mapa-cena.bloqueada{
+  opacity:.4;cursor:default;
+}
+.mapa-cena-titulo{
+  font-size:12px;font-weight:700;
+  color:rgba(220,185,80,.9);
+  margin-bottom:3px;
+}
+.mapa-cena.bloqueada .mapa-cena-titulo{color:rgba(155,130,65,.5);}
+.mapa-cena-sub{
+  font-size:10px;color:rgba(155,130,65,.6);
+}
+.mapa-cena-tags{
+  display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;
+}
+.mapa-tag{
+  font-size:9px;padding:2px 6px;border-radius:4px;
+  background:rgba(60,40,10,.8);
+  color:rgba(190,155,70,.7);
+  border:1px solid rgba(190,135,35,.2);
+}
+.mapa-tag.tag-batalha{
+  background:rgba(80,20,20,.8);color:rgba(220,100,80,.8);
+  border-color:rgba(180,60,40,.3);
+}
+.mapa-tag.tag-visitado{
+  background:rgba(20,60,20,.8);color:rgba(100,200,100,.8);
+  border-color:rgba(60,150,60,.3);
+}
+/* ── ESCOLHA DE CAMINHO (fog of war) ── */
+#caminho-intro{
+  font-size:12px;color:rgba(190,165,90,.8);font-style:italic;
+  line-height:1.5;margin-bottom:14px;
+}
+.caminho-card{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px;border-radius:12px;margin-bottom:10px;
+  border:1px solid rgba(190,135,35,.4);
+  background:rgba(28,19,7,.75);
+  cursor:pointer;transition:border-color .15s,background .15s,transform .1s;
+}
+.caminho-card:active{transform:scale(.985);}
+.caminho-card:hover{border-color:rgba(220,185,80,.85);background:rgba(45,30,9,.9);}
+.caminho-card.bloq{cursor:default;opacity:.55;}
+.caminho-card.bloq:hover{border-color:rgba(190,135,35,.4);background:rgba(28,19,7,.75);}
+.cam-seta{font-size:30px;flex-shrink:0;width:38px;text-align:center;}
+.cam-corpo{flex:1;min-width:0;}
+.cam-dir{
+  font-size:14px;font-weight:700;color:rgba(225,190,95,1);
+  margin-bottom:3px;
+}
+.cam-dest{
+  font-size:11px;color:rgba(150,200,120,.85);font-weight:700;margin-bottom:2px;
+}
+.cam-dest.incognito{color:rgba(160,135,75,.7);font-weight:400;font-style:italic;}
+.cam-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;}
+.cam-pill{
+  font-size:9px;letter-spacing:.5px;padding:2px 7px;border-radius:5px;
+  background:rgba(55,38,10,.8);color:rgba(195,160,75,.85);
+  border:1px solid rgba(190,135,35,.25);
+}
+.cam-pill.dist{background:rgba(20,40,55,.7);color:rgba(120,180,210,.85);border-color:rgba(60,120,160,.3);}
+.cam-pill.p0,.cam-pill.p1{background:rgba(20,55,20,.75);color:rgba(120,200,120,.9);border-color:rgba(60,150,60,.3);}
+.cam-pill.p2,.cam-pill.p3{background:rgba(70,55,10,.8);color:rgba(225,185,80,.9);border-color:rgba(190,150,40,.35);}
+.cam-pill.p4,.cam-pill.p5{background:rgba(80,20,20,.8);color:rgba(230,110,90,.95);border-color:rgba(180,60,40,.4);}
+.cam-nota{font-size:11px;color:rgba(170,140,80,.7);font-style:italic;text-align:center;margin-top:6px;}
+.mapa-tag.tag-atual{
+  background:rgba(60,42,10,.9);color:rgba(220,185,80,1);
+  border-color:rgba(190,135,35,.6);
+}
+.mapa-lock{
+  position:absolute;top:8px;right:10px;
+  font-size:14px;opacity:.5;
+}
+.mapa-gancho{
+  font-size:10px;color:rgba(190,155,70,.6);
+  margin-top:5px;font-style:italic;
+  line-height:1.4;
+}
+
+/* ══════════════════════════════════════════════════════════
+   DIAL ENGINE — modo diálogo interativo com IA
+   ══════════════════════════════════════════════════════════ */
+#dial-overlay{
+  position:fixed;inset:0;z-index:80;display:none;
+  pointer-events:none;
+  background:#050302;
+}
+#dial-overlay.ativo{ display:flex;flex-direction:column;pointer-events:all; }
+
+/* Cenário de fundo da cena de diálogo */
+#dial-cena-bg{
+  position:absolute;inset:0;
+  background-size:cover;background-position:top center;background-repeat:no-repeat;
+  transition:opacity .7s ease;
+}
+#dial-cena-bg::after{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 50% 62%, transparent 28%, rgba(0,0,0,.52) 100%),
+    linear-gradient(to bottom, rgba(0,0,0,.04) 0%, rgba(0,0,0,.66) 92%);
+}
+
+/* Standees */
+#dial-personagens{
+  position:absolute;bottom:122px;left:0;right:0;
+  height:clamp(240px,56vh,520px);
+  pointer-events:none;overflow:visible;z-index:12; /* standees NA FRENTE do balão (z:8) */
+}
+.dial-npc{
+  position:absolute;bottom:0;left:0;width:auto;height:100%;
+  transform:translateX(-130%);
+  transition:transform .52s cubic-bezier(.32,.72,0,1),opacity .32s ease,filter .32s ease;
+  filter:drop-shadow(0 10px 28px rgba(0,0,0,.92));
+}
+.dial-npc.dentro{ transform:translateX(0); }
+.dial-npc.inativo{ opacity:.28;filter:brightness(.45) saturate(.35); }
+.dial-npc canvas{ display:block;width:auto;height:100%;transform:scaleX(-1); }
+
+/* Balão de fala NPC */
+#dial-balao{
+  position:absolute;top:54px;left:12px;right:12px;
+  max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:rgba(7,3,1,.88);border:1px solid rgba(190,140,35,.42);
+  border-radius:14px;padding:10px 13px 11px;
+  backdrop-filter:blur(16px);box-shadow:0 4px 28px rgba(0,0,0,.78);
+  opacity:0;transform:translateY(-6px) scale(.98);
+  transition:opacity .28s ease,transform .28s ease;
+  pointer-events:none;z-index:8;
+}
+#dial-balao.visivel{opacity:1;transform:none;pointer-events:all;}
+#dial-balao-nome{font-size:8.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(190,140,35,.80);margin-bottom:5px;}
+#dial-balao-acao{font-size:10px;color:rgba(255,255,255,.90);font-style:italic;line-height:1.35;margin-bottom:4px;display:none;}
+#dial-balao-texto .dbt-acao{color:#ffffff;font-style:italic;}
+#dial-balao-texto{font-size:clamp(11px,2.9vw,13px);color:rgba(240,218,162,.96);line-height:1.5;font-style:italic;}
+
+/* Card do player */
+#dial-player-card{
+  position:absolute;top:60px;left:12px;right:12px;
+  display:flex;flex-direction:column;gap:8px;
+  opacity:0;pointer-events:none;
+  transform:translateY(-6px) scale(.98);
+  transition:opacity .28s ease,transform .28s ease;z-index:8;
+}
+#dial-player-card.visivel{opacity:1;transform:none;pointer-events:all;}
+.dial-pc-fala{
+  background:rgba(4,8,20,.92);border:1px solid rgba(100,155,220,.40);
+  border-radius:14px;padding:9px 13px 10px;
+  backdrop-filter:blur(16px);display:flex;gap:12px;align-items:center;
+}
+.dial-pc-nome{font-size:8px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:rgba(110,160,230,.80);margin-bottom:5px;}
+.dial-pc-texto{font-size:clamp(13px,3.6vw,15px);color:rgba(215,230,255,.94);line-height:1.6;font-style:italic;}
+
+/* Botão Continuar — dentro do balão, após o texto */
+#dial-btn-continuar{
+  display:none;width:fit-content;
+  margin:14px auto 2px;
+  background:rgba(22,11,2,.94);border:1px solid rgba(190,140,35,.58);
+  border-radius:24px;padding:9px 28px;
+  color:#f5d878;font-family:Georgia,serif;font-size:13px;font-weight:700;
+  cursor:pointer;white-space:nowrap;pointer-events:all;
+  box-shadow:0 4px 24px rgba(0,0,0,.7);
+  animation:dial-pulse 1.8s ease-in-out infinite;
+}
+@keyframes dial-pulse{0%,100%{box-shadow:0 0 0 0 rgba(190,140,35,.35);}50%{box-shadow:0 0 0 7px rgba(190,140,35,0);}}
+
+/* IA pensando */
+#dial-ia-pensando{
+  display:none;width:fit-content;
+  margin:12px auto 0;
+  background:rgba(60,28,100,.92);border:1px solid rgba(150,80,240,.5);
+  border-radius:20px;padding:7px 18px;color:rgba(200,140,255,.92);
+  font-size:12px;letter-spacing:.4px;white-space:nowrap;
+}
+
+/* Chips de NPC */
+#dial-npc-chips{
+  position:absolute;bottom:calc(58px + 28px);left:0;right:0;height:36px;
+  padding:0 12px;background:rgba(4,2,1,.90);
+  border-top:1px solid rgba(190,140,35,.12);
+  display:flex;align-items:center;gap:8px;z-index:20;
+  overflow-x:auto;scrollbar-width:none;
+}
+#dial-npc-chips::-webkit-scrollbar{display:none;}
+.dial-chip-label{font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:rgba(190,140,35,.28);flex-shrink:0;}
+.dial-chip-npc{
+  flex-shrink:0;padding:4px 14px;
+  border:1px solid rgba(190,140,35,.24);border-radius:20px;
+  background:rgba(25,16,5,.7);color:rgba(200,175,100,.52);
+  font-size:11px;font-family:Georgia,serif;cursor:pointer;white-space:nowrap;
+  transition:background .2s,color .2s,border-color .2s;
+}
+.dial-chip-npc.ativo{background:rgba(190,140,35,.20);border-color:rgba(190,140,35,.58);color:#f5d878;}
+.dial-chip-spacer{flex:1;min-width:4px;}
+.dial-btn-acao{
+  flex-shrink:0;padding:5px 14px;
+  border:1px solid rgba(190,140,35,.48);border-radius:20px;
+  background:rgba(190,140,35,.18);color:#f5d878;
+  font-size:11px;font-family:Georgia,serif;cursor:pointer;white-space:nowrap;
+}
+.dial-btn-sair{border-color:rgba(200,80,60,.40);background:rgba(200,80,60,.12);color:rgba(235,130,110,.90);}
+.dial-btn-perc{border-color:rgba(120,160,220,.45);background:rgba(80,120,200,.15);color:rgba(150,195,240,.95);}
+.dial-btn-mapa{border-color:rgba(120,180,120,.45);background:rgba(60,140,80,.15);color:rgba(150,220,170,.95);}
+.dial-btn-acao:disabled{opacity:.5;cursor:default;}
+
+/* Turno bar (chips de jogadores) */
+#dial-turno-bar{
+  position:absolute;bottom:58px;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:4px 12px;background:rgba(4,2,1,.88);
+  border-top:1px solid rgba(190,140,35,.10);
+  z-index:20;min-height:28px;
+}
+#dial-turno-players{display:flex;gap:8px;align-items:center;flex:1;}
+.dial-turno-chip{
+  font-size:10px;padding:2px 10px;border-radius:20px;
+  border:1px solid rgba(190,140,35,.18);color:rgba(200,175,100,.45);
+  background:transparent;cursor:pointer;transition:all .2s;
+}
+.dial-turno-chip.ativo{border-color:rgba(190,140,35,.55);color:#f5d878;background:rgba(190,140,35,.14);}
+#dial-turno-vez{font-size:10px;color:rgba(190,140,35,.45);letter-spacing:.5px;white-space:nowrap;flex-shrink:0;}
+
+/* Input bar */
+#dial-input-bar{
+  position:absolute;bottom:0;left:0;right:0;height:58px;
+  padding:9px 12px max(9px,env(safe-area-inset-bottom));
+  background:rgba(4,2,1,.95);border-top:1px solid rgba(190,140,35,.18);
+  display:flex;align-items:center;gap:9px;z-index:20;
+}
+#dial-msg-input{
+  flex:1;background:rgba(25,16,5,.95);
+  border:1px solid rgba(190,140,35,.28);border-radius:10px;
+  padding:10px 14px;color:#e8d5a8;font-family:Georgia,serif;font-size:14px;outline:none;
+}
+#dial-msg-input::placeholder{color:rgba(190,165,90,.32);}
+#dial-msg-input:disabled{opacity:.45;}
+#dial-btn-enviar{
+  flex-shrink:0;background:rgba(190,140,35,.16);
+  border:1px solid rgba(190,140,35,.42);border-radius:10px;
+  padding:10px 18px;color:#f5d878;font-family:Georgia,serif;
+  font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;
+}
+#dial-btn-enviar:disabled{opacity:.38;cursor:default;}
+
+/* Botão histórico */
+#dial-btn-historico{
+  position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;z-index:25;
+  background:rgba(7,3,1,.75);border:1px solid rgba(190,140,35,.30);
+  border-radius:50%;width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;cursor:pointer;backdrop-filter:blur(10px);
+}
+
+/* Drawer histórico */
+#dial-historico-drawer{
+  position:absolute;inset:0;z-index:30;
+  background:rgba(4,2,1,.96);
+  display:flex;flex-direction:column;
+}
+#dial-historico-drawer.oculto{display:none;}
+#dial-hd-header{
+  flex-shrink:0;padding:16px 18px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(190,140,35,.15);
+}
+#dial-hd-titulo{font-size:13px;font-weight:700;letter-spacing:.6px;color:#f5d878;}
+#dial-hd-fechar{background:none;border:none;color:rgba(190,165,90,.6);font-size:20px;cursor:pointer;padding:4px 8px;}
+#dial-hd-corpo{
+  flex:1;overflow-y:auto;padding:14px 18px 24px;
+  display:flex;flex-direction:column;gap:10px;
+  scrollbar-width:thin;scrollbar-color:rgba(190,140,35,.25) transparent;
+}
+.dial-hd-entrada{padding:8px 12px;border-left:2px solid rgba(190,140,35,.28);}
+.dial-hd-entrada.player{border-left-color:rgba(100,155,220,.45);}
+.dial-hd-quem{font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(190,140,35,.60);margin-bottom:4px;}
+.dial-hd-entrada.player .dial-hd-quem{color:rgba(110,160,230,.65);}
+.dial-hd-texto{font-size:13px;color:rgba(220,195,140,.88);line-height:1.58;font-style:italic;}
+
+/* host controls float above dial overlay */
+#controles-host{position:relative;z-index:85;}
+
+/* ── Painel de Investigação (cenas sem NPC) ── */
+#investig{ position:fixed; inset:0; z-index:90; display:flex; flex-direction:column; background:#0b0906; }
+#investig.oculto{ display:none; }
+#investig-bg{ position:absolute; inset:0; z-index:0; background-size:cover; background-position:top center; background-repeat:no-repeat; }
+#investig-bg::after{ content:''; position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,.22) 0%, rgba(0,0,0,.70) 66%, rgba(8,6,4,.97) 100%); }
+#investig-topo{ position:relative; z-index:2; padding:calc(env(safe-area-inset-top) + 12px) 16px 8px; }
+#investig-titulo{ font-family:Georgia,serif; font-size:16px; letter-spacing:.5px; color:#e8c874; text-shadow:0 2px 10px #000; }
+#investig-sub{ font-size:8.5px; letter-spacing:2px; text-transform:uppercase; color:rgba(200,170,90,.55); margin-top:2px; }
+#investig-painel{ position:relative; z-index:2; margin-top:auto; display:flex; flex-direction:column; gap:8px;
+  background:linear-gradient(to bottom, rgba(14,11,7,.55), rgba(11,8,5,.95) 20%);
+  border-top:1px solid rgba(190,140,35,.22); padding:10px 12px calc(env(safe-area-inset-bottom) + 10px); max-height:66vh; }
+#investig-tabs{ display:flex; gap:6px; }
+.itab{ flex:1; background:rgba(0,0,0,.35); border:1px solid rgba(190,140,35,.2); color:rgba(210,185,110,.6); border-radius:9px; padding:9px; font-size:12px; font-weight:700; }
+.itab.ativo{ background:rgba(190,140,35,.16); color:#e8c874; border-color:rgba(190,140,35,.5); }
+.investig-log{ flex:1; min-height:130px; overflow-y:auto; display:flex; flex-direction:column; gap:7px; padding:4px 2px; }
+.investig-log.oculto{ display:none; }
+.ilog-item{ font-size:12px; line-height:1.5; padding:7px 10px; border-radius:9px; max-width:90%; }
+.ilog-player{ background:rgba(44,64,96,.30); color:rgba(216,226,240,.94); align-self:flex-end; }
+.ilog-narr{ background:rgba(30,22,10,.52); color:rgba(240,222,170,.95); border-left:2px solid rgba(190,140,35,.5); font-style:italic; align-self:flex-start; }
+.ilog-narr .dbt-acao{ color:#fff; }
+.ilog-nome{ font-size:8px; letter-spacing:1px; text-transform:uppercase; opacity:.55; display:block; margin-bottom:2px; }
+#investig-pensando{ font-size:11px; color:rgba(200,175,110,.75); font-style:italic; text-align:center; padding:2px; }
+#investig-input-row{ display:flex; gap:7px; align-items:flex-end; }
+#investig-input{ flex:1; resize:none; height:42px; max-height:96px; background:rgba(0,0,0,.4); border:1px solid rgba(190,140,35,.25); border-radius:10px; color:#e8dcb0; padding:11px 12px; font-size:13px; font-family:inherit; }
+#investig-input::placeholder{ color:rgba(190,165,90,.4); }
+#investig-enviar{ flex-shrink:0; width:48px; height:42px; border:none; border-radius:10px; background:linear-gradient(135deg,#caa23e,#9a7826); color:#20160a; font-size:17px; font-weight:700; }
+#investig-acoes-bar{ display:flex; gap:8px; }
+.inv-acao-btn{ flex:1; border:1px solid rgba(190,140,35,.3); background:rgba(0,0,0,.35); border-radius:10px; padding:11px; font-size:12px; font-weight:700; color:rgba(220,190,110,.9); }
+#investig-perc{ border-color:rgba(120,150,200,.4); color:rgba(180,200,235,.95); }
+#investig-sair{ border-color:rgba(200,90,70,.35); color:rgba(230,150,130,.95); }
+#investig-acao-area{ flex:1; min-height:64px; display:flex; align-items:center; justify-content:center; padding:6px; }
+#investig-acao-area.oculto{ display:none; }
+#investig-vez{ font-size:13px; font-weight:700; color:rgba(210,185,110,.65); text-align:center; padding:11px 14px; border:1px dashed rgba(190,140,35,.28); border-radius:12px; }
+#investig-vez.minha-vez{ color:#e8c874; border-color:rgba(190,140,35,.55); background:rgba(190,140,35,.10); border-style:solid; }
+#investig-input:disabled{ opacity:.45; }
+#investig-enviar:disabled{ opacity:.4; }
+/* Card do Narrador sobre o cenário (como a fala dos NPCs) */
+#investig-card{ position:absolute; z-index:3; left:14px; right:14px; top:17%;
+  background:rgba(14,11,7,.92); border:1px solid rgba(190,140,35,.4); border-radius:14px;
+  padding:14px 16px 9px; box-shadow:0 12px 44px rgba(0,0,0,.62);
+  opacity:0; transform:translateY(-10px) scale(.98); pointer-events:none;
+  transition:opacity .35s ease, transform .35s cubic-bezier(.32,.72,0,1); }
+#investig-card.visivel{ opacity:1; transform:none; pointer-events:all; }
+#investig-card-nome{ font-size:8.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:rgba(190,140,35,.85); margin-bottom:5px; }
+#investig-card-texto{ font-size:clamp(12px,3vw,14px); color:rgba(240,222,170,.96); line-height:1.5; font-style:italic; max-height:34vh; overflow-y:auto; padding-right:2px; }
+#investig-card-texto .dbt-acao{ color:#fff; font-style:normal; font-weight:700; }
+#investig-card-mais{ position:absolute; left:0; right:0; bottom:26px; text-align:center; font-size:15px; line-height:1; color:rgba(232,200,116,.95); text-shadow:0 0 8px #000, 0 2px 6px #000; pointer-events:none; opacity:0; transition:opacity .2s ease; animation:invMaisPulse 1.4s ease-in-out infinite; }
+@keyframes invMaisPulse{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(2px);} }
+#investig-card-dica{ font-size:8px; text-transform:uppercase; letter-spacing:1px; color:rgba(190,165,90,.4); text-align:right; margin-top:8px; }
+
+</style>
+</head>
+<body>
+
+<div id="narracao-wrap">
+
+  <!-- Header -->
+  <div id="narr-header">
+    <button id="btn-voltar-lobby" onclick="voltarLobby()">← Lobby</button>
+    <div id="narr-titulo-wrap">
+      <div id="narr-titulo">Carregando…</div>
+      <div id="narr-subtitulo">Modo Narração</div>
+    </div>
+    <div id="modo-imagem-btns">
+      <button class="btn-modo ativo" id="btn-ext" onclick="setModoImagem('exterior')">Ext.</button>
+      <button class="btn-modo" id="btn-int" onclick="setModoImagem('interior')">Int.</button>
+    </div>
+  </div>
+
+  <!-- Imagem da cena -->
+  <div id="cena-imagem-wrap" class="sem-imagem">
+    <img id="cena-imagem" src="" alt="" onload="onImagemCarregada()" onerror="onImagemErro()">
+    <div class="neblina-layer"></div>
+    <div id="cena-placeholder">
+      <div id="cena-placeholder-icone">🏰</div>
+      <div id="cena-placeholder-texto">arte em breve</div>
+    </div>
+    <div id="cena-intro-overlay">
+      <div id="cena-intro-texto"></div>
+    </div>
+  </div>
+
+  <!-- Log de diálogo -->
+  <div id="dialogo-log">
+    <div class="dialogo-sistema">Aguardando a história começar…</div>
+  </div>
+
+  <!-- Controles do host -->
+  <div id="controles-host" style="display:none">
+    <div id="npc-chips"></div>
+    <div id="controles-row1">
+      <select id="sel-npc" onchange="onSelNpc()"></select>
+      <button id="btn-gerar-ia" onclick="gerarFalaIA()">✨ Gerar com IA</button>
+    </div>
+    <div id="controles-row2">
+      <textarea id="input-texto" placeholder="O que este personagem diz…" onkeydown="onKeydownInput(event)"></textarea>
+      <button id="btn-enviar" onclick="enviarFala()">Enviar</button>
+    </div>
+    <div id="controles-row3">
+      <button class="btn-cena" id="btn-cena-ant" onclick="navegarCena(-1)">← Cena Ant.</button>
+      <button class="btn-cena" id="btn-cfg-ia" onclick="abrirCfgIA()">⚙ IA</button>
+      <button class="btn-cena" id="btn-cena-prox" onclick="navegarCena(1)">Próx. Cena →</button>
+      <button class="btn-cena" id="btn-mapa-exp" onclick="abrirMapaExploracao()">🗺 Mapa</button>
+      <button id="btn-seguir-viagem" style="display:none" onclick="_irParaMapaMundo()">🧭 Seguir Viagem</button>
+      <button id="btn-iniciar-batalha" onclick="iniciarBatalha()">⚔ Batalha!</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Mapa de Exploração -->
+<div id="mapa-overlay" class="oculto">
+  <div id="mapa-header">
+    <span id="mapa-titulo">🗺 Mapa dos Blackwoods</span>
+    <button id="mapa-fechar" onclick="fecharMapaExploracao()">✕ Fechar</button>
+  </div>
+  <div id="mapa-conteudo"></div>
+</div>
+
+<!-- Painel de Investigação (cenas de investigação sem NPC) -->
+<div id="investig" class="oculto">
+  <div id="investig-bg"><div class="neblina-layer"></div></div>
+  <div id="investig-topo">
+    <div id="investig-titulo">—</div>
+    <div id="investig-sub">Investigação</div>
+  </div>
+  <!-- Card do Narrador sobre o cenário (como a fala dos NPCs) -->
+  <div id="investig-card" onclick="window._invDismissCard()">
+    <div id="investig-card-nome">NARRADOR</div>
+    <div id="investig-card-texto" onclick="event.stopPropagation()" onscroll="window._invScrollCard&&window._invScrollCard()">…</div>
+    <div id="investig-card-mais">▾</div>
+    <div id="investig-card-dica">toque para fechar</div>
+  </div>
+  <div id="investig-painel">
+    <div id="investig-tabs">
+      <button class="itab ativo" id="itab-chat" onclick="_invTab('chat')">💬 Bate-papo</button>
+      <button class="itab" id="itab-acao" onclick="_invTab('acao')">🔍 Ação</button>
+    </div>
+    <div class="investig-log" id="investig-log-chat"></div>
+    <div id="investig-acao-area" class="oculto">
+      <div id="investig-vez">🎲 Sua vez</div>
+    </div>
+    <div id="investig-pensando" style="display:none">✨ O Narrador considera…</div>
+    <div id="investig-input-row">
+      <textarea id="investig-input" rows="1" placeholder="Fale com o grupo…" onkeydown="_invKey(event)"></textarea>
+      <button id="investig-enviar" onclick="_invEnviar()">➤</button>
+    </div>
+    <div id="investig-acoes-bar">
+      <button class="inv-acao-btn" id="investig-perc" onclick="_invPercepcao()">🎲 Percepção</button>
+      <button class="inv-acao-btn" id="investig-sair" onclick="_invSair()">🚪 Sair</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Teste de Percepção -->
+<div id="percepcao-overlay" class="oculto">
+  <div id="percepcao-box">
+    <div id="percepcao-icon">👁</div>
+    <div id="percepcao-atmosfera">—</div>
+    <div id="percepcao-linha-dc" class="oculto">
+      <span class="perc-badge">🎲 DC</span>
+      <span id="percepcao-dc-val">12</span>
+      <span>— Percepção</span>
+    </div>
+    <div id="percepcao-rolar-div" class="oculto">
+      <button id="btn-rolar-perc" onclick="rolarPercepcao()">🎲 Rolar o dado</button>
+      <div id="perc-dado-wrap"></div>
+      <div id="percepcao-dado-result">—</div>
+    </div>
+    <div id="percepcao-aguardando" class="oculto">
+      <div id="percepcao-count-text">Aguardando todos rolarem…</div>
+      <div id="percepcao-respostas-list"></div>
+    </div>
+    <div id="percepcao-resultado" class="oculto">
+      <div id="perc-res-status">—</div>
+      <div id="perc-res-texto">—</div>
+      <button id="perc-res-ok" onclick="confirmarPercepcao()">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Intro cinematográfico de cena -->
+<div id="intro-cinematico" class="oculto">
+  <div id="intro-bg"></div>
+  <div id="intro-grad" onclick="_tapIntro(event)"></div>
+  <button id="intro-pular" onclick="pularIntro()">⏩ Pular</button>
+  <div id="intro-content" onclick="_tapIntro(event)">
+    <div id="intro-subtitulo-cena"></div>
+    <div id="intro-titulo-cena"></div>
+    <div id="intro-texto-pag"></div>
+    <div id="intro-dots"></div>
+  </div>
+  <button id="intro-btn-continuar" onclick="avancarIntro()">Continuar →</button>
+</div>
+
+<!-- Config IA -->
+<div id="cfg-overlay" class="oculto">
+  <div id="cfg-box">
+    <div id="cfg-titulo">Chave da API Groq</div>
+    <div id="cfg-descr">A chave é guardada apenas neste dispositivo (localStorage). Necessária para o recurso "Gerar com IA".</div>
+    <input id="cfg-input" type="password" placeholder="sk-ant-..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <div id="cfg-row">
+      <button id="cfg-salvar" onclick="salvarCfgIA()">Salvar</button>
+      <button id="cfg-fechar" onclick="fecharCfgIA()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Indicador de geração IA -->
+<div id="ia-loading" class="oculto">✨ A IA está pensando…</div>
+
+<!-- Badge de status -->
+<div id="narr-status">Narração</div>
+
+<!-- DialEngine overlay — modo diálogo interativo -->
+<div id="dial-overlay">
+  <div id="dial-cena-bg"><div class="neblina-layer"></div></div>
+  <div id="dial-personagens"></div>
+
+  <div id="dial-balao">
+    <div id="dial-balao-nome">—</div>
+    <div id="dial-balao-acao"></div>
+    <div id="dial-balao-texto">…</div>
+    <div id="dial-ia-pensando">✨ Pensando…</div>
+    <button id="dial-btn-continuar" onclick="window._dialContinuar()">▶ Continuar</button>
+  </div>
+
+  <div id="dial-player-card"></div>
+
+  <button id="dial-btn-historico" onclick="window._dialAbrirHistorico()">📜</button>
+
+  <div id="dial-historico-drawer" class="oculto">
+    <div id="dial-hd-header">
+      <span id="dial-hd-titulo">📜 Histórico da Cena</span>
+      <button id="dial-hd-fechar" onclick="window._dialFecharHistorico()">✕</button>
+    </div>
+    <div id="dial-hd-corpo"></div>
+  </div>
+
+  <!-- NPC chips (FALAR COM:) -->
+  <div id="dial-npc-chips">
+    <span class="dial-chip-label">Falar com:</span>
+    <div class="dial-chip-spacer"></div>
+    <button id="dial-btn-perc" class="dial-btn-acao dial-btn-perc" style="display:none" onclick="pedirPercepcao()">🎲 Percepção</button>
+    <button id="dial-btn-mapa" class="dial-btn-acao dial-btn-mapa" style="display:none" onclick="_irParaMapaMundo()">🗺 Mapa</button>
+    <button id="dial-btn-proximo" class="dial-btn-acao" style="display:none" onclick="window._dialProximaCena()">→ Continuar</button>
+  </div>
+
+  <!-- Turno bar (player chips) -->
+  <div id="dial-turno-bar">
+    <div id="dial-turno-players"></div>
+    <div id="dial-turno-vez">Sua vez</div>
+  </div>
+
+  <!-- Input bar (host only) -->
+  <div style="display:flex;gap:6px;padding:5px 12px;background:#121212;align-items:center">
+    <button id="mind-fala" onclick="window._mindModo(false)" aria-pressed="true">Falar</button>
+    <button id="mind-acao" onclick="window._mindModo(true)" aria-pressed="false">Agir · 3d6</button>
+    <select id="mind-skill" aria-label="Perícia GURPS" style="display:none;max-width:55%;background:#222;color:white"></select>
+  </div>
+  <div id="dial-input-bar">
+    <input id="dial-msg-input" type="text" placeholder="O que você diz…" autocomplete="off" spellcheck="false">
+    <button id="dial-btn-enviar" onclick="window._dialEnviar()">Enviar →</button>
+  </div>
+</div>
+
+<script type="module">
+import { test3d6, resolveSuccessTest } from './gurps.js';
+import { CLASSES_DATA } from './catalogo/kagehama/classes.js';
+import { NPCS } from './catalogo/kagehama/loader.js?v=2';
+import { CENAS, CENAS_ORDEM } from './catalogo/kagehama/campanha/roteiro/campaign.js?v=33';
+import { NARRACAO_NPCS as _dialNpcs, NARRACAO_FLUXO } from './catalogo/kagehama/narracao.js';
+import { NPCS_REGISTRY } from './catalogo/kagehama/npcs_registry.js?v=4';
+import { NOS as MAPA_NOS, CAMINHOS as MAPA_CAMINHOS } from './catalogo/kagehama/mapa.js';
+
+let _mindAcao=false;
+window._mindModo=function(acao){
+ _mindAcao=acao;
+ const player=_lastRoom?.players?.[_pid]||JSON.parse(localStorage.getItem('mindRolePlay.character')||'null')||{};
+ const cls=CLASSES_DATA[player.classId||localStorage.getItem('mindRolePlay.classId')];
+ const select=document.getElementById('mind-skill');
+ select.replaceChildren();
+ for(const skill of [...(player.skills||cls?.skills||[]),...Object.entries(player.attributes||cls?.attributes||{}).map(([name,level])=>({name,level}))]){
+  const option=document.createElement('option');option.value=String(skill.level);option.textContent=skill.name+' · '+skill.level;select.append(option);
+ }
+ select.style.display=acao?'':'none';
+ document.getElementById('mind-fala').setAttribute('aria-pressed',String(!acao));
+ document.getElementById('mind-acao').setAttribute('aria-pressed',String(acao));
+ document.getElementById('dial-msg-input').placeholder=acao?'Descreva sua ação…':'O que você diz…';
+};
+
+// ── Estado local ─────────────────────────────────────────────────
+const _pid = localStorage.getItem('mindRolePlay.playerId') || (() => {
+  const id = crypto.randomUUID();
+  localStorage.setItem('mindRolePlay.playerId', id);
+  return id;
+})();
+const _pname = localStorage.getItem('mindRolePlay.playerName') || 'Aventureiro';
+const _isHost = localStorage.getItem('mindRolePlay.isHost') !== '0';
+let _cenaAtual = null;   // null força atualizarCena() na primeira leitura do Firebase
+let _modoImagem = null;
+let _lastRoom   = null;
+let _dialogoLog = [];
+let _unsubRoom = null;
+let _percepcaoEmAndamento = false;
+let _percResolvendo = false;   // trava anti-loop: resolve o teste só uma vez
+const _IMGVER = '3';           // cache-bust das imagens de cenário (pós-compressão)
+function _imgBust(u){ return u ? (u.includes('?') ? u : u + '?v=' + _IMGVER) : u; }
+function _hlAcoesInline(t){
+  const esc = String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return esc.replace(/\[([^\]]+)\]/g, '<span class="dbt-acao">[$1]</span>');
+}
+let _cenasVisitadas = new Set();
+let _emboscadaTimer = null;   // dispara a batalha automática de cenas tipo 'emboscada'
+let _pularIntroVez = false;   // true ao voltar do mapa → abre direto no diálogo
+let _hbTimer = null;          // heartbeat de presença (multiplayer)
+
+// Jogadores ATIVOS: só quem bateu heartbeat nos últimos 45s. Pruna pids
+// fantasmas/defasados que travavam o gate de "todos prontos". Fallback: se
+// ninguém tem ts (dados antigos/solo), usa todos os pids (comportamento antigo).
+function _jogadoresAtivos(room) {
+  const players = room?.players || {};
+  const AGORA = Date.now(), VIVO = 45000;
+  const ativos = Object.entries(players).filter(([, p]) => p && p.ts && (AGORA - p.ts) < VIVO).map(([pid]) => pid);
+  if (ativos.length) return ativos;
+  const todos = Object.keys(players);
+  return todos.length ? todos : (_pid ? [_pid] : []);
+}
+
+// ── Referências DOM ──────────────────────────────────────────────
+const elTitulo = document.getElementById('narr-titulo');
+const elSubtitulo = document.getElementById('narr-subtitulo');
+const elImgWrap = document.getElementById('cena-imagem-wrap');
+const elImagem = document.getElementById('cena-imagem');
+const elPlaceholderIcone = document.getElementById('cena-placeholder-icone');
+const elPlaceholderTexto = document.getElementById('cena-placeholder-texto');
+const elIntroTexto = document.getElementById('cena-intro-texto');
+const elLog = document.getElementById('dialogo-log');
+const elControles = document.getElementById('controles-host');
+const elSelNpc = document.getElementById('sel-npc');
+const elInputTexto = document.getElementById('input-texto');
+const elBtnExt = document.getElementById('btn-ext');
+const elBtnInt = document.getElementById('btn-int');
+const elIaLoading = document.getElementById('ia-loading');
+const elBtnGerAnt = document.getElementById('btn-cena-ant');
+const elBtnGerProx = document.getElementById('btn-cena-prox');
+
+// ── Expõe funções ao window (usadas por onclick nos botões) ──────
+window.voltarLobby = voltarLobby;
+window.setModoImagem = setModoImagem;
+window.onImagemCarregada = onImagemCarregada;
+window.onImagemErro = onImagemErro;
+window.onSelNpc = onSelNpc;
+window.gerarFalaIA = gerarFalaIA;
+window.enviarFala = enviarFala;
+window.onKeydownInput = onKeydownInput;
+window.navegarCena = navegarCena;
+window.iniciarBatalha = iniciarBatalha;
+window.abrirMapaExploracao = abrirMapaExploracao;
+window.abrirEscolhaCaminho = abrirEscolhaCaminho;
+window.fecharMapaExploracao = fecharMapaExploracao;
+window.irParaCena = irParaCena;
+window.abrirCfgIA = abrirCfgIA;
+window.fecharCfgIA = fecharCfgIA;
+window.salvarCfgIA = salvarCfgIA;
+window.avancarIntro = avancarIntro;
+window.confirmarPronto = confirmarPronto;
+window.selecionarChip = selecionarChip;
+window.rolarPercepcao = rolarPercepcao;
+
+// ── Init ─────────────────────────────────────────────────────────
+function init() {
+  if (_isHost) {
+    elControles.style.display = 'flex';
+    preencherSelNpc();
+  }
+
+  const conectar = () => {
+    if (!window._fbListenRoom) {
+      // Solo fallback: arena.html stored the target scene in localStorage
+      const soloCena = localStorage.getItem('mindRolePlay.soloNarrCena');
+      if (soloCena) {
+        localStorage.removeItem('mindRolePlay.soloNarrCena');
+        onRoomUpdate({
+          status: 'narration',
+          narration: { cenaId: soloCena, dialogo: [], modoImagem: 'exterior', introConfirmados: {}, introIdx: 0 },
+          players: { [_pid]: { nome: _pname } },
+          cenasVisitadas: [],
+        });
+        return;
+      }
+      setTimeout(conectar, 100);
+      return;
+    }
+    _unsubRoom = window._fbListenRoom(onRoomUpdate);
+    // Presença: marca este device como VIVO agora e a cada 15s. O gate de
+    // "todos prontos" só conta quem está ativo — pruna pids fantasmas (device
+    // que limpou dados/abriu anônima e deixou uma entrada velha na sala).
+    const bater = () => window._fbHeartbeat?.(_pid, _pname);
+    bater();
+    if (_hbTimer) clearInterval(_hbTimer);
+    _hbTimer = setInterval(bater, 15000);
+  };
+
+  const hasFbConfig = !!(localStorage.getItem('mindRolePlay.fbConfig') && localStorage.getItem('mindRolePlay.roomId'));
+  if (!hasFbConfig || window._fbReady) conectar();
+  else window.addEventListener('fbReady', conectar, { once: true });
+}
+
+// ── Room listener ────────────────────────────────────────────────
+function onRoomUpdate(room) {
+  if (!room) return;
+  _lastRoom = room;
+
+  if (room.status === 'battle') {
+    // Grava a cena da batalha para a Arena escolher o roster certo
+    localStorage.setItem('mindRolePlay.battleCena', room.narration?.battleKey || room.narration?.cenaId || 'kagehama-scene-0');
+    window.location.href = 'arena.html?v=8';
+    return;
+  }
+  if (room.status === 'map') {
+    // Viagem: todos vão para o Mapa do Mundo (mapa.html) ver a jornada.
+    window.location.href = 'mapa.html?v=8';
+    return;
+  }
+
+  const narr = room.narration ?? {};
+  const novaCena = narr.cenaId ?? 'kagehama-scene-0';
+  const novoModo = narr.modoImagem ?? 'exterior';
+  const novoDialogo = narr.dialogo ?? [];
+
+  // Sincroniza cenas visitadas
+  _cenasVisitadas = new Set(room.cenasVisitadas ?? []);
+
+  let mudouCena = novaCena !== _cenaAtual;
+  let mudouModo = novoModo !== _modoImagem;
+
+  _cenaAtual = novaCena;
+  _modoImagem = novoModo;
+  _dialogoLog = novoDialogo;
+
+  // Voltar do mapa → cair DIRETO no diálogo (sem reabrir a introdução da cena).
+  _pularIntroVez = !!narr.pularIntro;
+
+  // atualizarCena() popula _introSlides via mostrarIntroCinemat()
+  if (mudouCena || mudouModo) atualizarCena();
+
+  // Consome o flag de pular-intro (host limpa para não vazar p/ próximas cenas)
+  if (narr.pularIntro && _isHost && window._fbUpdateNarration) window._fbUpdateNarration({ pularIntro: false });
+  _pularIntroVez = false;
+
+  // (Leitura do intro é LOCAL — não há mais sync de slide entre dispositivos.
+  //  Cada jogador avança no seu ritmo; só o "Estou Pronto" final é coletivo.)
+  if (mudouCena && _isHost) {
+    preencherSelNpc();
+    // Se a arena mandou um NPC de gancho pós-batalha, pré-selecionar ele
+    const ganchoNpc = narr.ganchoPosRenderizado;
+    if (ganchoNpc && NPCS[ganchoNpc]) {
+      setTimeout(() => {
+        const sel = document.getElementById('sel-npc');
+        if (sel) { sel.value = ganchoNpc; onSelNpc(); }
+        _marcarChipAtivo(ganchoNpc);
+      }, 200);
+    } else if (!_dialogoLog.length) {
+      // Só dispara a fala de ENTRADA se a conversa ainda não começou. Ao voltar
+      // do mapa, o log já tem a conversa → retoma na última fala (sem reiniciar).
+      _dispararFalaEntrada(novaCena);
+    }
+  }
+
+  // Emboscada: NUNCA dispara sozinha por timer (atropelava a leitura do texto).
+  // O combate parte quando o jogador AVANÇA o intro (leu o texto) — ver avancarIntro().
+  if (mudouCena) clearTimeout(_emboscadaTimer);
+  atualizarBotoesModo();
+  renderDialogo();
+  if (mudouCena) _dialDesativar();
+  _dialVerificarCena();
+  _invVerificarCena();
+  atualizarBotoesCena();
+  _atualizarAcaoCena(narr);
+  _atualizarBtnPercepcao();
+  // (Removido: o antigo gate viagemConfirmados disparava _irParaMapaMundo ao chegar
+  //  numa cena cujo fluxo é '_mapa' — causava o loop cena↔mapa. Viagem hoje só parte
+  //  por clique no botão, via _dialProximaCena.)
+  if (_dialAtivo) _dialAtualizarChips(); // atualiza rótulo/contagem do botão de viagem
+  if (_dialAtivo) { _dialAtualizarVezUI(); _dialFluxoTurnos(); } // turnos de fala + IA p/ guests (host)
+  // Viagem em grupo: parte quando TODOS confirmaram. O some(Boolean) evita o
+  // loop antigo do {} truthy (chegada com viagemConfirmados vazio re-disparava).
+  if (_isHost && narr.viagemConfirmados && Object.values(narr.viagemConfirmados).some(v => v === _cenaAtual)) {
+    _verificarViagemCompleta(narr);
+  }
+
+  // Gate de grupo: batalha (gancho) OU avanço de cena (intro puro em grupo).
+  // Só prossegue com o OK de TODOS os jogadores.
+  const cena = CENAS[_cenaAtual];
+  const temGancho = cena?.introSlides?.some(s => s.ganchoBatalha);
+  const jaResolvida = narr.cenaBatalhaResolvida === _cenaAtual; // anti-loop: batalha já vencida
+  const ganchoAtivo = temGancho && !jaResolvida;
+  const avancoGrupo = !!cena?.avancarEmGrupo && !!cena?.proximaCena;
+  if ((ganchoAtivo || avancoGrupo) && narr.introConfirmados) {
+    const jogadores = _jogadoresAtivos(room);   // só quem está VIVO (pruna fantasmas)
+    const confirmados = narr.introConfirmados;
+    // TODOS os ativos precisam ter confirmado.
+    if (jogadores.length > 0 && jogadores.every(pid => confirmados[pid])) {
+      if (ganchoAtivo) {
+        // NÃO reescreve cenaId (um aparelho stale resetaria o intro do outro)
+        window._fbSetStatus?.('battle', { 'narration.battleKey': null });
+      } else if (avancoGrupo && _isHost && window._fbUpdateNarration) {
+        // Avança em grupo para a próxima cena (só o host escreve)
+        window._fbUpdateNarration({
+          cenaId: cena.proximaCena, introConfirmados: {}, introIdx: 0,
+          modoImagem: 'exterior', dialogo: [],
+        });
+      }
+      return;
+    }
+    // Progresso "X/Y prontos" nos DOIS dispositivos (não só no que já confirmou).
+    if (jogadores.length > 1) {
+      const count = jogadores.filter(pid => confirmados[pid]).length;
+      const btnEl = document.getElementById('intro-btn-continuar');
+      if (btnEl) {
+        if (confirmados[_pid]) {
+          btnEl.textContent = `⌛ ${count}/${jogadores.length} prontos…`;
+          btnEl.disabled = true; btnEl.onclick = null;
+        } else {
+          // ainda não confirmou: continua clicável, mas mostra o progresso
+          const rotulo = ganchoAtivo ? '⚔ Estou Pronto!' : '→ Continuar';
+          btnEl.textContent = `${rotulo}  ·  ${count}/${jogadores.length}`;
+          btnEl.disabled = false;
+          btnEl.onclick = () => confirmarPronto();
+        }
+      }
+    }
+  }
+
+  // Verificar estado de percepção
+  const percepcao = narr.percepcao;
+  // Percepção de GRUPO (gatilhos de cena) — não atropela um teste INDIVIDUAL em curso
+  if (!_percLocal) {
+    if (percepcao?.ativo) {
+      mostrarModalPercepcao(percepcao);
+      if (_isHost && percepcao.fase === 'rolando') _verificarRolamentosCompletos(percepcao);
+    } else if (!percepcao?.ativo && _percepcaoEmAndamento) {
+      ocultarModalPercepcao();
+    }
+  }
+}
+
+// ── Cena ─────────────────────────────────────────────────────────
+// ── Fala automática de entrada do NPC ────────────────────────────
+let _cenaFalaEntradaPostada = null;
+
+async function _dispararFalaEntrada(cenaId) {
+  const cena = CENAS[cenaId];
+  if (!cena?.npcEntrada || !cena?.falaEntrada) return;
+  if (_cenaFalaEntradaPostada === cenaId) return; // já postou nesta cena
+  _cenaFalaEntradaPostada = cenaId;
+
+  const npc = NPCS[cena.npcEntrada];
+  if (!npc) return;
+
+  // Aguarda um beat narrativo antes do NPC falar
+  await new Promise(r => setTimeout(r, 1400));
+
+  const linha = {
+    tipo: 'npc',
+    oradorId: cena.npcEntrada,
+    oradorNome: npc.nome,
+    texto: cena.falaEntrada,
+    ts: Date.now(),
+  };
+  if (window._fbAddDialogue) await window._fbAddDialogue(linha);
+  else {
+    _dialogoLog = [..._dialogoLog, linha].slice(-60);
+    renderDialogo();
+    // In solo mode: Firebase won't trigger onRoomUpdate, so tick the DialEngine manually
+    if (_dialAtivo) _dialTickDisplay();
+  }
+}
+
+function atualizarCena() {
+  const cena = CENAS[_cenaAtual];
+  if (!cena) return;
+
+  elTitulo.textContent = cena.titulo;
+  elSubtitulo.textContent = cena.subtitulo || 'Modo Narração';
+  elIntroTexto.textContent = cena.textoIntro || '';
+
+  const imgSrc = _modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior;
+  elPlaceholderIcone.textContent = _modoImagem === 'exterior' ? '🏰' : '🕯';
+  elPlaceholderTexto.textContent = 'arte em breve';
+
+  const hasCurrent = elImagem.src && !elImagem.src.endsWith('/') && !elImagem.src.endsWith('#');
+  if (hasCurrent && elImagem.src !== imgSrc) {
+    // Fade-out da imagem atual, depois troca
+    elImagem.classList.add('oculto');
+    setTimeout(() => {
+      if (imgSrc) {
+        elImgWrap.classList.add('sem-imagem');
+        elImagem.src = _imgBust(imgSrc);
+        // onImagemCarregada() faz o fade-in
+      } else {
+        elImgWrap.classList.add('sem-imagem');
+        elImagem.src = '';
+      }
+    }, 400);
+  } else {
+    // Primeira carga ou mesma imagem
+    elImgWrap.classList.add('sem-imagem');
+    elImagem.classList.add('oculto');
+    if (imgSrc) {
+      elImagem.src = imgSrc;
+    }
+  }
+
+  // Cenas com semIntro (ex.: pós-batalha do Gregoras) — ou ao VOLTAR DO MAPA —
+  // abrem direto no diálogo, sem reabrir o slide de introdução.
+  if (cena.semIntro || _pularIntroVez) {
+    document.getElementById('intro-cinematico')?.classList.add('oculto');
+  } else {
+    mostrarIntroCinemat(cena);
+  }
+}
+
+// ── Intro cinematográfico ────────────────────────────────────────
+// Each slide: { imagem, texto, ganchoBatalha? }
+let _introSlides = [];
+let _introIdx    = 0;
+
+function makeIntroSlides(cena) {
+  // Base: slides curados, ou um único slide com todo o textoIntro
+  const raw = cena.introSlides?.length
+    ? cena.introSlides
+    : [{ imagem: (_modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior),
+         texto: (cena.textoIntro || '').trim() }];
+
+  // UM slide só por cena: junta todos os textos num bloco (tela cheia, rolável).
+  // Sem ficar passando/voltando vários slides curtos. Mantém o gancho de batalha
+  // se algum slide tinha (vira o botão "Estou Pronto" no slide único).
+  const texto = raw.map(s => (s.texto || '').trim()).filter(Boolean).join('\n\n');
+  const imagem = raw[0]?.imagem || (_modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior);
+  const ganchoBatalha = raw.some(s => s.ganchoBatalha);
+  return [{ imagem, texto, ganchoBatalha }];
+}
+
+function mostrarIntroCinemat(cena) {
+  const overlay = document.getElementById('intro-cinematico');
+  const bg      = document.getElementById('intro-bg');
+  const tituloEl = document.getElementById('intro-titulo-cena');
+  const subEl    = document.getElementById('intro-subtitulo-cena');
+  const textoEl  = document.getElementById('intro-texto-pag');
+  const btnEl    = document.getElementById('intro-btn-continuar');
+  const dotsEl   = document.getElementById('intro-dots');
+
+  _introSlides = makeIntroSlides(cena);
+  _introIdx = 0;
+
+  // Reset inline opacity — pode ter ficado em 0 se avancarIntro() foi interrompido
+  if (bg) bg.style.opacity = '';
+
+  tituloEl.textContent = cena.titulo;
+  subEl.textContent    = cena.subtitulo || '';
+  _aplicarSlide(bg, textoEl, btnEl, dotsEl);
+
+  overlay.classList.remove('oculto');
+}
+
+function _aplicarSlide(bg, textoEl, btnEl, dotsEl) {
+  const slide = _introSlides[_introIdx];
+
+  bg.style.backgroundImage = slide?.imagem ? `url(${_imgBust(slide.imagem)})` : 'none';
+
+  if (slide?.revealFirst) {
+    // Oculta conteúdo instantaneamente (sem transição) para mostrar imagem limpa
+    const grad      = document.getElementById('intro-grad');
+    const contentEl = document.getElementById('intro-content');
+    [grad, contentEl, btnEl].filter(Boolean).forEach(el => {
+      el.style.transition   = 'none';
+      el.style.opacity      = '0';
+      el.style.pointerEvents = 'none';
+    });
+    textoEl.textContent = '';
+    dotsEl.innerHTML = _introSlides
+      .map((_, i) => `<div class="intro-dot${i === _introIdx ? ' ativo' : ''}"></div>`)
+      .join('');
+    // Após 1.8s restaura transições, revela e digita o texto
+    setTimeout(() => {
+      [grad, contentEl, btnEl].filter(Boolean).forEach(el => {
+        el.style.transition   = '';
+        el.style.opacity      = '';
+        el.style.pointerEvents = '';
+      });
+      _preencherDotsBtn(dotsEl, btnEl, slide);
+      _typewriter(textoEl, slide?.texto || '', _agendarAutoAvanco);
+    }, 1800);
+    return;
+  }
+
+  _preencherDotsBtn(dotsEl, btnEl, slide);
+  _typewriter(textoEl, slide?.texto || '', _agendarAutoAvanco);
+}
+
+// ── Typewriter + pular ──
+let _typing = false, _typeTimer = null, _autoAdvTimer = null, _fullText = '';
+const _TYPE_MS = 32;        // velocidade da digitação (ms/char) — metade da velocidade anterior
+
+function _typewriter(el, texto, onDone) {
+  clearInterval(_typeTimer); clearTimeout(_autoAdvTimer);
+  _fullText = texto || '';
+  _typing = true;
+  el.classList.add('typing');
+  el.textContent = '';
+  const cont = document.getElementById('intro-content');
+  let i = 0;
+  _typeTimer = setInterval(() => {
+    el.textContent = _fullText.slice(0, ++i);
+    if (cont) cont.scrollTop = cont.scrollHeight; // acompanha o texto longo
+    if (i >= _fullText.length) {
+      clearInterval(_typeTimer);
+      _typing = false;
+      el.classList.remove('typing');
+      onDone && onDone();
+    }
+  }, _TYPE_MS);
+}
+
+function _finishTypewriter(el) {
+  if (!_typing) return false;
+  clearInterval(_typeTimer);
+  _typing = false;
+  el.textContent = _fullText;
+  el.classList.remove('typing');
+  const cont = document.getElementById('intro-content');
+  if (cont) cont.scrollTop = 0; // volta ao topo pra ler desde o começo
+  return true;
+}
+
+// Sem auto-avanço: o jogador lê no seu ritmo e clica em Continuar.
+function _agendarAutoAvanco() { /* desativado — avanço só pelo botão */ }
+
+// Toque na cena: completa a digitação (não avança — avançar é só pelo botão Continuar)
+window._tapIntro = function(ev) {
+  if (ev && ev.target && ev.target.closest('button')) return;
+  _finishTypewriter(document.getElementById('intro-texto-pag'));
+};
+
+// Pular: vai direto ao último slide (local — cada jogador no seu ritmo)
+window.pularIntro = function() {
+  const el = document.getElementById('intro-texto-pag');
+  clearInterval(_typeTimer); clearTimeout(_autoAdvTimer); _typing = false;
+  if (_introIdx >= _introSlides.length - 1) { _finishTypewriter(el); return; }
+  _introIdx = _introSlides.length - 1;
+  _aplicarSlide(
+    document.getElementById('intro-bg'), el,
+    document.getElementById('intro-btn-continuar'),
+    document.getElementById('intro-dots')
+  );
+};
+
+function _preencherDotsBtn(dotsEl, btnEl, slide) {
+  // Dots
+  if (_introSlides.length <= 1) { dotsEl.innerHTML = ''; }
+  else {
+    dotsEl.innerHTML = _introSlides
+      .map((_, i) => `<div class="intro-dot${i === _introIdx ? ' ativo' : ''}"></div>`)
+      .join('');
+  }
+  // Button
+  const ultimo = _introIdx >= _introSlides.length - 1;
+  const cenaAtualObj = CENAS[_cenaAtual];
+  if (ultimo && slide?.ganchoBatalha) {
+    btnEl.textContent = '⚔ Estou Pronto!';
+    btnEl.disabled = false;
+    btnEl.onclick = () => confirmarPronto();
+  } else if (ultimo && cenaAtualObj?.avancarEmGrupo && cenaAtualObj?.proximaCena) {
+    // Intro puro com avanço em grupo (ex.: prólogo → Feira): todos confirmam para seguir
+    btnEl.textContent = '→ Continuar (todos)';
+    btnEl.disabled = false;
+    btnEl.onclick = () => confirmarPronto();
+  } else if (ultimo) {
+    btnEl.textContent = 'Entrar na Cena →';
+    btnEl.disabled = false;
+    btnEl.onclick = () => avancarIntro();
+  } else {
+    btnEl.textContent = 'Continuar →';
+    btnEl.disabled = false;
+    btnEl.onclick = () => avancarIntro();
+  }
+}
+
+function avancarIntro() {
+  // Leitura é LOCAL — cada jogador avança no seu ritmo (NÃO sincroniza introIdx).
+  // Só o "Estou Pronto" final (confirmarPronto) é coletivo.
+  clearTimeout(_autoAdvTimer); clearInterval(_typeTimer); _typing = false;
+  _introIdx++;
+
+  const overlay = document.getElementById('intro-cinematico');
+  if (_introIdx >= _introSlides.length) {
+    overlay.classList.add('oculto');
+    const cena = CENAS[_cenaAtual];
+    // Emboscada pura: o combate começa AO AVANÇAR o intro (o jogador leu o texto),
+    // nunca por timer. A surpresa vem do banner "EMBOSCADA!" na Arena, não do atropelo.
+    const jaResolvida = _lastRoom?.narration?.cenaBatalhaResolvida === _cenaAtual;
+    const temGanchoManual = (cena?.introSlides || []).some(s => s.ganchoBatalha);
+    if (cena?.tipo === 'emboscada' && cena?.temBatalha && !jaResolvida && !temGanchoManual) {
+      if (_isHost && typeof iniciarBatalha === 'function') setTimeout(() => iniciarBatalha(), 250);
+      return;
+    }
+    const gatilhosEntrada = cena?.gatilhos_entrada || [];
+    // Cenas de investigação NÃO auto-disparam percepção — o jogador usa o botão 🎲 no painel.
+    if (gatilhosEntrada.length > 0 && !_percepcaoEmAndamento && !_ehCenaInvestigacao(cena)) {
+      setTimeout(() => triggerTestePercepcao(gatilhosEntrada[0], 'entrada', null), 900);
+    }
+    return;
+  }
+  const bg      = document.getElementById('intro-bg');
+  const textoEl = document.getElementById('intro-texto-pag');
+  const btnEl   = document.getElementById('intro-btn-continuar');
+  const dotsEl  = document.getElementById('intro-dots');
+
+  // Fade-out do bg e desabilita botão; após dip aplica o novo slide
+  btnEl.disabled  = true;
+  bg.style.opacity = '0';
+
+  setTimeout(() => {
+    textoEl.style.animation = 'none';
+    void textoEl.offsetWidth;
+    textoEl.style.animation = '';
+    _aplicarSlide(bg, textoEl, btnEl, dotsEl);
+    bg.style.opacity = '1';
+  }, 500);
+}
+
+async function confirmarPronto() {
+  const btnEl = document.getElementById('intro-btn-continuar');
+  btnEl.disabled = true;
+  btnEl.onclick  = null;
+  btnEl.textContent = '⌛ Aguardando…';
+
+  if (window._fbAddIntroConfirm) {
+    // Escreve confirmação e aguarda — onRoomUpdate detecta quando todos confirmaram
+    // e dispara status='battle' para TODOS (sem race condition de cache local)
+    await window._fbAddIntroConfirm(_pid);
+  } else {
+    // Sem Firebase (solo): grava a cena da batalha e vai direto
+    localStorage.setItem('mindRolePlay.battleCena', _cenaAtual || 'kagehama-scene-0');
+    window.location.href = 'arena.html?v=8';
+  }
+}
+
+function onImagemCarregada() {
+  elImgWrap.classList.remove('sem-imagem');
+  // Deixa o browser pintar o frame com oculto (opacity:0) antes de remover → fade-in suave
+  requestAnimationFrame(() => requestAnimationFrame(() => elImagem.classList.remove('oculto')));
+}
+
+function onImagemErro() {
+  elImgWrap.classList.add('sem-imagem');
+  elImagem.classList.add('oculto');
+}
+
+function atualizarBotoesModo() {
+  elBtnExt.classList.toggle('ativo', _modoImagem === 'exterior');
+  elBtnInt.classList.toggle('ativo', _modoImagem === 'interior');
+}
+
+function atualizarBotoesCena() {
+  const idx = CENAS_ORDEM.indexOf(_cenaAtual);
+  if (elBtnGerAnt) elBtnGerAnt.disabled = idx <= 0;
+  if (elBtnGerProx) elBtnGerProx.disabled = idx >= CENAS_ORDEM.length - 1;
+}
+
+// Alterna "⚔ Batalha!" ↔ "🧭 Seguir Viagem" conforme a cena.
+// Cena de exploração já vencida (cenaBatalhaResolvida) e com trilhas saindo →
+// oferece seguir viagem (seletor de caminho) em vez de re-iniciar a batalha.
+function _atualizarAcaoCena(narr) {
+  if (!_isHost) return;
+  const cena = CENAS[_cenaAtual];
+  const resolvida = narr?.cenaBatalhaResolvida === _cenaAtual;
+  const temCaminhos = _caminhosDe(_cenaAtual).length > 0;
+  const mostrarSeguir = resolvida && temCaminhos && !cena?.proximaCena;
+  const btnBat = document.getElementById('btn-iniciar-batalha');
+  const btnSeg = document.getElementById('btn-seguir-viagem');
+  if (btnSeg) btnSeg.style.display = mostrarSeguir ? '' : 'none';
+  if (btnBat) btnBat.style.display = mostrarSeguir ? 'none' : '';
+}
+
+function setModoImagem(modo) {
+  if (!_isHost) return;
+  if (window._fbUpdateNarration) window._fbUpdateNarration({ modoImagem: modo });
+  else { _modoImagem = modo; atualizarCena(); atualizarBotoesModo(); }
+}
+
+// ── Dado 3D (mesmo visual da arena) ─────────────────────────────
+let _lastGurpsRoll=null;
+function _gurpsSkill(name='Percepção') {
+ const sheet=JSON.parse(localStorage.getItem('mindRolePlay.character')||'null');
+ const player=_lastRoom?.players?.[_pid]||sheet||{};
+ const cls=CLASSES_DATA[player.classId||localStorage.getItem('mindRolePlay.classId')];
+ const skill=(player.skills||cls?.skills||[]).find(s=>s.name.toLowerCase()===name.toLowerCase());
+ return Number(skill?.level||player.attributes?.IQ||cls?.attrs?.IQ||10);
+}
+const PercDiceOverlay={rolar(onResult){
+ const result=test3d6(_gurpsSkill());_lastGurpsRoll=result;
+ const wrap=document.getElementById('perc-dado-wrap');
+ if(wrap){wrap.innerHTML='<div style="display:flex;gap:12px;justify-content:center;padding:30px">'+result.dice.map(d=>'<span style="background:white;color:black;border:2px solid #555;border-radius:9px;width:52px;height:52px;display:grid;place-items:center;font:bold 30px serif">'+['','⚀','⚁','⚂','⚃','⚄','⚅'][d]+'</span>').join('')+'</div>';}
+ setTimeout(()=>onResult(result.total),450);
+}};
+
+
+// ── Sistema de Percepção ─────────────────────────────────────────
+
+async function triggerTestePercepcao(gatilho, tipoTrigger, cenaDestino) {
+  if (!_isHost || _percepcaoEmAndamento) return;
+  _percResolvendo = false;   // novo teste: libera a trava de resolução
+  const apiKey = localStorage.getItem('oraculo.groqKey');
+  const cena = CENAS[_cenaAtual];
+  let textoAtmosfera = gatilho.textoFallback || 'Algo neste lugar retém a atenção por um momento fugaz…';
+  if (apiKey) textoAtmosfera = await _gerarAtmosferaPercepcao(gatilho, cena, apiKey);
+
+  const data = {
+    ativo: true,
+    fase: 'rolando',               // vai direto para o teste — sem "sim/não"
+    dc: gatilho.dc || 12,
+    trigger: tipoTrigger,
+    cenaId: _cenaAtual,
+    cenaDestinoId: cenaDestino || null,
+    ts: Date.now(),                // identifica o teste para o efeito datilografado
+    textoAtmosfera,
+    textoContexto: gatilho.descricaoContexto,
+    respostas: {}
+  };
+
+  if (window._fbUpdateNarration) {
+    await window._fbUpdateNarration({ percepcao: data });
+  } else {
+    if (!_lastRoom) _lastRoom = {};
+    if (!_lastRoom.narration) _lastRoom.narration = {};
+    _lastRoom.narration.percepcao = data;
+    mostrarModalPercepcao(data);
+  }
+}
+
+async function _gerarAtmosferaPercepcao(gatilho, cena, apiKey) {
+  try {
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 110,
+        temperature: 0.88,
+        messages: [
+          { role: 'system', content: 'Você é o Narrador de uma campanha de RPG de fantasia medieval. Gere 1-2 frases atmosféricas que dão ao grupo a sensação de que algo pode ter passado despercebido — sem revelar o quê. Use segunda pessoa plural (vocês). Crie tensão sutil e cinematográfica. NÃO nomeie o elemento oculto diretamente.' },
+          { role: 'user', content: `Local: "${cena?.titulo}". Elemento oculto (NÃO revelar): ${gatilho.descricaoContexto}. Gere o texto de percepção.` }
+        ]
+      })
+    });
+    const d = await resp.json();
+    return d.choices?.[0]?.message?.content?.trim() || gatilho.textoFallback || 'Algo neste lugar retém a atenção por um momento fugaz…';
+  } catch { return gatilho.textoFallback || 'Algo neste lugar retém a atenção por um momento fugaz…'; }
+}
+
+function _getNomeJogador(pid) {
+  return _lastRoom?.players?.[pid]?.nome || (pid === _pid ? _pname : pid.slice(0, 8));
+}
+
+let _percTypedTs   = null;  // ts do teste já "datilografado" (não re-digita a cada update)
+let _percTypeTimer = null;
+function _percTypewriter(el, texto, onDone) {
+  clearInterval(_percTypeTimer);
+  el.textContent = '';
+  let i = 0;
+  _percTypeTimer = setInterval(() => {
+    el.textContent = texto.slice(0, ++i);
+    if (i >= texto.length) { clearInterval(_percTypeTimer); onDone && onDone(); }
+  }, 26);
+}
+
+function mostrarModalPercepcao(percepcao) {
+  if (!percepcao?.ativo) { ocultarModalPercepcao(); return; }
+  _percepcaoEmAndamento = true;
+  document.getElementById('percepcao-overlay').classList.remove('oculto');
+  document.getElementById('percepcao-dc-val').textContent = _gurpsSkill();
+
+  const atmEl    = document.getElementById('percepcao-atmosfera');
+  const dcDiv    = document.getElementById('percepcao-linha-dc');
+  const rolarDiv = document.getElementById('percepcao-rolar-div');
+  const aguardDiv= document.getElementById('percepcao-aguardando');
+  const resDiv   = document.getElementById('percepcao-resultado');
+  const minha    = percepcao.respostas?.[_pid];
+  const jogadores= _jogadoresAtivos(_lastRoom);
+  // Teste INDIVIDUAL: só este jogador rola (sem aguardar o grupo)
+  const efetivos = percepcao.local ? [_pid] : (jogadores.length > 0 ? jogadores : [_pid]);
+
+  // ── Fase RESULTADO: sucesso/falha + explicação + Continuar ──
+  if (percepcao.fase === 'resultado') {
+    dcDiv.classList.add('oculto'); rolarDiv.classList.add('oculto'); aguardDiv.classList.add('oculto');
+    const sucesso = !!percepcao.resultado?.sucesso;
+    document.getElementById('percepcao-icon').textContent = sucesso ? '🔍' : '🌫️';
+    atmEl.textContent = sucesso ? 'Algo escapa à primeira vista — mas não a você.' : 'Você observa com atenção…';
+    const st = document.getElementById('perc-res-status');
+    st.textContent = sucesso ? '✓ Percepção — Sucesso' : '✗ Percepção — Falha';
+    st.className = sucesso ? 'sucesso' : 'falha';
+    resDiv.classList.remove('oculto');
+    const okBtn = document.getElementById('perc-res-ok');
+    okBtn.style.display = (percepcao.local || _isHost) ? '' : 'none';
+    const txtEl = document.getElementById('perc-res-texto');
+    if (_percTypedTs !== 'res:' + percepcao.ts) {
+      _percTypedTs = 'res:' + percepcao.ts;
+      resDiv.classList.add('perc-fade');
+      okBtn.style.visibility = 'hidden';
+      _percTypewriter(txtEl, percepcao.resultado?.texto || '', () => { okBtn.style.visibility = ''; });
+    } else {
+      txtEl.textContent = percepcao.resultado?.texto || '';
+      okBtn.style.visibility = '';
+    }
+    return;
+  }
+
+  // ── Fase ROLANDO: datilografa a atmosfera, depois revela DC + dado vermelho ──
+  resDiv.classList.add('oculto');
+  document.getElementById('percepcao-icon').textContent = '👁';
+  const atmTexto = 'Você observa o ambiente com atenção…\n\n' + (percepcao.textoAtmosfera || '');
+  if (_percTypedTs !== percepcao.ts) {
+    _percTypedTs = percepcao.ts;
+    dcDiv.classList.add('oculto'); rolarDiv.classList.add('oculto'); aguardDiv.classList.add('oculto');
+    _percTypewriter(atmEl, atmTexto, () => {
+      dcDiv.classList.remove('oculto'); dcDiv.classList.add('perc-fade');
+      _percRenderRolar(percepcao, percepcao.respostas?.[_pid], efetivos);
+    });
+  } else {
+    atmEl.textContent = atmTexto;
+    dcDiv.classList.remove('oculto');
+    _percRenderRolar(percepcao, minha, efetivos);
+  }
+}
+
+function _percRenderRolar(percepcao, minha, efetivos) {
+  const rolarDiv = document.getElementById('percepcao-rolar-div');
+  const aguardDiv= document.getElementById('percepcao-aguardando');
+  rolarDiv.classList.remove('oculto');
+  const btn = document.getElementById('btn-rolar-perc');
+  const res = document.getElementById('percepcao-dado-result');
+  if (minha?.resultado != null) {
+    btn.disabled = true; btn.textContent = '🎲 Você rolou';
+    res.textContent = String(minha.resultado);
+  } else {
+    btn.disabled = false; btn.textContent = '🎲 Rolar o dado';
+    res.textContent = '—';
+  }
+  if (efetivos.length > 1) { aguardDiv.classList.remove('oculto'); _renderChips(percepcao, efetivos); }
+  else aguardDiv.classList.add('oculto');
+}
+
+function _renderChips(percepcao, efetivos) {
+  const listDiv   = document.getElementById('percepcao-respostas-list');
+  const respostas = percepcao.respostas || {};
+  listDiv.innerHTML = efetivos.map(pid => {
+    const r = respostas[pid], nome = _getNomeJogador(pid);
+    if (r?.resultado != null) return `<span class="perc-resp-chip rolou">🎲 ${nome}: ${r.resultado}</span>`;
+    return `<span class="perc-resp-chip">⌛ ${nome}</span>`;
+  }).join('');
+  const rolaram = efetivos.filter(p => respostas[p]?.resultado != null).length;
+  document.getElementById('percepcao-count-text').textContent = `${rolaram}/${efetivos.length} rolaram`;
+}
+
+function ocultarModalPercepcao() {
+  _percepcaoEmAndamento = false;
+  _percResolvendo = false;
+  clearInterval(_percTypeTimer);
+  _percTypedTs = null;
+  document.getElementById('percepcao-overlay').classList.add('oculto');
+}
+
+async function rolarPercepcao() {
+  document.getElementById('btn-rolar-perc').disabled = true;
+  document.getElementById('percepcao-dado-result').textContent = '…';
+
+  PercDiceOverlay.rolar(async (roll) => {
+    document.getElementById('percepcao-dado-result').textContent = String(roll);
+    const resposta = { aceito: true, resultado: roll, dados:_lastGurpsRoll.dice, sucesso:_lastGurpsRoll.success, nivel:_lastGurpsRoll.effectiveSkill };
+    // Teste INDIVIDUAL: resolve aqui mesmo — o resultado é privado deste jogador.
+    if (_percLocal) {
+      const sucesso = _lastGurpsRoll.success;
+      const texto = sucesso
+        ? (_percLocal.textoContexto || 'Você percebe um detalhe que escapa a olhos comuns.')
+        : 'Você vasculha o ambiente com cuidado, mas nada de especial chama sua atenção desta vez.';
+      _percLocal = { ..._percLocal, fase: 'resultado', resultado: { sucesso, texto } };
+      mostrarModalPercepcao(_percLocal);
+      return;
+    }
+    if (window._fbRespondPercepcao) {
+      await window._fbRespondPercepcao(_pid, resposta);
+    } else {
+      const perc = _lastRoom?.narration?.percepcao;
+      if (perc) { perc.respostas = perc.respostas || {}; perc.respostas[_pid] = resposta; mostrarModalPercepcao(perc); if (_isHost) _verificarRolamentosCompletos(perc); }
+    }
+  });
+}
+
+// Resolve quando TODOS rolaram o dado.
+async function _verificarRolamentosCompletos(percepcao) {
+  if (!_isHost || _percResolvendo) return;
+  const jogadores = _jogadoresAtivos(_lastRoom);
+  const efetivos  = jogadores.length > 0 ? jogadores : [_pid];
+  const respostas = percepcao.respostas || {};
+  if (!efetivos.every(p => respostas[p]?.resultado != null)) return;
+  _percResolvendo = true;   // trava ANTES do await — evita o loop de feedback do onRoomUpdate
+  try { await _resolverPercepcao(percepcao); }
+  finally { /* liberado ao iniciar/fechar um novo teste */ }
+}
+
+async function _resolverPercepcao(percepcao) {
+  if (!_isHost) return;
+  const dc        = _gurpsSkill();
+  const jogadores = _jogadoresAtivos(_lastRoom);
+  const efetivos  = jogadores.length > 0 ? jogadores : [_pid];
+  const respostas = percepcao.respostas || {};
+  const passaram  = efetivos.filter(p => respostas[p]?.sucesso === true);
+  const apiKey    = localStorage.getItem('oraculo.groqKey');
+  const ts        = Date.now();
+  const sucesso   = passaram.length > 0;
+
+  let textoReveal = percepcao.textoContexto || 'Você percebe um detalhe que escapa a olhos comuns.';
+  if (sucesso && apiKey) textoReveal = await _gerarRevealPercepcao(percepcao, passaram, apiKey);
+  const textoFalha = 'Você vasculha o ambiente com cuidado, mas nada de especial chama sua atenção desta vez. Talvez não houvesse nada aqui — ou tenha passado despercebido.';
+  const resultadoTexto = sucesso ? textoReveal : textoFalha;
+
+  // Registra no histórico da conversa (log)
+  const rolls = efetivos.map(p => `${_getNomeJogador(p)}: ${respostas[p]?.resultado ?? '?'}`).join(' · ');
+  await window._fbAddDialogue?.({
+    tipo:'narrador', oradorId:'narrador', oradorNome:'Narrador',
+    texto: sucesso ? `[👁 PERCEPÇÃO — SUCESSO (${rolls})] ${textoReveal}`
+                   : `[👁 PERCEPÇÃO — FALHA (${rolls})] Nada de especial.`,
+    // Em cena de investigação, o resultado aparece no log de Ação do painel
+    canal: _ehCenaInvestigacao(CENAS[_cenaAtual]) ? 'inv-acao' : undefined,
+    ts,
+  });
+
+  // Mostra o resultado NO modal (não fecha — aguarda o "Continuar")
+  const novaPerc = { ...percepcao, fase: 'resultado', resultado: { sucesso, texto: resultadoTexto } };
+  if (window._fbUpdateNarration) await window._fbUpdateNarration({ percepcao: novaPerc });
+  else { if (_lastRoom?.narration) _lastRoom.narration.percepcao = novaPerc; mostrarModalPercepcao(novaPerc); }
+}
+
+// "Continuar" no resultado → fecha o teste e, se for gatilho de saída, navega.
+async function confirmarPercepcao() {
+  // Teste INDIVIDUAL: fecha só aqui (o resultado era privado deste jogador)
+  if (_percLocal) { _percLocal = null; ocultarModalPercepcao(); return; }
+  if (!_isHost) return;
+  const percepcao = _lastRoom?.narration?.percepcao || {};
+  const updatePerc = { percepcao: { ativo: false, fase: 'resolvido' } };
+  if (percepcao.trigger === 'saida' && percepcao.cenaDestinoId) {
+    Object.assign(updatePerc, { cenaId: percepcao.cenaDestinoId, modoImagem: 'exterior', introConfirmados: {} });
+  }
+  if (window._fbUpdateNarration) {
+    await window._fbUpdateNarration(updatePerc);
+  } else {
+    if (_lastRoom?.narration) _lastRoom.narration.percepcao = { ativo: false, fase: 'resolvido' };
+    ocultarModalPercepcao();
+    if (percepcao.trigger === 'saida' && percepcao.cenaDestinoId) {
+      _cenaAtual = percepcao.cenaDestinoId; _modoImagem = 'exterior';
+      atualizarCena(); atualizarBotoesModo(); atualizarBotoesCena();
+    }
+  }
+}
+window.confirmarPercepcao = confirmarPercepcao;
+
+async function _gerarRevealPercepcao(percepcao, passaram, apiKey) {
+  try {
+    const nomes = passaram.map(p => _getNomeJogador(p)).join(' e ');
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 170,
+        temperature: 0.82,
+        messages: [
+          { role: 'system', content: `Você é o Narrador de uma campanha de RPG de fantasia medieval. ${nomes} passou(aram) no teste de Percepção. Revele o elemento descoberto de forma dramática e cinematográfica em 2-3 frases. Use segunda pessoa (você/vocês). NÃO use asteriscos. Seja impactante e preciso.` },
+          { role: 'user', content: `O que ${nomes} percebeu: ${percepcao.textoContexto}` }
+        ]
+      })
+    });
+    const d = await resp.json();
+    return d.choices?.[0]?.message?.content?.trim() || percepcao.textoContexto;
+  } catch { return percepcao.textoContexto; }
+}
+
+async function navegarCena(delta) {
+  if (!_isHost) return;
+  const idx = CENAS_ORDEM.indexOf(_cenaAtual);
+  const novoIdx = idx + delta;
+  if (novoIdx < 0 || novoIdx >= CENAS_ORDEM.length) return;
+  const novaCena = CENAS_ORDEM[novoIdx];
+
+  // Gatilho de saída: verificar antes de avançar
+  if (delta > 0 && !_percepcaoEmAndamento) {
+    const cena = CENAS[_cenaAtual];
+    const gatilhosSaida = cena?.gatilhos_saida || [];
+    if (gatilhosSaida.length > 0) {
+      await triggerTestePercepcao(gatilhosSaida[0], 'saida', novaCena);
+      return; // navegação acontece após resolução da percepção
+    }
+  }
+
+  _executarNavegacao(novaCena);
+}
+
+function _executarNavegacao(novaCena) {
+  // Marca a cena atual como visitada antes de sair
+  if (_cenaAtual && !_cenasVisitadas.has(_cenaAtual)) {
+    _cenasVisitadas.add(_cenaAtual);
+    if (window._fbMarcarVisitada) window._fbMarcarVisitada(_cenaAtual);
+  }
+  if (window._fbUpdateNarration) {
+    window._fbUpdateNarration({ cenaId: novaCena, modoImagem: 'exterior', introConfirmados: {}, introIdx: 0, percepcao: { ativo: false }, dialogo: [], viagemConfirmados: {} });
+  } else {
+    _cenaAtual = novaCena; _modoImagem = 'exterior';
+    atualizarCena(); atualizarBotoesModo(); atualizarBotoesCena();
+  }
+}
+
+// ── Mapa de Exploração ───────────────────────────────────────────
+function _cenaDisponivel(cena) {
+  if (!cena.exigeAntes || cena.exigeAntes.length === 0) return true;
+  return cena.exigeAntes.every(req => _cenasVisitadas.has(req));
+}
+
+function abrirMapaExploracao() {
+  const overlay = document.getElementById('mapa-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('oculto');
+
+  const cont = document.getElementById('mapa-conteudo');
+  cont.innerHTML = '';
+
+  const GRUPOS = [1,2,3,4].map(ato=>({ato,label:'Ato '+ato+' — Kagehama',ids:CENAS_ORDEM.filter(id=>CENAS[id].ato===ato)}));
+
+  for (const grupo of GRUPOS) {
+    const secao = document.createElement('div');
+    secao.className = 'mapa-ato';
+
+    const titulo = document.createElement('div');
+    titulo.className = 'mapa-ato-titulo';
+    titulo.textContent = grupo.label;
+    secao.appendChild(titulo);
+
+    const grid = document.createElement('div');
+    grid.className = 'mapa-cena-grid';
+
+    for (const id of grupo.ids) {
+      const cena = CENAS[id];
+      if (!cena) continue;
+
+      const visitada = _cenasVisitadas.has(id);
+      const eAtual   = id === _cenaAtual;
+      const disponivel = _cenaDisponivel(cena);
+      const bloqueada = !disponivel && !visitada && !eAtual;
+
+      const card = document.createElement('div');
+      card.className = 'mapa-cena';
+      if (eAtual) card.classList.add('atual');
+      else if (visitada) card.classList.add('visitada');
+      else if (disponivel) card.classList.add('disponivel');
+      else card.classList.add('bloqueada');
+
+      if (!bloqueada) {
+        card.onclick = () => irParaCena(id);
+      }
+
+      // Lock icon
+      if (bloqueada) {
+        const lock = document.createElement('span');
+        lock.className = 'mapa-lock';
+        lock.textContent = '🔒';
+        card.appendChild(lock);
+      }
+
+      const tit = document.createElement('div');
+      tit.className = 'mapa-cena-titulo';
+      tit.textContent = cena.titulo;
+      card.appendChild(tit);
+
+      const sub = document.createElement('div');
+      sub.className = 'mapa-cena-sub';
+      sub.textContent = cena.subtitulo || '';
+      card.appendChild(sub);
+
+      // Tags
+      const tags = document.createElement('div');
+      tags.className = 'mapa-cena-tags';
+      if (eAtual) {
+        const t = document.createElement('span');
+        t.className = 'mapa-tag tag-atual';
+        t.textContent = '📍 Aqui';
+        tags.appendChild(t);
+      } else if (visitada) {
+        const t = document.createElement('span');
+        t.className = 'mapa-tag tag-visitado';
+        t.textContent = '✓ Visitada';
+        tags.appendChild(t);
+      }
+      if (cena.temBatalha) {
+        const t = document.createElement('span');
+        t.className = 'mapa-tag tag-batalha';
+        t.textContent = '⚔ Batalha';
+        tags.appendChild(t);
+      }
+      if (cena.tipo) {
+        const TIPOS = { emboscada:'⚡ Emboscada', dialogo:'💬 Diálogo', negociacao:'🤝 Negociação',
+                        descoberta:'🔍 Descoberta', aparicao:'👻 Aparição', transicao:'➡ Transição' };
+        const t = document.createElement('span');
+        t.className = 'mapa-tag';
+        t.textContent = TIPOS[cena.tipo] || cena.tipo;
+        tags.appendChild(t);
+      }
+      card.appendChild(tags);
+
+      // Gancho de chegada (se disponível/desbloqueada, mostra o gancho)
+      if (!bloqueada && cena.ganchoChegada) {
+        const g = document.createElement('div');
+        g.className = 'mapa-gancho';
+        g.textContent = cena.ganchoChegada;
+        card.appendChild(g);
+      } else if (bloqueada && cena.exigeAntes?.length) {
+        const g = document.createElement('div');
+        g.className = 'mapa-gancho';
+        const faltam = cena.exigeAntes.filter(r => !_cenasVisitadas.has(r))
+          .map(r => CENAS[r]?.titulo || r).join(', ');
+        g.textContent = `Requer: ${faltam}`;
+        card.appendChild(g);
+      }
+
+      grid.appendChild(card);
+    }
+
+    secao.appendChild(grid);
+    cont.appendChild(secao);
+  }
+}
+
+function fecharMapaExploracao() {
+  document.getElementById('mapa-overlay')?.classList.add('oculto');
+  document.getElementById('mapa-titulo').textContent = '🗺 Mapa dos Blackwoods';
+}
+
+// ── Escolha de CAMINHO (fog of war) ───────────────────────────────
+// Em vez de escolher um destino conhecido, o grupo escolhe uma trilha
+// (direção + perigo + distância). O destino só é revelado ao chegar.
+const _COMPASSO = [
+  { nome:'Leste',     emoji:'➡️' }, { nome:'Nordeste',  emoji:'↗️' },
+  { nome:'Norte',     emoji:'⬆️' }, { nome:'Noroeste',  emoji:'↖️' },
+  { nome:'Oeste',     emoji:'⬅️' }, { nome:'Sudoeste',  emoji:'↙️' },
+  { nome:'Sul',       emoji:'⬇️' }, { nome:'Sudeste',   emoji:'↘️' },
+];
+const _PERIGO_NOME = ['tranquilo','baixo risco','risco moderado','perigoso','muito perigoso','mortal'];
+const _DIST_NOME   = { curta:'trilha curta', media:'caminho médio', longa:'jornada longa' };
+function _direcaoEntre(deId, ateId) {
+  const a = MAPA_NOS[deId], b = MAPA_NOS[ateId];
+  if (!a || !b) return { nome:'Adiante', emoji:'🧭' };
+  const ang = Math.atan2(-(b.y - a.y), b.x - a.x);   // y cresce p/ baixo
+  let idx = Math.round(ang / (Math.PI / 4));
+  idx = ((idx % 8) + 8) % 8;
+  return _COMPASSO[idx];
+}
+function _caminhosDe(cur) {
+  const out = [];
+  for (const c of MAPA_CAMINHOS) {
+    if (c.de === cur)      out.push({ destino: c.ate, c });
+    else if (c.ate === cur) out.push({ destino: c.de,  c, volta:true });
+  }
+  return out;
+}
+function abrirEscolhaCaminho() {
+  const overlay = document.getElementById('mapa-overlay');
+  if (!overlay) return;
+  document.getElementById('mapa-titulo').textContent = '🧭 Que caminho seguir?';
+  const cont = document.getElementById('mapa-conteudo');
+  cont.innerHTML = '';
+
+  const intro = document.createElement('div');
+  intro.id = 'caminho-intro';
+  intro.textContent = 'Vocês não conhecem estas terras. Escolham por onde seguir — cada trilha leva a algum lugar que só descobrirão ao chegar.';
+  cont.appendChild(intro);
+
+  const opcoes = _caminhosDe(_cenaAtual).filter(o => CENAS[o.destino]);
+  if (!opcoes.length) {
+    const vazio = document.createElement('div');
+    vazio.className = 'cam-nota';
+    vazio.textContent = 'Não há trilhas partindo daqui.';
+    cont.appendChild(vazio);
+  }
+
+  for (const o of opcoes) {
+    const dir = _direcaoEntre(_cenaAtual, o.destino);
+    const conhecido = _cenasVisitadas.has(o.destino);
+    const perigo = o.c.perigo || 0;
+    const card = document.createElement('div');
+    card.className = 'caminho-card';
+
+    const seta = document.createElement('div');
+    seta.className = 'cam-seta'; seta.textContent = dir.emoji;
+    card.appendChild(seta);
+
+    const corpo = document.createElement('div');
+    corpo.className = 'cam-corpo';
+    corpo.innerHTML =
+      `<div class="cam-dir">Seguir para o ${dir.nome}</div>` +
+      (conhecido
+        ? `<div class="cam-dest">→ ${MAPA_NOS[o.destino]?.titulo || CENAS[o.destino]?.titulo || '???'}${o.volta ? ' (já visitado)' : ''}</div>`
+        : `<div class="cam-dest incognito">Destino desconhecido…</div>`) +
+      `<div class="cam-meta">
+         <span class="cam-pill p${perigo}">⚠ ${_PERIGO_NOME[perigo] || 'incerto'}</span>
+         <span class="cam-pill dist">🥾 ${_DIST_NOME[o.c.dist] || o.c.dist || '?'}</span>
+       </div>`;
+    card.appendChild(corpo);
+
+    if (_isHost) card.onclick = () => { fecharMapaExploracao(); irParaCena(o.destino); };
+    else card.classList.add('bloq');
+    cont.appendChild(card);
+  }
+
+  if (!_isHost) {
+    const nota = document.createElement('div');
+    nota.className = 'cam-nota';
+    nota.textContent = 'Aguardando o anfitrião escolher o caminho do grupo…';
+    cont.appendChild(nota);
+  }
+  overlay.classList.remove('oculto');
+}
+
+function irParaCena(cenaId) {
+  if (!_isHost) return;
+  fecharMapaExploracao();
+  const cena = CENAS[cenaId];
+  if (!cena) return;
+  // Gatilho de saída da cena atual
+  const cenaAtualObj = CENAS[_cenaAtual];
+  const gatilhosSaida = cenaAtualObj?.gatilhos_saida || [];
+  if (gatilhosSaida.length > 0 && !_percepcaoEmAndamento) {
+    triggerTestePercepcao(gatilhosSaida[0], 'saida', cenaId);
+    return;
+  }
+  _executarNavegacao(cenaId);
+}
+
+// ── Diálogo ──────────────────────────────────────────────────────
+function renderDialogo() {
+  elLog.innerHTML = '';
+  if (_dialogoLog.length === 0) {
+    elLog.innerHTML = '<div class="dialogo-sistema">Aguardando a história começar…</div>';
+    return;
+  }
+  for (const linha of _dialogoLog) {
+    elLog.appendChild(criarElementoLinha(linha));
+  }
+  setTimeout(() => { elLog.scrollTop = elLog.scrollHeight; }, 60);
+}
+
+function criarElementoLinha(linha) {
+  const tipo = linha.tipo || 'npc';
+  if (tipo === 'narrador') {
+    const d = document.createElement('div');
+    d.className = 'dialogo-narrador';
+    d.textContent = linha.texto;
+    return d;
+  }
+  if (tipo === 'jogador') {
+    const d = document.createElement('div');
+    d.className = 'dialogo-jogador';
+    d.innerHTML = `<div class="dialogo-jogador-nome">${esc(linha.oradorNome)}</div><div class="dialogo-jogador-balao">${esc(linha.texto)}</div>`;
+    return d;
+  }
+  if (tipo === 'sistema') {
+    const d = document.createElement('div');
+    d.className = 'dialogo-sistema';
+    d.textContent = linha.texto;
+    return d;
+  }
+  if (tipo === 'acao') {
+    const d = document.createElement('div');
+    d.className = 'dialogo-acao';
+    const nomeStr = linha.oradorNome
+      ? `<span class="dialogo-acao-nome">${esc(linha.oradorNome)}</span>`
+      : '';
+    d.innerHTML = `<span style="opacity:.45;font-size:12px">✦</span><span>${nomeStr}${esc(linha.texto)}</span>`;
+    return d;
+  }
+  // NPC (padrão)
+  const npc = NPCS[linha.oradorId] || null;
+  const spriteSrc = npc ? npc.sprite : '';
+  const d = document.createElement('div');
+  d.className = 'dialogo-npc';
+  d.innerHTML = `
+    <div class="dialogo-npc-portrait">
+      ${spriteSrc ? `<img src="${esc(spriteSrc)}" alt="${esc(linha.oradorNome)}" onerror="this.style.display='none'">` : ''}
+    </div>
+    <div class="dialogo-npc-balao">
+      <div class="dialogo-npc-nome">${esc(linha.oradorNome)}</div>
+      <div class="dialogo-npc-texto">${esc(linha.texto)}</div>
+    </div>`;
+  return d;
+}
+
+// Quebra resposta de IA em linhas separadas: [ACAO: ...] → card de ato, resto → fala
+function _parseRespostaIA(texto, npcId, npcNome, tsBase) {
+  const parts = [];
+  const re = /\[ACAO:\s*([^\]]+)\]/g;
+  let last = 0, m;
+  while ((m = re.exec(texto)) !== null) {
+    const antes = texto.slice(last, m.index).trim();
+    if (antes) parts.push({ tipo: 'npc', texto: antes });
+    parts.push({ tipo: 'acao', texto: m[1].trim() });
+    last = m.index + m[0].length;
+  }
+  const depois = texto.slice(last).trim();
+  if (depois) parts.push({ tipo: 'npc', texto: depois });
+  if (parts.length === 0) parts.push({ tipo: 'npc', texto });
+  return parts.map((p, i) => ({
+    tipo: p.tipo, oradorId: npcId, oradorNome: npcNome, texto: p.texto, ts: tsBase + i
+  }));
+}
+
+// ── Controles do host ────────────────────────────────────────────
+function preencherSelNpc() {
+  const cena = CENAS[_cenaAtual];
+  const npcsPresentes = cena?.npcsPresentes ?? [];
+
+  // Opções: narrador, jogador, depois os NPCs da cena e todos os demais
+  const opts = [
+    { value: '__narrador__', label: '📖 Narrador' },
+    { value: '__jogador__', label: '💬 Jogador (eu)' },
+    { value: '__sep__', label: '── NPCs da cena ──', disabled: true },
+    ...npcsPresentes.map(id => ({ value: id, label: NPCS[id]?.nome || id })),
+    { value: '__sep2__', label: '── Outros NPCs ──', disabled: true },
+    ...Object.values(NPCS).filter(n => !npcsPresentes.includes(n.id)).map(n => ({ value: n.id, label: n.nome })),
+  ];
+
+  elSelNpc.innerHTML = opts.map(o =>
+    o.disabled
+      ? `<option disabled>${o.label}</option>`
+      : `<option value="${esc(o.value)}">${o.label}</option>`
+  ).join('');
+
+  _atualizarNpcChips();
+}
+
+function _atualizarNpcChips() {
+  const chips = document.getElementById('npc-chips');
+  if (!chips) return;
+  const cena = CENAS[_cenaAtual];
+  const ids = cena?.npcsPresentes ?? [];
+  chips.innerHTML = ids.map(id => {
+    const npc = NPCS[id];
+    if (!npc) return '';
+    const sprUrl = npc.retrato || npc.sprite || '';
+    const imgHtml = sprUrl
+      ? `<img class="npc-chip-img" src="${esc(sprUrl)}" alt="" onerror="this.style.display='none'">`
+      : '';
+    return `<button class="npc-chip" id="chip-${esc(id)}" onclick="selecionarChip('${esc(id)}')">${imgHtml}${esc(npc.nome)}</button>`;
+  }).join('');
+  // Pré-selecionar npcEntrada
+  if (cena?.npcEntrada && ids.includes(cena.npcEntrada)) {
+    _marcarChipAtivo(cena.npcEntrada);
+    elSelNpc.value = cena.npcEntrada;
+    onSelNpc();
+  }
+}
+
+function selecionarChip(npcId) {
+  elSelNpc.value = npcId;
+  onSelNpc();
+  _marcarChipAtivo(npcId);
+}
+
+function _marcarChipAtivo(npcId) {
+  document.querySelectorAll('.npc-chip').forEach(c => c.classList.remove('ativo'));
+  const chip = document.getElementById('chip-' + npcId);
+  if (chip) chip.classList.add('ativo');
+}
+
+function onSelNpc() {
+  const v = elSelNpc.value;
+  if (v === '__narrador__') elInputTexto.placeholder = 'Texto de narração (ambiência)…';
+  else if (v === '__jogador__') elInputTexto.placeholder = 'O que seu personagem diz…';
+  else {
+    const npc = NPCS[v];
+    elInputTexto.placeholder = npc ? `${npc.nome} diz…` : 'Fala do personagem…';
+    _marcarChipAtivo(v);
+  }
+}
+
+function onKeydownInput(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarFala(); }
+}
+
+async function enviarFala() {
+  const texto = elInputTexto.value.trim();
+  if (!texto) return;
+  const npcId = elSelNpc.value;
+
+  let linhas;
+  if (npcId === '__narrador__') {
+    linhas = [{ tipo: 'narrador', oradorId: 'narrador', oradorNome: 'Narrador', texto, ts: Date.now() }];
+  } else if (npcId === '__jogador__') {
+    linhas = [{ tipo: 'jogador', oradorId: _pid, oradorNome: _pname, texto, ts: Date.now() }];
+  } else {
+    const npc = NPCS[npcId];
+    linhas = _parseRespostaIA(texto, npcId, npc?.nome || npcId, Date.now());
+  }
+
+  elInputTexto.value = '';
+  for (const linha of linhas) {
+    if (window._fbAddDialogue) await window._fbAddDialogue(linha);
+    else _dialogoLog = [..._dialogoLog, linha].slice(-60);
+  }
+  if (!window._fbAddDialogue) renderDialogo();
+}
+
+// ── Geração com IA ────────────────────────────────────────────────
+async function gerarFalaIA() {
+  const npcId = elSelNpc.value;
+  if (npcId === '__narrador__' || npcId === '__jogador__') {
+    alert('Selecione um NPC para gerar fala com IA.');
+    return;
+  }
+  const apiKey = localStorage.getItem('oraculo.groqKey');
+  if (!apiKey) { abrirCfgIA(); return; }
+
+  const npc = NPCS[npcId];
+  const cena = CENAS[_cenaAtual];
+  if (!npc) return;
+
+  const diretiva = elInputTexto.value.trim();
+  const ultimasLinhas = _dialogoLog.slice(-12)
+    .map(l => `${l.oradorNome}: ${l.texto}`)
+    .join('\n');
+
+  // Contexto narrativo completo (introSlides + textoIntro)
+  const situacaoNarrativa = (
+    cena?.introSlides?.map(s => s.texto).join('\n\n') || cena?.textoIntro || ''
+  ).slice(0, 700);
+
+  // Outros NPCs presentes na cena (nomes + primeira frase da personalidade)
+  const outrosNpcs = (cena?.npcsPresentes || [])
+    .filter(id => id !== npcId && NPCS[id])
+    .map(id => `• ${NPCS[id].nome}: ${(NPCS[id].personalidade || '').split('.')[0]}`)
+    .join('\n');
+
+  const ia = npc.ia || {};
+  const personalidade = ia.personalidade || npc.personalidade || '';
+  const formaFalar   = ia.forma_de_falar || npc.formaDeFalar || '';
+  const objetivosStr = ia.objetivos?.length
+    ? '- ' + ia.objetivos.join('\n- ')
+    : '';
+  const gatilhosPos = ia.gatilhos_positivos?.length
+    ? ia.gatilhos_positivos.join(', ')
+    : '';
+  const gatilhosNeg = ia.gatilhos_negativos?.length
+    ? ia.gatilhos_negativos.join(', ')
+    : '';
+
+  const systemContent =
+`${ia.prompt_sistema ? ia.prompt_sistema + '\n\n' : ''}Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. Jogadores reais estão interagindo com você agora. Seja completamente este personagem.
+
+QUEM VOCÊ É:
+${personalidade}
+
+O QUE VOCÊ SABE (revele aos poucos conforme a conversa justificar — nunca tudo de uma vez):
+${npc.conhecimentos || ''}
+${objetivosStr ? `\nSEUS OBJETIVOS ATUAIS:\n${objetivosStr}` : ''}
+${gatilhosPos ? `\nO QUE TE AGRADA: ${gatilhosPos}` : ''}
+${gatilhosNeg ? `\nO QUE TE IRRITA: ${gatilhosNeg}` : ''}
+
+SUA FORMA DE FALAR:
+${formaFalar}
+
+SITUAÇÃO ATUAL — ${cena?.titulo ?? ''}:
+${situacaoNarrativa}
+${outrosNpcs ? `\nOUTROS PRESENTES NA CENA:\n${outrosNpcs}` : ''}
+
+REGRAS ABSOLUTAS:
+- Português brasileiro, primeira pessoa, como ${npc.nome} — jamais quebre o personagem
+- Máximo 3 frases por resposta; seja direto e vivo
+- Para ações físicas VISÍVEIS (expressão, gesto, postura, movimento) use EXATAMENTE o formato [ACAO: descrição em 3ª pessoa]. Exemplo: [ACAO: ${npc.nome} pousa as mãos na mesa e inclina o corpo levemente para a frente]. Coloque ANTES da fala. Nunca use asteriscos.
+- Se quiser dirigir-se especificamente a outro personagem presente, diga o nome dele na fala
+- Se precisar negociar, negocie de verdade — defenda seus interesses
+- Se desconfiar de algo, demonstre a desconfiança com seu jeito de falar
+- Se tiver urgência, transmita urgência
+- Se tiver segredo, proteja-o até ser convencido a revelar
+- Reaja ao que foi dito — não responda no vácuo, reaja como um ser humano real agiria`;
+
+  elIaLoading.classList.remove('oculto');
+  const btnGer = document.getElementById('btn-gerar-ia');
+  btnGer.classList.add('carregando');
+
+  try {
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 350,
+        messages: [
+          {
+            role: 'system',
+            content: systemContent,
+          },
+          {
+            role: 'user',
+            content: `${ultimasLinhas ? `Histórico recente da conversa:\n${ultimasLinhas}\n\n` : ''}${diretiva || 'Reaja naturalmente ao que acabou de acontecer ou ao que foi dito.'}`,
+          },
+        ],
+      }),
+    });
+    const data = await resp.json();
+    const texto = data.choices?.[0]?.message?.content?.trim();
+    if (texto) {
+      elInputTexto.value = texto;
+      onSelNpc();
+    } else if (data.error) {
+      alert(`Erro da API: ${data.error.message}`);
+    }
+  } catch (e) {
+    alert(`Erro de conexão com a API: ${e.message}`);
+  } finally {
+    elIaLoading.classList.add('oculto');
+    btnGer.classList.remove('carregando');
+  }
+}
+
+// ── Iniciar batalha ───────────────────────────────────────────────
+async function iniciarBatalha() {
+  if (!_isHost) return;
+  if (window._fbSetStatus) {
+    await window._fbSetStatus('battle', {
+      'narration.cenaId': _cenaAtual,   // garante que o pós-batalha saiba a cena de origem p/ avançar à proximaCena
+      'narration.battleKey': null,      // batalha normal de cena usa o cenaId (limpa emboscada anterior)
+      postBattleConfirmados: {},
+      batalha: {},
+      currentTurnPlayerId: null,
+      turnOrder: [],
+      enemies: [],
+    });
+  } else {
+    localStorage.setItem('mindRolePlay.battleCena', _cenaAtual || 'kagehama-scene-0');
+    window.location.href = 'arena.html?v=8';
+  }
+}
+
+// ── Voltar ao lobby ───────────────────────────────────────────────
+function voltarLobby() {
+  if (_unsubRoom) { _unsubRoom(); _unsubRoom = null; }
+  window.location.href = '../index.html';
+}
+
+// ── Config IA ─────────────────────────────────────────────────────
+function abrirCfgIA() {
+  const input = document.getElementById('cfg-input');
+  input.value = localStorage.getItem('oraculo.groqKey') || '';
+  document.getElementById('cfg-overlay').classList.remove('oculto');
+  input.focus();
+}
+function fecharCfgIA() {
+  document.getElementById('cfg-overlay').classList.add('oculto');
+}
+function salvarCfgIA() {
+  const v = document.getElementById('cfg-input').value.trim();
+  if (v) localStorage.setItem('oraculo.groqKey', v);
+  fecharCfgIA();
+}
+
+// ── Utilitários ───────────────────────────────────────────────────
+function esc(v) {
+  return String(v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DIAL ENGINE — motor interativo de diálogo com IA
+// ═══════════════════════════════════════════════════════════
+
+// ── Estado ────────────────────────────────────────────────
+let _dialAtivo        = false;
+let _dialReadIdx      = 0;
+let _dialAnimBeat     = false;
+let _dialAwaitingCont = false;
+let _dialNpcEls       = [];      // [{par, npc, idx}]
+let _dialNarracaoCena = null;
+let _dialCampCenaAtiva = null;  // ID de campanha da cena atual no overlay
+let _dialNpcAtivoIdx  = 0;       // índice no array de NPCs presentes na cena
+let _dialJogadorAtivo = null;    // {id, nome, classId} do jogador que fala
+let _dialHistoricoLocal = [];    // [{tipo:'npc'|'jogador', quem, texto}]
+let _dialLidoGravado  = 0;       // último tamanho de log confirmado como lido (este device)
+let _dialIaRespondTs  = null;    // ts do beat de guest que o host já está respondendo
+
+// ── Turnos de fala com confirmação de leitura ─────────────────────
+// A VEZ é DERIVADA (não gravada): seguinte ao autor da última fala de jogador,
+// liberada só quando o NPC respondeu e TODOS leram. Determinística e idêntica
+// em todos os aparelhos — sem corrida de escrita (que fazia a vez 'voltar').
+function _dialVezPid(){
+  const log=_dialogoLog, ult=log[log.length-1];
+  if(ult && ult.tipo==='jogador') return null;   // rodada em curso: NPC vai responder
+  if(!_dialTodosLeram()) return null;            // grupo ainda lendo a rodada
+  const ativos=_jogadoresAtivos(_lastRoom).sort();
+  if(!ativos.length) return _pid;
+  for(let i=log.length-1;i>=0;i--){
+    if(log[i].tipo==='jogador'){
+      const idx=ativos.indexOf(log[i].authorId);
+      return ativos[(idx+1)%ativos.length]||ativos[0];   // Igor → Patrícia → Igor…
+    }
+  }
+  return ativos[0];   // ninguém falou ainda: começa o primeiro
+}
+function _dialMinhaVez(){
+  if(!window._fbListenRoom) return true;         // solo/offline: sempre pode
+  return _dialVezPid()===_pid;
+}
+function _dialTodosLeram(){
+  if(!window._fbListenRoom) return true;
+  const len=_dialogoLog.length;
+  if(!len) return true;
+  const lido=_lastRoom?.narration?.dialLido||{};
+  return _jogadoresAtivos(_lastRoom).every(pid=>(lido[pid]||0)>=len);
+}
+// Read receipt: este device terminou de ler todos os beats
+function _dialGravarLido(){
+  const len=_dialogoLog.length;
+  if(len>_dialLidoGravado){ _dialLidoGravado=len; window._fbDialLido?.(_pid,len); }
+}
+// HOST conduz: responde IA à fala de guest e passa a vez quando todos leram.
+async function _dialFluxoTurnos(){
+  if(!_isHost || !_dialAtivo) return;
+  const log=_dialogoLog, ult=log[log.length-1];
+  const ativos=_jogadoresAtivos(_lastRoom).sort();
+  // 1) Fala de guest sem resposta → host chama a IA (a chave vive no host)
+  if(ult && ult.tipo==='jogador' && ult.authorId!==_pid && _dialIaRespondTs!==ult.ts){
+    _dialIaRespondTs=ult.ts;
+    document.getElementById('dial-ia-pensando').style.display='block';
+    const resposta=await _dialChamarIA(_dialNpcAtivoIdx, ult.texto);
+    document.getElementById('dial-ia-pensando').style.display='none';
+    const npc=_dialNpcEls[_dialNpcAtivoIdx]?.npc;
+    if(resposta && npc){
+      await window._fbAddDialogue?.({tipo:'npc',oradorId:npc.id,oradorNome:npc.nome,texto:resposta,ts:Date.now()});
+    }
+  }
+  // (Rotação da vez: DERIVADA em _dialVezPid() — nada a gravar aqui.)
+}
+
+// ── Helpers ───────────────────────────────────────────────
+const _dialDelay = ms => new Promise(r => setTimeout(r, ms));
+
+function _dialParsearFala(raw) {
+  const m = raw.match(/\[ACAO:\s*([^\]]+)\]/i);
+  return { acao: m?.[1]?.trim() || null, fala: raw.replace(/\[ACAO:[^\]]+\]\s*/gi, '').trim() };
+}
+
+function _dialGetNarracaoCena(campCenaId) {
+  const cena = CENAS[campCenaId];
+  if (cena?.dialCena) return cena.dialCena;
+  const presentes = cena?.npcsPresentes || [];
+  for (const npc of _dialNpcs) {
+    if (presentes.some(id => id.includes(npc.id))) return npc.cenas[0];
+  }
+  return null;
+}
+
+// ── Chromakey canvas ──────────────────────────────────────
+function _dialLoadCanvas(src, canvas, onOk, onErr) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    try {
+      const H = 900, W = Math.round(H * img.naturalWidth / img.naturalHeight);
+      const tmp = document.createElement('canvas');
+      tmp.width = W; tmp.height = H;
+      const tctx = tmp.getContext('2d');
+      tctx.drawImage(img, 0, 0, W, H);
+      _dialChroma(tctx, W, H);
+      const bb = _dialBbox(tctx, W, H);
+      const cw = bb.r - bb.l + 1, ch = bb.b - bb.t + 1;
+      canvas.width = cw; canvas.height = ch;
+      canvas.getContext('2d').drawImage(tmp, bb.l, bb.t, cw, ch, 0, 0, cw, ch);
+      if (onOk) onOk();
+    } catch (_) { if (onErr) onErr(); }
+  };
+  img.onerror = () => { if (onErr) onErr(); };
+  img.src = src;
+}
+
+function _dialBbox(ctx, w, h) {
+  const d = ctx.getImageData(0, 0, w, h).data;
+  let l = w, r = -1, t = h, b = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (d[(y * w + x) * 4 + 3] > 24) {
+      if (x < l) l = x; if (x > r) r = x; if (y < t) t = y; if (y > b) b = y;
+    }
+  }
+  if (r < l || b < t) return { l: 0, t: 0, r: w - 1, b: h - 1 };
+  return { l, t, r, b };
+}
+
+function _dialChroma(ctx, w, h) {
+  const id = ctx.getImageData(0, 0, w, h), d = id.data;
+  for (let i = 3; i < d.length; i += 4) { if (d[i] < 230) return; }
+  const pts = [[0,0],[w-1,0],[0,h-1],[w-1,h-1],[Math.floor(w/2),0],[0,Math.floor(h/2)],[w-1,Math.floor(h/2)],[Math.floor(w/2),h-1]];
+  let kr = 0, kg = 0, kb = 0;
+  for (const [x, y] of pts) { const b = (y * w + x) * 4; kr += d[b]; kg += d[b+1]; kb += d[b+2]; }
+  kr = Math.round(kr/pts.length); kg = Math.round(kg/pts.length); kb = Math.round(kb/pts.length);
+  for (let i = 0; i < d.length; i += 4) {
+    const dist = Math.abs(d[i]-kr) + Math.abs(d[i+1]-kg) + Math.abs(d[i+2]-kb);
+    if (dist < 52) d[i+3] = 0;
+    else if (dist < 95) d[i+3] = Math.round((dist-52)/43*255);
+  }
+  ctx.putImageData(id, 0, 0);
+}
+
+// ── Activar / Desativar ────────────────────────────────────
+function _dialActivar(campCenaId) {
+  // Ao (re)abrir, retoma na ÚLTIMA fala de NPC/Narrador já registrada — assim,
+  // voltar do mapa cai exatamente onde a conversa parou (não em branco).
+  let _idxRetoma = _dialogoLog.length;
+  for (let i = _dialogoLog.length - 1; i >= 0; i--) {
+    if (_dialogoLog[i]?.tipo === 'npc' || _dialogoLog[i]?.tipo === 'narrador') { _idxRetoma = i; break; }
+  }
+  _dialReadIdx      = _idxRetoma; // exibe a última fala registrada + beats novos
+  _dialAnimBeat     = false;
+  _dialAwaitingCont = false;
+  _dialNpcEls       = [];
+  _dialHistoricoLocal = [];
+  _dialLidoGravado  = 0;   // re-confirma leitura na cena nova
+  _dialIaRespondTs  = null;
+  // Host zera os receipts/vez da cena anterior (leituras antigas não contam aqui)
+  if (_isHost) window._fbUpdateNarration?.({ dialLido: {}, dialVez: null });
+
+  const narracaoCena = _dialGetNarracaoCena(campCenaId);
+  _dialNarracaoCena  = narracaoCena;
+  _dialCampCenaAtiva = campCenaId;
+
+  const cena = CENAS[campCenaId];
+
+  // Background da cena de diálogo — overlay de conversa usa sempre interior (é o close-up do encontro)
+  const bg = document.getElementById('dial-cena-bg');
+  const bgSrc = cena?.imgInterior || cena?.imgExterior;
+  if (bg && bgSrc) bg.style.backgroundImage = `url(${_imgBust(bgSrc)})`;
+
+  // Standees
+  const container = document.getElementById('dial-personagens');
+  container.innerHTML = '';
+  // Use npcsPresentes da cena como fonte primária; curated NARRACAO_NPCS tem prioridade
+  const npcsIds = cena?.npcsPresentes ?? [];
+  const npcsNaCena = npcsIds.length > 0
+    ? npcsIds.map(id => {
+        const curated = _dialNpcs.find(n => n.id === id || id === n.id);
+        return curated || NPCS_REGISTRY[id] || null;
+      }).filter(Boolean)
+    : narracaoCena ? _dialNpcs.filter(n => n.cenas.includes(narracaoCena)) : [];
+
+  // Escala proporcional à altura real do bicho (altura_cm). Reduzimos a referência
+  // e o teto para que os balões não fiquem cobertos — mantendo grandões maiores.
+  const _ALTURA_REF_CM = 180, _ALTURA_REF_VH = 37;
+  npcsNaCena.forEach((npc, i) => {
+    const div = document.createElement('div');
+    div.className = 'dial-npc';
+    const npcVh = Math.min((npc.altura_cm || _ALTURA_REF_CM) / _ALTURA_REF_CM * _ALTURA_REF_VH, 50).toFixed(1);
+    div.style.cssText = `z-index:${npc.zBase || 5};left:${npc.offsetPx || 0}px;height:${npcVh}vh;`;
+    if (i > 0) div.classList.add('inativo');
+    const canvas = document.createElement('canvas');
+    _dialLoadCanvas(npc.img, canvas, () => {
+      div.appendChild(canvas);
+      requestAnimationFrame(() => div.classList.add('dentro'));
+    }, () => {
+      const fb = document.createElement('span');
+      fb.style.cssText = 'font-size:48px;display:flex;align-items:flex-start;padding-top:16px;';
+      fb.textContent = npc.avatar || '👤';
+      div.appendChild(fb);
+      requestAnimationFrame(() => div.classList.add('dentro'));
+    });
+    container.appendChild(div);
+    _dialNpcEls.push({ par: div, npc, idx: i });
+  });
+
+  // Selecionar primeiro NPC ativo
+  _dialNpcAtivoIdx = 0;
+
+  // Chips de NPC
+  _dialAtualizarChips();
+
+  // Jogador ativo padrão
+  const jogadores = Object.entries(_lastRoom?.players || {});
+  _dialJogadorAtivo = jogadores.length > 0
+    ? { id: jogadores[0][0], nome: jogadores[0][1].nome || _pname, classId: jogadores[0][1].classId || 'guerreiro' }
+    : { id: _pid, nome: _pname, classId: localStorage.getItem('mindRolePlay.classId') || 'guerreiro' };
+  _dialAtualizarTurnoBar();
+
+  // Input p/ TODOS os jogadores — o controle é pela VEZ (input trava fora dela).
+  // (Antes era host-only: o guest nem via o campo de digitar.)
+  const inputBar = document.getElementById('dial-input-bar');
+  const turnoBar = document.getElementById('dial-turno-bar');
+  if (inputBar) inputBar.style.display = 'flex';
+  if (turnoBar) turnoBar.style.display = 'flex';
+  _dialAtualizarVezUI();
+
+  // Limpar state do balão
+  document.getElementById('dial-balao').classList.remove('visivel');
+  document.getElementById('dial-player-card').classList.remove('visivel');
+  document.getElementById('dial-player-card').innerHTML = '';
+  document.getElementById('dial-btn-continuar').style.display = 'none';
+  document.getElementById('dial-ia-pensando').style.display = 'none';
+
+  // Ativar overlay
+  const ov = document.getElementById('dial-overlay');
+  ov.style.display = 'flex';
+  ov.classList.add('ativo');
+
+  // Esconder log do host
+  elLog.style.display = 'none';
+
+  _dialAtivo = true;
+
+  // Checar se há beats já no log para exibir
+  _dialTickDisplay();
+}
+
+function _dialDesativar() {
+  if (!_dialAtivo) return;
+  _dialAtivo = false;
+  const ov = document.getElementById('dial-overlay');
+  ov.style.display = 'none';
+  ov.classList.remove('ativo');
+  document.getElementById('dial-balao').classList.remove('visivel');
+  document.getElementById('dial-player-card').classList.remove('visivel');
+  document.getElementById('dial-btn-continuar').style.display = 'none';
+  document.getElementById('dial-ia-pensando').style.display = 'none';
+  elLog.style.display = '';
+}
+
+// Destino "evidente"? revelarImediato (canônico, NPC já diz logo) OU revelaSe
+// (alguma fala de NPC/Narrador na conversa contém uma das palavras-chave).
+function _dialDestinoRevelado(fluxo) {
+  if (!fluxo) return false;
+  if (fluxo.revelarImediato) return true;
+  if (Array.isArray(fluxo.revelaSe) && fluxo.revelaSe.length) {
+    const txt = (_dialogoLog || [])
+      .filter(b => b.tipo === 'npc' || b.tipo === 'narrador')
+      .map(b => (b.texto || '').toLowerCase()).join(' \n ');
+    return fluxo.revelaSe.some(k => txt.includes(String(k).toLowerCase()));
+  }
+  return false;
+}
+
+// ── NPC chips ─────────────────────────────────────────────
+function _dialAtualizarChips() {
+  const bar = document.getElementById('dial-npc-chips');
+  bar.querySelectorAll('.dial-chip-npc').forEach(c => c.remove());
+  const spacer = bar.querySelector('.dial-chip-spacer');
+  _dialNpcEls.forEach(({ npc }, i) => {
+    const chip = document.createElement('button');
+    chip.className = 'dial-chip-npc' + (i === _dialNpcAtivoIdx ? ' ativo' : '');
+    chip.textContent = npc.nome.split(' ')[0];
+    chip.onclick = () => _dialSelecionarNpc(i);
+    bar.insertBefore(chip, spacer);
+  });
+  // Botão narrativo de avanço — só aparece quando a conversa torna o destino
+  // EVIDENTE (revelarImediato: canônico, ex. Gregoras; ou revelaSe: NPC mencionou).
+  const btnProximo = document.getElementById('dial-btn-proximo');
+  if (btnProximo) {
+    const cena = CENAS[_cenaAtual];
+    const fluxo = NARRACAO_FLUXO?.find?.(f => f.id === _dialCampCenaAtiva) || NARRACAO_FLUXO?.find?.(f => f.id === _dialNarracaoCena);
+    const proximaId = fluxo?.proximo || cena?.proximaCena;
+    const label = fluxo?.btnLabel || (proximaId ? '→ Avançar' : null);
+    if (label && proximaId && _dialDestinoRevelado(fluxo)) {
+      const conf = _lastRoom?.narration?.viagemConfirmados || {};
+      const jogadores = _jogadoresAtivos(_lastRoom);
+      const total = jogadores.length || 1;
+      const nConf = jogadores.length ? jogadores.filter(p => conf[p] === _cenaAtual).length : (conf[_pid] === _cenaAtual ? 1 : 0);
+      const euConfirmei = conf[_pid] === _cenaAtual;
+      btnProximo.style.display = 'block';
+      btnProximo.disabled = euConfirmei;
+      if (euConfirmei) btnProximo.textContent = `⌛ Aguardando o grupo… (${nConf}/${total})`;
+      else btnProximo.textContent = (total > 1 && nConf > 0) ? `${label}  (${nConf}/${total})` : label;
+    } else {
+      btnProximo.style.display = 'none';
+    }
+  }
+  // Botão 🗺 Mapa — sempre disponível enquanto a cena for um nó do mundo,
+  // para o grupo poder viajar a qualquer momento.
+  const btnMapa = document.getElementById('dial-btn-mapa');
+  if (btnMapa) {
+    btnMapa.style.display = (_isHost && MAPA_NOS[_cenaAtual]) ? 'block' : 'none';
+  }
+  _atualizarBtnPercepcao();
+  // Atualizar placeholder
+  const npcAtivo = _dialNpcEls[_dialNpcAtivoIdx]?.npc;
+  const input = document.getElementById('dial-msg-input');
+  if (input && npcAtivo) input.placeholder = `O que você diz para ${npcAtivo.nome.split(' ')[0]}…`;
+}
+
+function _dialSelecionarNpc(idx) {
+  _dialNpcAtivoIdx = idx;
+  _dialNpcEls.forEach(({ par, npc }, i) => {
+    const ativo = i === idx;
+    par.classList.toggle('inativo', !ativo);
+    par.style.zIndex = ativo ? String((npc.zBase || 5) + 2) : String(npc.zBase || 5);
+  });
+  document.querySelectorAll('.dial-chip-npc').forEach((c, i) => c.classList.toggle('ativo', i === idx));
+  const npcAtivo = _dialNpcEls[idx]?.npc;
+  const input = document.getElementById('dial-msg-input');
+  if (input && npcAtivo) input.placeholder = `O que você diz para ${npcAtivo.nome.split(' ')[0]}…`;
+}
+
+function _dialFocarNpc(npcId) {
+  const idx = _dialNpcEls.findIndex(({ npc }) => npc.id === npcId || (npcId || '').includes(npc.id));
+  if (idx >= 0) _dialSelecionarNpc(idx);
+}
+
+// UI da vez de falar: trava o input fora da vez e mostra o estado da rodada.
+function _dialAtualizarVezUI(){
+  const input=document.getElementById('dial-msg-input');
+  const btn=document.getElementById('dial-btn-enviar');
+  const vezEl=document.getElementById('dial-turno-vez');
+  if(!input||!btn) return;
+  const vez=_dialVezPid(), minha=_dialMinhaVez(), leram=_dialTodosLeram();
+  const pode=minha&&leram;
+  input.disabled=!pode; btn.disabled=!pode;
+  if(vezEl){
+    if(pode) vezEl.textContent='🗣 Sua vez';
+    else if(!leram){
+      const lido=_lastRoom?.narration?.dialLido||{};
+      const ativos=_jogadoresAtivos(_lastRoom);
+      const n=ativos.filter(p=>(lido[p]||0)>=_dialogoLog.length).length;
+      vezEl.textContent=`⌛ lendo… (${n}/${ativos.length})`;
+    }
+    else if(vez) vezEl.textContent='Vez de '+_getNomeJogador(vez).split(' ')[0];
+    else vezEl.textContent='⌛ …';
+  }
+  _dialAtualizarTurnoBar();   // chip ativo acompanha a vez
+}
+
+// ── Turno bar (players) ────────────────────────────────────
+function _dialAtualizarTurnoBar() {
+  const bar = document.getElementById('dial-turno-players');
+  if (!bar) return;
+  bar.innerHTML = '';
+  const jogadores = Object.entries(_lastRoom?.players || {});
+  const lista = jogadores.length > 0 ? jogadores : [[_pid, { nome: _pname }]];
+  const vez = _dialVezPid();
+  lista.forEach(([id, p]) => {
+    const chip = document.createElement('button');
+    // O chip ATIVO é o jogador da VEZ (sincronizado) — não é mais seletor manual.
+    chip.className = 'dial-turno-chip' + (id === vez ? ' ativo' : '');
+    chip.textContent = (p.nome || (id === _pid ? _pname : null) || 'Jog.').split(' ')[0];
+    bar.appendChild(chip);
+  });
+}
+
+// ── Balão NPC ─────────────────────────────────────────────
+function _dialMostrarBalaoNPC(nome, acao, texto, comContinuar) {
+  const balao = document.getElementById('dial-balao');
+  document.getElementById('dial-balao-nome').textContent = (nome || 'NPC').toUpperCase();
+  const acaoEl = document.getElementById('dial-balao-acao');
+  if (acao) { acaoEl.textContent = acao; acaoEl.style.display = 'block'; } else { acaoEl.style.display = 'none'; }
+  document.getElementById('dial-balao-texto').innerHTML = _hlAcoesInline(texto || '');
+  document.getElementById('dial-player-card').classList.remove('visivel');
+  document.getElementById('dial-player-card').innerHTML = '';
+  balao.classList.add('visivel');
+  document.getElementById('dial-btn-continuar').style.display = comContinuar ? 'block' : 'none';
+}
+
+function _dialOcultarBalao() {
+  document.getElementById('dial-balao').classList.remove('visivel');
+  document.getElementById('dial-player-card').classList.remove('visivel');
+  document.getElementById('dial-player-card').innerHTML = '';
+  document.getElementById('dial-btn-continuar').style.display = 'none';
+}
+
+// ── Card Player ───────────────────────────────────────────
+function _dialMostrarCardPlayer(nome, avatar, texto, comOk) {
+  document.getElementById('dial-balao').classList.remove('visivel');
+  const card = document.getElementById('dial-player-card');
+  card.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'dial-pc-fala';
+  const avatarEl = document.createElement('span');
+  avatarEl.style.cssText = 'font-size:28px;flex-shrink:0;';
+  avatarEl.textContent = avatar || '⚔️';
+  const body = document.createElement('div');
+  const nm = document.createElement('div'); nm.className = 'dial-pc-nome'; nm.textContent = nome;
+  const tx = document.createElement('div'); tx.className = 'dial-pc-texto'; tx.textContent = texto;
+  body.append(nm, tx);
+  row.append(avatarEl, body);
+  card.appendChild(row);
+  // OK embutido no card: o botão Continuar vive DENTRO do balão do NPC, que
+  // fica oculto quando o card do jogador está na tela — a fala de OUTRO
+  // jogador precisa do OK aqui dentro (senão o leitor fica preso no card).
+  if (comOk) {
+    const okBtn = document.createElement('button');
+    okBtn.textContent = '✔ OK';
+    okBtn.style.cssText = 'margin-top:9px;padding:8px 22px;font-family:inherit;'
+      + 'font-size:13px;font-weight:700;background:rgba(190,140,35,.2);color:#e8c874;'
+      + 'border:1px solid rgba(190,140,35,.5);border-radius:9px;cursor:pointer;display:block;margin-left:auto;';
+    okBtn.onclick = () => window._dialContinuar();
+    card.appendChild(okBtn);
+  }
+  card.classList.add('visivel');
+}
+
+// ── Motor de exibição (tick por beat) ─────────────────────
+function _dialTickDisplay() {
+  if (!_dialAtivo || _dialAnimBeat || _dialAwaitingCont) return;
+  const log = _dialogoLog;
+  if (_dialReadIdx >= log.length) { _dialGravarLido(); _dialAtualizarVezUI(); return; }
+  const beat = log[_dialReadIdx];
+  _dialAnimBeat = true;
+  _dialRenderBeat(beat);
+}
+
+async function _dialRenderBeat(beat) {
+  const { tipo, oradorId, oradorNome, texto } = beat;
+
+  if (tipo === 'npc') {
+    const { acao, fala } = _dialParsearFala(texto || '');
+    _dialOcultarBalao();
+    await _dialDelay(120);
+    _dialFocarNpc(oradorId);
+    // Entrar NPC se ainda não entrou
+    _dialNpcEls.forEach(({ par }) => {
+      if (!par.classList.contains('dentro')) par.classList.add('dentro');
+    });
+    await _dialDelay(300);
+    _dialMostrarBalaoNPC(oradorNome, acao, fala || texto, true);
+    _dialHistoricoLocal.push({ tipo: 'npc', quem: oradorNome, texto: fala || texto });
+    _dialAnimBeat = false;
+    _dialAwaitingCont = true;
+
+  } else if (tipo === 'jogador') {
+    const CLASS_AVATAR = { mago:'🔮', guerreiro:'⚔️', ladino:'🗡️', clerigo:'✝️', arqueiro:'🏹', druida:'🌿', barbaro:'🪓' };
+    const avatar = CLASS_AVATAR[beat.classId] || '⚔️';
+    const ehMinha = beat.authorId === _pid;
+    _dialMostrarCardPlayer(oradorNome || 'Jogador', avatar, texto || '', !ehMinha);
+    _dialHistoricoLocal.push({ tipo: 'jogador', quem: oradorNome || 'Jogador', texto: texto || '' });
+    // Se fui eu quem enviou → avança automaticamente; senão → ✔ OK no card
+    if (ehMinha) {
+      _dialReadIdx++;
+      _dialAnimBeat = false;
+      await _dialDelay(600);
+      _dialTickDisplay();
+    } else {
+      _dialAnimBeat = false;
+      _dialAwaitingCont = true;
+    }
+  } else {
+    // narrador / sistema — avança sem exibir
+    _dialReadIdx++;
+    _dialAnimBeat = false;
+    _dialTickDisplay();
+  }
+}
+
+window._dialContinuar = function () {
+  document.getElementById('dial-btn-continuar').style.display = 'none';
+  _dialAwaitingCont = false;
+  _dialReadIdx++;
+  _dialOcultarBalao();
+  _dialTickDisplay();
+};
+
+// ── IA (Groq) ─────────────────────────────────────────────
+async function _dialChamarIA(npcIdx, mensagemJogador) {
+  const key = localStorage.getItem('oraculo.groqKey');
+  if (!key) return null;
+  const npc = _dialNpcEls[npcIdx]?.npc;
+  if (!npc) return null;
+
+  // Contexto da cena
+  const cena = CENAS[_cenaAtual];
+  const nomesPresentes = _dialNpcEls.map(e => e.npc.nome).join(', ');
+  const local = cena?.titulo || _cenaAtual;
+  const jogadoresNomes = Object.values(_lastRoom?.players || {}).map(p => p.nome).join(', ') || _pname;
+  const historicoTexto = _dialHistoricoLocal.length
+    ? _dialHistoricoLocal.map(e => `${e.quem}: "${e.texto}"`).join('\n')
+    : '(a cena acaba de começar)';
+  const memoria=_lastRoom?.narration?.memorias?.[npc.id]||[];
+  const contextoCena = `MEMÓRIA ESTABELECIDA: ${JSON.stringify(memoria)}\nLOCAL: ${local}.\nPRESENTES: ${nomesPresentes} e ${jogadoresNomes} (aventureiros).\n\nDIÁLOGOS RECENTES:\n${historicoTexto}`;
+
+  const sysBase = npc.promptSistema
+    ? `${npc.promptSistema}\n\nQUEM VOCÊ É: ${npc.personalidade}\nO QUE VOCÊ SABE (revele gradualmente): ${npc.conhecimentos}\n\n${contextoCena}\n\nREGRAS: Resultados GURPS 3d6 informados pelo programa são definitivos: narre a consequência sem refazer testes ou alterar sucesso, falha ou críticos. Fala comum não exige dado; não conceda persuasão contra interesses sem teste. Português brasileiro, 1ª pessoa. Máximo 2-3 frases. Use [ACAO: desc] antes da fala para ações físicas visíveis. Reaja ao contexto da cena, não apenas à última fala.`
+    : `Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. NUNCA quebre o personagem.\n\nQUEM VOCÊ É: ${npc.personalidade}\nO QUE VOCÊ SABE (revele gradualmente): ${npc.conhecimentos}\nSUA FORMA DE FALAR: ${npc.formaDeFalar}\n\n${contextoCena}\n\nREGRAS: Resultados GURPS 3d6 informados pelo programa são definitivos: narre a consequência sem refazer testes ou alterar sucesso, falha ou críticos. Fala comum não exige dado; não conceda persuasão contra interesses sem teste. Português brasileiro, 1ª pessoa. Máximo 2-3 frases. Use [ACAO: desc] antes da fala para ações físicas visíveis. Reaja ao contexto da cena, não apenas à última fala.`;
+
+  const messages = [
+    { role: 'system', content: sysBase },
+    { role: 'user', content: mensagemJogador },
+  ];
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 18000);
+  try {
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST', signal: controller.signal,
+      headers: { 'Authorization': `Bearer ${key}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 200, messages }),
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const reply=data.choices?.[0]?.message?.content?.trim()||null;
+    if(reply && window._fbUpdateNarration){
+      const saved=[...memoria,{jogador:(_dialogoLog.filter(b=>b.tipo==='jogador').at(-1)?.oradorNome||_pname),pergunta:mensagemJogador,resposta:reply}].slice(-40);
+      await window._fbUpdateNarration({['memorias.'+npc.id]:saved});
+    }
+    return reply;
+  } catch (_) { return null; }
+  finally { clearTimeout(timer); }
+}
+
+// ── Reação espontânea ──────────────────────────────────────
+async function _dialVerificarReacao(npcQueRespondeuIdx) {
+  const outros = _dialNpcEls.filter((_, i) => i !== npcQueRespondeuIdx);
+  if (!outros.length) return;
+  const reator = outros[Math.floor(Math.random() * outros.length)];
+  const npc = reator.npc;
+  if (Math.random() > (npc.reatividade ?? 0.20)) return;
+
+  const recenteLog = _dialHistoricoLocal.slice(-4).map(e => `${e.quem}: "${e.texto}"`).join('\n');
+  const prompt = `Você observou:\n${recenteLog}\n\nDado exatamente quem você é, você diria algo agora? 1 frase brevíssima no seu estilo. Se não, responda exatamente "---".`;
+  const reacao = await _dialChamarIA(reator.idx, prompt);
+  if (!reacao || reacao.trim().startsWith('---')) return;
+
+  const npcData = reator.npc;
+  const beat = { tipo: 'npc', oradorId: npcData.id, oradorNome: npcData.nome, texto: reacao, ts: Date.now() };
+  if (window._fbAddDialogue) await window._fbAddDialogue(beat);
+  else { _dialogoLog = [..._dialogoLog, beat].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
+}
+
+// ── Enviar fala do jogador ─────────────────────────────────
+// QUALQUER jogador fala — na SUA vez, e só quando todos leram a rodada anterior.
+window._dialEnviar = async function () {
+  if (!_dialAtivo) return;
+  if (!_dialMinhaVez() || !_dialTodosLeram()) { _dialAtualizarVezUI(); return; }
+  const input = document.getElementById('dial-msg-input');
+  let texto = (input?.value || '').trim();
+  if (!texto) return;
+  if(_mindAcao){
+    const select=document.getElementById('mind-skill');
+    if(!select.options.length)window._mindModo(true);
+    const result=test3d6(Number(select.value));
+    texto='[GURPS 3d6: '+result.dice.join('+')+' = '+result.total+'; '+select.selectedOptions[0].textContent+'; '+result.outcome+'; margem '+result.margin+'] '+texto;
+  }
+
+  const key = localStorage.getItem('oraculo.groqKey');
+  if (_isHost && !key) {   // só o host precisa da chave (é ele quem chama a IA)
+    document.getElementById('cfg-overlay')?.classList.remove('oculto');
+    return;
+  }
+
+  input.value = '';
+  input.blur();   // fecha o teclado para o jogador ler a cena/resposta do NPC
+  input.disabled = true;
+  document.getElementById('dial-btn-enviar').disabled = true;
+
+  // Cada jogador fala por SI (não mais pelo seletor do host)
+  const jogador = { id: _pid, nome: _pname, classId: localStorage.getItem('mindRolePlay.classId') || 'guerreiro' };
+  const beatJogador = {
+    tipo: 'jogador', oradorId: jogador.id, oradorNome: jogador.nome,
+    texto, classId: jogador.classId, authorId: _pid, ts: Date.now(),
+  };
+  // (A vez trava sozinha: com fala de jogador no fim do log, _dialVezPid()=null)
+  if (window._fbAddDialogue) await window._fbAddDialogue(beatJogador);
+  else { _dialogoLog = [..._dialogoLog, beatJogador].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
+
+  input.disabled = false;
+  document.getElementById('dial-btn-enviar').disabled = false;
+
+  // Guest: para aqui — o HOST vê o beat e chama a IA (_dialFluxoTurnos)
+  if (!_isHost) { _dialAtualizarVezUI(); return; }
+
+  // Host falando: chama a IA direto
+  document.getElementById('dial-ia-pensando').style.display = 'block';
+  const resposta = await _dialChamarIA(_dialNpcAtivoIdx, texto);
+  document.getElementById('dial-ia-pensando').style.display = 'none';
+
+  if (!resposta) return;
+  const npc = _dialNpcEls[_dialNpcAtivoIdx]?.npc;
+  if (!npc) return;
+
+  const beatNpc = { tipo: 'npc', oradorId: npc.id, oradorNome: npc.nome, texto: resposta, ts: Date.now() };
+  if (window._fbAddDialogue) await window._fbAddDialogue(beatNpc);
+  else { _dialogoLog = [..._dialogoLog, beatNpc].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
+
+  // Verificar reação espontânea de outros NPCs
+  await _dialDelay(400);
+  await _dialVerificarReacao(_dialNpcAtivoIdx);
+};
+
+// ── Navegação e histórico ──────────────────────────────────
+// TODA viagem passa pelo Mapa do Mundo (bonequinhos andando, 5s, emboscadas).
+// Se o destino é um nó vizinho, a viagem começa sozinha; se é distante, o grupo
+// explora pulando de nó em nó no mapa.
+window._dialProximaCena = function () {
+  const proximaId = _proximaIdDaCena(_cenaAtual);
+  const ativos = _jogadoresAtivos(_lastRoom);
+  // MULTIPLAYER: o clique só CONFIRMA a vontade deste jogador. A partida
+  // acontece quando TODOS confirmarem — quem ainda quer conversar/investigar
+  // continua livre até clicar também. (Antes: 1 clique arrastava o grupo.)
+  if (ativos.length > 1 && window._fbConfirmarViagem) {
+    window._fbConfirmarViagem(_pid, _cenaAtual);
+    return;
+  }
+  if (!proximaId) { _irParaMapaMundo(); return; }
+  _irParaMapaMundo(proximaId === '_mapa' ? null : proximaId);
+};
+
+// Resolve o ID da próxima cena de uma cena de diálogo (fluxo narrativo ou proximaCena).
+function _proximaIdDaCena(cenaId) {
+  const dial = CENAS[cenaId]?.dialCena;
+  const fluxo = NARRACAO_FLUXO?.find?.(f => f.id === cenaId) || (dial && NARRACAO_FLUXO?.find?.(f => f.id === dial));
+  return fluxo?.proximo || CENAS[cenaId]?.proximaCena || null;
+}
+
+// Nó do mundo correspondente à cena atual (cena = nó; cenas auxiliares usam .nodeId).
+function _noDaCena(cenaId) {
+  if (MAPA_NOS[cenaId]) return cenaId;
+  return CENAS[cenaId]?.nodeId || 'kagehama-scene-0';
+}
+function _saoAdjacentesNoMapa(a, b) {
+  return MAPA_CAMINHOS.some(c => (c.de === a && c.ate === b) || (c.de === b && c.ate === a));
+}
+
+// Handoff para o Mapa do Mundo (mapa.html): o grupo viaja a partir do nó atual.
+// destino (opcional): se for um nó VIZINHO, o mapa já inicia a viagem sozinho
+// (auto). Se for distante ou nulo, o grupo escolhe o caminho no mapa.
+function _irParaMapaMundo(destino) {
+  if (!_isHost) return; // o anfitrião conduz a transição; todos seguem pelo status
+  if (_cenaAtual && !_cenasVisitadas.has(_cenaAtual)) {
+    _cenasVisitadas.add(_cenaAtual);
+    window._fbMarcarVisitada?.(_cenaAtual);
+  }
+  const node = _noDaCena(_cenaAtual);
+  const auto = (destino && destino !== '_mapa' && MAPA_NOS[destino] && _saoAdjacentesNoMapa(node, destino))
+    ? destino : null;
+  // NPCs que acompanham o grupo nesta viagem → aparecem juntinhos no mapa.
+  const compIds = CENAS[_cenaAtual]?.companheirosViagem || [];
+  const companheiros = compIds.map(id => {
+    const n = NPCS_REGISTRY[id] || {};
+    return { id, nome: n.nome || id, img: n.img || `catalogo/kagehama/npcs/${id}/peca_tabuleiro/${id}_peca.png` };
+  });
+  if (window._fbSetStatus) {
+    window._fbSetStatus('map', {
+      'mapa.localAtual': node,
+      'mapa.viagemEmAndamento': false,
+      'mapa.votacao': null,
+      'mapa.autoViagem': auto,        // nó vizinho a viajar automaticamente (ou null)
+      'mapa.cenaOrigem': _cenaAtual,  // cena exata p/ o botão "← Voltar" do mapa
+      'mapa.companheiros': companheiros,  // NPCs acompanhantes (ou [])
+      'narration.viagemConfirmados': {},
+    });
+  } else {
+    localStorage.setItem('mindRolePlay.mapaLocal', node);
+    if (auto) localStorage.setItem('mindRolePlay.mapaAuto', auto);
+    window.location.href = 'mapa.html?v=8';
+  }
+}
+window._irParaMapaMundo = _irParaMapaMundo;
+
+// Host: navega o grupo quando TODOS confirmaram a viagem.
+function _verificarViagemCompleta(narr) {
+  if (!_isHost) return;
+  const proximaId = _proximaIdDaCena(_cenaAtual);
+  if (!proximaId) return;
+  const conf = narr?.viagemConfirmados || {};
+  const jogadores = _jogadoresAtivos(_lastRoom);
+  const efetivos = jogadores.length > 0 ? jogadores : (_pid ? [_pid] : Object.keys(conf));
+  if (!efetivos.length || !efetivos.every(pid => conf[pid] === _cenaAtual)) return;
+  // TODOS confirmaram → o grupo parte junto, via Mapa do Mundo (com companheiros)
+  _irParaMapaMundo(proximaId === '_mapa' ? null : proximaId);
+}
+
+// Teste de Percepção sob demanda (botão 🎲): o host convoca; o grupo rola.
+// Percepção INDIVIDUAL: cada jogador decide a hora de rolar e o resultado é
+// SÓ DELE — quem passou sabe de algo que os outros não sabem. Limite de 1 uso
+// por cenário POR JOGADOR no Firebase (narration.percUsadaPor.{cena}.{pid}).
+let _percLocal = null;                    // teste individual em andamento (só neste aparelho)
+const _percUsadaLocalSet = new Set();     // fallback solo/offline
+function _percUseiNaCena(){
+  if (!window._fbListenRoom) return _percUsadaLocalSet.has(_cenaAtual);
+  return !!(_lastRoom?.narration?.percUsadaPor?.[_cenaAtual]?.[_pid]);
+}
+function pedirPercepcao() {
+  if (_percepcaoEmAndamento) return;
+  const cena = CENAS[_cenaAtual];
+  const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
+  if (!hook || _percUseiNaCena()) return;
+  _percUsadaLocalSet.add(_cenaAtual);
+  window._fbUpdateNarration?.({ [`percUsadaPor.${_cenaAtual}.${_pid}`]: true });
+  _atualizarBtnPercepcao();
+  _percLocal = {
+    ativo: true, fase: 'rolando', dc: hook.dc || 12, ts: Date.now(), local: true,
+    textoAtmosfera: hook.textoFallback || 'Algo neste lugar retém a atenção por um momento fugaz…',
+    textoContexto: hook.descricaoContexto, respostas: {},
+  };
+  mostrarModalPercepcao(_percLocal);
+}
+window.pedirPercepcao = pedirPercepcao;
+
+// Botão 🎲 disponível p/ QUALQUER jogador que ainda não usou nesta cena.
+function _atualizarBtnPercepcao() {
+  const btn = document.getElementById('dial-btn-perc');
+  if (!btn) return;
+  const cena = CENAS[_cenaAtual];
+  const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
+  const disponivel = !!hook && !_percUseiNaCena();
+  btn.style.display = disponivel ? '' : 'none';
+}
+
+window._dialFecharDialogo = function () {
+  _dialDesativar();
+};
+
+window._dialAbrirHistorico = function () {
+  const corpo = document.getElementById('dial-hd-corpo');
+  corpo.innerHTML = _dialHistoricoLocal.length
+    ? _dialHistoricoLocal.map(e => {
+        const cls = e.tipo === 'jogador' ? 'dial-hd-entrada player' : 'dial-hd-entrada';
+        return `<div class="${cls}"><div class="dial-hd-quem">${e.quem.toUpperCase()}</div><div class="dial-hd-texto">${e.texto}</div></div>`;
+      }).join('')
+    : '<div style="padding:40px;text-align:center;color:rgba(190,140,35,.35);font-style:italic;">Nenhuma fala ainda.</div>';
+  document.getElementById('dial-historico-drawer').classList.remove('oculto');
+};
+
+window._dialFecharHistorico = function () {
+  document.getElementById('dial-historico-drawer').classList.add('oculto');
+};
+
+// ── Enter key no input ────────────────────────────────────
+document.getElementById('dial-msg-input')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window._dialEnviar(); }
+});
+
+// ── Verificar e (re)ativar conforme a cena ────────────────
+function _dialVerificarCena() {
+  const cena     = CENAS[_cenaAtual];
+  const ehDialogo = cena?.tipo === 'dialogo';
+
+  if (ehDialogo) {
+    if (!_dialAtivo || _cenaAtual !== _dialCampCenaAtiva) {
+      _dialDesativar();
+      _dialActivar(_cenaAtual);
+    } else {
+      _dialTickDisplay();
+    }
+  } else {
+    if (_dialAtivo) _dialDesativar();
+  }
+}
+
+// ── Painel de Investigação (cenas sem NPC) ──────────────────────
+let _invAtivo = false, _invCena = null, _invTabAtual = 'chat';
+let _invRenderedChat = 0;   // append-only (chat)
+let _invCardTs = 0;         // último resultado de ação já mostrado no card
+const _INV_DC = 11;         // dificuldade base do teste de ação (3d6)
+
+function _ehCenaInvestigacao(cena){
+  if (!cena) return false;
+  if (cena.investigacao === true) return true;
+  const semNpc = !(cena.npcsPresentes && cena.npcsPresentes.length);
+  return semNpc && (cena.tipo === 'descoberta' || cena.tipo === 'exploracao');
+}
+
+// ── Turnos ──
+function _invOrdemJogadores(){
+  // .sort() é ESSENCIAL: Object.keys do Firestore pode vir em ordem diferente
+  // em cada aparelho — sem ordenação, cada um achava que era sua vez (2 jogadas).
+  const ks = _jogadoresAtivos(_lastRoom).slice().sort();
+  return ks.length ? ks : (_pid ? [_pid] : []);
+}
+// Vez DERIVADA do log (como no diálogo): seguinte ao autor da última ação.
+// Determinística e idêntica em todos os aparelhos — sem estado gravado.
+function _invVezPid(){
+  const ordem = _invOrdemJogadores();
+  if (!ordem.length) return _pid;
+  const todas = _lastRoom?.narration?.dialogo || [];
+  for (let i = todas.length - 1; i >= 0; i--) {
+    const b = todas[i];
+    if (b.canal === 'inv-acao' && b.authorId) {
+      const idx = ordem.indexOf(b.authorId);
+      return ordem[(idx + 1) % ordem.length] || ordem[0];
+    }
+  }
+  return ordem[0];
+}
+function _invMinhaVez(){ if(!window._fbListenRoom) return true; return _invVezPid() === _pid; }
+
+function _invVerificarCena(){
+  const cena = CENAS[_cenaAtual];
+  if (_ehCenaInvestigacao(cena)) {
+    if (!_invAtivo || _invCena !== _cenaAtual) _invActivar(_cenaAtual);
+    else _invRender();
+  } else if (_invAtivo) {
+    _invDesativar();
+  }
+}
+
+function _invActivar(cenaId){
+  const cena = CENAS[cenaId];
+  _invAtivo = true; _invCena = cenaId; _invRenderedChat = 0; _invCardTs = Date.now();
+  document.getElementById('investig-log-chat').innerHTML = '';
+  document.getElementById('investig-titulo').textContent = cena?.titulo || 'Investigação';
+  document.getElementById('investig-sub').textContent = cena?.subtitulo || 'Local de investigação';
+  const src = cena?.imgExterior || cena?.imgInterior;
+  document.getElementById('investig-bg').style.backgroundImage = src ? `url(${_imgBust(src)})` : 'none';
+  _invDismissCard();
+  document.getElementById('investig').classList.remove('oculto');
+  // (vez DERIVADA do log — nada a inicializar)
+  _invTab('acao');
+  _invRender();
+}
+
+function _invDesativar(){
+  _invAtivo = false; _invCena = null;
+  document.getElementById('investig').classList.add('oculto');
+}
+
+function _invTab(t){
+  _invTabAtual = t;
+  document.getElementById('itab-chat').classList.toggle('ativo', t === 'chat');
+  document.getElementById('itab-acao').classList.toggle('ativo', t === 'acao');
+  document.getElementById('investig-log-chat').classList.toggle('oculto', t !== 'chat');
+  document.getElementById('investig-acao-area').classList.toggle('oculto', t !== 'acao');
+  document.getElementById('investig-perc').style.display = t === 'acao' ? '' : 'none';
+  document.getElementById('investig-enviar').textContent = t === 'acao' ? '🎲' : '➤';
+  _invAtualizarVez();
+}
+
+function _invAtualizarVez(){
+  const vezEl = document.getElementById('investig-vez');
+  const inp = document.getElementById('investig-input');
+  const btn = document.getElementById('investig-enviar');
+  if (_invTabAtual !== 'acao') { inp.placeholder = 'Fale com o grupo…'; inp.disabled = false; btn.disabled = false; return; }
+  const minha = _invMinhaVez();
+  const nome = _getNomeJogador(_invVezPid());
+  vezEl.textContent = minha ? '🎲 Sua vez — descreva sua ação' : `⏳ Vez de ${nome}…`;
+  vezEl.classList.toggle('minha-vez', minha);
+  inp.disabled = !minha; btn.disabled = !minha;
+  inp.placeholder = minha ? 'O que você tenta fazer?' : `Aguardando ${nome}…`;
+}
+
+// Append-only (chat) + card do último resultado de ação (sem re-render → sem tremedeira)
+function _invRender(){
+  if (!_invAtivo) return;
+  const todas = _lastRoom?.narration?.dialogo || [];
+  const chat = todas.filter(l => l.canal === 'inv-chat');
+  const chatEl = document.getElementById('investig-log-chat');
+  if (chat.length < _invRenderedChat) { chatEl.innerHTML = ''; _invRenderedChat = 0; }
+  for (let i = _invRenderedChat; i < chat.length; i++) chatEl.appendChild(_invLinhaEl(chat[i]));
+  if (chat.length > _invRenderedChat) { _invRenderedChat = chat.length; chatEl.scrollTop = chatEl.scrollHeight; }
+  // ação → card do último resultado do Narrador
+  const acao = todas.filter(l => l.canal === 'inv-acao' && l.tipo === 'narrador');
+  const ult = acao[acao.length - 1];
+  if (ult && (ult.ts || 0) > _invCardTs) { _invCardTs = ult.ts || Date.now(); _invMostrarCard(ult); }
+  _invAtualizarVez();
+}
+
+function _invLinhaEl(l){
+  const div = document.createElement('div');
+  div.className = 'ilog-item ' + (l.tipo === 'narrador' ? 'ilog-narr' : 'ilog-player');
+  const nome = document.createElement('span'); nome.className = 'ilog-nome';
+  nome.textContent = l.tipo === 'narrador' ? 'Narrador' : (l.oradorNome || 'Aventureiro');
+  div.appendChild(nome);
+  const txt = document.createElement('span'); txt.innerHTML = _hlAcoesInline(l.texto || '');
+  div.appendChild(txt);
+  return div;
+}
+
+// Card sobre o cenário (como a fala dos NPCs)
+function _invMostrarCard(l){
+  const card = document.getElementById('investig-card');
+  const txt = document.getElementById('investig-card-texto');
+  txt.innerHTML = _hlAcoesInline(l.texto || '');
+  card.classList.add('visivel');
+  txt.scrollTop = 0;
+  requestAnimationFrame(_invScrollCard);
+}
+function _invScrollCard(){
+  const txt = document.getElementById('investig-card-texto');
+  const mais = document.getElementById('investig-card-mais');
+  if (!txt || !mais) return;
+  const temMais = (txt.scrollHeight - txt.clientHeight - txt.scrollTop) > 6;
+  mais.style.opacity = temMais ? '1' : '0';
+}
+function _invDismissCard(){ document.getElementById('investig-card')?.classList.remove('visivel'); }
+window._invDismissCard = _invDismissCard;
+window._invScrollCard = _invScrollCard;
+
+function _invKey(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _invEnviar(); } }
+
+async function _invEnviar(){
+  const inp = document.getElementById('investig-input');
+  const texto = (inp.value || '').trim();
+  if (!texto) return;
+  if (_invTabAtual === 'chat') {
+    inp.value = '';
+    await window._fbAddDialogue?.({ tipo:'player', oradorNome:_pname, texto, canal:'inv-chat', ts: Date.now() });
+    return;
+  }
+  // aba Ação — só na sua vez
+  if (!_invMinhaVez()) return;
+  inp.value = ''; inp.blur();
+  const chosen=prompt('Perícia ou atributo GURPS para esta ação:', 'Percepção');
+  if(chosen===null)return;
+  const cls=CLASSES_DATA[localStorage.getItem('mindRolePlay.classId')], player=_lastRoom?.players?.[_pid]||{};
+  const skills=player.skills||cls?.skills||[];
+  const level=skills.find(s=>s.name.toLowerCase()===chosen.toLowerCase())?.level||(player.attributes||cls?.attributes||{})[chosen.toUpperCase()];
+  if(!Number.isFinite(Number(level))){inp.value=texto;alert('Escolha uma perícia da ficha ou ST, DX, IQ, HT.');return;}
+  const result=test3d6(Number(level));_lastGurpsRoll=result;
+  const roll=result.total;
+  await _invAdjudicarAcao(texto, roll);   // a vez passa sozinha: o beat carrega o authorId
+}
+
+async function _invAdjudicarAcao(acaoTexto, roll){
+  const cena = CENAS[_cenaAtual];
+  const pens = document.getElementById('investig-pensando');
+  pens.style.display = 'block';
+  const ator = _pname;
+  const outros = Object.entries(_lastRoom?.players || {})
+    .filter(([pid]) => pid !== _pid).map(([, p]) => p.nome).filter(Boolean);
+  const contexto = cena?.percepcao?.descricaoContexto || cena?.contextoInvestigacao || cena?.textoIntro || '';
+  let verdito = _lastGurpsRoll.success ? 'SUCESSO' : 'FALHA';   // fallback sem IA
+  let narr = verdito === 'SUCESSO'
+    ? 'Sua tentativa surte efeito — algo cede ou se revela ao seu esforço.'
+    : 'A tentativa não vinga desta vez.';
+  const apiKey = localStorage.getItem('oraculo.groqKey');
+  if (apiKey) {
+    try {
+      const outrosTxt = outros.length ? `Outros presentes: ${outros.join(', ')}.` : 'Ninguém mais está presente.';
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method:'POST',
+        headers:{ 'Authorization':`Bearer ${apiKey}`, 'content-type':'application/json' },
+        body: JSON.stringify({
+          model:'llama-3.3-70b-versatile', max_tokens:190, temperature:0.85,
+          messages:[
+            { role:'system', content:`Você é o Narrador de uma campanha de RPG de fantasia sombria, num local de investigação.
+${ator} tenta uma ação. GURPS 3d6: ${_lastGurpsRoll.dice.join("+")} = ${roll}, nível efetivo ${_lastGurpsRoll.effectiveSkill}, resultado definitivo ${verdito}. Narre esse resultado sem modificar os dados ou decidir sucesso novamente.
+Responda começando LITERALMENTE com "SUCESSO" ou "FALHA" (uma palavra só), depois um traço e a narração do desfecho em 1-2 frases, 2ª pessoa, in-world.
+${outrosTxt} Quando for COERENTE, mencione de forma breve se os outros presentes percebem (ou não) o que aconteceu — sobretudo atos que alguém poderia querer ocultar: achar, pegar, carregar, guardar, esconder ou ouvir algo. Uma falha desastrada (tropeço, barulho) tende a ser notada; um movimento discreto e bem-sucedido pode passar despercebido. Não force isso quando não fizer sentido.
+Não invente itens novos nem decida ações futuras pelos jogadores. Contexto oculto do local (use com parcimônia): ${contexto}` },
+            { role:'user', content:`Local: "${cena?.titulo}". ${ator} tenta: "${acaoTexto}". Rolagem GURPS 3d6 = ${roll}; resultado definitivo ${verdito}. Narre a consequência.` }
+          ]
+        })
+      });
+      const d = await resp.json();
+      const raw = (d.choices?.[0]?.message?.content || '').trim();
+      const m = raw.match(/^\s*(SUCESSO|FALHA)\b[\s—:.-]*/i);
+      if (m) { narr = raw.slice(m[0].length).trim() || narr; }
+      else if (raw) { narr = raw; }
+    } catch {}
+  }
+  pens.style.display = 'none';
+  await window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto: `[🎲 ${roll} — ${verdito}] ${narr}`, canal:'inv-acao', authorId:_pid, ts: Date.now() });
+}
+
+function _invPercepcao(){
+  if (_percepcaoEmAndamento) return;
+  const cena = CENAS[_cenaAtual];
+  const hook = cena?.percepcao || cena?.gatilhos_entrada?.[0] || cena?.gatilhos_saida?.[0];
+  if (!hook || _percUseiNaCena()) return;   // sem hook ou já usei: nada acontece (privado)
+  pedirPercepcao();                          // teste INDIVIDUAL — resultado só deste jogador
+}
+
+function _invSair(){ window._dialProximaCena?.(); }
+
+window._invTab = _invTab; window._invEnviar = _invEnviar; window._invPercepcao = _invPercepcao;
+window._invSair = _invSair; window._invKey = _invKey;
+
+// ── Boot ──────────────────────────────────────────────────────────
+init();
+
+// ── Teclado mobile: esconde imagem da cena quando input está ativo ─
+(function(){
+  const wrap = document.getElementById('narracao-wrap');
+  if (!wrap) return;
+
+  function _setTeclado(aberto) {
+    wrap.classList.toggle('teclado-aberto', aberto);
+    if (!aberto) elLog?.scrollTo({ top: elLog.scrollHeight, behavior: 'smooth' });
+  }
+
+  // visualViewport é a forma mais confiável em Android Chrome
+  if (window.visualViewport) {
+    const INITIAL_H = window.visualViewport.height;
+    window.visualViewport.addEventListener('resize', () => {
+      const delta = INITIAL_H - window.visualViewport.height;
+      wrap.style.height = window.visualViewport.height + 'px';
+      _setTeclado(delta > 80); // >80px = teclado abriu
+    });
+  }
+
+  // Fallback: foco/blur no textarea
+  elInputTexto?.addEventListener('focus', () => _setTeclado(true));
+  elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
+})();
+</script>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">v46</div>
+</body>
+</html>

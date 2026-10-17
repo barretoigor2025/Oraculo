@@ -1,52 +1,57 @@
-# Mind RolePlay
+# Mind RolePlay — base Oráculo
 
-O ciclo de conversa agora responde automaticamente após cada fala/ação individual,
-com intervenções de NPCs presentes e memória persistente. Veja
-[RECONSTRUCAO.md](RECONSTRUCAO.md) para arquitetura, testes e limites de paridade.
+O acesso usa as telas e a lógica de `index.html` e `src/main.js` do Oráculo,
+transpostas para `MindRolePlay/index.html` e `src/oraculoEntry.js`.
 
-Mind RolePlay é a casa onde várias campanhas narrativas ficam organizadas. O sistema é independente do Oráculo, mas reaproveita sua configuração de Firebase/Firestore e o fluxo simples de sala online.
+Fluxo: campanha → Jogar → quatro espaços de aventureiros → criação ou seleção
+→ criar/entrar em sala → espera → narração → mapa → narração.
+Solo usa a mesma sala com um participante, como no original.
 
-## O esqueleto implementado
+## Identificação
 
-- Tela inicial com entrada para **Jogar Online** e **Mind Database**.
-- Três pacotes vazios de exemplo, criados na coleção `mindCampaigns`.
-- Cada pacote usa o mesmo formato: roteiro, classes/regras, personagens, NPCs, cenários, mapa, arte, checklist e histórico de testes.
-- Cadastro inicial de personagem com perícia, vantagens, desvantagens e condição persistente.
-- Teste de tentativa em 3d6, animação dos três dados, resultado, margem e registro na campanha.
-- Sala inicial com criar código e entrar por código na coleção própria `mindRooms`.
+`mindRolePlay.playerId` identifica o jogador neste navegador e é independente
+ do personagem. `mindRolePlay.characters` guarda os quatro espaços locais;
+`mindRolePlay.character` é a ficha selecionada. A sala identifica participantes
+pelo ID do jogador, guarda a ficha utilizada e define o anfitrião em `hostId`.
+`Continuar Aventura` retoma a sala salva, sem reinicializar a campanha.
+Não há cadastro com senha: este é o mesmo modelo local do Oráculo.
 
-O HTML e os módulos ficam em `MindRolePlay/`; Vite inclui essa página como entrada independente sem substituir a tela do Oráculo.
+O banco reutiliza a configuração Firebase e a coleção autorizada `mindRooms`,
+com o marcador `engine: oraculo-kagehama-v2`. Salas do protótipo anterior não são
+convertidas silenciosamente porque tinham outro formato de jogadores/estado.
+As salas e identificações do Oráculo permanecem separadas.
 
-## Resolução 3d6
+## Motores e campanha
 
-O motor de regras soma três d6 e compara o total ao nível efetivo da perícia. Neste primeiro corte, uma tentativa sempre rola os dados, conforme a premissa definida para o Mind RolePlay. Os resultados críticos seguem os limites básicos do GURPS; modificadores da situação e condições persistentes entram no nível efetivo. A implementação vive em [`src/gurps.js`](src/gurps.js).
+`public/MindRolePlay/narration.html`, `mapa.html` e `catalog.html` são transposições
+das páginas originais: diálogo por turno, confirmação de leitura, respostas
+Groq, reações de outros NPCs, percepção, investigação, votação de rota,
+névoa de descoberta, formação e viagem, catálogo e checklist.
 
-O GURPS usa esse teste básico de 3d6 contra habilidade/atributo efetivo, com sucesso em resultado igual ou abaixo do alvo. O Mind RolePlay está tomando isso como base, sem copiar o sistema inteiro. Referência: [GURPS Lite — Steve Jackson Games](https://www.sjgames.com/gurps/lite/).
+O cartucho reside em `public/MindRolePlay/catalogo/kagehama/`, no esquema
+Oráculo: `classes.js`, `loader.js`, `npcs_registry.js`, `narracao.js`, `mapa.js`,
+`encontros.js`, `campanha/roteiro/campaign.js`, roteiro legível e `dados.json`.
+As artes já existentes são reutilizadas sem alteração.
 
-## Pacote de campanha
+As telas preservam a estrutura original; a campanha e as fichas usam Kagehama.
+Os testes de percepção e ação usam o mesmo resolvedor determinístico GURPS
+3d6 do projeto. O compositor original permite Falar ou Agir com uma perícia ou
+atributo da ficha; o resultado acompanha a intenção enviada ao NPC.
+A arena tática antiga não foi exposta: confrontos permanecem na cena narrativa,
+conforme o escopo anterior sem arena. Isso não implementa o livro inteiro GURPS.
 
-Cada campanha tem um documento independente em `mindCampaigns/{campaignId}`, padronizado por `schemaVersion`. O documento mantém suas listas próprias de conteúdo; a arte e os arquivos pesados poderão usar caminhos separados no Firebase Storage quando essa etapa for construída.
+O anfitrião aberto executa as chamadas Groq com `oraculo.groqKey`, a mesma
+configuração local usada pelo Oráculo. Só o anfitrião precisa da chave.
 
-## Firebase compartilhado
-
-O app importa o Firestore da configuração existente em `src/firebase/config.js`. Os dados do Mind ficam nas coleções `mindCampaigns` e `mindRooms`; as coleções do Oráculo permanecem intactas.
-
-As novas regras estão em `firestore.rules`. Para liberar gravação em Firebase, elas precisam ser publicadas no projeto com:
+## Gerar, verificar e publicar
 
 ```bash
-firebase deploy --only firestore:rules
+npm ci
+npm run build:mind-cartridge
+npm run test:mind
+npm run build
 ```
 
-Se a leitura ou gravação remota falhar, o protótipo abre em modo local neste navegador, para permitir explorar as telas e testar os dados sem misturar com as salas do Oráculo.
-
-## Próximas etapas
-
-- [ ] Adicionar atualização em tempo real e estado completo das salas multiplayer.
-- [ ] Definir atributos, lista de perícias, vantagens/desvantagens e efeitos de condições com mais detalhe.
-- [ ] Expandir as fichas e permitir múltiplas perícias e modelos de personagem.
-- [ ] Construir a importação de campanha e o checklist automático.
-- [x] Conectar a narração Groq a cada fala/ação, com perfis e memória de NPCs.
-- [ ] Completar seleção contextual de perícia/modificadores e demais regras GURPS.
-- [ ] Migrar textos/listas extensos para subcoleções e arte para Storage quando necessário.
-
-Veja [CONCEITO.md](CONCEITO.md) para o fluxo completo e as decisões de design.
+`scripts/build-mind-oracle.mjs` transpõe as fontes originais e gera o cartucho;
+`scripts/adapt-mind-oracle.py` aplica as adaptações explícitas de Kagehama/GURPS.
+A publicação segue o GitHub Pages do repositório; não usa outro Site ou serviço.

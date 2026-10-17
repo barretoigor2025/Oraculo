@@ -1,0 +1,20 @@
+{
+  "id": "gaki-arquivos",
+  "nome": "Gaki dos Arquivos Afogados",
+  "tipo": "espírito faminto",
+  "descricao": "Água parada, papel mastigado e nomes ausentes nos registros. Ataca memórias escritas antes de atacar corpos. Oferece devolver uma informação se lhe derem um nome que ninguém pronuncia.",
+  "habilidades": [
+    {
+      "nome": "espírito faminto",
+      "desc": "Ataca memórias escritas antes de atacar corpos. Oferece devolver uma informação se lhe derem um nome que ninguém pronuncia."
+    }
+  ],
+  "fraqueza": "Golpes comuns o atrasam, mas não o ferem. Reúna a página rasgada que contém seu nome, lave-a com água corrente e leia-a em voz alta enquanto uma pessoa protege a passagem.",
+  "nivel": 2,
+  "maxHp": 12,
+  "hp": 12,
+  "atkMod": 13,
+  "mov": 4,
+  "sp": 10,
+  "ac": 0
+}
