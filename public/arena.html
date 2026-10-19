@@ -218,14 +218,19 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   padding:0 6px; align-content:center;
 }
 .verb-btn{
-  height:28px !important;
+  height:42px !important;
   width:auto !important;
   border-radius:7px !important;
   padding:0 2px !important;
 }
 .verb-btn .btn-icon{ font-size:14px !important; }
 .verb-btn .btn-label{ font-size:8px !important; letter-spacing:.2px !important; }
-.verb-btn.inativo{ opacity:0.22 !important; }
+.verb-btn.inativo{ opacity:0.58 !important; filter:saturate(.45); }
+.verb-btn.inativo::after{
+  content:attr(data-reason-short); display:block; max-width:100%; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; color:#ead28e; font-size:6px;
+  font-weight:700; line-height:1; letter-spacing:0; opacity:.9;
+}
 
 /* ── Faixa 2: Detalhe contextual ── */
 #panel-detail{
@@ -251,7 +256,7 @@ canvas{ position:absolute; top:0; left:0; pointer-events:none; }
   letter-spacing:.8px; color:rgba(155,130,65,0.55);
 }
 #pd-plan-body{
-  font-size:11px; color:rgba(220,190,110,0.9);
+  font-size:clamp(11px,2.9vw,13px); color:rgba(235,210,150,0.96);
   font-weight:700; line-height:1.45;
 }
 #pt-nome{
@@ -2204,7 +2209,7 @@ function atualizarHUD(){
 function _updateVerbBtns(){
   const estados = {
     'planejar_mover':  {mover:true,  atacar:false, skill:false, acaolivre:true},
-    'mover_ativo':     {mover:true,  atacar:false, skill:false, acaolivre:false},
+    'mover_ativo':     {mover:false, atacar:false, skill:false, acaolivre:false},
     'planejar_acao':   {mover:false, atacar:true,  skill:true,  acaolivre:true},
     'acao_ativa':      {mover:false, atacar:false, skill:false, acaolivre:false},
     'acao_pronta':     {mover:false, atacar:false, skill:false, acaolivre:false},
@@ -2221,13 +2226,78 @@ function _updateVerbBtns(){
     btn.classList.toggle('ativo', e[k]);
     btn.classList.toggle('inativo', !e[k]);
     btn.disabled = !e[k];
+    const label = btn.querySelector('.btn-label')?.textContent || k.toUpperCase();
+    const reason = e[k] ? 'Disponível nesta etapa.' : _motivoAcaoBloqueada(k, faseDoTurno);
+    btn.title = reason;
+    btn.setAttribute('aria-label', label + (e[k] ? ': disponível agora' : ': ' + reason));
+    btn.dataset.estado = e[k] ? 'disponivel' : 'bloqueada';
+    btn.dataset.reasonShort = e[k] ? '' : _motivoAcaoCurto(k, faseDoTurno);
   });
   const btnAl = document.getElementById('btn-acao-livre');
   if(btnAl){
     btnAl.classList.toggle('ativo', e.acaolivre);
     btnAl.classList.toggle('inativo', !e.acaolivre);
     btnAl.disabled = !e.acaolivre;
+    const reason = e.acaolivre ? 'Disponível nesta etapa.' : _motivoAcaoBloqueada('acaolivre', faseDoTurno);
+    btnAl.title = reason;
+    btnAl.setAttribute('aria-label', 'Ação livre' + (e.acaolivre ? ': disponível agora' : ': ' + reason));
+    btnAl.dataset.estado = e.acaolivre ? 'disponivel' : 'bloqueada';
+    btnAl.dataset.reasonShort = e.acaolivre ? '' : _motivoAcaoCurto('acaolivre', faseDoTurno);
   }
+}
+
+function _motivoAcaoCurto(acao, fase){
+  if(fase==='planejar_mover' && ['atacar','skill'].includes(acao)) return 'Depois de mover';
+  if(fase==='mover_ativo') return acao==='mover' ? 'Escolha ou cancele' : 'Conclua o movimento';
+  if(fase==='planejar_acao' && acao==='mover') return 'Movimento já definido';
+  if(fase==='acao_ativa') return 'Conclua a mira';
+  if(fase==='acao_pronta') return 'Cancele para alterar';
+  if(fase==='turno_inimigo') return 'Turno inimigo';
+  if(fase==='aguardando') return 'Aguarde sua vez';
+  return 'Indisponível agora';
+}
+
+function _motivoAcaoBloqueada(acao, fase){
+  const porFase = {
+    planejar_mover: {
+      atacar: 'Ataque libera depois de mover ou escolher SEM MOVER.',
+      skill: 'Habilidades liberam depois de mover ou escolher SEM MOVER.',
+    },
+    mover_ativo: {
+      mover: 'Escolha um hex destacado ou cancele o movimento atual.',
+      atacar: 'Conclua ou cancele o movimento antes de atacar.',
+      skill: 'Conclua ou cancele o movimento antes de usar uma habilidade.',
+      acaolivre: 'Conclua ou cancele o movimento antes de fazer outra ação.',
+    },
+    planejar_acao: {
+      mover: 'O deslocamento desta rodada já foi definido.',
+    },
+    acao_ativa: {
+      mover: 'Finalize ou cancele a mira atual antes de outra ação.',
+      atacar: 'Finalize ou cancele a mira atual antes de outro ataque.',
+      skill: 'Finalize ou cancele a mira atual antes de outra habilidade.',
+      acaolivre: 'Finalize ou cancele a mira atual antes de outra ação.',
+    },
+    acao_pronta: {
+      mover: 'Ação planejada. Cancele o plano para alterá-lo.',
+      atacar: 'Ação planejada. Cancele o plano para alterá-lo.',
+      skill: 'Ação planejada. Cancele o plano para alterá-lo.',
+      acaolivre: 'Ação planejada. Cancele o plano para alterá-lo.',
+    },
+    turno_inimigo: {
+      mover: 'Aguarde o turno dos inimigos terminar.',
+      atacar: 'Aguarde o turno dos inimigos terminar.',
+      skill: 'Aguarde o turno dos inimigos terminar.',
+      acaolivre: 'Aguarde o turno dos inimigos terminar.',
+    },
+    aguardando: {
+      mover: 'Aguarde o jogador atual concluir o turno.',
+      atacar: 'Aguarde o jogador atual concluir o turno.',
+      skill: 'Aguarde o jogador atual concluir o turno.',
+      acaolivre: 'Aguarde o jogador atual concluir o turno.',
+    },
+  };
+  return porFase[fase]?.[acao] || 'Essa ação não está disponível nesta etapa.';
 }
 
 function cancelarAcaoPlano(){
@@ -3390,6 +3460,8 @@ function _abrirPainelHabilidades(filtro){
     const semSP = (h.custoSP||0) > 0 && selUnit.sp < h.custoSP;
     const btn=document.createElement('button');
     btn.className='hab-btn'+(semSP?' sem-sp':'');
+    btn.disabled=semSP;
+    if(semSP) btn.title=`Indisponível: requer ${h.custoSP} SP; você tem ${selUnit.sp} SP.`;
 
     // build badges
     let badges='';
@@ -3397,7 +3469,7 @@ function _abrirPainelHabilidades(filtro){
     if(cat==='magia')  badges+=`<span class="hab-tag magia">Magia</span>`;
     else if(cat==='skill') badges+=`<span class="hab-tag skill">Skill</span>`;
     else if(cat==='buff')  badges+=`<span class="hab-tag buff">Buff</span>`;
-    if(h.custoSP>0)   badges+=`<span class="hab-sp">⚡${h.custoSP} SP${semSP?' ✕':''}</span>`;
+    if(h.custoSP>0)   badges+=`<span class="hab-sp">${semSP?'⛔ Faltam '+(h.custoSP-selUnit.sp)+' SP':'⚡'+h.custoSP+' SP'}</span>`;
     if(h.dano)        badges+=`<span class="hab-dano">${h.dano}</span>`;
 
     btn.innerHTML=`<span class="hab-icon">${h.icone}</span>
@@ -3639,22 +3711,22 @@ function renderBottomPanel(){
         elBody.textContent='—';
       } else if(faseDoTurno==='planejar_mover'){
         elL.innerHTML=tracker;
-        elBody.innerHTML=`Iniciar turno &nbsp;<span style="opacity:.55;font-size:9px">MOVER ou SEM MOVER</span>`;
+        elBody.innerHTML=`<strong>Sua vez:</strong> mova até ${selUnit.mov} hexes ou escolha <strong>SEM MOVER</strong>. Ataque e habilidades liberam depois.`;
       } else if(faseDoTurno==='mover_ativo'){
         elL.innerHTML=tracker;
         elBody.innerHTML=hexPreview
-          ? `<span style="color:#7aa0c8">Destino:</span> ${hexLabel(hexPreview.col,hexPreview.row)} — confirme`
-          : `${selUnit.mov} hexes disponíveis`;
+          ? `<span style="color:#7aa0c8">Destino:</span> ${hexLabel(hexPreview.col,hexPreview.row)} — confirme para mover`
+          : `Toque em um hex destacado. Alcance: ${selUnit.mov} hexes; use CANCELAR para voltar.`;
       } else if(faseDoTurno==='planejar_acao'){
         elL.innerHTML=tracker;
         elBody.innerHTML=planoMovimento
-          ? `<span style="color:#a0d8a0">Movendo para ${_movDest?hexLabel(_movDest.col,_movDest.row):'?'}</span><br><span style="opacity:.65;font-size:9px">Escolha ATACAR ou AÇÃO</span>`
-          : `Escolha ATACAR ou AÇÃO`;
+          ? `<span style="color:#a0d8a0">Movimento definido: ${_movDest?hexLabel(_movDest.col,_movDest.row):'?'}</span><br><span>Agora: ATAQUE, SKILL ou AÇÃO LIVRE. Movimento não pode ser repetido neste turno.</span>`
+          : `Agora: ATAQUE, SKILL ou AÇÃO LIVRE. Se não houver alvo ao alcance, encerre o turno.`;
       } else if(faseDoTurno==='acao_ativa'){
         elL.innerHTML=tracker;
         const habNm=`<span style="color:#cc8844">${habAtual?.nome||'?'}</span>`;
         if(habAtual?.areaRaio>0){
-          const dica=`${habNm} — Toque no hex para lançar`;
+          const dica=`${habNm} — escolha um hex destacado; depois toque LANÇAR`;
           elBody.innerHTML=dica;
         } else if(atkTargets.length===1){
           const t=atkTargets[0];
@@ -3667,7 +3739,7 @@ function renderBottomPanel(){
         elL.innerHTML=tracker;
         const isSelf=planoAtaque?.alvo===planoAtaque?.atacante;
         const alvN=isSelf?'si mesmo':(planoAtaque?.alvo?.nome||(planoAtaque?.alvoHex?hexLabel(planoAtaque.alvoHex.col,planoAtaque.alvoHex.row):'?'));
-        elBody.innerHTML=`<span style="color:#e8c060">${planoAtaque?.hab?.nome||'?'}</span> → ${alvN}`;
+        elBody.innerHTML=`<span style="color:#e8c060">Ação planejada:</span> ${planoAtaque?.hab?.nome||'?'} → ${alvN}. Revise e toque FINALIZAR TURNO para executar.`;
       } else if(faseDoTurno==='resolvendo'){
         elL.innerHTML=`<span style="${clO}">⚙️ EXECUTANDO</span>`;
         elBody.textContent='…';
@@ -3743,8 +3815,8 @@ function selecionarHabilidade(hab){
     // Verifica se há ao menos 1 inimigo acessível (dentro de alcance + raio)
     const temAlvo=unidades.some(u=>u.tipo==='inimigo'&&u.hp>0&&
       hexDist(_pos.col,_pos.row,u.col,u.row)<=hab.alcance+hab.areaRaio);
-    if(!temAlvo){ modoAtaque=false; habAtual=null; faseDoTurno='planejar_acao'; renderActionRow(); return; }
-    renderActionRow(); renderSel();
+    if(!temAlvo){ modoAtaque=false; habAtual=null; faseDoTurno='planejar_acao'; renderActionRow(); renderBottomPanel(); mostrarLetreiro('SEM ALVO EM ALCANCE','Essa habilidade não alcança inimigos. Escolha outra ou encerre o turno','',1600); return; }
+    renderActionRow(); renderSel(); renderBottomPanel();
     return;
   }
 
@@ -3759,11 +3831,11 @@ function selecionarHabilidade(hab){
   if(!inimigosAlvo.length){
     modoAtaque=false; habAtual=null;
     faseDoTurno='planejar_acao';
-    renderActionRow(); renderSel();
+    renderActionRow(); renderSel(); renderBottomPanel(); mostrarLetreiro('SEM ALVO EM ALCANCE','Essa habilidade não alcança inimigos. Escolha outra ou encerre o turno','',1600);
     return;
   }
 
-  renderActionRow(); renderSel();
+  renderActionRow(); renderSel(); renderBottomPanel();
 }
 
 function cancelarAtaque(){
