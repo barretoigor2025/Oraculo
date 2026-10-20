@@ -1,0 +1,21 @@
+{
+  "id": "classe_exemplo",
+  "nome": "Classe Exemplo",
+  "tipo": "classe",
+  "descricao_curta": "Modelo de classe jogavel.",
+  "status_base": {
+    "hp": 0,
+    "mp": 0,
+    "ataque": 0,
+    "defesa": 0,
+    "magia": 0,
+    "movimento": 0,
+    "iniciativa": 0
+  },
+  "assets": {
+    "retrato": "retrato/classe_exemplo_retrato.png",
+    "sprite_frente": "sprites/frente/classe_exemplo_frente.png",
+    "sprite_costas": "sprites/costas/classe_exemplo_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/classe_exemplo_peca.png"
+  }
+}

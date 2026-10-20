@@ -1,0 +1,36 @@
+{
+  "id": "id_da_entidade",
+  "nome": "Nome da Entidade",
+  "tipo": "classe | heroi | npc | inimigo | criatura",
+  "descricao_curta": "Descricao resumida para catalogo e ficha.",
+  "status": {
+    "hp": 0,
+    "mp": 0,
+    "ataque": 0,
+    "defesa": 0,
+    "magia": 0,
+    "movimento": 0,
+    "iniciativa": 0
+  },
+  "combate": {
+    "alcance": 1,
+    "dano_base": "1d6",
+    "comportamento": "neutro",
+    "prioridade_alvo": "nenhuma"
+  },
+  "assets": {
+    "retrato": "retrato/id_da_entidade_retrato.png",
+    "sprite_frente": "sprites/frente/id_da_entidade_frente.png",
+    "sprite_costas": "sprites/costas/id_da_entidade_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/id_da_entidade_peca.png"
+  },
+  "mapa": {
+    "tamanho": "medio",
+    "ocupa_hex": 1,
+    "tipo_base": "redonda"
+  },
+  "roteiro": {
+    "aparece_em": [],
+    "observacoes": ""
+  }
+}

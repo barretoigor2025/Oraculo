@@ -1,0 +1,23 @@
+{
+  "id": "heroi_exemplo",
+  "nome": "Heroi Exemplo",
+  "tipo": "heroi",
+  "classe_id": "classe_exemplo",
+  "jogador": "",
+  "descricao_curta": "Modelo de heroi jogavel.",
+  "status": {
+    "hp": 0,
+    "mp": 0,
+    "ataque": 0,
+    "defesa": 0,
+    "magia": 0,
+    "movimento": 0,
+    "iniciativa": 0
+  },
+  "assets": {
+    "retrato": "retrato/heroi_exemplo_retrato.png",
+    "sprite_frente": "sprites/frente/heroi_exemplo_frente.png",
+    "sprite_costas": "sprites/costas/heroi_exemplo_costas.png",
+    "peca_tabuleiro": "peca_tabuleiro/heroi_exemplo_peca.png"
+  }
+}

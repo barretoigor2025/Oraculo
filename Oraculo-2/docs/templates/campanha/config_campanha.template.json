@@ -1,0 +1,15 @@
+{
+  "id": "id_da_campanha",
+  "nome": "Nome da Campanha",
+  "versao": "0.1.0",
+  "status": "rascunho",
+  "descricao": "Descricao curta da campanha.",
+  "material_original": "material_original/campanha_original.pdf",
+  "roteiro_principal": "roteiro/roteiro_jogavel.md",
+  "catalogo": "../../catalogo/id_da_campanha",
+  "sistemas_ativos": {
+    "arena": true,
+    "catalogo": true,
+    "checklist": true
+  }
+}

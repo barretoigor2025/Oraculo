@@ -1,0 +1,20 @@
+{
+  "campanha_id": "_template",
+  "status": "rascunho",
+  "estrutura": {
+    "campanhas/_template": true,
+    "catalogo/_template": true,
+    "classes": true,
+    "herois": true,
+    "npcs": true,
+    "inimigos": true,
+    "cenarios": true
+  },
+  "pendencias": [
+    "Substituir templates por entidades reais da campanha.",
+    "Inserir material original.",
+    "Criar roteiro jogavel final.",
+    "Adicionar assets reais de retrato, sprites e peca de tabuleiro."
+  ],
+  "status_jogavel": false
+}
