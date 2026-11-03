@@ -10,8 +10,10 @@
 <script>(function(){try{var c=localStorage.getItem('mindRolePlay.fbConfig'),r=localStorage.getItem('mindRolePlay.roomId');if(!c||!r){location.replace('index.html?v=8');}}catch(e){location.replace("index.html?v=8");}})();</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script type="module">
+import {newId} from './identity.js?v=7';
 import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import{getFirestore,doc,onSnapshot,updateDoc,getDoc}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import{getFirestore,doc,onSnapshot,updateDoc,getDoc,runTransaction}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { appendBeats, appendPlayerBeat, beatKey, conversationState } from './conversation.js?v=7';
 const _cfg=JSON.parse(localStorage.getItem('mindRolePlay.fbConfig')||'null');
 const _rid=localStorage.getItem('mindRolePlay.roomId');
 if(_cfg&&_rid){
@@ -25,16 +27,50 @@ if(_cfg&&_rid){
         for(const[k,v]of Object.entries(fields)) update[`narration.${k}`]=v;
         update['narration.ts']=Date.now();
         await updateDoc(rd,update);
-      }catch(e){console.warn('fbUpdateNarration:',e);}
+      }catch(e){console.warn('fbUpdateNarration:',e);throw e;}
+    };
+    const clientId=newId();
+    const localPid=localStorage.getItem('mindRolePlay.playerId');
+    const activeIds=room=>{
+      const entries=Object.entries(room.players||{});
+      const live=entries.filter(([,p])=>!p.ts||Date.now()-p.ts<45000);
+      return (live.length?live:entries).map(([id])=>id).sort();
     };
     window._fbAddDialogue=async(linha)=>{
-      try{
-        const snap=await getDoc(rd);
-        if(!snap.exists())return;
-        const dialogo=[...(snap.data().narration?.dialogo??[]),linha].slice(-60);
-        await updateDoc(rd,{'narration.dialogo':dialogo,'narration.ts':Date.now()});
-      }catch(e){console.warn('fbAddDialogue:',e);}
+      const scene=window._mindSceneId;
+      return runTransaction(db,async tx=>{
+        const snap=await tx.get(rd);
+        if(!snap.exists())throw new Error('A sala não existe mais.');
+        const room=snap.data(),n=room.narration||{};
+        if(scene&&n.cenaId!==scene)throw new Error('A cena mudou. Sua mensagem não foi enviada.');
+        const update=linha.tipo==='jogador'||(linha.tipo==='controle'&&linha.controle==='passar')
+          ? appendPlayerBeat({...room,narration:{...n,conversationStatus:n.conversationScene===n.cenaId?n.conversationStatus:{}}},linha,activeIds(room)) : appendBeats(n,[linha]);
+        const state=conversationState(update.dialogo,activeIds(room),n.conversationScene===n.cenaId?n.conversationStatus:{});
+        tx.update(rd,{'narration.dialogo':update.dialogo,'narration.dialogueSeq':update.dialogueSeq,
+          'narration.conversationStatus':state.status,'narration.conversationScene':n.cenaId,'narration.ts':Date.now()});
+      });
     };
+    window._fbClaimReply=async(source,scene)=>runTransaction(db,async tx=>{
+      const snap=await tx.get(rd);if(!snap.exists())return false;
+      const room=snap.data(),n=room.narration||{},lease=n.replyLease;
+      if(room.hostId!==localPid||n.cenaId!==scene||beatKey(n.dialogo?.at(-1))!==source)return false;
+      if(lease?.expires>Date.now()&&lease.owner!==clientId)return false;
+      tx.update(rd,{'narration.replyLease':{source,owner:clientId,expires:Date.now()+30000}});return true;
+    });
+    window._fbResolveDialogue=async(beat,source,scene,memory)=>runTransaction(db,async tx=>{
+      const snap=await tx.get(rd);if(!snap.exists())return false;
+      const room=snap.data(),n=room.narration||{};
+      if(room.hostId!==localPid||n.cenaId!==scene||beatKey(n.dialogo?.at(-1))!==source)return false;
+      if(n.replyLease?.owner!==clientId)return false;
+      const result=appendBeats(n,[beat]);
+      const update={'narration.dialogo':result.dialogo,'narration.dialogueSeq':result.dialogueSeq,'narration.replyLease':null,'narration.ts':Date.now()};
+      if(memory)update['narration.memorias.'+beat.oradorId]=[...(n.memorias?.[beat.oradorId]||[]),memory].slice(-30);
+      tx.update(rd,update);return true;
+    });
+    window._fbReleaseReply=async()=>runTransaction(db,async tx=>{
+      const snap=await tx.get(rd);
+      if(snap.data()?.narration?.replyLease?.owner===clientId)tx.update(rd,{'narration.replyLease':null});
+    });
     window._fbSetStatus=async(status,extra={})=>{
       try{
         const d={status,updatedAt:Date.now()};
@@ -68,7 +104,7 @@ if(_cfg&&_rid){
         await updateDoc(rd,u);
       }catch(e){console.warn('fbAtualizarPercepcao:',e);}
     };
-    window._fbListenRoom=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null));
+    window._fbListenRoom=cb=>onSnapshot(rd,s=>cb(s.exists()?s.data():null),error=>{const el=document.getElementById('dial-ia-pensando');if(el){el.style.display='block';el.textContent='Não foi possível abrir a sessão: '+error.message;}});
     window._fbHeartbeat=async(pid,nome)=>{
       try{await updateDoc(rd,{[`players.${pid}.nome`]:nome,[`players.${pid}.ts`]:Date.now()});}
       catch(e){console.warn('fbHeartbeat:',e);}
@@ -1098,6 +1134,12 @@ html,body{
 #dial-ia-pensando{box-sizing:border-box;min-width:0;width:auto;max-width:94%;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-height:26dvh}
 #dial-ia-pensando button{display:block;white-space:normal;max-width:100%;margin:8px 0 0}
 @media(max-height:520px){#dial-ia-pensando{bottom:170px;max-height:28dvh}}
+
+#mind-conversation-controls{display:flex;gap:6px;flex-wrap:wrap;padding:5px 12px;background:#121212;flex-shrink:0}
+#mind-conversation-controls button{padding:6px 9px;border:1px solid #777;background:#222;color:#eee;border-radius:6px;font:12px sans-serif}
+#mind-conversation-controls button[hidden]{display:none}
+#mind-conversation-controls button:disabled{opacity:.4}
+#mind-test-reason{padding:0 12px;font:12px sans-serif;color:#e5d094;background:#121212;max-height:10dvh;overflow:auto}
 </style>
 </head>
 <body>
@@ -1306,8 +1348,19 @@ html,body{
   <div style="display:flex;gap:6px;padding:5px 12px;background:#121212;align-items:center">
     <button id="mind-fala" onclick="window._mindModo(false)" aria-pressed="true">Falar</button>
     <button id="mind-acao" onclick="window._mindModo(true)" aria-pressed="false">Agir · 3d6</button>
+    <label id="mind-mod-label" style="display:none">Mod. <input id="mind-mod" type="number" min="-10" max="10" value="0" style="width:48px"></label>
     <select id="mind-skill" aria-label="Perícia GURPS" style="display:none;max-width:55%;background:#222;color:white"></select>
   </div>
+  <div id="mind-conversation-controls">
+    <button id="mind-pass" onclick="window._mindControle('passar')">Passar vez</button>
+    <button id="mind-done" onclick="window._mindControle('satisfeito')">Satisfeito ✓</button>
+    <button id="mind-return" onclick="window._mindControle('voltar')" hidden>Voltar à conversa</button>
+    <button id="mind-define-test" onclick="window._mindDefinirTeste()" hidden>Definir NH por omissão</button>
+    <button id="mind-combat" onclick="window._mindAbrirConfronto()">Confronto</button>
+    <button id="mind-test" onclick="window._mindRolarPedido()" hidden>Rolar teste · 3d6</button>
+    <button onclick="window._mindFicha()">Ficha</button>
+  </div>
+  <div id="mind-test-reason" role="status"></div>
   <div id="dial-input-bar">
     <input id="dial-msg-input" type="text" placeholder="O que você diz…" autocomplete="off" spellcheck="false">
     <button id="dial-btn-enviar" onclick="window._dialEnviar()">Enviar →</button>
@@ -1315,8 +1368,12 @@ html,body{
 </div>
 
 <script type="module">
+import {newId} from './identity.js?v=7';
 import { groqFetch } from './groq.js?v=6';
-import { test3d6, resolveSuccessTest } from './gurps.js';
+import { appendBeats, beatKey, logSequence, conversationState } from './conversation.js?v=7';
+import { buildNpcPrompt, parseNpcReply } from './director.js?v=7';
+import { SCENE_GUIDES } from './catalogo/kagehama/direction.js?v=7';
+import { test3d6, resolveSuccessTest, sheetSkills, skillLevel, conditionModifier } from './gurps.js';
 import { CLASSES_DATA } from './catalogo/kagehama/classes.js';
 import { NPCS } from './catalogo/kagehama/loader.js?v=2';
 import { CENAS, CENAS_ORDEM } from './catalogo/kagehama/campanha/roteiro/campaign.js?v=33';
@@ -1331,10 +1388,10 @@ window._mindModo=function(acao){
  const cls=CLASSES_DATA[player.classId||localStorage.getItem('mindRolePlay.classId')];
  const select=document.getElementById('mind-skill');
  select.replaceChildren();
- for(const skill of [...(player.skills||cls?.skills||[]),...Object.entries(player.attributes||cls?.attributes||{}).map(([name,level])=>({name,level}))]){
-  const option=document.createElement('option');option.value=String(skill.level);option.textContent=skill.name+' · '+skill.level;select.append(option);
+ for(const skill of sheetSkills({...cls,...player})){
+  const option=document.createElement('option');option.value=skill.name;option.textContent=skill.name+' · '+skill.level;select.append(option);
  }
- select.style.display=acao?'':'none';
+ select.style.display=acao?'':'none';document.getElementById('mind-mod-label').style.display=acao?'':'none';
  document.getElementById('mind-fala').setAttribute('aria-pressed',String(!acao));
  document.getElementById('mind-acao').setAttribute('aria-pressed',String(acao));
  document.getElementById('dial-msg-input').placeholder=acao?'Descreva sua ação…':'O que você diz…';
@@ -1342,12 +1399,12 @@ window._mindModo=function(acao){
 
 // ── Estado local ─────────────────────────────────────────────────
 const _pid = localStorage.getItem('mindRolePlay.playerId') || (() => {
-  const id = crypto.randomUUID();
+  const id = newId();
   localStorage.setItem('mindRolePlay.playerId', id);
   return id;
 })();
 const _pname = localStorage.getItem('mindRolePlay.playerName') || 'Aventureiro';
-const _isHost = localStorage.getItem('mindRolePlay.isHost') !== '0';
+let _isHost = localStorage.getItem('mindRolePlay.isHost') !== '0';
 let _cenaAtual = null;   // null força atualizarCena() na primeira leitura do Firebase
 let _modoImagem = null;
 let _lastRoom   = null;
@@ -1462,6 +1519,9 @@ function init() {
 function onRoomUpdate(room) {
   if (!room) return;
   _lastRoom = room;
+  if(room.hostId)_isHost=room.hostId===_pid;
+  elControles.style.display=_isHost?'flex':'none';
+  window._mindSceneId=room.narration?.cenaId;
 
   if (room.status === 'battle') {
     // Grava a cena da batalha para a Arena escolher o roster certo
@@ -1488,7 +1548,15 @@ function onRoomUpdate(room) {
 
   _cenaAtual = novaCena;
   _modoImagem = novoModo;
+  const readingKey=beatKey(_dialogoLog[_dialReadIdx]);
+  const oldHead=beatKey(_dialogoLog[0]);
+  const wasAtEnd=_dialReadIdx>=_dialogoLog.length;
   _dialogoLog = novoDialogo;
+  if(!mudouCena&&oldHead&&oldHead!==beatKey(novoDialogo[0])){
+    const found=novoDialogo.findIndex(b=>beatKey(b)===readingKey);
+    _dialReadIdx=found>=0?found:(wasAtEnd?novoDialogo.length-1:0);
+    _dialReadIdx=Math.max(0,_dialReadIdx);
+  }
 
   // Voltar do mapa → cair DIRETO no diálogo (sem reabrir a introdução da cena).
   _pularIntroVez = !!narr.pularIntro;
@@ -1534,7 +1602,7 @@ function onRoomUpdate(room) {
   //  numa cena cujo fluxo é '_mapa' — causava o loop cena↔mapa. Viagem hoje só parte
   //  por clique no botão, via _dialProximaCena.)
   if (_dialAtivo) _dialAtualizarChips(); // atualiza rótulo/contagem do botão de viagem
-  if (_dialAtivo) { _dialAtualizarVezUI(); _dialFluxoTurnos(); } // turnos de fala + IA p/ guests (host)
+  if (_dialAtivo) { _mindSincronizarJogadores(); _dialAtualizarVezUI(); _dialFluxoTurnos(); } // turnos de fala + IA p/ guests (host)
   // Viagem em grupo: parte quando TODOS confirmaram. O some(Boolean) evita o
   // loop antigo do {} truthy (chegada com viagemConfirmados vazio re-disparava).
   if (_isHost && narr.viagemConfirmados && Object.values(narr.viagemConfirmados).some(v => v === _cenaAtual)) {
@@ -1613,7 +1681,9 @@ async function _dispararFalaEntrada(cenaId) {
   // Aguarda um beat narrativo antes do NPC falar
   await new Promise(r => setTimeout(r, 1400));
 
+  if(_cenaAtual!==cenaId)return;
   const linha = {
+    id:'opening:'+cenaId,
     tipo: 'npc',
     oradorId: cena.npcEntrada,
     oradorNome: npc.nome,
@@ -1949,11 +2019,11 @@ function _gurpsSkill(name='Percepção') {
  const sheet=JSON.parse(localStorage.getItem('mindRolePlay.character')||'null');
  const player=_lastRoom?.players?.[_pid]||sheet||{};
  const cls=CLASSES_DATA[player.classId||localStorage.getItem('mindRolePlay.classId')];
- const skill=(player.skills||cls?.skills||[]).find(s=>s.name.toLowerCase()===name.toLowerCase());
- return Number(skill?.level||player.attributes?.IQ||cls?.attrs?.IQ||10);
+ return skillLevel({...cls,...player},name)??10;
 }
 const PercDiceOverlay={rolar(onResult){
- const result=test3d6(_gurpsSkill());_lastGurpsRoll=result;
+ const player={...CLASSES_DATA[localStorage.getItem('mindRolePlay.classId')],..._lastRoom?.players?.[_pid]};
+ const result=test3d6(_gurpsSkill(),{conditionModifier:conditionModifier(player,'Percepção')});_lastGurpsRoll=result;
  const wrap=document.getElementById('perc-dado-wrap');
  if(wrap){wrap.innerHTML='<div style="display:flex;gap:12px;justify-content:center;padding:30px">'+result.dice.map(d=>'<span style="background:white;color:black;border:2px solid #555;border-radius:9px;width:52px;height:52px;display:grid;place-items:center;font:bold 30px serif">'+['','⚀','⚁','⚂','⚃','⚄','⚅'][d]+'</span>').join('')+'</div>';}
  setTimeout(()=>onResult(result.total),450);
@@ -2862,14 +2932,7 @@ function _dialVezPid(){
   if(ult && ult.tipo==='jogador') return null;   // rodada em curso: NPC vai responder
   if(!_dialTodosLeram()) return null;            // grupo ainda lendo a rodada
   const ativos=_jogadoresAtivos(_lastRoom).sort();
-  if(!ativos.length) return _pid;
-  for(let i=log.length-1;i>=0;i--){
-    if(log[i].tipo==='jogador'){
-      const idx=ativos.indexOf(log[i].authorId);
-      return ativos[(idx+1)%ativos.length]||ativos[0];   // Igor → Patrícia → Igor…
-    }
-  }
-  return ativos[0];   // ninguém falou ainda: começa o primeiro
+  return conversationState(log,ativos,(_lastRoom?.narration?.conversationScene===_cenaAtual?_lastRoom?.narration?.conversationStatus:{})).turn;
 }
 function _dialMinhaVez(){
   if(!window._fbListenRoom) return true;         // solo/offline: sempre pode
@@ -2877,14 +2940,14 @@ function _dialMinhaVez(){
 }
 function _dialTodosLeram(){
   if(!window._fbListenRoom) return true;
-  const len=_dialogoLog.length;
+  const len=logSequence(_dialogoLog);
   if(!len) return true;
   const lido=_lastRoom?.narration?.dialLido||{};
   return _jogadoresAtivos(_lastRoom).every(pid=>(lido[pid]||0)>=len);
 }
 // Read receipt: este device terminou de ler todos os beats
 function _dialGravarLido(){
-  const len=_dialogoLog.length;
+  const len=logSequence(_dialogoLog);
   if(len>_dialLidoGravado){ _dialLidoGravado=len; window._fbDialLido?.(_pid,len); }
 }
 // HOST conduz: responde IA à fala de guest e passa a vez quando todos leram.
@@ -2899,24 +2962,29 @@ function _mindErroResposta(error){
 }
 async function _dialFluxoTurnos(){
  if(!_isHost||!_dialAtivo||_mindRespostaEmCurso)return;
- const ult=_dialogoLog.at(-1);
- if(!ult||ult.tipo!=='jogador'||_dialIaRespondTs===ult.ts)return;
- _mindRespostaEmCurso=true;_dialIaRespondTs=ult.ts;
+ const ult=_dialogoLog.at(-1),source=beatKey(ult),scene=_cenaAtual;
+ if(!ult||ult.tipo!=='jogador'||_dialIaRespondTs===source)return;
+ _mindRespostaEmCurso=true;_dialIaRespondTs=source;
  const status=document.getElementById('dial-ia-pensando');
  status.textContent='Preparando a resposta…';status.style.display='block';
  try{
+  if(window._fbClaimReply&&!await window._fbClaimReply(source,scene)){_dialIaRespondTs=null;return;}
   const idx=ult.npcId?_dialNpcEls.findIndex(e=>e.npc.id===ult.npcId):_dialNpcAtivoIdx;
   const npc=_dialNpcEls[idx]?.npc;
   if(!npc)throw new Error('O NPC escolhido não está nesta cena.');
   const resposta=await _dialChamarIA(idx,ult.texto);
-  if(_dialogoLog.at(-1)?.ts!==ult.ts)return;
-  const beat={tipo:'npc',oradorId:npc.id,oradorNome:npc.nome,texto:resposta,respondeA:ult.ts,ts:Date.now()};
-  if(window._fbAddDialogue)await window._fbAddDialogue(beat);
-  else{_dialogoLog=[..._dialogoLog,beat];renderDialogo();_dialTickDisplay();}
+  if(_cenaAtual!==scene||beatKey(_dialogoLog.at(-1))!==source)return;
+  const parsed=parseNpcReply(resposta,{playerId:ult.authorId,playerIds:Object.keys(_lastRoom?.players||{}),allowTest:!ult.roll});
+  const beat={...parsed,id:'reply:'+source,tipo:'npc',oradorId:npc.id,oradorNome:npc.nome,respondeA:source,ts:Date.now()};
+  const memory={cena:scene,jogador:ult.oradorNome,pergunta:ult.texto,resposta:parsed.texto,...(ult.roll?{roll:ult.roll}:{})};
+  let committed=true;
+  if(window._fbResolveDialogue)committed=await window._fbResolveDialogue(beat,source,scene,memory);
+  else if(window._fbAddDialogue)await window._fbAddDialogue(beat);
+  else{_dialogoLog=appendBeats({dialogo:_dialogoLog},[beat]).dialogo;renderDialogo();_dialTickDisplay();}
   status.style.display='none';
-  try{await _dialVerificarReacao(idx);}catch(error){console.warn('Reação opcional indisponível:',error.message);}
- }catch(error){_mindErroResposta(error);}
- finally{_mindRespostaEmCurso=false;_dialAtualizarVezUI();}
+  if(committed&&!beat.pedidoTeste)try{await _dialVerificarReacao(idx);}catch(error){console.warn('Reação opcional indisponível:',error.message);}
+ }catch(error){_dialIaRespondTs=null;_mindErroResposta(error);}
+ finally{await window._fbReleaseReply?.().catch(()=>{});_mindRespostaEmCurso=false;_dialAtualizarVezUI();}
 }
 
 // ── Helpers ───────────────────────────────────────────────
@@ -2991,19 +3059,11 @@ function _dialChroma(ctx, w, h) {
 function _dialActivar(campCenaId) {
   // Ao (re)abrir, retoma na ÚLTIMA fala de NPC/Narrador já registrada — assim,
   // voltar do mapa cai exatamente onde a conversa parou (não em branco).
-  let _idxRetoma = _dialogoLog.length;
-  for (let i = _dialogoLog.length - 1; i >= 0; i--) {
-    if (_dialogoLog[i]?.tipo === 'npc' || _dialogoLog[i]?.tipo === 'narrador') { _idxRetoma = i; break; }
-  }
-  _dialReadIdx      = _idxRetoma; // exibe a última fala registrada + beats novos
-  _dialAnimBeat     = false;
-  _dialAwaitingCont = false;
-  _dialNpcEls       = [];
-  _dialHistoricoLocal = [];
-  _dialLidoGravado  = 0;   // re-confirma leitura na cena nova
-  _dialIaRespondTs  = null;
-  // Host zera os receipts/vez da cena anterior (leituras antigas não contam aqui)
-  if (_isHost) window._fbUpdateNarration?.({ dialLido: {}, dialVez: null });
+  const receipt=_lastRoom?.narration?.dialLido?.[_pid]||0;
+  const firstUnread=_dialogoLog.findIndex((beat,i)=>(beat.seq||i+1)>receipt);
+  _dialReadIdx=firstUnread>=0?firstUnread:Math.max(0,_dialogoLog.length-1);
+  _dialAnimBeat=false;_dialAwaitingCont=false;_dialNpcEls=[];_dialHistoricoLocal=[];
+  _dialLidoGravado=receipt;_dialIaRespondTs=null;
 
   const narracaoCena = _dialGetNarracaoCena(campCenaId);
   _dialNarracaoCena  = narracaoCena;
@@ -3052,18 +3112,7 @@ function _dialActivar(campCenaId) {
     _dialNpcEls.push({ par: div, npc, idx: i });
   });
 
-  Object.entries(_lastRoom?.players||{}).forEach(([pid,player],index)=>{
-    const cls=CLASSES_DATA[player.classId];
-    const src=player.standee||cls?.standee;
-    if(!src)return;
-    const div=document.createElement('div');div.className='dial-hero';
-    div.dataset.playerId=pid;
-    div.style.right=(index*13)+'%';
-    const canvas=document.createElement('canvas');
-    _dialLoadCanvas(src,canvas,()=>{div.append(canvas);div.classList.add('arte-pronta');if(div.classList.contains('em-cena'))requestAnimationFrame(()=>div.classList.add('dentro'));},()=>{});
-    const label=document.createElement('span');label.textContent=player.nome||player.name||'Aventureiro';div.append(label);
-    container.append(div);
-  });
+  _mindSincronizarJogadores();
   // Selecionar primeiro NPC ativo
   _dialNpcAtivoIdx = 0;
 
@@ -3193,6 +3242,23 @@ function _dialSelecionarNpc(idx) {
   if (input && npcAtivo) input.placeholder = `O que você diz para ${npcAtivo.nome.split(' ')[0]}…`;
 }
 
+function _mindSincronizarJogadores(){
+  const container=document.getElementById('dial-personagens');
+  Object.entries(_lastRoom?.players||{}).forEach(([pid,player],index)=>{
+    if([...container.querySelectorAll('.dial-hero')].some(el=>el.dataset.playerId===pid))return;
+    const cls=CLASSES_DATA[player.classId];
+    const src=player.standee||cls?.standee;
+    if(!src)return;
+    const div=document.createElement('div');div.className='dial-hero';
+    div.dataset.playerId=pid;
+    div.style.right=(index*13)+'%';
+    const canvas=document.createElement('canvas');
+    _dialLoadCanvas(src,canvas,()=>{div.append(canvas);div.classList.add('arte-pronta');if(div.classList.contains('em-cena'))requestAnimationFrame(()=>div.classList.add('dentro'));},()=>{});
+    const label=document.createElement('span');label.textContent=player.nome||player.name||'Aventureiro';div.append(label);
+    container.append(div);
+  });
+}
+
 function _mindMostrarAtor(tipo,id){
   const npc=tipo==='npc';
   const actors=npc?_dialNpcEls.map(e=>({el:e.par,id:e.npc.id}))
@@ -3217,14 +3283,25 @@ function _dialAtualizarVezUI(){
   const vezEl=document.getElementById('dial-turno-vez');
   if(!input||!btn) return;
   const vez=_dialVezPid(), minha=_dialMinhaVez(), leram=_dialTodosLeram();
-  const pode=minha&&leram;
+  const state=conversationState(_dialogoLog,_jogadoresAtivos(_lastRoom).sort(),(_lastRoom?.narration?.conversationScene===_cenaAtual?_lastRoom?.narration?.conversationStatus:{}));
+  const pode=minha&&leram&&!_mindRespostaEmCurso;
+  const pass=document.getElementById('mind-pass'),done=document.getElementById('mind-done'),back=document.getElementById('mind-return'),test=document.getElementById('mind-test');
+  if(pass)pass.disabled=!pode;
+  if(done)done.disabled=!!state.pendingTest||state.awaitingReply;
+  if(back)back.hidden=state.status[_pid]!=='satisfeito';
+  if(done)done.hidden=state.status[_pid]==='satisfeito';
+  const define=document.getElementById('mind-define-test');if(define)define.hidden=!_isHost||!state.pendingTest;
+  const combat=document.getElementById('mind-combat');if(combat)combat.hidden=!_isHost;
+  if(test){test.hidden=!state.pendingTest||state.pendingTest.playerId!==_pid;test.disabled=!leram;}
+  const reason=document.getElementById('mind-test-reason');
+  if(reason)reason.textContent=state.pendingTest?state.pendingTest.skill+' ('+state.pendingTest.modifier+') — '+state.pendingTest.reason:state.invitations[_pid]?state.invitations[_pid]+' quer falar com você. Você pode voltar à conversa.':!state.active.length?'Todos estão satisfeitos. O anfitrião pode abrir o mapa.':'';
   input.disabled=!pode; btn.disabled=!pode;
   if(vezEl){
     if(pode) vezEl.textContent='🗣 Sua vez';
     else if(!leram){
       const lido=_lastRoom?.narration?.dialLido||{};
       const ativos=_jogadoresAtivos(_lastRoom);
-      const n=ativos.filter(p=>(lido[p]||0)>=_dialogoLog.length).length;
+      const n=ativos.filter(p=>(lido[p]||0)>=logSequence(_dialogoLog)).length;
       vezEl.textContent=`⌛ lendo… (${n}/${ativos.length})`;
     }
     else if(vez) vezEl.textContent='Vez de '+_getNomeJogador(vez).split(' ')[0];
@@ -3241,11 +3318,13 @@ function _dialAtualizarTurnoBar() {
   const jogadores = Object.entries(_lastRoom?.players || {});
   const lista = jogadores.length > 0 ? jogadores : [[_pid, { nome: _pname }]];
   const vez = _dialVezPid();
+  const state=conversationState(_dialogoLog,_jogadoresAtivos(_lastRoom),(_lastRoom?.narration?.conversationScene===_cenaAtual?_lastRoom?.narration?.conversationStatus:{}));
   lista.forEach(([id, p]) => {
     const chip = document.createElement('button');
     // O chip ATIVO é o jogador da VEZ (sincronizado) — não é mais seletor manual.
     chip.className = 'dial-turno-chip' + (id === vez ? ' ativo' : '');
     chip.textContent = (p.nome || (id === _pid ? _pname : null) || 'Jog.').split(' ')[0];
+    if(state.status[id]==='satisfeito')chip.textContent+=' ✓';
     bar.appendChild(chip);
   });
 }
@@ -3331,20 +3410,21 @@ async function _dialRenderBeat(beat) {
     _mindMostrarAtor('jogador',beat.authorId||oradorId);
     const CLASS_AVATAR = { mago:'🔮', guerreiro:'⚔️', ladino:'🗡️', clerigo:'✝️', arqueiro:'🏹', druida:'🌿', barbaro:'🪓' };
     const avatar = CLASS_AVATAR[beat.classId] || '⚔️';
-    _dialMostrarCardPlayer(oradorNome || 'Jogador', avatar, texto || '', true);
+    _dialMostrarCardPlayer(oradorNome || 'Jogador', avatar, (beat.roll?'🎲 '+beat.roll.dice.join('+')+' = '+beat.roll.total+' · '+beat.roll.skill+' '+beat.roll.effectiveSkill+' · '+beat.roll.outcome+'\n':'')+(texto||''), true);
     _dialHistoricoLocal.push({ tipo: 'jogador', quem: oradorNome || 'Jogador', texto: texto || '' });
     _dialAnimBeat = false;
     _dialAwaitingCont = true;
 
+  } else if(tipo==='narrador'||tipo==='sistema'){
+    _dialMostrarBalaoNPC(oradorNome||'Narrador','',texto||'',true);
+    _dialAnimBeat=false;_dialAwaitingCont=true;
   } else {
-    // narrador / sistema — avança sem exibir
-    _dialReadIdx++;
-    _dialAnimBeat = false;
-    _dialTickDisplay();
+    _dialReadIdx++;_dialAnimBeat=false;_dialTickDisplay();
   }
 }
 
 window._dialContinuar = function () {
+  if(!_dialAwaitingCont)return;
   document.getElementById('dial-btn-continuar').style.display = 'none';
   _dialAwaitingCont = false;
   _dialReadIdx++;
@@ -3359,20 +3439,10 @@ async function _dialChamarIA(npcIdx, mensagemJogador) {
   const npc = _dialNpcEls[npcIdx]?.npc;
   if (!npc) return null;
 
-  // Contexto da cena
-  const cena = CENAS[_cenaAtual];
-  const nomesPresentes = _dialNpcEls.map(e => e.npc.nome).join(', ');
-  const local = cena?.titulo || _cenaAtual;
-  const jogadoresNomes = Object.values(_lastRoom?.players || {}).map(p => p.nome).join(', ') || _pname;
-  const historicoTexto = _dialogoLog.length
-    ? _dialogoLog.slice(-40).map(e => `${e.oradorNome}: "${e.texto}"`).join('\n')
-    : '(a cena acaba de começar)';
+  const cena=CENAS[_cenaAtual];
   const memoria=_lastRoom?.narration?.memorias?.[npc.id]||[];
-  const contextoCena = `MEMÓRIA ESTABELECIDA: ${JSON.stringify(memoria)}\nLOCAL: ${local}.\nPRESENTES: ${nomesPresentes} e ${jogadoresNomes} (aventureiros).\n\nDIÁLOGOS RECENTES:\n${historicoTexto}`;
-
-  const sysBase = npc.promptSistema
-    ? `${npc.promptSistema}\n\nQUEM VOCÊ É: ${npc.personalidade}\nO QUE VOCÊ SABE (revele gradualmente): ${npc.conhecimentos}\n\n${contextoCena}\n\nREGRAS: Resultados GURPS 3d6 informados pelo programa são definitivos: narre a consequência sem refazer testes ou alterar sucesso, falha ou críticos. Fala comum não exige dado; não conceda persuasão contra interesses sem teste. Português brasileiro, 1ª pessoa. Máximo 2-3 frases. Use [ACAO: desc] antes da fala para ações físicas visíveis. Reaja ao contexto da cena, não apenas à última fala.`
-    : `Você é ${npc.nome} — personagem vivo de uma campanha de RPG de fantasia medieval. NUNCA quebre o personagem.\n\nQUEM VOCÊ É: ${npc.personalidade}\nO QUE VOCÊ SABE (revele gradualmente): ${npc.conhecimentos}\nSUA FORMA DE FALAR: ${npc.formaDeFalar}\n\n${contextoCena}\n\nREGRAS: Resultados GURPS 3d6 informados pelo programa são definitivos: narre a consequência sem refazer testes ou alterar sucesso, falha ou críticos. Fala comum não exige dado; não conceda persuasão contra interesses sem teste. Português brasileiro, 1ª pessoa. Máximo 2-3 frases. Use [ACAO: desc] antes da fala para ações físicas visíveis. Reaja ao contexto da cena, não apenas à última fala.`;
+  const sysBase=buildNpcPrompt({npc,scene:cena,guide:SCENE_GUIDES[_cenaAtual],world:_lastRoom?.narration?.world,
+    players:_lastRoom?.players,log:_dialogoLog,npcMemory:memoria,reaction:mensagemJogador.startsWith('Você observou:')});
 
   const messages = [
     { role: 'system', content: sysBase },
@@ -3385,15 +3455,11 @@ async function _dialChamarIA(npcIdx, mensagemJogador) {
     const resp = await groqFetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST', signal: controller.signal,
       headers: { 'Authorization': `Bearer ${key}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 200, messages }),
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 500, messages }),
     });
     const data = await resp.json();
     if (!resp.ok || data.error) throw new Error(data.error?.message || 'Serviço de IA indisponível ('+resp.status+').');
     const reply=data.choices?.[0]?.message?.content?.trim()||null;
-    if(reply && window._fbUpdateNarration){
-      const saved=[...memoria,{jogador:(_dialogoLog.filter(b=>b.tipo==='jogador').at(-1)?.oradorNome||_pname),pergunta:mensagemJogador,resposta:reply}].slice(-40);
-      await window._fbUpdateNarration({['memorias.'+npc.id]:saved});
-    }
     if(!reply)throw new Error('A IA não retornou uma resposta.');
     return reply;
   } catch (error) { throw new Error(error.name==='AbortError'?'A IA demorou demais para responder.':error.message); }
@@ -3408,13 +3474,15 @@ async function _dialVerificarReacao(npcQueRespondeuIdx) {
   const npc = reator.npc;
   if (Math.random() > (npc.reatividade ?? 0.20)) return;
 
-  const recenteLog = _dialHistoricoLocal.slice(-4).map(e => `${e.quem}: "${e.texto}"`).join('\n');
+  const recenteLog = _dialogoLog.slice(-6).map(e => `${e.oradorNome}: ${e.texto}`).join('\n');
   const prompt = `Você observou:\n${recenteLog}\n\nDado exatamente quem você é, você diria algo agora? 1 frase brevíssima no seu estilo. Se não, responda exatamente "---".`;
+  const reactionScene=_cenaAtual,reactionSource=beatKey(_dialogoLog.at(-1));
   const reacao = await _dialChamarIA(reator.idx, prompt);
+  if(_cenaAtual!==reactionScene||beatKey(_dialogoLog.at(-1))!==reactionSource)return;
   if (!reacao || reacao.trim().startsWith('---')) return;
 
   const npcData = reator.npc;
-  const beat = { tipo: 'npc', oradorId: npcData.id, oradorNome: npcData.nome, texto: reacao, ts: Date.now() };
+  const beat = { ...parseNpcReply(reacao,{allowTest:false,playerIds:Object.keys(_lastRoom?.players||{})}),id:'reaction:'+beatKey(_dialogoLog.at(-1))+':'+npcData.id, tipo: 'npc', oradorId: npcData.id, oradorNome: npcData.nome, ts: Date.now() };
   if (window._fbAddDialogue) await window._fbAddDialogue(beat);
   else { _dialogoLog = [..._dialogoLog, beat].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
 }
@@ -3427,11 +3495,16 @@ window._dialEnviar = async function () {
   const input = document.getElementById('dial-msg-input');
   let texto = (input?.value || '').trim();
   if (!texto) return;
+  let actionRoll=null;
   if(_mindAcao){
     const select=document.getElementById('mind-skill');
     if(!select.options.length)window._mindModo(true);
-    const result=test3d6(Number(select.value));
-    texto='[GURPS 3d6: '+result.dice.join('+')+' = '+result.total+'; '+select.selectedOptions[0].textContent+'; '+result.outcome+'; margem '+result.margin+'] '+texto;
+    const player={...CLASSES_DATA[localStorage.getItem('mindRolePlay.classId')],..._lastRoom?.players?.[_pid]};
+    const level=skillLevel(player,select.value);
+    if(level===null)return;
+    const modifier=Number(document.getElementById('mind-mod').value);
+    if(!Number.isFinite(modifier)||modifier< -10||modifier>10)return;
+    try{actionRoll={...test3d6(level,{situationalModifier:modifier,conditionModifier:conditionModifier(player,select.value)}),skill:select.value};}catch(error){_mindErroResposta(error);return;}
   }
 
   const key = localStorage.getItem('oraculo.groqKey');
@@ -3449,18 +3522,65 @@ window._dialEnviar = async function () {
   const jogador = { id: _pid, nome: _pname, classId: localStorage.getItem('mindRolePlay.classId') || 'guerreiro' };
   const beatJogador = {
     tipo: 'jogador', oradorId: jogador.id, oradorNome: jogador.nome,
-    texto, classId: jogador.classId, authorId: _pid, npcId:_dialNpcEls[_dialNpcAtivoIdx]?.npc.id||null, ts: Date.now(),
+    ...(actionRoll?{roll:actionRoll}:{}),id:newId(),texto, classId: jogador.classId, authorId: _pid, npcId:_dialNpcEls[_dialNpcAtivoIdx]?.npc.id||null, ts: Date.now(),
   };
   // (A vez trava sozinha: com fala de jogador no fim do log, _dialVezPid()=null)
-  if (window._fbAddDialogue) await window._fbAddDialogue(beatJogador);
+  try{if (window._fbAddDialogue) await window._fbAddDialogue(beatJogador);
   else { _dialogoLog = [..._dialogoLog, beatJogador].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
 
+  }catch(error){input.value=texto;_mindErroResposta(error);_dialAtualizarVezUI();return;}
   input.disabled = false;
   document.getElementById('dial-btn-enviar').disabled = false;
 
   // Only the host generates replies; both local and remote speech use this path.
   await _dialFluxoTurnos();
   _dialAtualizarVezUI();
+};
+
+window._mindControle=async function(controle){
+ try{
+   if(!['passar','satisfeito','voltar'].includes(controle))return;
+   if(controle==='passar'&&(!_dialMinhaVez()||!_dialTodosLeram()))return;
+   const state=conversationState(_dialogoLog,_jogadoresAtivos(_lastRoom),(_lastRoom?.narration?.conversationScene===_cenaAtual?_lastRoom?.narration?.conversationStatus:{}));
+   if(state.awaitingReply||state.pendingTest)return;
+   const beat={id:newId(),tipo:'controle',controle,authorId:_pid,oradorNome:_pname,ts:Date.now()};
+   if(window._fbAddDialogue)await window._fbAddDialogue(beat);
+   else{_dialogoLog=appendBeats({dialogo:_dialogoLog},[beat]).dialogo;_dialTickDisplay();_dialAtualizarVezUI();}
+ }catch(error){_mindErroResposta(error);}
+};
+window._mindRolarPedido=async function(){
+ const pending=conversationState(_dialogoLog,_jogadoresAtivos(_lastRoom),(_lastRoom?.narration?.conversationScene===_cenaAtual?_lastRoom?.narration?.conversationStatus:{})).pendingTest;
+ if(!pending||pending.playerId!==_pid||!_dialTodosLeram())return;
+ const player={...CLASSES_DATA[localStorage.getItem('mindRolePlay.classId')],..._lastRoom?.players?.[_pid]};
+ let name=pending.skill,level=_lastRoom?.narration?.testLevels?.[pending.requestId]??skillLevel(player,name);
+ if(level===null){
+   // Untrained defaults vary by skill: never invent IQ or an automatic success.
+   _mindErroResposta(new Error('Perícia '+name+' não consta da ficha. O anfitrião deve definir o nível por omissão antes de rolar.'));
+   return;
+ }
+ let roll;try{roll={...test3d6(level,{situationalModifier:pending.modifier,conditionModifier:conditionModifier(player,name)}),skill:name};}catch(error){_mindErroResposta(error);return;}
+ const beat={id:'roll:'+pending.requestId,tipo:'jogador',authorId:_pid,oradorId:_pid,oradorNome:_pname,npcId:pending.npcId,testeDe:pending.requestId,roll,texto:'Resolvo a tentativa anterior: '+pending.reason,ts:Date.now()};
+ try{if(window._fbAddDialogue)await window._fbAddDialogue(beat);else{_dialogoLog=appendBeats({dialogo:_dialogoLog},[beat]).dialogo;_dialTickDisplay();}await _dialFluxoTurnos();}
+ catch(error){_mindErroResposta(error);}
+};
+window._mindDefinirTeste=async function(){
+ if(!_isHost)return;
+ const pending=conversationState(_dialogoLog,_jogadoresAtivos(_lastRoom),(_lastRoom?.narration?.conversationScene===_cenaAtual?_lastRoom?.narration?.conversationStatus:{})).pendingTest;
+ if(!pending)return;
+ const raw=prompt('Nível da perícia ou nível por omissão GURPS ANTES do modificador '+pending.modifier+'. Consulte a ficha e a regra da perícia.');
+ if(raw===null)return;
+ const level=Number(raw);if(!Number.isInteger(level)||level<3||level>30){alert('Informe um NH entre 3 e 30.');return;}
+ try{await window._fbUpdateNarration?.({['testLevels.'+pending.requestId]:level});}catch(error){_mindErroResposta(error);}
+};
+window._mindAbrirConfronto=async function(){
+ if(!_isHost||_mindRespostaEmCurso)return;
+ const pending=conversationState(_dialogoLog,_jogadoresAtivos(_lastRoom)).pendingTest;
+ if(pending){_mindErroResposta(new Error('Resolva o teste pendente antes de abrir um confronto.'));return;}
+ try{await window._fbSetStatus?.('battle',{'combat':null});}catch(error){_mindErroResposta(error);}
+};
+window._mindFicha=function(){
+ const player={...CLASSES_DATA[localStorage.getItem('mindRolePlay.classId')],..._lastRoom?.players?.[_pid]};
+ alert((player.nome||player.name||_pname)+'\nPV '+(player.hp??player.maxHp)+'/'+player.maxHp+' · PF '+(player.sp??0)+'\n'+sheetSkills(player).map(s=>s.name+': '+s.level).join('\n'));
 };
 
 // ── Navegação e histórico ──────────────────────────────────
@@ -3870,6 +3990,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v6</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v7</div>
 </body>
 </html>

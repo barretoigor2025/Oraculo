@@ -12,11 +12,12 @@ export async function joinRoom(roomId,playerId,character,create=false){
     const room=snap.exists()?snap.data():{id:roomId,engine:'oraculo-kagehama-v2',campaign:'kagehama',hostId:playerId,status:'lobby',players:{},createdAt:Date.now(),updatedAt:Date.now(),log:[]};
     if(room.engine!=='oraculo-kagehama-v2')throw new Error('Esta sala usa uma versão anterior. Crie uma sala nova.');
     const prior=room.players?.[playerId];
-    if(!prior&&room.status!=='lobby')throw new Error('A campanha já começou.');
+    // Sharing the room code also invites a friend into an ongoing session.
+    // Existing narration and membership are preserved transactionally.
     const cls=CLASSES[prior?.classId||character.classId];if(!cls)throw new Error('Escolha um aventureiro válido.');
     const sheet=JSON.parse(localStorage.getItem('mindRolePlay.character')||'null');
     const player={...(prior||{}),id:playerId,name:prior?.name||character.name,nome:prior?.nome||character.name,classId:prior?.classId||cls.id,
-      characterId:prior?.characterId||sheet?.id||'',gender:cls.gender,icon:cls.icon,attributes:cls.attributes,skills:cls.skills,
+      characterId:prior?.characterId||sheet?.id||'',gender:cls.gender,icon:cls.icon,attributes:prior?.attributes||cls.attributes,skills:prior?.skills||cls.skills,conditions:prior?.conditions||[],
       hp:prior?.hp??cls.maxHp,maxHp:cls.maxHp,sp:prior?.sp??cls.sp,portrait:cls.portrait,standee:cls.standee,
       ts:Date.now(),joinedAt:prior?.joinedAt||Date.now()};
     tx.set(ref,{...room,players:{...room.players,[playerId]:player},updatedAt:Date.now()});

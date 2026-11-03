@@ -11,6 +11,23 @@
   ],
   "fraqueza": "Apenas arma consagrada, sal ritual ou um selo reparado pode feri-lo. Enquanto o selo permanecer na pedra votiva, ele retorna a cada rodada narrativa; retirar o selo expõe a comporta e exige uma escolha de risco.",
   "nivel": 4,
+  "attributes": {
+    "ST": 14,
+    "DX": 14,
+    "IQ": 10,
+    "HT": 14
+  },
+  "dr": 2,
+  "incorporeal": true,
+  "requiresRitual": true,
+  "weapon": {
+    "name": "Ataque natural",
+    "skill": 14,
+    "damage": "2d6",
+    "type": "cr",
+    "ranged": false,
+    "spiritual": true
+  },
   "maxHp": 16,
   "hp": 16,
   "atkMod": 15,

@@ -388,6 +388,23 @@ export const INIMIGOS_DATA = [
     ],
     "fraqueza": "Armas comuns dispersam sua forma por alguns instantes. Para libertá-lo, descubra seu nome e queime o talismã que o mantém preso com sal e incenso; uma lâmina consagrada pode cortar o vínculo.",
     "nivel": 1,
+    "attributes": {
+      "ST": 11,
+      "DX": 11,
+      "IQ": 10,
+      "HT": 11
+    },
+    "dr": 0,
+    "incorporeal": false,
+    "requiresRitual": true,
+    "weapon": {
+      "name": "Ataque natural",
+      "skill": 11,
+      "damage": "1d6",
+      "type": "cr",
+      "ranged": false,
+      "spiritual": true
+    },
     "maxHp": 10,
     "hp": 10,
     "atkMod": 12,
@@ -408,6 +425,23 @@ export const INIMIGOS_DATA = [
     ],
     "fraqueza": "Não pode ser ferido por aço. Apague as sete chamas em ordem inversa e devolva o objeto que o espírito procura; a chama pode então ser recolhida num talismã.",
     "nivel": 1,
+    "attributes": {
+      "ST": 11,
+      "DX": 11,
+      "IQ": 10,
+      "HT": 11
+    },
+    "dr": 0,
+    "incorporeal": true,
+    "requiresRitual": true,
+    "weapon": {
+      "name": "Ataque natural",
+      "skill": 11,
+      "damage": "1d6",
+      "type": "cr",
+      "ranged": false,
+      "spiritual": true
+    },
     "maxHp": 10,
     "hp": 10,
     "atkMod": 12,
@@ -428,6 +462,23 @@ export const INIMIGOS_DATA = [
     ],
     "fraqueza": "Golpes comuns o atrasam, mas não o ferem. Reúna a página rasgada que contém seu nome, lave-a com água corrente e leia-a em voz alta enquanto uma pessoa protege a passagem.",
     "nivel": 2,
+    "attributes": {
+      "ST": 12,
+      "DX": 12,
+      "IQ": 10,
+      "HT": 12
+    },
+    "dr": 0,
+    "incorporeal": true,
+    "requiresRitual": true,
+    "weapon": {
+      "name": "Ataque natural",
+      "skill": 12,
+      "damage": "1d6",
+      "type": "cr",
+      "ranged": false,
+      "spiritual": true
+    },
     "maxHp": 12,
     "hp": 12,
     "atkMod": 13,
@@ -448,6 +499,23 @@ export const INIMIGOS_DATA = [
     ],
     "fraqueza": "Armas encantadas podem atingir sua forma. Para derrotá-lo de vez, rompa o chamado da torre, revele a falsificação que distorceu seu juramento e marque o chão com sal consagrado.",
     "nivel": 3,
+    "attributes": {
+      "ST": 13,
+      "DX": 13,
+      "IQ": 10,
+      "HT": 13
+    },
+    "dr": 1,
+    "incorporeal": true,
+    "requiresRitual": true,
+    "weapon": {
+      "name": "Ataque natural",
+      "skill": 13,
+      "damage": "2d6",
+      "type": "cr",
+      "ranged": false,
+      "spiritual": true
+    },
     "maxHp": 14,
     "hp": 14,
     "atkMod": 14,
@@ -468,6 +536,23 @@ export const INIMIGOS_DATA = [
     ],
     "fraqueza": "Apenas arma consagrada, sal ritual ou um selo reparado pode feri-lo. Enquanto o selo permanecer na pedra votiva, ele retorna a cada rodada narrativa; retirar o selo expõe a comporta e exige uma escolha de risco.",
     "nivel": 4,
+    "attributes": {
+      "ST": 14,
+      "DX": 14,
+      "IQ": 10,
+      "HT": 14
+    },
+    "dr": 2,
+    "incorporeal": true,
+    "requiresRitual": true,
+    "weapon": {
+      "name": "Ataque natural",
+      "skill": 14,
+      "damage": "2d6",
+      "type": "cr",
+      "ranged": false,
+      "spiritual": true
+    },
     "maxHp": 16,
     "hp": 16,
     "atkMod": 15,
@@ -488,6 +573,23 @@ export const INIMIGOS_DATA = [
     ],
     "fraqueza": "Armas sem encantamento apenas atrasam sua manifestação. Para vencê-lo é preciso expor o nome apagado, reunir as testemunhas do juramento original e quebrar o tratado junto à guarda de Hibari. Uma arma encantada abre a vulnerabilidade, mas não substitui a decisão moral.",
     "nivel": 5,
+    "attributes": {
+      "ST": 15,
+      "DX": 15,
+      "IQ": 10,
+      "HT": 15
+    },
+    "dr": 3,
+    "incorporeal": true,
+    "requiresRitual": true,
+    "weapon": {
+      "name": "Ataque natural",
+      "skill": 15,
+      "damage": "2d6",
+      "type": "cr",
+      "ranged": false,
+      "spiritual": true
+    },
     "maxHp": 18,
     "hp": 18,
     "atkMod": 16,

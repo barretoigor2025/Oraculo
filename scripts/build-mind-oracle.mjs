@@ -36,7 +36,7 @@ for(const n of npcs){const p=n.behaviorProfile;
   write(cart+'/npcs/'+n.id+'/dados.json',json(NPCS[n.id]));
 }
 write(cart+'/npcs_registry.js','export const NPCS_REGISTRY = '+json(registry)+';\n');
-const enemies=bestiary.map(b=>({id:b.id,nome:b.name,tipo:b.role,descricao:b.sign+' '+b.behavior,habilidades:[{nome:b.role,desc:b.behavior}],fraqueza:b.weakness,nivel:b.level,maxHp:8+b.level*2,hp:8+b.level*2,atkMod:11+b.level,mov:4,sp:10,ac:0}));
+const enemies=bestiary.map(b=>({id:b.id,nome:b.name,tipo:b.role,descricao:b.sign+' '+b.behavior,habilidades:[{nome:b.role,desc:b.behavior}],fraqueza:b.weakness,nivel:b.level,attributes:{ST:10+b.level,DX:10+b.level,IQ:10,HT:10+b.level},dr:Math.max(0,b.level-2),incorporeal:!['oni-biombo'].includes(b.id),requiresRitual:true,weapon:{name:'Ataque natural',skill:10+b.level,damage:b.level<3?'1d6':'2d6',type:'cr',ranged:false,spiritual:true},maxHp:8+b.level*2,hp:8+b.level*2,atkMod:11+b.level,mov:4,sp:10,ac:0}));
 for(const en of enemies)write(cart+'/inimigos/'+en.id+'/dados.json',json(en));
 write(cart+'/loader.js','export const NPCS = '+json(NPCS)+';\nexport const INIMIGOS_DATA = '+json(enemies)+';\n');
 const CENAS={};
@@ -69,11 +69,11 @@ function adapt(source){return source.replaceAll('oraculo.groqKey','__GROQ_KEY__'
   .replaceAll('catalogo/mhoried/','catalogo/kagehama/').replaceAll("'mhoried_market'","'kagehama-scene-0'").replaceAll('Oráculo —','Mind RolePlay —').replaceAll('Oráculo RPG','Mind RolePlay');}
 for(const page of ['narration.html','mapa.html','catalog.html'])write(dest+'/'+page,adapt(fs.readFileSync('public/'+page,'utf8')));
 // Shared rules module for static pages: one deterministic resolver across UI surfaces.
-write(dest+'/gurps.js',fs.readFileSync('MindRolePlay/src/gurps.js','utf8')+`\nexport function test3d6(skill=12){return resolveSuccessTest({...roll3d6(),skill});}\n`);
+write(dest+'/gurps.js',fs.readFileSync('MindRolePlay/src/gurps.js','utf8'));
 // Original home markup and styles, same screen IDs, layout, four slots and lobby.
 let html=fs.readFileSync('index.html','utf8').replace('src="/src/main.js"','src="./src/oraculoEntry.js"').replaceAll('Oráculo RPG','Mind RolePlay').replace('ORÁCULO','MIND ROLEPLAY').replace('RPG · Tático','RPG · GURPS').replace('Mapa tático · Multiplayer · Turno sincronizado','Campanha japonesa · Multiplayer · GURPS 3d6');
 html=html.replace(/<button class="camp-card camp-mhoried[\s\S]*?<\/button>\s*<button class="camp-card camp-dn[\s\S]*?<\/button>/,`<button class="camp-card camp-mhoried selecionado" id="camp-kagehama" data-camp="kagehama"><span class="camp-icon">⛩</span><span class="camp-name">Kagehama</span><span class="camp-sub">As Sete Lanternas</span></button>`)
-  .replace('catalogo/mhoried/checklist/checklist.html','catalog.html#checklist').replace('v11</div>','Mind · Oráculo v2</div>');
+  .replace('catalogo/mhoried/checklist/checklist.html','catalog.html#checklist').replace('v11</div>','Mind · Oráculo v7</div>');
 write('MindRolePlay/index.html',html);
 write('MindRolePlay/src/oraculoStyles.css',fs.readFileSync('src/styles.css','utf8')+'\n/* Kagehama keeps the Oráculo layout; monochrome ink palette. */\n:root{--gold:#ddd;--gold2:#fff;--bg:#090909} .isc-logo-wrap,.isc-slot-card,.isc-cls-chip,.isc-class-detail{filter:grayscale(1)}\n');
 let entry=adapt(fs.readFileSync('src/main.js','utf8')).replace("import './styles.css';","import './oraculoStyles.css';")
@@ -98,3 +98,5 @@ write('MindRolePlay/src/oraculoClasses.js',`import { CLASSES_DATA } from '../../
 console.log('Generated Oráculo entry, narrator, world map, catalogue and Kagehama cartridge.');
 
 execFileSync('python3',['scripts/adapt-mind-oracle.py'],{stdio:'inherit'});
+
+execFileSync('python3',['scripts/enhance-mind-oracle.py'],{stdio:'inherit'});

@@ -12,7 +12,12 @@ const {NPCS_REGISTRY}=await load('public/MindRolePlay/catalogo/kagehama/npcs_reg
 const {NARRACAO_NPCS,NARRACAO_FLUXO}=await load('public/MindRolePlay/catalogo/kagehama/narracao.js');
 const {MAPA_IMG,NOS,CAMINHOS}=await load('public/MindRolePlay/catalogo/kagehama/mapa.js');
 const {test3d6,resolveSuccessTest}=await load('public/MindRolePlay/gurps.js');
-const mocks={CLASSES_DATA,NPCS,INIMIGOS_COMPLETO:INIMIGOS_DATA,CENAS,CENAS_ORDEM,NPCS_REGISTRY,_dialNpcs:NARRACAO_NPCS,NARRACAO_FLUXO,MAPA_NOS:NOS,MAPA_CAMINHOS:CAMINHOS,MAPA_IMG,NOS,CAMINHOS,test3d6,resolveSuccessTest,MAPAS_BATALHA:{},DN_CLASSES_DATA:{},DN_PERSONAGENS:[],DN_REGRAS:[],DN_CENARIOS:[],FANTASMA_CLASSES:{},FANTASMA_NPCS:[],FANTASMA_INIMIGOS:[],FANTASMA_CENARIOS:[]};
+const conversation=await load('public/MindRolePlay/conversation.js');
+const director=await load('public/MindRolePlay/director.js');
+const gurps=await load('public/MindRolePlay/gurps.js');
+const {SCENE_GUIDES}=await load('public/MindRolePlay/catalogo/kagehama/direction.js');
+const {newId}=await load('public/MindRolePlay/identity.js');
+const mocks={newId,...conversation,...director,...gurps,SCENE_GUIDES,CLASSES_DATA,NPCS,INIMIGOS_COMPLETO:INIMIGOS_DATA,CENAS,CENAS_ORDEM,NPCS_REGISTRY,_dialNpcs:NARRACAO_NPCS,NARRACAO_FLUXO,MAPA_NOS:NOS,MAPA_CAMINHOS:CAMINHOS,MAPA_IMG,NOS,CAMINHOS,test3d6,resolveSuccessTest,MAPAS_BATALHA:{},DN_CLASSES_DATA:{},DN_PERSONAGENS:[],DN_REGRAS:[],DN_CENARIOS:[],FANTASMA_CLASSES:{},FANTASMA_NPCS:[],FANTASMA_INIMIGOS:[],FANTASMA_CENARIOS:[]};
 function dom(html){const d=new JSDOM(html,{url:'https://example.test/Oraculo/MindRolePlay/index.html',runScripts:'outside-only'});d.window.HTMLCanvasElement.prototype.getContext=()=>new Proxy({measureText:()=>({width:10})},{get:(t,p)=>t[p]||(()=>{})});d.window.requestAnimationFrame=()=>0;d.window.ResizeObserver=class{observe(){}};d.window.alert=()=>{};d.window.confirm=()=>true;return d;}
 {
  const d=dom(fs.readFileSync(root+'MindRolePlay/index.html','utf8')),w=d.window;
@@ -43,7 +48,7 @@ function dom(html){const d=new JSDOM(html,{url:'https://example.test/Oraculo/Min
  console.log('PASS catalogue tabs rendered');d.window.close();
 }
 // Syntax check every inline script, including inactive branches not included by Vite.
-for(const file of ['narration.html','mapa.html','catalog.html']){
+for(const file of ['narration.html','mapa.html','catalog.html','arena.html']){
  const html=fs.readFileSync(root+'public/MindRolePlay/'+file,'utf8');
  for(const [i,m]of [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].entries()){
   const code=m[1].replace(/^import[^;]+;\n/gm,'');
@@ -75,7 +80,9 @@ for(const file of ['narration.html','mapa.html','catalog.html']){
  assert.equal(records.get('ABCDE').players.host.classId,'samurai');
  assert.equal(records.get('ABCDE').players.host.characterId,'sheet-a');
  await assert.rejects(context.joinRoom('MISSING','guest',{name:'Igor',classId:'shinobi'}),/Sala não encontrada/);
- await assert.rejects(context.joinRoom('ABCDE','late',{name:'Igor',classId:'shinobi'}),/já começou/);
+ await context.joinRoom('ABCDE','late',{name:'Amigo convidado',classId:'shinobi'});
+ assert.deepEqual(records.get('ABCDE').narration,original);
+ assert.equal(Object.keys(records.get('ABCDE').players).length,3);
  storage.set('mindRolePlay.playerId','guest');
  await assert.rejects(context.startNarration('ABCDE'),/anfitrião/);
  console.log('PASS room ownership, duplicate names, stable membership, resume without reset and invalid room rejection');

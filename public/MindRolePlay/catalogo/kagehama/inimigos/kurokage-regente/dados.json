@@ -11,6 +11,23 @@
   ],
   "fraqueza": "Armas sem encantamento apenas atrasam sua manifestação. Para vencê-lo é preciso expor o nome apagado, reunir as testemunhas do juramento original e quebrar o tratado junto à guarda de Hibari. Uma arma encantada abre a vulnerabilidade, mas não substitui a decisão moral.",
   "nivel": 5,
+  "attributes": {
+    "ST": 15,
+    "DX": 15,
+    "IQ": 10,
+    "HT": 15
+  },
+  "dr": 3,
+  "incorporeal": true,
+  "requiresRitual": true,
+  "weapon": {
+    "name": "Ataque natural",
+    "skill": 15,
+    "damage": "2d6",
+    "type": "cr",
+    "ranged": false,
+    "spiritual": true
+  },
   "maxHp": 18,
   "hp": 18,
   "atkMod": 16,
