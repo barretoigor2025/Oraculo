@@ -154,3 +154,26 @@ for(const file of ['narration.html','mapa.html','catalog.html','arena.html']){
 
  d.window.close();
 }
+
+// Regression: cancelling preparation must actually leave status=battle, rather
+// than bouncing straight back into the arena; completed battles are not reused.
+{
+ const html=fs.readFileSync(root+'public/MindRolePlay/arena.html','utf8'),d=dom(html),updates=[];
+ d.window.localStorage.setItem('mindRolePlay.playerId','host');
+ d.window.localStorage.setItem('mindRolePlay.roomId','ROOM');
+ d.window.localStorage.setItem('mindRolePlay.fbConfig','{}');
+ let notify;
+ Object.assign(d.window,{...mocks,INIMIGOS_DATA,initializeApp:()=>({}),getApps:()=>[],getFirestore:()=>({}),doc:()=>({}),
+ onSnapshot:(ref,cb)=>{notify=cb;},updateDoc:async(ref,fields)=>updates.push(fields),runTransaction:async()=>{}});
+ const code=[...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(s=>s.includes('getFirestore'))
+ .replace(/^import[^;]+;\n/gm,'').replaceAll("location.href='narration.html';","window.didNavigate=true;");
+ vm.runInContext(code,d.getInternalVMContext());
+ notify({exists:()=>true,data:()=>({hostId:'host',status:'battle',narration:{cenaId:'kagehama-scene-0'},combat:{recorded:true,status:'victory'}})});
+ assert.equal(d.window.document.querySelector('#setup').classList.contains('hidden'),false);
+ d.window.document.querySelector('#back').click();
+ await Promise.resolve();
+ assert.equal(updates[0].status,'narration');
+ assert.equal(updates[0]['narration.pularIntro'],true);
+ console.log('PASS cancelled preparation returns to narration; recorded battles do not block new setup');
+ d.window.close();
+}
