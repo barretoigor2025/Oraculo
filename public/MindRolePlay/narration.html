@@ -2861,6 +2861,7 @@ async function iniciarBatalha() {
   if (!_isHost) return;
   if (window._fbSetStatus) {
     await window._fbSetStatus('battle', {
+      combat:null,
       'narration.cenaId': _cenaAtual,   // garante que o pós-batalha saiba a cena de origem p/ avançar à proximaCena
       'narration.battleKey': null,      // batalha normal de cena usa o cenaId (limpa emboscada anterior)
       postBattleConfirmados: {},
