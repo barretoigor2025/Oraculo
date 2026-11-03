@@ -11,6 +11,23 @@
   ],
   "fraqueza": "Golpes comuns o atrasam, mas não o ferem. Reúna a página rasgada que contém seu nome, lave-a com água corrente e leia-a em voz alta enquanto uma pessoa protege a passagem.",
   "nivel": 2,
+  "attributes": {
+    "ST": 12,
+    "DX": 12,
+    "IQ": 10,
+    "HT": 12
+  },
+  "dr": 0,
+  "incorporeal": true,
+  "requiresRitual": true,
+  "weapon": {
+    "name": "Ataque natural",
+    "skill": 12,
+    "damage": "1d6",
+    "type": "cr",
+    "ranged": false,
+    "spiritual": true
+  },
   "maxHp": 12,
   "hp": 12,
   "atkMod": 13,

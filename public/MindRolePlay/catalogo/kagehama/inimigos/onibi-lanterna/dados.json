@@ -11,6 +11,23 @@
   ],
   "fraqueza": "Não pode ser ferido por aço. Apague as sete chamas em ordem inversa e devolva o objeto que o espírito procura; a chama pode então ser recolhida num talismã.",
   "nivel": 1,
+  "attributes": {
+    "ST": 11,
+    "DX": 11,
+    "IQ": 10,
+    "HT": 11
+  },
+  "dr": 0,
+  "incorporeal": true,
+  "requiresRitual": true,
+  "weapon": {
+    "name": "Ataque natural",
+    "skill": 11,
+    "damage": "1d6",
+    "type": "cr",
+    "ranged": false,
+    "spiritual": true
+  },
   "maxHp": 10,
   "hp": 10,
   "atkMod": 12,

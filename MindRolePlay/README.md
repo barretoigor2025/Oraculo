@@ -5,7 +5,8 @@ transpostas para `MindRolePlay/index.html` e `src/oraculoEntry.js`.
 
 Fluxo: campanha → Jogar → quatro espaços de aventureiros → criação ou seleção
 → criar/entrar em sala → espera → narração → mapa → narração.
-Solo usa a mesma sala com um participante, como no original.
+Solo usa a mesma sala com um participante, como no original. Compartilhar o
+código permite convidar um amigo mesmo depois de começar, sem reiniciar a cena.
 
 ## Identificação
 
@@ -37,8 +38,10 @@ As telas preservam a estrutura original; a campanha e as fichas usam Kagehama.
 Os testes de percepção e ação usam o mesmo resolvedor determinístico GURPS
 3d6 do projeto. O compositor original permite Falar ou Agir com uma perícia ou
 atributo da ficha; o resultado acompanha a intenção enviada ao NPC.
-A arena tática antiga não foi exposta: confrontos permanecem na cena narrativa,
-conforme o escopo anterior sem arena. Isso não implementa o livro inteiro GURPS.
+A cena pode abrir um confronto GURPS sincronizado: ataque, defesa escolhida,
+dano, RD, lesão e retorno dos PV/PF à narração. O núcleo automatizado e os pontos
+que ainda dependem do mestre estão descritos em `RECONSTRUCAO.md`.
+Isso não implementa o livro inteiro GURPS.
 
 O anfitrião aberto executa as chamadas Groq com `oraculo.groqKey`, a mesma
 configuração local usada pelo Oráculo. Só o anfitrião precisa da chave.
@@ -54,4 +57,7 @@ npm run build
 
 `scripts/build-mind-oracle.mjs` transpõe as fontes originais e gera o cartucho;
 `scripts/adapt-mind-oracle.py` aplica as adaptações explícitas de Kagehama/GURPS.
+`scripts/enhance-mind-oracle.py` instala por último as fontes mantidas de
+`MindRolePlay/screens/` e `MindRolePlay/engine/`, preservando as correções em
+regenerações.
 A publicação segue o GitHub Pages do repositório; não usa outro Site ou serviço.

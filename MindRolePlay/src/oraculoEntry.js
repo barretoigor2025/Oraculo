@@ -1,4 +1,5 @@
 import './oraculoStyles.css';
+import { newId } from '../../public/MindRolePlay/identity.js';
 import { CLASSES, standeeUrl, retratoUrl } from './oraculoClasses.js';
 import { joinRoom, listenRoom, saveRoom, startNarration, startSimulation } from './oraculoRooms.js';
 import { firebaseApp } from '../../src/firebase/config.js';
@@ -7,7 +8,7 @@ import { firebaseApp } from '../../src/firebase/config.js';
 const introOverlay = document.querySelector('#intro-overlay');
 
 const session = {
-  playerId: localStorage.getItem('mindRolePlay.playerId') ?? crypto.randomUUID(),
+  playerId: localStorage.getItem('mindRolePlay.playerId') ?? newId(),
   playerName: '',
   classId: 'ronin',
   roomId: '',
@@ -315,7 +316,7 @@ function confirmarPersonagem() {
   const character = {
     name, classId: selectedClassId, className: cls.name,
     icon: cls.icon, maxHp: cls.maxHp, movement: cls.movement, attack: cls.attack,
-    id: crypto.randomUUID(), level: 1, campaign: 'Kagehama', attributes:cls.attributes, skills:cls.skills, gender:cls.gender,
+    id: newId(), level: 1, campaign: 'Kagehama', attributes:cls.attributes, skills:cls.skills, gender:cls.gender,
   };
   localStorage.setItem('mindRolePlay.character',JSON.stringify(character));
   chars.push(character);

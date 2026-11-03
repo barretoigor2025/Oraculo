@@ -11,6 +11,23 @@
   ],
   "fraqueza": "Armas encantadas podem atingir sua forma. Para derrotá-lo de vez, rompa o chamado da torre, revele a falsificação que distorceu seu juramento e marque o chão com sal consagrado.",
   "nivel": 3,
+  "attributes": {
+    "ST": 13,
+    "DX": 13,
+    "IQ": 10,
+    "HT": 13
+  },
+  "dr": 1,
+  "incorporeal": true,
+  "requiresRitual": true,
+  "weapon": {
+    "name": "Ataque natural",
+    "skill": 13,
+    "damage": "2d6",
+    "type": "cr",
+    "ranged": false,
+    "spiritual": true
+  },
   "maxHp": 14,
   "hp": 14,
   "atkMod": 14,
