@@ -2,7 +2,7 @@ from pathlib import Path
 r=Path(__file__).resolve().parent.parent
 base=r/'public/MindRolePlay'
 for name in ['conversation','director','combat','equipment','identity']:
- (base/(name+'.js')).write_text((r/'MindRolePlay/engine'/(name+'.js')).read_text().replace("from '../src/gurps.js'","from './gurps.js?v=7'"))
+ (base/(name+'.js')).write_text((r/'MindRolePlay/engine'/(name+'.js')).read_text().replace("from '../src/gurps.js'","from './gurps.js?v=8'"))
 (base/'gurps.js').write_text((r/'MindRolePlay/src/gurps.js').read_text())
 # Canonical maintained screens are copied last, after legacy conversion.
 for name in ['narration.html','arena.html']:

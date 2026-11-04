@@ -117,3 +117,40 @@ usado como comprovação de sessão real. Testes simulados não comprovam permis
 publicadas no Firestore nem credenciais/cota da Groq. Essa sessão ponta a ponta
 com dois dispositivos e serviços reais continua pendente. As regras Firebase
 existentes não foram ampliadas nem publicadas por este trabalho.
+
+
+## Reverificação — Mind v8 (4 de novembro de 2026)
+
+A fila de GitHub Pages foi conferida: a execução 41657169498 falhou; as
+execuções 41657729597 e 41657999747 concluíram com sucesso. Portanto, a v7
+foi publicada após a correção do Node 24; não estava aguardando deploy.
+
+Correções desta revisão:
+- Sair da fila fora da vez preserva quem já aguardava para falar. Os comandos
+  de controle também são validados na transação: não interrompem uma resposta
+  ou teste pendente, mesmo se outra aba tiver estado antigo.
+- Investigação usa Per/Will e perícias normalizadas da mesma ficha GURPS,
+  condições e modificadores definidos antes da rolagem. O resultado completo
+  é registrado separadamente da narração, sem reutilizar a variável global de
+  Percepção.
+- A ação é reservada na sala antes da chamada de IA. Somente o anfitrião gera
+  a consequência com a chave Groq dele, inclusive para ações dos convidados.
+  Chat paralelo não invalida o pedido. A concessão de geração e a confirmação
+  transacional impedem duplicatas; outra cena rejeita o resultado atrasado.
+- Erro de IA mantém o pedido e os mesmos dados para tentar novamente. Não
+  produz consequência fictícia genérica nem passa a vez como se tivesse dado certo.
+
+### Fila restante
+
+| Item | Estado |
+|---|---|
+| Entrada, quatro espaços, criação, sala, catálogo e palco sequencial | Implementados; verificações automatizadas passaram |
+| Conversa individual, Continuar, memória por NPC, pedidos de teste e reações | Implementados; sessão real com Groq/Firestore ainda precisa ser validada |
+| Investigação de convidado conduzida pela IA do anfitrião | Corrigida nesta revisão; transações e falhas verificadas com serviços simulados |
+| Campanha japonesa, direção dos capítulos e arte existente | Mantidas |
+| Regras de combate, fichas e magia GURPS completas | Incompletas; limites descritos acima continuam válidos |
+| Paridade total com os cinco pilares do Oráculo | Não comprovada; não declarar reconstrução integral concluída |
+
+Não há comprovação nesta revisão de uma partida ponta a ponta em dois
+aparelhos com credenciais e serviços reais. Testes transacionais simulados
+não substituem essa validação.

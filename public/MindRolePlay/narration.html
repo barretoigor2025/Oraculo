@@ -10,10 +10,10 @@
 <script>(function(){try{var c=localStorage.getItem('mindRolePlay.fbConfig'),r=localStorage.getItem('mindRolePlay.roomId');if(!c||!r){location.replace('index.html?v=8');}}catch(e){location.replace("index.html?v=8");}})();</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script type="module">
-import {newId} from './identity.js?v=7';
+import {newId} from './identity.js?v=8';
 import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import{getFirestore,doc,onSnapshot,updateDoc,getDoc,runTransaction}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { appendBeats, appendPlayerBeat, beatKey, conversationState } from './conversation.js?v=7';
+import { appendBeats, appendPlayerBeat, appendControlBeat, appendInvestigationRequest, pendingInvestigation, beatKey, conversationState } from './conversation.js?v=8';
 const _cfg=JSON.parse(localStorage.getItem('mindRolePlay.fbConfig')||'null');
 const _rid=localStorage.getItem('mindRolePlay.roomId');
 if(_cfg&&_rid){
@@ -43,8 +43,10 @@ if(_cfg&&_rid){
         if(!snap.exists())throw new Error('A sala não existe mais.');
         const room=snap.data(),n=room.narration||{};
         if(scene&&n.cenaId!==scene)throw new Error('A cena mudou. Sua mensagem não foi enviada.');
-        const update=linha.tipo==='jogador'||(linha.tipo==='controle'&&linha.controle==='passar')
-          ? appendPlayerBeat({...room,narration:{...n,conversationStatus:n.conversationScene===n.cenaId?n.conversationStatus:{}}},linha,activeIds(room)) : appendBeats(n,[linha]);
+        const currentRoom={...room,narration:{...n,conversationStatus:n.conversationScene===n.cenaId?n.conversationStatus:{}}};
+        const update=linha.canal==='inv-pedido' ? appendInvestigationRequest(currentRoom,linha,activeIds(room))
+          : linha.tipo==='jogador' ? appendPlayerBeat(currentRoom,linha,activeIds(room))
+          : linha.tipo==='controle' ? appendControlBeat(currentRoom,linha,activeIds(room)) : appendBeats(n,[linha]);
         const state=conversationState(update.dialogo,activeIds(room),n.conversationScene===n.cenaId?n.conversationStatus:{});
         tx.update(rd,{'narration.dialogo':update.dialogo,'narration.dialogueSeq':update.dialogueSeq,
           'narration.conversationStatus':state.status,'narration.conversationScene':n.cenaId,'narration.ts':Date.now()});
@@ -53,14 +55,14 @@ if(_cfg&&_rid){
     window._fbClaimReply=async(source,scene)=>runTransaction(db,async tx=>{
       const snap=await tx.get(rd);if(!snap.exists())return false;
       const room=snap.data(),n=room.narration||{},lease=n.replyLease;
-      if(room.hostId!==localPid||n.cenaId!==scene||beatKey(n.dialogo?.at(-1))!==source)return false;
+      if(room.hostId!==localPid||n.cenaId!==scene||beatKey(pendingInvestigation(n.dialogo)||n.dialogo?.at(-1))!==source)return false;
       if(lease?.expires>Date.now()&&lease.owner!==clientId)return false;
       tx.update(rd,{'narration.replyLease':{source,owner:clientId,expires:Date.now()+30000}});return true;
     });
     window._fbResolveDialogue=async(beat,source,scene,memory)=>runTransaction(db,async tx=>{
       const snap=await tx.get(rd);if(!snap.exists())return false;
       const room=snap.data(),n=room.narration||{};
-      if(room.hostId!==localPid||n.cenaId!==scene||beatKey(n.dialogo?.at(-1))!==source)return false;
+      if(room.hostId!==localPid||n.cenaId!==scene||beatKey(pendingInvestigation(n.dialogo)||n.dialogo?.at(-1))!==source)return false;
       if(n.replyLease?.owner!==clientId)return false;
       const result=appendBeats(n,[beat]);
       const update={'narration.dialogo':result.dialogo,'narration.dialogueSeq':result.dialogueSeq,'narration.replyLease':null,'narration.ts':Date.now()};
@@ -1368,14 +1370,14 @@ html,body{
 </div>
 
 <script type="module">
-import {newId} from './identity.js?v=7';
+import {newId} from './identity.js?v=8';
 import { groqFetch } from './groq.js?v=6';
-import { appendBeats, beatKey, logSequence, conversationState } from './conversation.js?v=7';
-import { buildNpcPrompt, parseNpcReply } from './director.js?v=7';
-import { SCENE_GUIDES } from './catalogo/kagehama/direction.js?v=7';
-import { test3d6, resolveSuccessTest, sheetSkills, skillLevel, conditionModifier } from './gurps.js?v=7';
+import { appendBeats, beatKey, logSequence, conversationState, pendingInvestigation } from './conversation.js?v=8';
+import { buildNpcPrompt, parseNpcReply } from './director.js?v=8';
+import { SCENE_GUIDES } from './catalogo/kagehama/direction.js?v=8';
+import { test3d6, resolveSuccessTest, sheetSkills, skillLevel, conditionModifier } from './gurps.js?v=8';
 import { CLASSES_DATA } from './catalogo/kagehama/classes.js';
-import { NPCS } from './catalogo/kagehama/loader.js?v=7';
+import { NPCS } from './catalogo/kagehama/loader.js?v=8';
 import { CENAS, CENAS_ORDEM } from './catalogo/kagehama/campanha/roteiro/campaign.js?v=33';
 import { NARRACAO_NPCS as _dialNpcs, NARRACAO_FLUXO } from './catalogo/kagehama/narracao.js';
 import { NPCS_REGISTRY } from './catalogo/kagehama/npcs_registry.js?v=4';
@@ -1595,6 +1597,7 @@ function onRoomUpdate(room) {
   if (mudouCena) _dialDesativar();
   _dialVerificarCena();
   _invVerificarCena();
+  if(_invAtivo)_invResolvePending();
   atualizarBotoesCena();
   _atualizarAcaoCena(narr);
   _atualizarBtnPercepcao();
@@ -3780,7 +3783,7 @@ function _invVezPid(){
   }
   return ordem[0];
 }
-function _invMinhaVez(){ if(!window._fbListenRoom) return true; return _invVezPid() === _pid; }
+function _invMinhaVez(){ if(pendingInvestigation(_lastRoom?.narration?.dialogo))return false; if(!window._fbListenRoom) return true; return _invVezPid() === _pid; }
 
 function _invVerificarCena(){
   const cena = CENAS[_cenaAtual];
@@ -3828,7 +3831,7 @@ function _invAtualizarVez(){
   const inp = document.getElementById('investig-input');
   const btn = document.getElementById('investig-enviar');
   if (_invTabAtual !== 'acao') { inp.placeholder = 'Fale com o grupo…'; inp.disabled = false; btn.disabled = false; return; }
-  const minha = _invMinhaVez();
+  const minha = !_invActionBusy && _invMinhaVez();
   const nome = _getNomeJogador(_invVezPid());
   vezEl.textContent = minha ? '🎲 Sua vez — descreva sua ação' : `⏳ Vez de ${nome}…`;
   vezEl.classList.toggle('minha-vez', minha);
@@ -3885,6 +3888,7 @@ window._invScrollCard = _invScrollCard;
 
 function _invKey(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _invEnviar(); } }
 
+let _invActionBusy=false;
 async function _invEnviar(){
   const inp = document.getElementById('investig-input');
   const texto = (inp.value || '').trim();
@@ -3895,34 +3899,68 @@ async function _invEnviar(){
     return;
   }
   // aba Ação — só na sua vez
-  if (!_invMinhaVez()) return;
-  inp.value = ''; inp.blur();
+  if (_invActionBusy || !_invMinhaVez()) return;
+  const actionScene=_cenaAtual;
+  inp.blur();
   const chosen=prompt('Perícia ou atributo GURPS para esta ação:', 'Percepção');
   if(chosen===null)return;
-  const cls=CLASSES_DATA[localStorage.getItem('mindRolePlay.classId')], player=_lastRoom?.players?.[_pid]||{};
-  const skills=player.skills||cls?.skills||[];
-  const level=skills.find(s=>s.name.toLowerCase()===chosen.toLowerCase())?.level||(player.attributes||cls?.attributes||{})[chosen.toUpperCase()];
-  if(!Number.isFinite(Number(level))){inp.value=texto;alert('Escolha uma perícia da ficha ou ST, DX, IQ, HT.');return;}
-  const result=test3d6(Number(level));_lastGurpsRoll=result;
-  const roll=result.total;
-  await _invAdjudicarAcao(texto, roll);   // a vez passa sozinha: o beat carrega o authorId
+  const player={...CLASSES_DATA[localStorage.getItem('mindRolePlay.classId')],..._lastRoom?.players?.[_pid]};
+  const level=skillLevel(player,chosen);
+  if(level===null){alert('Escolha uma perícia ou atributo da ficha, incluindo Percepção e Will.');return;}
+  const modifierText=prompt('Modificador da situação, definido antes dos dados (-10 a +10):','0');
+  if(modifierText===null)return;
+  const modifier=Number(modifierText);
+  if(!Number.isFinite(modifier)||modifier < -10||modifier > 10){alert('Modificador inválido.');return;}
+  let result;
+  try{result={...test3d6(level,{situationalModifier:modifier,conditionModifier:conditionModifier(player,chosen)}),skill:chosen};}
+  catch(error){alert(error.message);return;}
+  _invActionBusy=true;
+  try{
+    const request={id:newId(),tipo:'investigacao',canal:'inv-pedido',authorId:_pid,oradorNome:_pname,texto,roll:result,ts:Date.now()};
+    await window._fbAddDialogue(request);
+    inp.value='';
+  }catch(error){alert(error.message);}
+  finally{_invActionBusy=false;_invAtualizarVez();}
 }
 
-async function _invAdjudicarAcao(acaoTexto, roll){
+let _invResolving=false;
+let _invFailedRequest=null;
+async function _invResolvePending(){
+  const request=pendingInvestigation(_lastRoom?.narration?.dialogo);
+  if(!_isHost||!_invAtivo||_invResolving||!request||_invFailedRequest===request.id)return;
+  const scene=_cenaAtual;
+  _invResolving=true;
+  const pens=document.getElementById('investig-pensando');
+  pens.textContent='Preparando a consequência da investigação…';pens.style.display='block';
+  try{
+    if(!await window._fbClaimReply(request.id,scene))return;
+    await _invAdjudicarAcao(request.texto,request.roll,scene,request);
+    _invFailedRequest=null;
+  }catch(error){
+    if(_cenaAtual!==scene)return;
+    _invFailedRequest=request.id;
+    pens.replaceChildren();
+    const message=document.createElement('span');message.textContent='A investigação não foi concluída: '+error.message+' ';
+    const retry=document.createElement('button');retry.textContent='Tentar novamente com os mesmos dados';
+    retry.onclick=()=>{_invFailedRequest=null;_invResolvePending();};
+    pens.append(message,retry);
+  }finally{await window._fbReleaseReply?.().catch(()=>{});_invResolving=false;_invAtualizarVez();}
+}
+
+async function _invAdjudicarAcao(acaoTexto, result, actionScene, request){
+  const roll=result.total;
   const cena = CENAS[_cenaAtual];
   const pens = document.getElementById('investig-pensando');
   pens.style.display = 'block';
-  const ator = _pname;
+  const ator = request.oradorNome;
   const outros = Object.entries(_lastRoom?.players || {})
-    .filter(([pid]) => pid !== _pid).map(([, p]) => p.nome).filter(Boolean);
+    .filter(([pid]) => pid !== request.authorId).map(([, p]) => p.nome).filter(Boolean);
   const contexto = cena?.percepcao?.descricaoContexto || cena?.contextoInvestigacao || cena?.textoIntro || '';
-  let verdito = _lastGurpsRoll.success ? 'SUCESSO' : 'FALHA';   // fallback sem IA
-  let narr = verdito === 'SUCESSO'
-    ? 'Sua tentativa surte efeito — algo cede ou se revela ao seu esforço.'
-    : 'A tentativa não vinga desta vez.';
+  const verdito = result.success ? 'SUCESSO' : 'FALHA';
+  let narr;
   const apiKey = localStorage.getItem('oraculo.groqKey');
-  if (apiKey) {
-    try {
+  if (!apiKey)throw new Error('Configure a chave Groq para resolver a investigação.');
+  {
       const outrosTxt = outros.length ? `Outros presentes: ${outros.join(', ')}.` : 'Ninguém mais está presente.';
       const resp = await groqFetch('https://api.groq.com/openai/v1/chat/completions', {
         method:'POST',
@@ -3931,7 +3969,7 @@ async function _invAdjudicarAcao(acaoTexto, roll){
           model:'llama-3.3-70b-versatile', max_tokens:190, temperature:0.85,
           messages:[
             { role:'system', content:`Você é o Narrador de uma campanha de RPG de fantasia sombria, num local de investigação.
-${ator} tenta uma ação. GURPS 3d6: ${_lastGurpsRoll.dice.join("+")} = ${roll}, nível efetivo ${_lastGurpsRoll.effectiveSkill}, resultado definitivo ${verdito}. Narre esse resultado sem modificar os dados ou decidir sucesso novamente.
+${ator} tenta uma ação. GURPS 3d6: ${result.dice.join("+")} = ${roll}, nível efetivo ${result.effectiveSkill}, resultado definitivo ${verdito}. Narre esse resultado sem modificar os dados ou decidir sucesso novamente.
 Responda começando LITERALMENTE com "SUCESSO" ou "FALHA" (uma palavra só), depois um traço e a narração do desfecho em 1-2 frases, 2ª pessoa, in-world.
 ${outrosTxt} Quando for COERENTE, mencione de forma breve se os outros presentes percebem (ou não) o que aconteceu — sobretudo atos que alguém poderia querer ocultar: achar, pegar, carregar, guardar, esconder ou ouvir algo. Uma falha desastrada (tropeço, barulho) tende a ser notada; um movimento discreto e bem-sucedido pode passar despercebido. Não force isso quando não fizer sentido.
 Não invente itens novos nem decida ações futuras pelos jogadores. Contexto oculto do local (use com parcimônia): ${contexto}` },
@@ -3940,14 +3978,18 @@ Não invente itens novos nem decida ações futuras pelos jogadores. Contexto oc
         })
       });
       const d = await resp.json();
+      if(!resp.ok||d.error)throw new Error(d.error?.message||'Serviço de IA indisponível.');
       const raw = (d.choices?.[0]?.message?.content || '').trim();
+      if(!raw)throw new Error('A IA não retornou uma consequência.');
       const m = raw.match(/^\s*(SUCESSO|FALHA)\b[\s—:.-]*/i);
-      if (m) { narr = raw.slice(m[0].length).trim() || narr; }
+      if (m) { narr = raw.slice(m[0].length).trim(); }
       else if (raw) { narr = raw; }
-    } catch {}
   }
+  if(!narr)throw new Error('A IA não retornou uma consequência.');
+  if(_cenaAtual!==actionScene||pendingInvestigation(_lastRoom?.narration?.dialogo)?.id!==request.id)throw new Error('A cena ou a vez mudou; resultado não aplicado.');
+  const beat={id:'reply:'+request.id,tipo:'narrador',oradorNome:'Narrador',texto:`[🎲 ${result.dice.join('+')} = ${roll} vs ${result.effectiveSkill} — ${result.outcome}] ${narr}`,acao:acaoTexto,roll:result,canal:'inv-acao',authorId:request.authorId,respondeA:request.id,ts:Date.now()};
+  if(!await window._fbResolveDialogue(beat,request.id,actionScene))throw new Error('A cena ou a vez mudou; resultado não aplicado.');
   pens.style.display = 'none';
-  await window._fbAddDialogue?.({ tipo:'narrador', oradorNome:'Narrador', texto: `[🎲 ${roll} — ${verdito}] ${narr}`, canal:'inv-acao', authorId:_pid, ts: Date.now() });
 }
 
 function _invPercepcao(){
@@ -3991,6 +4033,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v7</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v8</div>
 </body>
 </html>

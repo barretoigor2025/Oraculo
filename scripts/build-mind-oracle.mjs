@@ -73,7 +73,7 @@ write(dest+'/gurps.js',fs.readFileSync('MindRolePlay/src/gurps.js','utf8'));
 // Original home markup and styles, same screen IDs, layout, four slots and lobby.
 let html=fs.readFileSync('index.html','utf8').replace('src="/src/main.js"','src="./src/oraculoEntry.js"').replaceAll('Oráculo RPG','Mind RolePlay').replace('ORÁCULO','MIND ROLEPLAY').replace('RPG · Tático','RPG · GURPS').replace('Mapa tático · Multiplayer · Turno sincronizado','Campanha japonesa · Multiplayer · GURPS 3d6');
 html=html.replace(/<button class="camp-card camp-mhoried[\s\S]*?<\/button>\s*<button class="camp-card camp-dn[\s\S]*?<\/button>/,`<button class="camp-card camp-mhoried selecionado" id="camp-kagehama" data-camp="kagehama"><span class="camp-icon">⛩</span><span class="camp-name">Kagehama</span><span class="camp-sub">As Sete Lanternas</span></button>`)
-  .replace('catalogo/mhoried/checklist/checklist.html','catalog.html#checklist').replace('v11</div>','Mind · Oráculo v7</div>');
+  .replace('catalogo/mhoried/checklist/checklist.html','catalog.html#checklist').replace('v11</div>','Mind · Oráculo v8</div>');
 write('MindRolePlay/index.html',html);
 write('MindRolePlay/src/oraculoStyles.css',fs.readFileSync('src/styles.css','utf8')+'\n/* Kagehama keeps the Oráculo layout; monochrome ink palette. */\n:root{--gold:#ddd;--gold2:#fff;--bg:#090909} .isc-logo-wrap,.isc-slot-card,.isc-cls-chip,.isc-class-detail{filter:grayscale(1)}\n');
 let entry=adapt(fs.readFileSync('src/main.js','utf8')).replace("import './styles.css';","import './oraculoStyles.css';")

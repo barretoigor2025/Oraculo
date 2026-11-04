@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import { appendBeats, appendPlayerBeat, beatKey, logSequence, conversationState, LOG_LIMIT } from '../engine/conversation.js';
+import { appendBeats, appendPlayerBeat, appendControlBeat, appendInvestigationRequest, pendingInvestigation, investigationTurn, beatKey, logSequence, conversationState, LOG_LIMIT } from '../engine/conversation.js';
 import { parseNpcReply, buildNpcPrompt } from '../engine/director.js';
 import { createCombat, combatAction, availableDefense, injuryFromDamage, rollDamage } from '../engine/combat.js';
 import { derivedStats, skillLevel, conditionModifier, test3d6 } from '../src/gurps.js';
@@ -92,7 +92,7 @@ test('Firebase adapter keeps guest speech, single host response and cross-scene 
  let room={hostId:'host',players:{host:{},guest:{}},narration:{cenaId:'bridge',dialogo:[]}};
  let callback;
  const ctx=vm.createContext({console,Date,JSON,Math,Error,Promise,Object,crypto,window:{_mindSceneId:'bridge',dispatchEvent(){}},Event:class{},document:{getElementById:()=>null},localStorage:{getItem:k=>k.includes('fbConfig')?'{}':k.includes('playerId')?'host':'ROOM'},
- newId:()=> 'client-1',initializeApp:()=>({}),getApps:()=>[],getFirestore:()=>({}),doc:()=>({}),onSnapshot:()=>{},updateDoc:()=>{},getDoc:()=>{},appendBeats,appendPlayerBeat,beatKey,conversationState,
+ newId:()=> 'client-1',initializeApp:()=>({}),getApps:()=>[],getFirestore:()=>({}),doc:()=>({}),onSnapshot:()=>{},updateDoc:()=>{},getDoc:()=>{},appendBeats,appendPlayerBeat,appendControlBeat,appendInvestigationRequest,pendingInvestigation,beatKey,conversationState,
  runTransaction:async(db,fn)=>fn({get:async()=>({exists:()=>true,data:()=>structuredClone(room)}),update:(ref,update)=>{for(const [key,value]of Object.entries(update)){const parts=key.split('.');let obj=room;for(const part of parts.slice(0,-1))obj=obj[part]??={};obj[parts.at(-1)]=structuredClone(value);}}})});
  const html=fs.readFileSync(new URL('../screens/narration.html',import.meta.url),'utf8');
  const code=[...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(s=>s.includes('runTransaction')) .replace(/^import[^;]+;\n/gm,'');
@@ -108,4 +108,57 @@ test('Firebase adapter keeps guest speech, single host response and cross-scene 
  assert.equal(await ctx.window._fbClaimReply('guest-1','bridge'),false);
  await assert.rejects(ctx.window._fbAddDialogue(action('late','host')),/cena mudou/);
  assert.equal(room.narration.dialogo.length,2);
+ ctx.window._mindSceneId='forest';room.narration.dialogo=[];
+ const investigation={id:'inv-guest',tipo:'investigacao',canal:'inv-pedido',authorId:'guest',oradorNome:'Amigo',texto:'Procuro rastros',roll:test3d6(12,{random:()=>.45})};
+ await ctx.window._fbAddDialogue(investigation);
+ await ctx.window._fbAddDialogue({id:'inv-chat',tipo:'player',canal:'inv-chat',authorId:'host',texto:'Vou olhar a porta.'});
+ await assert.rejects(ctx.window._fbAddDialogue({...investigation,id:'duplicate'}),/pendente/);
+ assert.equal(await ctx.window._fbClaimReply('inv-guest','forest'),true);
+ const consequence={id:'reply:inv-guest',tipo:'narrador',canal:'inv-acao',authorId:'guest',texto:'Você encontra rastros.'};
+ assert.equal(await ctx.window._fbResolveDialogue(consequence,'inv-guest','forest'),true);
+ assert.equal(await ctx.window._fbResolveDialogue(consequence,'inv-guest','forest'),false);
+ assert.equal(room.narration.dialogo.length,3);
+});
+
+test('satisfied out of turn does not skip the player waiting to speak',()=>{
+ const log=[action('first','a'),{id:'reply:first',tipo:'npc'},
+  {id:'exit-c',tipo:'controle',controle:'satisfeito',authorId:'c'}];
+ assert.equal(conversationState(log,['a','b','c']).turn,'b');
+ assert.equal(conversationState(log,['a','b','c'],{c:'satisfeito'}).turn,'b');
+ const room={narration:{dialogo:[action('pending','a')]}};
+ assert.throws(()=>appendControlBeat(room,{tipo:'controle',controle:'satisfeito',authorId:'b'},['a','b']),/Aguarde/);
+ assert.throws(()=>appendControlBeat({narration:{dialogo:log}},{tipo:'controle',controle:'passar',authorId:'a'},['a','b','c']),/outro/);
+});
+test('investigation preserves its own dice, rejects provider failures and stale scenes',async()=>{
+ const html=fs.readFileSync(new URL('../screens/narration.html',import.meta.url),'utf8');
+ const code=html.slice(html.indexOf('async function _invAdjudicarAcao('),html.indexOf('function _invPercepcao('));
+ const beats=[];const pens={style:{}};
+ const request={id:'request-1',canal:'inv-pedido',authorId:'a',oradorNome:'Igor'};
+ const ctx=vm.createContext({_cenaAtual:'bridge',CENAS:{bridge:{titulo:'Ponte'}},_pname:'Igor',_pid:'a',_lastRoom:{players:{},narration:{dialogo:[request]}},pendingInvestigation,
+  document:{getElementById:()=>pens},localStorage:{getItem:()=> 'configured'},_invMinhaVez:()=>true,newId:()=> 'inv-1',
+  window:{_fbResolveDialogue:async beat=>{beats.push(beat);return true;}},groqFetch:async()=>({ok:true,json:async()=>({choices:[{message:{content:'SUCESSO — Você encontra as pegadas.'}}]})})});
+ vm.runInContext(code,ctx);
+ const roll={...test3d6(14,{random:()=>.45}),skill:'Percepção'};
+ await ctx._invAdjudicarAcao('Procuro pegadas',roll,'bridge',request);
+ assert.equal(beats.length,1);assert.equal(beats[0].roll,roll);assert.equal(beats[0].acao,'Procuro pegadas');
+ assert.match(beats[0].texto,/3\+3\+3 = 9 vs 14/);
+ ctx.groqFetch=async()=>({ok:false,json:async()=>({error:{message:'Quota esgotada'}})});
+ await assert.rejects(ctx._invAdjudicarAcao('Procuro pegadas',roll,'bridge',request),/Quota/);
+ assert.equal(beats.length,1);
+ ctx.groqFetch=async()=>{ctx._cenaAtual='forest';return {ok:true,json:async()=>({choices:[{message:{content:'SUCESSO — Uma pista.'}}]})};};
+ await assert.rejects(ctx._invAdjudicarAcao('Procuro pegadas',roll,'bridge',request),/cena ou a vez mudou/);
+ assert.equal(beats.length,1);
+});
+
+test('investigation request reserves the shared turn and ignores chat while awaiting the host',()=>{
+ let room={narration:{dialogo:[]}};
+ const request={id:'investigate-a',canal:'inv-pedido',tipo:'investigacao',authorId:'a'};
+ room.narration=appendInvestigationRequest(room,request,['a','b']);
+ assert.throws(()=>appendInvestigationRequest(room,request,['a','b']),/pendente/);
+ room.narration=appendBeats(room.narration,[{id:'chat',canal:'inv-chat',texto:'Olá'}]);
+ assert.equal(pendingInvestigation(room.narration.dialogo).id,request.id);
+ room.narration=appendBeats(room.narration,[{id:'resolved',canal:'inv-acao',authorId:'a'}]);
+ assert.equal(pendingInvestigation(room.narration.dialogo),null);
+ assert.equal(investigationTurn(room.narration.dialogo,['a','b']),'b');
+ assert.throws(()=>appendInvestigationRequest(room,request,['a','b']),/outro investigador/);
 });

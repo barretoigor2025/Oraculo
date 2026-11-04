@@ -1,4 +1,4 @@
-import { derivedStats, test3d6 } from './gurps.js?v=7';
+import { derivedStats, test3d6 } from './gurps.js?v=8';
 const clone = value => JSON.parse(JSON.stringify(value));
 const valid = (n, label, min=0) => { if(!Number.isFinite(n)||n<min)throw new Error(label+' inválido.'); return n; };
 export function rollDamage(expression, random=Math.random) {

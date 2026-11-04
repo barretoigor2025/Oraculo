@@ -12,11 +12,11 @@
 <script type="module">
 import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import{getFirestore,doc,onSnapshot,runTransaction,updateDoc}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import {createCombat,combatAction,currentFighter,availableDefense} from './combat.js?v=7';
-import {appendBeats} from './conversation.js?v=7';
-import {equipmentFor} from './equipment.js?v=7';
+import {createCombat,combatAction,currentFighter,availableDefense} from './combat.js?v=8';
+import {appendBeats} from './conversation.js?v=8';
+import {equipmentFor} from './equipment.js?v=8';
 import {CLASSES_DATA} from './catalogo/kagehama/classes.js';
-import {INIMIGOS_DATA} from './catalogo/kagehama/loader.js?v=7';
+import {INIMIGOS_DATA} from './catalogo/kagehama/loader.js?v=8';
 import {CENAS} from './catalogo/kagehama/campanha/roteiro/campaign.js';
 const $=id=>document.getElementById(id),pid=localStorage.getItem('mindRolePlay.playerId'),rid=localStorage.getItem('mindRolePlay.roomId');
 const cfg=JSON.parse(localStorage.getItem('mindRolePlay.fbConfig')||'null');
