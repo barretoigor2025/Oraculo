@@ -154,3 +154,39 @@ Correções desta revisão:
 Não há comprovação nesta revisão de uma partida ponta a ponta em dois
 aparelhos com credenciais e serviços reais. Testes transacionais simulados
 não substituem essa validação.
+
+
+## Revisão visual — Mind v9 (5 de novembro de 2026)
+
+- A ponte agora é vista de cima do tablado. O novo fundo em paisagem deixa um
+  plano sólido para os pés dos personagens; água fica além dos guarda-corpos.
+  A arte original foi preservada como arquivo separado. A imagem final está em
+  `assets/campaigns/kagehama/scenes/ponte-sete-lanternas-tablado.jpg`.
+- A abertura tem três passagens curadas (cidade e motivos, disposição física,
+  ataque), com dois parágrafos cada. A revelação é por palavras inteiras;
+  quebras automáticas respeitam palavras, sem hifenização. O jogador controla
+  o avanço. Isso é apenas a introdução, não substitui as conversas do jogo.
+- Só a mulher do leque está ao alcance no primeiro encontro. Outros nomes e
+  facções surgem em encontros próprios. As identidades canônicas ficam nas
+  notas do narrador; chips, balões e histórico usam descrição observável até
+  uma apresentação explícita em fala direta. O conhecimento é persistido e
+  o nome só aparece para o leitor ao chegar à fala correspondente.
+- O dado vermelho recupera geometria, material, arestas, luz, queda, quique e
+  giro do original. É a assinatura visual; não é uma rolagem de 1d20. A tela
+  revela os três d6 reais, soma, NH e resultado GURPS, com Continuar. Se WebGL
+  estiver indisponível, há um dado facetado animado em CSS; preferência por
+  movimento reduzido é respeitada. A apresentação não sorteia novos números.
+- Percepção, ações no diálogo, testes solicitados, investigação e testes do
+  confronto usam a apresentação compartilhada. O confronto registra os dados
+  estruturados junto ao evento; repetir uma transação não cria outra rolagem.
+
+A revisão visual no navegador usou a página real com um estado de cena local,
+sem acessar IA ou Firestore. Foram conferidos a abertura, o piso, o seletor de
+um único NPC e o modo gráfico de contingência do dado (WebGL indisponível nesse
+navegador). A captura de composição está em `docs/mind-v9-opening.jpg`.
+
+Direção da imagem: refazer a ponte no mesmo mangá P&B, câmera sobre o tablado,
+com 55% inferiores de piso contínuo, guarda-corpos nas laterais, água só além
+deles, cidade e castelo ao fundo, lanternas e lua, carro de cordas junto à lateral,
+sem pessoas nem texto. A imagem foi gerada como edição da arte original e
+comprimida para JPEG para uso no jogo.

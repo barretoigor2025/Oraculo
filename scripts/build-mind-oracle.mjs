@@ -27,11 +27,12 @@ for(const c of classes)for(const g of ['m','f']){
   write(cart+'/classes/'+id+'/dados.json',json(file));
 }
 write(cart+'/classes.js','export const CLASSES_DATA = '+json(classData)+';\n');
+const publicAliases=['Mulher do leque','Homem da bengala de prata','Escriba de olhar atento','Homem da capa de palha','Mulher das contas de madeira','Monge da bengala marcada','Senhora da armadura verde','Arqueiro de postura firme','Mulher com material de curativo','Ferreiro de mãos marcadas','Cão branco'];
 const registry={},NPCS={};
 for(const n of npcs){const p=n.behaviorProfile;
   const name=n.title.replace(/^NPC — /,'');
   const ia={papel:n.description,personalidade:p.voice+' '+p.methods,forma_de_falar:p.voice,objetivos:[p.goal],segredos:[p.secret],estado_emocional_base:p.fear,reacoes_especiais:{ameaca:p.ifPressured},disposicao_inicial:'neutro',prompt_sistema:`Você é ${name}, em Kagehama, Japão medieval fantástico. ${n.description}\nVOZ: ${p.voice}\nOBJETIVO: ${p.goal}\nMEDO: ${p.fear}\nMÉTODOS: ${p.methods}\nSEGREDO (não revele sem justificativa): ${p.secret}\nSE PRESSIONADO: ${p.ifPressured}\nLIMITE: ${p.narratorGuardrail}\nResponda à pergunta específica. Você pode recusar, negociar, mentir por motivo e agir por iniciativa própria. Não decida pelo jogador.`};
-  registry[n.id]={id:n.id,nome:name,img:n.portrait,avatar:n.id.endsWith('-10')?'🐕':'🔷',altura_cm:n.id.endsWith('-10')?55:175,zBase:5,offsetPx:0,reatividade:.2,personalidade:ia.personalidade,formaDeFalar:p.voice,conhecimentos:p.secret,promptSistema:ia.prompt_sistema};
+  registry[n.id]={id:n.id,nome:name,publicAlias:publicAliases[Number(n.id.split('-').at(-1))]||'Pessoa desconhecida',img:n.portrait,avatar:n.id.endsWith('-10')?'🐕':'🔷',altura_cm:n.id.endsWith('-10')?55:175,zBase:5,offsetPx:0,reatividade:.2,personalidade:ia.personalidade,formaDeFalar:p.voice,conhecimentos:p.secret,promptSistema:ia.prompt_sistema};
   NPCS[n.id]={...registry[n.id],descricao:n.description,categoria:'neutro',ia,_retrato:n.portrait};
   write(cart+'/npcs/'+n.id+'/dados.json',json(NPCS[n.id]));
 }
@@ -43,6 +44,7 @@ const CENAS={};
 for(const [i,s]of scenes.entries()){
   const opening=(s.beats||[]).find(b=>b.type==='dialogue'&&s.presentNpcIds?.includes(b.speakerId));
   CENAS[s.id]={id:s.id,ato:i<3?1:i<8?2:i<11?3:4,titulo:s.title,subtitulo:s.chapter||'As Sete Lanternas',tipo:s.presentNpcIds?.length?'dialogo':'exploracao',textoIntro:s.openingPrompt||s.beats?.[0]?.text||s.description,
+    ...(s.introPages?.length?{introSlides:s.introPages.map(texto=>({texto,imagem:s.image}))}:{}),
     npcsPresentes:s.presentNpcIds||[],npcEntrada:opening?.speakerId||null,falaEntrada:opening?.text||'',semIntro:false,avancarEmGrupo:true,
     imgExterior:s.image,imgInterior:s.image,beatNarrativo:s.objective||s.description,contextoInvestigacao:s.description,
     percepcao:s.perception?{dc:12,descricaoContexto:s.perception.success||s.perception.clue,textoFallback:s.perception.failure}:null,
@@ -51,7 +53,7 @@ for(const [i,s]of scenes.entries()){
 write(cart+'/campanha/roteiro/campaign.js','export const CENAS = '+json(CENAS)+';\nexport const CENAS_ORDEM = '+json(scenes.map(s=>s.id))+';\n');
 write(cart+'/campanha/roteiro/roteiro_jogavel.md',story);
 write(cart+'/campanha/config_campanha.json',json({id:'kagehama',nome:'As Sete Lanternas de Kagehama',sistema:'GURPS 4e',versao:2,origem:'Oráculo: docs/o_oraculo.md',arte:'Mangá preto e branco'}));
-write(cart+'/narracao.js',`import { NPCS_REGISTRY } from './npcs_registry.js';\nexport const NARRACAO_NPCS=Object.values(NPCS_REGISTRY);\nexport const NARRACAO_CENAS=${json(Object.fromEntries(scenes.map(s=>[s.id,{bg:s.image,titulo:s.title}])))};\nexport const NARRACAO_FLUXO=[];\n`);
+write(cart+'/narracao.js',`import { NPCS_REGISTRY } from './npcs_registry.js?v=9';\nexport const NARRACAO_NPCS=Object.values(NPCS_REGISTRY);\nexport const NARRACAO_CENAS=${json(Object.fromEntries(scenes.map(s=>[s.id,{bg:s.image,titulo:s.title}])))};\nexport const NARRACAO_FLUXO=[];\n`);
 const positions=[[15,76],[29,65],[41,77],[55,56],[82,69],[79,47],[87,49],[44,38],[29,57],[35,23],[52,24],[71,34],[86,22]];
 const NOS=Object.fromEntries(scenes.map((s,i)=>[s.id,{titulo:s.title,subtitulo:s.chapter||'Kagehama',x:positions[i][0],y:positions[i][1],icon:'⛩',estadoInicial:i===0?'descoberto':i<3?'ouviu_falar':'desconhecido',desc:s.description}]));
 const edges=[[0,1],[0,2],[1,3],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,12],[1,8],[3,7],[5,10]];
@@ -73,7 +75,7 @@ write(dest+'/gurps.js',fs.readFileSync('MindRolePlay/src/gurps.js','utf8'));
 // Original home markup and styles, same screen IDs, layout, four slots and lobby.
 let html=fs.readFileSync('index.html','utf8').replace('src="/src/main.js"','src="./src/oraculoEntry.js"').replaceAll('Oráculo RPG','Mind RolePlay').replace('ORÁCULO','MIND ROLEPLAY').replace('RPG · Tático','RPG · GURPS').replace('Mapa tático · Multiplayer · Turno sincronizado','Campanha japonesa · Multiplayer · GURPS 3d6');
 html=html.replace(/<button class="camp-card camp-mhoried[\s\S]*?<\/button>\s*<button class="camp-card camp-dn[\s\S]*?<\/button>/,`<button class="camp-card camp-mhoried selecionado" id="camp-kagehama" data-camp="kagehama"><span class="camp-icon">⛩</span><span class="camp-name">Kagehama</span><span class="camp-sub">As Sete Lanternas</span></button>`)
-  .replace('catalogo/mhoried/checklist/checklist.html','catalog.html#checklist').replace('v11</div>','Mind · Oráculo v8</div>');
+  .replace('catalogo/mhoried/checklist/checklist.html','catalog.html#checklist').replace('v11</div>','Mind · Oráculo v9</div>');
 write('MindRolePlay/index.html',html);
 write('MindRolePlay/src/oraculoStyles.css',fs.readFileSync('src/styles.css','utf8')+'\n/* Kagehama keeps the Oráculo layout; monochrome ink palette. */\n:root{--gold:#ddd;--gold2:#fff;--bg:#090909} .isc-logo-wrap,.isc-slot-card,.isc-cls-chip,.isc-class-detail{filter:grayscale(1)}\n');
 let entry=adapt(fs.readFileSync('src/main.js','utf8')).replace("import './styles.css';","import './oraculoStyles.css';")

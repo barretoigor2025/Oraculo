@@ -17,7 +17,8 @@ const director=await load('public/MindRolePlay/director.js');
 const gurps=await load('public/MindRolePlay/gurps.js');
 const {SCENE_GUIDES}=await load('public/MindRolePlay/catalogo/kagehama/direction.js');
 const {newId}=await load('public/MindRolePlay/identity.js');
-const mocks={newId,...conversation,...director,...gurps,SCENE_GUIDES,CLASSES_DATA,NPCS,INIMIGOS_COMPLETO:INIMIGOS_DATA,CENAS,CENAS_ORDEM,NPCS_REGISTRY,_dialNpcs:NARRACAO_NPCS,NARRACAO_FLUXO,MAPA_NOS:NOS,MAPA_CAMINHOS:CAMINHOS,MAPA_IMG,NOS,CAMINHOS,test3d6,resolveSuccessTest,MAPAS_BATALHA:{},DN_CLASSES_DATA:{},DN_PERSONAGENS:[],DN_REGRAS:[],DN_CENARIOS:[],FANTASMA_CLASSES:{},FANTASMA_NPCS:[],FANTASMA_INIMIGOS:[],FANTASMA_CENARIOS:[]};
+const presentation=await load('public/MindRolePlay/presentation.js');
+const mocks={...presentation,showDiceRoll:async result=>result,newId,...conversation,...director,...gurps,SCENE_GUIDES,CLASSES_DATA,NPCS,INIMIGOS_COMPLETO:INIMIGOS_DATA,CENAS,CENAS_ORDEM,NPCS_REGISTRY,_dialNpcs:NARRACAO_NPCS,NARRACAO_FLUXO,MAPA_NOS:NOS,MAPA_CAMINHOS:CAMINHOS,MAPA_IMG,NOS,CAMINHOS,test3d6,resolveSuccessTest,MAPAS_BATALHA:{},DN_CLASSES_DATA:{},DN_PERSONAGENS:[],DN_REGRAS:[],DN_CENARIOS:[],FANTASMA_CLASSES:{},FANTASMA_NPCS:[],FANTASMA_INIMIGOS:[],FANTASMA_CENARIOS:[]};
 function dom(html){const d=new JSDOM(html,{url:'https://example.test/Oraculo/MindRolePlay/index.html',runScripts:'outside-only'});d.window.HTMLCanvasElement.prototype.getContext=()=>new Proxy({measureText:()=>({width:10})},{get:(t,p)=>t[p]||(()=>{})});d.window.requestAnimationFrame=()=>0;d.window.ResizeObserver=class{observe(){}};d.window.alert=()=>{};d.window.confirm=()=>true;return d;}
 {
  const d=dom(fs.readFileSync(root+'MindRolePlay/index.html','utf8')),w=d.window;
@@ -99,14 +100,14 @@ for(const file of ['narration.html','mapa.html','catalog.html','arena.html']){
    .replace(/^import[^;]+;\n/gm,'').replace(/^init\(\);$/m,'');
  vm.runInContext(source,d.getInternalVMContext());
  vm.runInContext(`_cenaAtual='kagehama-scene-0';_lastRoom={players:{'test-hero':{id:'test-hero',nome:'Teste Samurai',classId:'samurai'}}};_dialActivar(_cenaAtual);`,d.getInternalVMContext());
- assert.equal(d.window.document.querySelectorAll('#dial-personagens .dial-npc').length,4);
+ assert.equal(d.window.document.querySelectorAll('#dial-personagens .dial-npc').length,1);
  assert.equal(d.window.document.querySelectorAll('#dial-personagens .dial-hero').length,1);
  assert.ok(d.window.document.querySelector('#dial-overlay').classList.contains('ativo'));
  assert.match(d.window.document.querySelector('#dial-cena-bg').style.backgroundImage,/ponte-sete-lanternas/);
  assert.equal(d.window.document.querySelectorAll('#dial-personagens .em-cena').length,0);
  vm.runInContext(`_mindMostrarAtor('npc','kagehama-npc-0');`,d.getInternalVMContext());
  assert.equal(d.window.document.querySelectorAll('.dial-npc.em-cena').length,1);
- vm.runInContext(`_mindMostrarAtor('npc','kagehama-npc-1');_mindMostrarAtor('jogador','test-hero');`,d.getInternalVMContext());
+ vm.runInContext(`_mindMostrarAtor('npc','kagehama-npc-0');_mindMostrarAtor('jogador','test-hero');`,d.getInternalVMContext());
  assert.equal(d.window.document.querySelectorAll('.dial-npc.em-cena').length,1);
  assert.equal(d.window.document.querySelectorAll('.dial-hero.em-cena').length,1);
  assert.ok(d.window.document.querySelector('.dial-npc.em-cena')===d.window.document.querySelectorAll('.dial-npc')[0]);
@@ -131,19 +132,19 @@ for(const file of ['narration.html','mapa.html','catalog.html','arena.html']){
  d.window.document.querySelector('#dial-player-card button').click();
  assert.equal(vm.runInContext('_dialReadIdx',d.getInternalVMContext()),1);
  await vm.runInContext(`(async()=>{
-   _dialogoLog=[{tipo:'jogador',authorId:'guest',texto:'Olá',npcId:'kagehama-npc-1',ts:200}];
+   _dialogoLog=[{tipo:'jogador',authorId:'guest',texto:'Olá',npcId:'kagehama-npc-0',ts:200}];
    _dialChamarIA=async()=>{throw new Error('Serviço indisponível');};
    await _dialFluxoTurnos();
  })()`,d.getInternalVMContext());
  assert.match(d.window.document.querySelector('#dial-ia-pensando').textContent,/Serviço indisponível/);
  assert.match(d.window.document.querySelector('#dial-ia-pensando button').textContent,/Tentar novamente/);
  await vm.runInContext(`(async()=>{
-   _dialChamarIA=async(idx)=>{testCalls.push(_dialNpcEls[idx].npc.id);return 'Sou Ren.';};
+   _dialChamarIA=async(idx)=>{testCalls.push(_dialNpcEls[idx].npc.id);return 'Sou Akiho.';};
    document.querySelector('#dial-ia-pensando button').click();
    await new Promise(resolve=>setTimeout(resolve,0));
  })()`,d.getInternalVMContext());
  assert.equal(d.window.testReplies.length,2);
- assert.equal(d.window.testCalls.at(-1),'kagehama-npc-1');
+ assert.equal(d.window.testCalls.at(-1),'kagehama-npc-0');
  assert.equal(d.window.document.querySelector('#dial-ia-pensando').parentElement.id,'dial-overlay');
  vm.runInContext(`window._fbListenRoom=()=>{};
  _lastRoom={players:{'test-hero':{nome:'Teste'},guest:{nome:'Convidado'}},narration:{dialLido:{'test-hero':2,guest:2}}};`,d.getInternalVMContext());

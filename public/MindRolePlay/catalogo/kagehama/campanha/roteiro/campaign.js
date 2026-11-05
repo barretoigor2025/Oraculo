@@ -5,21 +5,32 @@ export const CENAS = {
     "titulo": "Ponte das Sete Lanternas",
     "subtitulo": "PRÓLOGO",
     "tipo": "dialogo",
-    "textoIntro": "A cidade de Kagehama se prepara para encerrar uma guerra. Representantes de três famílias que governam a região chegaram para assinar um acordo de paz. Nesta noite, a população acompanha a passagem da comitiva pela Ponte das Sete Lanternas.\n\nVocês estão entre as pessoas reunidas na ponte. À frente, o mensageiro Jiro caminha ao lado da mediadora Akiho Senda. Ele carrega uma pequena caixa quadrada de madeira, fechada com um selo oficial. Dentro dela estão os documentos que serão assinados no palácio.\n\nUma flecha disparada de um dos telhados atinge o ombro de Jiro. Ele solta a caixa, cambaleia contra a lateral da ponte e cai na água. A caixa bate nas tábuas e desliza até a borda, perto de vocês.\n\nA multidão começa a fugir. Enquanto os guardas procuram o atirador, Jiro tenta manter a cabeça fora da água. Sob a ponte, uma pessoa estende a mão para alcançar a caixa. Vocês podem ajudar o mensageiro, proteger os documentos ou tentar encontrar quem disparou.",
+    "textoIntro": "Faz três anos que os caminhos de Kagehama se tornaram perigosos. As famílias que disputam a região cobram passagem, requisitam alimentos e convocam homens para uma guerra que nunca parece terminar. Nesta noite, porém, lanternas de papel iluminam as ruas: corre a notícia de que um acordo de paz será assinado no palácio.\n\nVocês chegaram à capital por motivos próprios. No começo da noite, a passagem da comitiva fecha o caminho para o outro lado do canal. Sem se conhecerem ainda, acabam lado a lado na parte mais larga da Ponte das Sete Lanternas.\n\nO tablado firme range sob as sandálias. À esquerda, vendedores recolhem cestos para dar passagem aos guardas. Além do guarda-corpo, a água escura leva pétalas e pequenos restos de papel. Um carro de serviço ficou encostado à lateral da ponte, com cordas usadas pelos barqueiros.\n\nEntre os guardas caminha um homem de capa de palha. Ele segura contra o peito uma caixa quadrada de madeira, lacrada com um selo. Ao seu lado, uma mulher de quimono sóbrio e leque rachado pede que a multidão recue. Os guardas a escutam. Vocês ainda não sabem quem ela é.\n\nUm estalo seco vem dos telhados. Uma flecha atinge o ombro do homem da capa. A caixa escapa de seus braços, bate nas tábuas e desliza até perto dos pés de vocês. Ele tenta se apoiar no guarda-corpo, perde o equilíbrio e cai no canal.\n\nOs gritos se espalham. Os guardas voltam os olhos para os telhados; a mulher do leque permanece junto à borda, tentando localizar o ferido na água. Por um instante, a passagem entre ela e vocês fica livre. Há corda no carro, a caixa está ao alcance e o disparo veio das casas além da ponte. O que cada um de vocês faz?",
+    "introSlides": [
+      {
+        "texto": "Faz três anos que os caminhos de Kagehama se tornaram perigosos. As famílias que disputam a região cobram passagem, requisitam alimentos e convocam homens para uma guerra que nunca parece terminar. Nesta noite, porém, lanternas de papel iluminam as ruas: corre a notícia de que um acordo de paz será assinado no palácio.\n\nVocês chegaram à capital por motivos próprios. No começo da noite, a passagem da comitiva fecha o caminho para o outro lado do canal. Sem se conhecerem ainda, acabam lado a lado na parte mais larga da Ponte das Sete Lanternas.",
+        "imagem": "catalogo/kagehama/assets/ponte-sete-lanternas-tablado.jpg"
+      },
+      {
+        "texto": "O tablado firme range sob as sandálias. À esquerda, vendedores recolhem cestos para dar passagem aos guardas. Além do guarda-corpo, a água escura leva pétalas e pequenos restos de papel. Um carro de serviço ficou encostado à lateral da ponte, com cordas usadas pelos barqueiros.\n\nEntre os guardas caminha um homem de capa de palha. Ele segura contra o peito uma caixa quadrada de madeira, lacrada com um selo. Ao seu lado, uma mulher de quimono sóbrio e leque rachado pede que a multidão recue. Os guardas a escutam. Vocês ainda não sabem quem ela é.",
+        "imagem": "catalogo/kagehama/assets/ponte-sete-lanternas-tablado.jpg"
+      },
+      {
+        "texto": "Um estalo seco vem dos telhados. Uma flecha atinge o ombro do homem da capa. A caixa escapa de seus braços, bate nas tábuas e desliza até perto dos pés de vocês. Ele tenta se apoiar no guarda-corpo, perde o equilíbrio e cai no canal.\n\nOs gritos se espalham. Os guardas voltam os olhos para os telhados; a mulher do leque permanece junto à borda, tentando localizar o ferido na água. Por um instante, a passagem entre ela e vocês fica livre. Há corda no carro, a caixa está ao alcance e o disparo veio das casas além da ponte. O que cada um de vocês faz?",
+        "imagem": "catalogo/kagehama/assets/ponte-sete-lanternas-tablado.jpg"
+      }
+    ],
     "npcsPresentes": [
-      "kagehama-npc-1",
-      "kagehama-npc-0",
-      "kagehama-npc-2",
-      "kagehama-npc-4"
+      "kagehama-npc-0"
     ],
     "npcEntrada": "kagehama-npc-0",
-    "falaEntrada": "[ACAO: Akiho afasta duas pessoas da borda e se volta para vocês.] O mensageiro está no canal! Quem puder ajudá-lo, venha comigo. Não deixem que levem a caixa com os documentos! Depressa!",
+    "falaEntrada": "[ACAO: A mulher fecha o leque rachado e se ajoelha junto ao guarda-corpo, os pés firmes no tablado.] Ele ainda está à superfície! Há corda naquele carro. Se alguém alcançar a caixa, afaste-a da borda. Conseguem me ajudar?",
     "semIntro": false,
     "avancarEmGrupo": true,
-    "imgExterior": "catalogo/kagehama/assets/ponte-sete-lanternas.jpg",
-    "imgInterior": "catalogo/kagehama/assets/ponte-sete-lanternas.jpg",
+    "imgExterior": "catalogo/kagehama/assets/ponte-sete-lanternas-tablado.jpg",
+    "imgInterior": "catalogo/kagehama/assets/ponte-sete-lanternas-tablado.jpg",
     "beatNarrativo": "Dar contexto da capital e do armistício, apresentar o grupo como testemunha de uma crise em andamento e deixar cada pessoa escolher como reage ao mensageiro em perigo e ao estojo levado para a água.",
-    "contextoInvestigacao": "Na Festa das Sete Lanternas, os personagens já estão reunidos no trecho central da ponte quando uma tentativa de roubo interrompe a procissão do armistício.",
+    "contextoInvestigacao": "Na noite de uma possível paz, viajantes que ainda não se conhecem ficam retidos na ponte. Um ataque ao portador de uma caixa lacrada os torna testemunhas e lhes dá uma escolha imediata.",
     "percepcao": {
       "dc": 12,
       "descricaoContexto": "Sob a ponte há um fragmento de papel imperial queimado por dentro; ao tocá-lo, a água sussurra o nome “Kuroda”.",
@@ -36,7 +47,7 @@ export const CENAS = {
     "titulo": "Capítulo 2 — Três contas queimadas",
     "subtitulo": "As Sete Lanternas",
     "tipo": "dialogo",
-    "textoIntro": "Três contas de oração chegam ao santuário com as marcas queimadas por dentro. Sayo não pede que acreditem nela; coloca as contas sobre a mesa e espera que alguém perceba que a fuligem segue a forma de um mapa.",
+    "textoIntro": "No pátio do santuário de Aokiri, o tumulto da capital dá lugar ao ruído da chuva no beiral. Um monge de bengala marcada serve água aos recém-chegados, enquanto um cão branco dorme perto da porta. À mesa, uma mulher de roupas discretas mantém três contas de madeira entre os dedos.\n\nEla nota o olhar de vocês e as deposita sobre um pano. As marcas parecem ter queimado a madeira por dentro. O monge lhe oferece uma tigela, mas ela não bebe: observa primeiro o portão e só então pergunta o que os trouxe até ali.",
     "npcsPresentes": [
       "kagehama-npc-4",
       "kagehama-npc-5"
@@ -47,8 +58,8 @@ export const CENAS = {
     "avancarEmGrupo": true,
     "imgExterior": "catalogo/kagehama/assets/santuario-aokiri.jpg",
     "imgInterior": "catalogo/kagehama/assets/santuario-aokiri.jpg",
-    "beatNarrativo": "Sayo leva ao santuário; refugiados somem na floresta e uma trilha cruza esconderijo de Daichi.",
-    "contextoInvestigacao": "Sayo leva ao santuário; refugiados somem na floresta e uma trilha cruza esconderijo de Daichi.",
+    "beatNarrativo": "No pátio do santuário de Aokiri, uma mulher com contas de madeira e um monge acolhem os que chegam. As marcas queimadas nas contas ligam os refugiados à floresta.",
+    "contextoInvestigacao": "No pátio do santuário de Aokiri, uma mulher com contas de madeira e um monge acolhem os que chegam. As marcas queimadas nas contas ligam os refugiados à floresta.",
     "percepcao": {
       "dc": 12,
       "descricaoContexto": "O padrão é uma rota de procissão usada para guiar os desaparecidos sem deixar trilha visível.",

@@ -1,6 +1,7 @@
 {
   "id": "kagehama-npc-10",
   "nome": "Nuvem",
+  "publicAlias": "Cão branco",
   "img": "catalogo/kagehama/assets/kagehama-npc-10.png",
   "avatar": "🐕",
   "altura_cm": 55,

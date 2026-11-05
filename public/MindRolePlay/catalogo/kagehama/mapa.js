@@ -7,7 +7,7 @@ export const NOS={
     "y": 76,
     "icon": "⛩",
     "estadoInicial": "descoberto",
-    "desc": "Na Festa das Sete Lanternas, os personagens já estão reunidos no trecho central da ponte quando uma tentativa de roubo interrompe a procissão do armistício."
+    "desc": "Na noite de uma possível paz, viajantes que ainda não se conhecem ficam retidos na ponte. Um ataque ao portador de uma caixa lacrada os torna testemunhas e lhes dá uma escolha imediata."
   },
   "kagehama-scene-1": {
     "titulo": "Capítulo 2 — Três contas queimadas",
@@ -16,7 +16,7 @@ export const NOS={
     "y": 65,
     "icon": "⛩",
     "estadoInicial": "ouviu_falar",
-    "desc": "Sayo leva ao santuário; refugiados somem na floresta e uma trilha cruza esconderijo de Daichi."
+    "desc": "No pátio do santuário de Aokiri, uma mulher com contas de madeira e um monge acolhem os que chegam. As marcas queimadas nas contas ligam os refugiados à floresta."
   },
   "kagehama-scene-2": {
     "titulo": "Capítulo 3 — O homem sob a água",

@@ -1,1 +1,1 @@
-export const ENCONTROS={}; export const EMBOSCADAS={}; export const MAPAS_BATALHA={}; export const MAPA_FALLBACK={mapa:"catalogo/kagehama/assets/ponte-sete-lanternas.jpg"}; export function rosterDaKey(){return [];} export function mapaDaKey(){return MAPA_FALLBACK;}
+export const ENCONTROS={}; export const EMBOSCADAS={}; export const MAPAS_BATALHA={}; export const MAPA_FALLBACK={mapa:"catalogo/kagehama/assets/ponte-sete-lanternas-tablado.jpg"}; export function rosterDaKey(){return [];} export function mapaDaKey(){return MAPA_FALLBACK;}

@@ -2,6 +2,7 @@ export const NPCS_REGISTRY = {
   "kagehama-npc-0": {
     "id": "kagehama-npc-0",
     "nome": "Lady Akiho Senda",
+    "publicAlias": "Mulher do leque",
     "img": "catalogo/kagehama/assets/kagehama-npc-0.png",
     "avatar": "🔷",
     "altura_cm": 175,
@@ -16,6 +17,7 @@ export const NPCS_REGISTRY = {
   "kagehama-npc-1": {
     "id": "kagehama-npc-1",
     "nome": "Ren Kuroda",
+    "publicAlias": "Homem da bengala de prata",
     "img": "catalogo/kagehama/assets/kagehama-npc-1.png",
     "avatar": "🔷",
     "altura_cm": 175,
@@ -30,6 +32,7 @@ export const NPCS_REGISTRY = {
   "kagehama-npc-2": {
     "id": "kagehama-npc-2",
     "nome": "Tomoe Arashi",
+    "publicAlias": "Escriba de olhar atento",
     "img": "catalogo/kagehama/assets/kagehama-npc-2.png",
     "avatar": "🔷",
     "altura_cm": 175,
@@ -44,6 +47,7 @@ export const NPCS_REGISTRY = {
   "kagehama-npc-3": {
     "id": "kagehama-npc-3",
     "nome": "Jiro “Três Chuvas”",
+    "publicAlias": "Homem da capa de palha",
     "img": "catalogo/kagehama/assets/kagehama-npc-3.png",
     "avatar": "🔷",
     "altura_cm": 175,
@@ -58,6 +62,7 @@ export const NPCS_REGISTRY = {
   "kagehama-npc-4": {
     "id": "kagehama-npc-4",
     "nome": "Sayo",
+    "publicAlias": "Mulher das contas de madeira",
     "img": "catalogo/kagehama/assets/kagehama-npc-4.png",
     "avatar": "🔷",
     "altura_cm": 175,
@@ -72,6 +77,7 @@ export const NPCS_REGISTRY = {
   "kagehama-npc-5": {
     "id": "kagehama-npc-5",
     "nome": "Monge Genzō",
+    "publicAlias": "Monge da bengala marcada",
     "img": "catalogo/kagehama/assets/kagehama-npc-5.png",
     "avatar": "🔷",
     "altura_cm": 175,
@@ -86,6 +92,7 @@ export const NPCS_REGISTRY = {
   "kagehama-npc-6": {
     "id": "kagehama-npc-6",
     "nome": "Lady Chiyo Arashi",
+    "publicAlias": "Senhora da armadura verde",
     "img": "catalogo/kagehama/assets/kagehama-npc-6.png",
     "avatar": "🔷",
     "altura_cm": 175,
@@ -100,6 +107,7 @@ export const NPCS_REGISTRY = {
   "kagehama-npc-7": {
     "id": "kagehama-npc-7",
     "nome": "Daichi Arashi",
+    "publicAlias": "Arqueiro de postura firme",
     "img": "catalogo/kagehama/assets/kagehama-npc-7.png",
     "avatar": "🔷",
     "altura_cm": 175,
@@ -114,6 +122,7 @@ export const NPCS_REGISTRY = {
   "kagehama-npc-8": {
     "id": "kagehama-npc-8",
     "nome": "Akane",
+    "publicAlias": "Mulher com material de curativo",
     "img": "catalogo/kagehama/assets/kagehama-npc-8.png",
     "avatar": "🔷",
     "altura_cm": 175,
@@ -128,6 +137,7 @@ export const NPCS_REGISTRY = {
   "kagehama-npc-9": {
     "id": "kagehama-npc-9",
     "nome": "Mestre Tetsuo",
+    "publicAlias": "Ferreiro de mãos marcadas",
     "img": "catalogo/kagehama/assets/kagehama-npc-9.png",
     "avatar": "🔷",
     "altura_cm": 175,
@@ -142,6 +152,7 @@ export const NPCS_REGISTRY = {
   "kagehama-npc-10": {
     "id": "kagehama-npc-10",
     "nome": "Nuvem",
+    "publicAlias": "Cão branco",
     "img": "catalogo/kagehama/assets/kagehama-npc-10.png",
     "avatar": "🐕",
     "altura_cm": 55,

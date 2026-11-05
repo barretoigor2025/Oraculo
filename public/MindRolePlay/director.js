@@ -1,5 +1,5 @@
 // Campaign knowledge is separate from the engine, just like Oráculo cartridges.
-export function buildNpcPrompt({ npc, scene, guide = {}, world = {}, log = [], players = {}, npcMemory = [], reaction = false }) {
+export function buildNpcPrompt({ npc, scene, guide = {}, world = {}, log = [], players = {}, npcMemory = [], reaction = false, knowsName = false }) {
   return `${npc.promptSistema || npc.personalidade}
 VOZ: ${npc.formaDeFalar || ''}
 LOCAL: ${scene?.titulo}. CONTEXTO VISÍVEL: ${scene?.textoIntro || ''}
@@ -10,6 +10,7 @@ MEMÓRIA DESTE NPC: ${JSON.stringify(npcMemory)}
 QUEM ESTÁ PRESENTE: ${JSON.stringify(Object.entries(players).map(([id,p])=>({id,nome:p.nome||p.name,classe:p.classId})))}
 HISTÓRICO COMUM (inclui todos os jogadores e NPCs):
 ${log.slice(-40).map(b=>`${b.oradorNome || b.authorId || 'Narrador'}: ${b.texto || b.controle || ''}${b.roll ? '\nRESULTADO MECÂNICO CONFIÁVEL: '+JSON.stringify(b.roll) : ''}`).join('\n')}
+IDENTIDADE DIANTE DO GRUPO: ${knowsName ? 'Seu nome já foi apresentado nesta aventura.' : 'Os jogadores ainda não sabem seu nome. Você é percebido como: '+(npc.publicAlias||'uma pessoa desconhecida')+'. Não suponha intimidade nem apresentações prévias. Use a descrição observável nas ações, sem revelar seu nome por rubrica. Se perguntarem quem é ou houver motivo natural, apresente-se em fala direta (por exemplo: Meu nome é ...). Não precisa se apresentar durante uma emergência.'}
 REGRAS DO NARRADOR:
 - Responda em português claro, 2-3 frases, com a voz e os interesses deste NPC. Ações visíveis começam com [ACAO: ...].
 - Conhecimento é limitado ao que este NPC presenciou, ouviu ou já sabia. O roteiro futuro é direção, nunca conhecimento automático. Guarde segredos até haver evidência ou confiança.
@@ -21,7 +22,7 @@ REGRAS DO NARRADOR:
 - ${reaction ? 'Você está reagindo como observador. Só intervenha se tiver algo pertinente. Pode responder --- para ficar em silêncio. Não peça teste nem faça uma segunda rodada de reação.' : 'Não termine a conversa por conta própria: o grupo escolhe quando sair.'}
 - Não imprima metadados, estatísticas ou explicações do sistema na fala.`;
 }
-export function parseNpcReply(raw, { playerId, playerIds = [], allowTest = true } = {}) {
+export function parseNpcReply(raw, { playerId, playerIds = [], allowTest = true, npcName } = {}) {
   let text = String(raw || '').trim();
   const request = text.match(/\[PEDE_TESTE:\s*([^|\]]+)\|\s*([+-]?\d+)\s*\|\s*([^\]]+)\]/i);
   const reengage = text.match(/\[REENGAJA:\s*([^\]]+)\]/i)?.[1]?.trim();
@@ -29,5 +30,11 @@ export function parseNpcReply(raw, { playerId, playerIds = [], allowTest = true 
   const result = { texto: text || 'Aguardo sua resposta.' };
   if (request && allowTest && playerId) result.pedidoTeste = { playerId, skill: request[1].trim().slice(0,60), modifier: Math.max(-10, Math.min(10, Number(request[2]))), reason: request[3].trim().slice(0,200) };
   if (reengage && playerIds.includes(reengage)) result.reengajar = reengage;
+  if(npcName){
+    const plain=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const first=plain(npcName).replace(/^(lady|monge|mestre|senhor|senhora)\s+/,'').split(/\s+/)[0];
+    const speech=plain(text.replace(/\[ACAO:[^\]]*\]/gi,''));
+    if(first&&[...speech.matchAll(/(?:^|[.!?,;]\s*|\n)\s*(?:me chamo|meu nome e|sou(?: a| o)?)\s+([^.!?\n]+)/g)].some(m=>m[1].replace(/^(lady|monge|mestre|senhor|senhora)\s+/,'').split(/[ ,—]/)[0]===first))result.revelaNome=true;
+  }
   return result;
 }

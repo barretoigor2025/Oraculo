@@ -7,13 +7,13 @@
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,viewport-fit=cover">
 <title>Mind RolePlay — Narração</title>
-<script>(function(){try{var c=localStorage.getItem('mindRolePlay.fbConfig'),r=localStorage.getItem('mindRolePlay.roomId');if(!c||!r){location.replace('index.html?v=8');}}catch(e){location.replace("index.html?v=8");}})();</script>
+<script>(function(){try{var c=localStorage.getItem('mindRolePlay.fbConfig'),r=localStorage.getItem('mindRolePlay.roomId');if(!c||!r){location.replace('index.html?v=9');}}catch(e){location.replace("index.html?v=9");}})();</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script type="module">
-import {newId} from './identity.js?v=8';
+import {newId} from './identity.js?v=9';
 import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import{getFirestore,doc,onSnapshot,updateDoc,getDoc,runTransaction}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { appendBeats, appendPlayerBeat, appendControlBeat, appendInvestigationRequest, pendingInvestigation, beatKey, conversationState } from './conversation.js?v=8';
+import { appendBeats, appendPlayerBeat, appendControlBeat, appendInvestigationRequest, pendingInvestigation, beatKey, conversationState } from './conversation.js?v=9';
 const _cfg=JSON.parse(localStorage.getItem('mindRolePlay.fbConfig')||'null');
 const _rid=localStorage.getItem('mindRolePlay.roomId');
 if(_cfg&&_rid){
@@ -48,8 +48,10 @@ if(_cfg&&_rid){
           : linha.tipo==='jogador' ? appendPlayerBeat(currentRoom,linha,activeIds(room))
           : linha.tipo==='controle' ? appendControlBeat(currentRoom,linha,activeIds(room)) : appendBeats(n,[linha]);
         const state=conversationState(update.dialogo,activeIds(room),n.conversationScene===n.cenaId?n.conversationStatus:{});
-        tx.update(rd,{'narration.dialogo':update.dialogo,'narration.dialogueSeq':update.dialogueSeq,
-          'narration.conversationStatus':state.status,'narration.conversationScene':n.cenaId,'narration.ts':Date.now()});
+        const fields={'narration.dialogo':update.dialogo,'narration.dialogueSeq':update.dialogueSeq,
+          'narration.conversationStatus':state.status,'narration.conversationScene':n.cenaId,'narration.ts':Date.now()};
+        if(linha.revelaNome&&linha.oradorId&&room.hostId===localPid)fields['narration.knownNpcs.'+linha.oradorId]={scene:n.cenaId,seq:update.dialogueSeq};
+        tx.update(rd,fields);
       });
     };
     window._fbClaimReply=async(source,scene)=>runTransaction(db,async tx=>{
@@ -66,6 +68,7 @@ if(_cfg&&_rid){
       if(n.replyLease?.owner!==clientId)return false;
       const result=appendBeats(n,[beat]);
       const update={'narration.dialogo':result.dialogo,'narration.dialogueSeq':result.dialogueSeq,'narration.replyLease':null,'narration.ts':Date.now()};
+      if(beat.revelaNome&&beat.oradorId)update['narration.knownNpcs.'+beat.oradorId]={scene,seq:result.dialogueSeq};
       if(memory)update['narration.memorias.'+beat.oradorId]=[...(n.memorias?.[beat.oradorId]||[]),memory].slice(-30);
       tx.update(rd,update);return true;
     });
@@ -573,6 +576,7 @@ html,body{
 .perc-resp-chip.rolou{border-color:rgba(90,190,80,0.5);color:#a0e08c;}
 #percepcao-rolar-div{display:flex;flex-direction:column;align-items:center;gap:6px;}
 #perc-dado-wrap{width:130px;height:130px;display:flex;align-items:center;justify-content:center;}
+#perc-dado-wrap:empty::before{content:'';width:72px;height:78px;clip-path:polygon(50% 0,94% 25%,94% 75%,50% 100%,6% 75%,6% 25%);background:conic-gradient(from 30deg,#fd7863,#7e0804,#e52a16,#6f0805,#f3492d,#a00f07,#fd7863)}
 #btn-rolar-perc{
   padding:14px 0;width:100%;
   background:rgba(60,110,170,0.22);
@@ -583,7 +587,7 @@ html,body{
 }
 #btn-rolar-perc:disabled{opacity:.35;cursor:default;}
 #percepcao-dado-result{
-  font-size:32px;font-weight:900;color:#f5d878;
+  font-size:clamp(20px,5vw,28px);font-weight:900;color:#f5d878;
   letter-spacing:3px;min-height:40px;
 }
 
@@ -1142,6 +1146,19 @@ html,body{
 #mind-conversation-controls button[hidden]{display:none}
 #mind-conversation-controls button:disabled{opacity:.4}
 #mind-test-reason{padding:0 12px;font:12px sans-serif;color:#e5d094;background:#121212;max-height:10dvh;overflow:auto}
+
+/* Complete words remain together while each short passage is revealed. */
+#intro-texto-pag{width:100%;max-width:650px;word-break:normal;overflow-wrap:normal;hyphens:none;text-align:left;text-wrap:pretty;font-style:normal;line-height:1.75}
+#intro-content{padding-left:max(24px,6vw);padding-right:max(24px,6vw)}
+#intro-titulo-cena{word-break:normal;overflow-wrap:normal;font-size:clamp(22px,5.5vw,38px);letter-spacing:1px}
+#dial-balao-texto,#dial-player-card .dial-pc-texto{font-size:clamp(15px,2.4vw,18px);line-height:1.6}
+#dial-balao-acao{font-size:13px;line-height:1.5}
+#dial-balao-nome{font-size:11px;letter-spacing:1.3px}
+#dial-npc-chips .dial-chip-npc{white-space:normal;flex-shrink:0;max-width:220px;font-size:12px}
+#dial-overlay.bridge-stage #dial-cena-bg{background-position:50% 70%}
+#dial-overlay.bridge-stage #dial-personagens{bottom:clamp(160px,24dvh,230px)}
+#dial-overlay.bridge-stage .dial-npc::after,#dial-overlay.bridge-stage .dial-hero::after{content:'';position:absolute;left:15%;right:15%;bottom:-5px;height:10px;background:#0009;border-radius:50%;filter:blur(5px);z-index:-1}
+@media(max-height:520px){#dial-overlay.bridge-stage #dial-personagens{bottom:135px}}
 </style>
 </head>
 <body>
@@ -1370,18 +1387,20 @@ html,body{
 </div>
 
 <script type="module">
-import {newId} from './identity.js?v=8';
+import {newId} from './identity.js?v=9';
 import { groqFetch } from './groq.js?v=6';
-import { appendBeats, beatKey, logSequence, conversationState, pendingInvestigation } from './conversation.js?v=8';
-import { buildNpcPrompt, parseNpcReply } from './director.js?v=8';
-import { SCENE_GUIDES } from './catalogo/kagehama/direction.js?v=8';
-import { test3d6, resolveSuccessTest, sheetSkills, skillLevel, conditionModifier } from './gurps.js?v=8';
+import { appendBeats, beatKey, logSequence, conversationState, pendingInvestigation } from './conversation.js?v=9';
+import { showDiceRoll } from './dice-visual.js?v=9';
+import { visibleNpcName, maskNpcDirection, wordTokens, introductionSlides } from './presentation.js?v=9';
+import { buildNpcPrompt, parseNpcReply } from './director.js?v=9';
+import { SCENE_GUIDES } from './catalogo/kagehama/direction.js?v=9';
+import { test3d6, resolveSuccessTest, sheetSkills, skillLevel, conditionModifier } from './gurps.js?v=9';
 import { CLASSES_DATA } from './catalogo/kagehama/classes.js';
-import { NPCS } from './catalogo/kagehama/loader.js?v=8';
-import { CENAS, CENAS_ORDEM } from './catalogo/kagehama/campanha/roteiro/campaign.js?v=33';
-import { NARRACAO_NPCS as _dialNpcs, NARRACAO_FLUXO } from './catalogo/kagehama/narracao.js';
-import { NPCS_REGISTRY } from './catalogo/kagehama/npcs_registry.js?v=4';
-import { NOS as MAPA_NOS, CAMINHOS as MAPA_CAMINHOS } from './catalogo/kagehama/mapa.js';
+import { NPCS } from './catalogo/kagehama/loader.js?v=9';
+import { CENAS, CENAS_ORDEM } from './catalogo/kagehama/campanha/roteiro/campaign.js?v=34';
+import { NARRACAO_NPCS as _dialNpcs, NARRACAO_FLUXO } from './catalogo/kagehama/narracao.js?v=9';
+import { NPCS_REGISTRY } from './catalogo/kagehama/npcs_registry.js?v=9';
+import { NOS as MAPA_NOS, CAMINHOS as MAPA_CAMINHOS } from './catalogo/kagehama/mapa.js?v=9';
 
 let _mindAcao=false;
 window._mindModo=function(acao){
@@ -1528,12 +1547,12 @@ function onRoomUpdate(room) {
   if (room.status === 'battle') {
     // Grava a cena da batalha para a Arena escolher o roster certo
     localStorage.setItem('mindRolePlay.battleCena', room.narration?.battleKey || room.narration?.cenaId || 'kagehama-scene-0');
-    window.location.href = 'arena.html?v=8';
+    window.location.href = 'arena.html?v=9';
     return;
   }
   if (room.status === 'map') {
     // Viagem: todos vão para o Mapa do Mundo (mapa.html) ver a jornada.
-    window.location.href = 'mapa.html?v=8';
+    window.location.href = 'mapa.html?v=9';
     return;
   }
 
@@ -1753,19 +1772,7 @@ let _introSlides = [];
 let _introIdx    = 0;
 
 function makeIntroSlides(cena) {
-  // Base: slides curados, ou um único slide com todo o textoIntro
-  const raw = cena.introSlides?.length
-    ? cena.introSlides
-    : [{ imagem: (_modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior),
-         texto: (cena.textoIntro || '').trim() }];
-
-  // UM slide só por cena: junta todos os textos num bloco (tela cheia, rolável).
-  // Sem ficar passando/voltando vários slides curtos. Mantém o gancho de batalha
-  // se algum slide tinha (vira o botão "Estou Pronto" no slide único).
-  const texto = raw.map(s => (s.texto || '').trim()).filter(Boolean).join('\n\n');
-  const imagem = raw[0]?.imagem || (_modoImagem === 'exterior' ? cena.imgExterior : cena.imgInterior);
-  const ganchoBatalha = raw.some(s => s.ganchoBatalha);
-  return [{ imagem, texto, ganchoBatalha }];
+  return introductionSlides(cena,_modoImagem);
 }
 
 function mostrarIntroCinemat(cena) {
@@ -1836,17 +1843,15 @@ function _typewriter(el, texto, onDone) {
   el.classList.add('typing');
   el.textContent = '';
   const cont = document.getElementById('intro-content');
+  const tokens=wordTokens(_fullText);
   let i = 0;
   _typeTimer = setInterval(() => {
-    el.textContent = _fullText.slice(0, ++i);
-    if (cont) cont.scrollTop = cont.scrollHeight; // acompanha o texto longo
-    if (i >= _fullText.length) {
-      clearInterval(_typeTimer);
-      _typing = false;
-      el.classList.remove('typing');
+    el.textContent = tokens.slice(0,++i).join('');
+    if (i >= tokens.length) {
+      clearInterval(_typeTimer);_typing=false;el.classList.remove('typing');
       onDone && onDone();
     }
-  }, _TYPE_MS);
+  }, 95);
 }
 
 function _finishTypewriter(el) {
@@ -1969,7 +1974,7 @@ async function confirmarPronto() {
   } else {
     // Sem Firebase (solo): grava a cena da batalha e vai direto
     localStorage.setItem('mindRolePlay.battleCena', _cenaAtual || 'kagehama-scene-0');
-    window.location.href = 'arena.html?v=8';
+    window.location.href = 'arena.html?v=9';
   }
 }
 
@@ -2024,12 +2029,12 @@ function _gurpsSkill(name='Percepção') {
  const cls=CLASSES_DATA[player.classId||localStorage.getItem('mindRolePlay.classId')];
  return skillLevel({...cls,...player},name)??10;
 }
-const PercDiceOverlay={rolar(onResult){
+const PercDiceOverlay={async rolar(onResult){
  const player={...CLASSES_DATA[localStorage.getItem('mindRolePlay.classId')],..._lastRoom?.players?.[_pid]};
- const result=test3d6(_gurpsSkill(),{conditionModifier:conditionModifier(player,'Percepção')});_lastGurpsRoll=result;
- const wrap=document.getElementById('perc-dado-wrap');
- if(wrap){wrap.innerHTML='<div style="display:flex;gap:12px;justify-content:center;padding:30px">'+result.dice.map(d=>'<span style="background:white;color:black;border:2px solid #555;border-radius:9px;width:52px;height:52px;display:grid;place-items:center;font:bold 30px serif">'+['','⚀','⚁','⚂','⚃','⚄','⚅'][d]+'</span>').join('')+'</div>';}
- setTimeout(()=>onResult(result.total),450);
+ const result={...test3d6(_gurpsSkill(),{conditionModifier:conditionModifier(player,'Percepção')}),skill:'Percepção'};
+ await showDiceRoll(result,{title:'Olhar com atenção'});
+ _lastGurpsRoll=result;
+ return onResult(result.total,result);
 }};
 
 
@@ -2169,7 +2174,7 @@ function _percRenderRolar(percepcao, minha, efetivos) {
   const res = document.getElementById('percepcao-dado-result');
   if (minha?.resultado != null) {
     btn.disabled = true; btn.textContent = '🎲 Você rolou';
-    res.textContent = String(minha.resultado);
+    res.textContent = minha.dados?.length===3 ? minha.dados.join(' + ')+' = '+minha.resultado : String(minha.resultado);
   } else {
     btn.disabled = false; btn.textContent = '🎲 Rolar o dado';
     res.textContent = '—';
@@ -2202,12 +2207,12 @@ async function rolarPercepcao() {
   document.getElementById('btn-rolar-perc').disabled = true;
   document.getElementById('percepcao-dado-result').textContent = '…';
 
-  PercDiceOverlay.rolar(async (roll) => {
-    document.getElementById('percepcao-dado-result').textContent = String(roll);
-    const resposta = { aceito: true, resultado: roll, dados:_lastGurpsRoll.dice, sucesso:_lastGurpsRoll.success, nivel:_lastGurpsRoll.effectiveSkill };
+  await PercDiceOverlay.rolar(async (roll, result) => {
+    document.getElementById('percepcao-dado-result').textContent = result.dice.join(' + ')+' = '+roll;
+    const resposta = { aceito: true, resultado: roll, dados:result.dice, sucesso:result.success, nivel:result.effectiveSkill };
     // Teste INDIVIDUAL: resolve aqui mesmo — o resultado é privado deste jogador.
     if (_percLocal) {
-      const sucesso = _lastGurpsRoll.success;
+      const sucesso = result.success;
       const texto = sucesso
         ? (_percLocal.textoContexto || 'Você percebe um detalhe que escapa a olhos comuns.')
         : 'Você vasculha o ambiente com cuidado, mas nada de especial chama sua atenção desta vez.';
@@ -2595,7 +2600,7 @@ function criarElementoLinha(linha) {
   if (tipo === 'jogador') {
     const d = document.createElement('div');
     d.className = 'dialogo-jogador';
-    d.innerHTML = `<div class="dialogo-jogador-nome">${esc(linha.oradorNome)}</div><div class="dialogo-jogador-balao">${esc(linha.texto)}</div>`;
+    d.innerHTML = `<div class="dialogo-jogador-nome">${esc(linha.tipo==='npc'?_mindNpcNome(linha.oradorId):linha.oradorNome)}</div><div class="dialogo-jogador-balao">${esc(linha.texto)}</div>`;
     return d;
   }
   if (tipo === 'sistema') {
@@ -2623,7 +2628,7 @@ function criarElementoLinha(linha) {
       ${spriteSrc ? `<img src="${esc(spriteSrc)}" alt="${esc(linha.oradorNome)}" onerror="this.style.display='none'">` : ''}
     </div>
     <div class="dialogo-npc-balao">
-      <div class="dialogo-npc-nome">${esc(linha.oradorNome)}</div>
+      <div class="dialogo-npc-nome">${esc(linha.tipo==='npc'?_mindNpcNome(linha.oradorId):linha.oradorNome)}</div>
       <div class="dialogo-npc-texto">${esc(linha.texto)}</div>
     </div>`;
   return d;
@@ -2875,7 +2880,7 @@ async function iniciarBatalha() {
     });
   } else {
     localStorage.setItem('mindRolePlay.battleCena', _cenaAtual || 'kagehama-scene-0');
-    window.location.href = 'arena.html?v=8';
+    window.location.href = 'arena.html?v=9';
   }
 }
 
@@ -2978,7 +2983,7 @@ async function _dialFluxoTurnos(){
   if(!npc)throw new Error('O NPC escolhido não está nesta cena.');
   const resposta=await _dialChamarIA(idx,ult.texto);
   if(_cenaAtual!==scene||beatKey(_dialogoLog.at(-1))!==source)return;
-  const parsed=parseNpcReply(resposta,{playerId:ult.authorId,playerIds:Object.keys(_lastRoom?.players||{}),allowTest:!ult.roll});
+  const parsed=parseNpcReply(resposta,{playerId:ult.authorId,playerIds:Object.keys(_lastRoom?.players||{}),allowTest:!ult.roll,npcName:npc.nome});
   const beat={...parsed,id:'reply:'+source,tipo:'npc',oradorId:npc.id,oradorNome:npc.nome,respondeA:source,ts:Date.now()};
   const memory={cena:scene,jogador:ult.oradorNome,pergunta:ult.texto,resposta:parsed.texto,...(ult.roll?{roll:ult.roll}:{})};
   let committed=true;
@@ -3001,6 +3006,7 @@ function _dialParsearFala(raw) {
 
 function _dialGetNarracaoCena(campCenaId) {
   const cena = CENAS[campCenaId];
+  document.getElementById('dial-overlay').classList.toggle('bridge-stage',campCenaId==='kagehama-scene-0');
   if (cena?.dialCena) return cena.dialCena;
   const presentes = cena?.npcsPresentes || [];
   for (const npc of _dialNpcs) {
@@ -3074,6 +3080,7 @@ function _dialActivar(campCenaId) {
   _dialCampCenaAtiva = campCenaId;
 
   const cena = CENAS[campCenaId];
+  document.getElementById('dial-overlay').classList.toggle('bridge-stage',campCenaId==='kagehama-scene-0');
 
   // Background da cena de diálogo — overlay de conversa usa sempre interior (é o close-up do encontro)
   const bg = document.getElementById('dial-cena-bg');
@@ -3186,6 +3193,17 @@ function _dialDestinoRevelado(fluxo) {
   return false;
 }
 
+function _mindNpcConhecido(id){
+  const known=_lastRoom?.narration?.knownNpcs?.[id];
+  if(known&&known.scene!==_cenaAtual)return true;
+  const read=_dialogoLog.slice(0,_dialReadIdx+1);
+  return read.some(b=>b.oradorId===id&&b.revelaNome)||!!(known&&read.at(-1)?.seq>=known.seq);
+}
+function _mindNpcNome(id,revealed=false){
+  const npc=NPCS_REGISTRY[id]||NPCS[id];
+  return npc?visibleNpcName(npc,revealed||_mindNpcConhecido(id)):'Pessoa desconhecida';
+}
+
 // ── NPC chips ─────────────────────────────────────────────
 function _dialAtualizarChips() {
   const bar = document.getElementById('dial-npc-chips');
@@ -3194,7 +3212,8 @@ function _dialAtualizarChips() {
   _dialNpcEls.forEach(({ npc }, i) => {
     const chip = document.createElement('button');
     chip.className = 'dial-chip-npc' + (i === _dialNpcAtivoIdx ? ' ativo' : '');
-    chip.textContent = npc.nome.split(' ')[0];
+    chip.textContent = _mindNpcNome(npc.id);
+    chip.title = _mindNpcNome(npc.id);
     chip.onclick = () => _dialSelecionarNpc(i);
     bar.insertBefore(chip, spacer);
   });
@@ -3230,7 +3249,7 @@ function _dialAtualizarChips() {
   // Atualizar placeholder
   const npcAtivo = _dialNpcEls[_dialNpcAtivoIdx]?.npc;
   const input = document.getElementById('dial-msg-input');
-  if (input && npcAtivo) input.placeholder = `O que você diz para ${npcAtivo.nome.split(' ')[0]}…`;
+  if (input && npcAtivo) input.placeholder = `O que você diz para ${_mindNpcNome(npcAtivo.id)}…`;
 }
 
 function _dialSelecionarNpc(idx) {
@@ -3243,7 +3262,7 @@ function _dialSelecionarNpc(idx) {
   document.querySelectorAll('.dial-chip-npc').forEach((c, i) => c.classList.toggle('ativo', i === idx));
   const npcAtivo = _dialNpcEls[idx]?.npc;
   const input = document.getElementById('dial-msg-input');
-  if (input && npcAtivo) input.placeholder = `O que você diz para ${npcAtivo.nome.split(' ')[0]}…`;
+  if (input && npcAtivo) input.placeholder = `O que você diz para ${_mindNpcNome(npcAtivo.id)}…`;
 }
 
 function _mindSincronizarJogadores(){
@@ -3396,17 +3415,22 @@ function _dialTickDisplay() {
 
 async function _dialRenderBeat(beat) {
   const { tipo, oradorId, oradorNome, texto } = beat;
+  if(beat.roll){
+    const key='mindRolePlay.diceSeen.'+(localStorage.getItem('mindRolePlay.roomId')||'solo')+'.'+beatKey(beat);
+    if(!sessionStorage.getItem(key)){await showDiceRoll(beat.roll,{title:'Teste de '+(oradorNome||'personagem')});sessionStorage.setItem(key,'1');}
+  }
 
   if (tipo === 'npc') {
-    const { acao, fala } = _dialParsearFala(texto || '');
+    const { acao, fala } = _dialParsearFala(maskNpcDirection(texto,NPCS_REGISTRY[oradorId]||NPCS[oradorId],!!beat.revelaNome||_mindNpcConhecido(oradorId)));
     _dialOcultarBalao();
     await _dialDelay(120);
     _dialFocarNpc(oradorId);
     // Entrar NPC se ainda não entrou
     _mindMostrarAtor('npc',oradorId);
     await _dialDelay(300);
-    _dialMostrarBalaoNPC(oradorNome, acao, fala || texto, true);
-    _dialHistoricoLocal.push({ tipo: 'npc', quem: oradorNome, texto: fala || texto });
+    _dialMostrarBalaoNPC(_mindNpcNome(oradorId,!!beat.revelaNome), acao, fala || texto, true);
+    _dialAtualizarChips();
+    _dialHistoricoLocal.push({ tipo: 'npc', quem: _mindNpcNome(oradorId,!!beat.revelaNome), texto: fala || texto });
     _dialAnimBeat = false;
     _dialAwaitingCont = true;
 
@@ -3446,7 +3470,7 @@ async function _dialChamarIA(npcIdx, mensagemJogador) {
   const cena=CENAS[_cenaAtual];
   const memoria=_lastRoom?.narration?.memorias?.[npc.id]||[];
   const sysBase=buildNpcPrompt({npc,scene:cena,guide:SCENE_GUIDES[_cenaAtual],world:_lastRoom?.narration?.world,
-    players:_lastRoom?.players,log:_dialogoLog,npcMemory:memoria,reaction:mensagemJogador.startsWith('Você observou:')});
+    players:_lastRoom?.players,log:_dialogoLog,npcMemory:memoria,knowsName:!!_lastRoom?.narration?.knownNpcs?.[npc.id],reaction:mensagemJogador.startsWith('Você observou:')});
 
   const messages = [
     { role: 'system', content: sysBase },
@@ -3486,7 +3510,7 @@ async function _dialVerificarReacao(npcQueRespondeuIdx) {
   if (!reacao || reacao.trim().startsWith('---')) return;
 
   const npcData = reator.npc;
-  const beat = { ...parseNpcReply(reacao,{allowTest:false,playerIds:Object.keys(_lastRoom?.players||{})}),id:'reaction:'+beatKey(_dialogoLog.at(-1))+':'+npcData.id, tipo: 'npc', oradorId: npcData.id, oradorNome: npcData.nome, ts: Date.now() };
+  const beat = { ...parseNpcReply(reacao,{allowTest:false,playerIds:Object.keys(_lastRoom?.players||{}),npcName:npcData.nome}),id:'reaction:'+beatKey(_dialogoLog.at(-1))+':'+npcData.id, tipo: 'npc', oradorId: npcData.id, oradorNome: npcData.nome, ts: Date.now() };
   if (window._fbAddDialogue) await window._fbAddDialogue(beat);
   else { _dialogoLog = [..._dialogoLog, beat].slice(-60); renderDialogo(); if (_dialAtivo) _dialTickDisplay(); }
 }
@@ -3652,7 +3676,7 @@ function _irParaMapaMundo(destino) {
   } else {
     localStorage.setItem('mindRolePlay.mapaLocal', node);
     if (auto) localStorage.setItem('mindRolePlay.mapaAuto', auto);
-    window.location.href = 'mapa.html?v=8';
+    window.location.href = 'mapa.html?v=9';
   }
 }
 window._irParaMapaMundo = _irParaMapaMundo;
@@ -3916,6 +3940,8 @@ async function _invEnviar(){
   catch(error){alert(error.message);return;}
   _invActionBusy=true;
   try{
+    await showDiceRoll(result,{title:'Investigar o local'});
+    if(_cenaAtual!==actionScene)throw new Error('A cena mudou; ação não enviada.');
     const request={id:newId(),tipo:'investigacao',canal:'inv-pedido',authorId:_pid,oradorNome:_pname,texto,roll:result,ts:Date.now()};
     await window._fbAddDialogue(request);
     inp.value='';
@@ -4033,6 +4059,6 @@ init();
   elInputTexto?.addEventListener('blur',  () => _setTeclado(false));
 })();
 </script>
-<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v8</div>
+<div style="position:fixed;bottom:2px;left:4px;z-index:99999;font:9px monospace;color:rgba(200,160,80,.4);pointer-events:none">Mind v9</div>
 </body>
 </html>

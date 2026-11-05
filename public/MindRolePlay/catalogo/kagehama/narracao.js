@@ -1,8 +1,8 @@
-import { NPCS_REGISTRY } from './npcs_registry.js';
+import { NPCS_REGISTRY } from './npcs_registry.js?v=9';
 export const NARRACAO_NPCS=Object.values(NPCS_REGISTRY);
 export const NARRACAO_CENAS={
   "kagehama-scene-0": {
-    "bg": "catalogo/kagehama/assets/ponte-sete-lanternas.jpg",
+    "bg": "catalogo/kagehama/assets/ponte-sete-lanternas-tablado.jpg",
     "titulo": "Ponte das Sete Lanternas"
   },
   "kagehama-scene-1": {

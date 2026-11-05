@@ -360,10 +360,15 @@ Consórcio de comerciantes estrangeiros ficcionais, com navios, crédito e inté
 
 ### Prólogo — As lanternas não mentem
 
-Os personagens estão na procissão da Ponte das Sete Lanternas. Podem ser guarda, mensageiro, curandeira, convidado, informante ou viajante. Um disparo corta a música. Jiro cai no canal; o estojo do tratado some. Uma mulher de mangas brancas grita que viu um shinobi, mas descreve um uniforme de guarda.
+Depois de três anos de guerra nas estradas, uma procissão leva documentos de um possível acordo de paz ao palácio. Os personagens chegam à capital por motivos próprios e ficam lado a lado quando os guardas interrompem a passagem na Ponte das Sete Lanternas. Não presumir que já se conheçam.
 
-**Testes possíveis:** perceber o ponto do disparo, mergulhar para salvar Jiro, controlar o pânico da multidão, perseguir a pessoa com o estojo, impedir que os guardas ataquem civis.  
-**Consequências:** cada sucesso resgata uma pessoa, uma pista ou tempo. Uma falha nunca encerra a investigação; pode ferir alguém, separar o grupo ou fazer os personagens parecerem cúmplices.
+Primeiro descreva o chão: o tablado seco, o guarda-corpo, os vendedores afastando cestos e um carro de serviço com cordas. Depois, só duas figuras chamam atenção: um homem de capa de palha com uma caixa quadrada lacrada e uma mulher de leque rachado que parece ter autoridade sobre os guardas. Os nomes Jiro e Akiho pertencem às notas do mestre; o grupo ainda não os conhece.
+
+Uma flecha atinge o ombro do portador. A caixa cai no tablado perto dos personagens e ele perde o equilíbrio, caindo no canal. A mulher do leque é a única interlocutora ao alcance e pede ajuda concreta. O ferido, os guardas e os curiosos são descritos na ficção, não adicionados como uma fila de NPCs selecionáveis. Kuroda, Nao e Sayo terão seus próprios encontros; não aparecem na ponte por conveniência.
+
+**Testes possíveis:** localizar o disparo, lançar ou amarrar a corda, entrar na água por escolha do jogador, afastar pessoas da borda e proteger a caixa. Pergunte a intenção e o risco antes de pedir 3d6; conversar ou se apresentar normalmente não exige teste.
+
+**Consequências:** não determine de antemão que a caixa foi roubada nem que o ferido morreu ou foi salvo. A escolha dos personagens resolve a emergência e preserva pessoas, pistas ou tempo. Apresente alguém por gesto e aparência, deixando nome, cargo e vínculos surgirem da conversa. Depois da emergência, a mulher pode indicar abrigo no santuário de Aokiri ou uma audiência de testemunhas.
 
 ### Ato I — A cidade das versões
 

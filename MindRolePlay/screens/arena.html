@@ -9,17 +9,25 @@
 <section id="critical" class="hidden"><h2>Resultado crítico</h2><p>O mestre consulta a tabela aplicável antes de confirmar o efeito. O ataque crítico não permite defesa. Falhas críticas de arma também exigem resolução do mestre.</p><div class="row"><label>Multiplicador de dano<select id="mult"><option>1</option><option>2</option><option>3</option></select></label><label>Divisor de RD<select id="divisor"><option>1</option><option>2</option></select></label><label>Efeito aplicado<input id="critical-note" maxlength="200" placeholder="Descreva o efeito da tabela"></label><button id="resolve-critical">Confirmar efeito</button></div></section>
 <section id="end" class="hidden"><h2 id="outcome"></h2><button id="finish" class="primary">Registrar resultado e voltar à cena</button></section>
 <section><h2>Registro de combate</h2><div id="log" aria-live="polite"></div></section><p class="muted">Testes de ataque, defesa, HT e recuperação usam 3d6. Dano usa a expressão da arma. RD e multiplicador de ferimento são aplicados pelo programa.</p></main>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script type="module">
+import {showDiceRoll} from './dice-visual.js?v=9';
 import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import{getFirestore,doc,onSnapshot,runTransaction,updateDoc}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import {createCombat,combatAction,currentFighter,availableDefense} from './combat.js?v=8';
-import {appendBeats} from './conversation.js?v=8';
-import {equipmentFor} from './equipment.js?v=8';
+import {createCombat,combatAction,currentFighter,availableDefense} from './combat.js?v=9';
+import {appendBeats} from './conversation.js?v=9';
+import {equipmentFor} from './equipment.js?v=9';
 import {CLASSES_DATA} from './catalogo/kagehama/classes.js';
-import {INIMIGOS_DATA} from './catalogo/kagehama/loader.js?v=8';
-import {CENAS} from './catalogo/kagehama/campanha/roteiro/campaign.js';
+import {INIMIGOS_DATA} from './catalogo/kagehama/loader.js?v=9';
+import {CENAS} from './catalogo/kagehama/campanha/roteiro/campaign.js?v=34';
 const $=id=>document.getElementById(id),pid=localStorage.getItem('mindRolePlay.playerId'),rid=localStorage.getItem('mindRolePlay.roomId');
 const cfg=JSON.parse(localStorage.getItem('mindRolePlay.fbConfig')||'null');
+let _diceInitial=true;
+function showCombatDice(b){
+ const events=(b?.log||[]).filter(e=>e.roll&&e.id);
+ for(const [i,e]of events.entries()){const key="mindRolePlay.diceSeen."+e.id;if(sessionStorage.getItem(key))continue;sessionStorage.setItem(key,"1");if(_diceInitial&&i<events.length-1)continue;showDiceRoll(e.roll,{title:"Confronto",label:e.text.split(":")[0]}).catch(console.warn);}
+ _diceInitial=false;
+}
 let actPublic=()=>{};let room=null,battle=null,host=false,busy=false;const roster=[];
 const error=e=>{$('error').textContent=e?.message||String(e);};
 if(!cfg||!rid){error('Abra uma sala antes de iniciar o confronto.');}else{
@@ -39,7 +47,7 @@ $('attack').onclick=()=>act({type:'attack',targetId:$('target').value,modifier:N
 for(const type of ['defend','wait','flee','stand','ready'])$(type).onclick=()=>act({type});
 $('resolve-critical').onclick=()=>{if(!$('critical-note').value.trim()){error('Registre o efeito antes de confirmar.');return;}act({type:battle.phase==='fumble'?'fumble':'critical',multiplier:Number($('mult').value),divisor:Number($('divisor').value),note:$('critical-note').value.trim()});};
 $('finish').onclick=async()=>{if(!host||busy)return;busy=true;try{await runTransaction(db,async tx=>{const s=await tx.get(ref),r=s.data(),b=r.combat;if(r.hostId!==pid||!b||b.status==='active'||b.recorded)throw new Error('O resultado já foi registrado ou o confronto ainda está ativo.');const last=b.log.slice(-8).map(e=>e.text).join('\n');const beat={id:'combat-result:'+b.id,tipo:'narrador',oradorNome:'Narrador',texto:(b.status==='victory'?'O grupo controla o confronto. Entidades dispersadas ainda exigem resolver seu vínculo ritual.':'O grupo foi contido ou precisou se retirar.')+'\n'+last,ts:Date.now()};const log=appendBeats(r.narration,[beat]);const fields={status:'narration','combat.recorded':true,'narration.dialogo':log.dialogo,'narration.dialogueSeq':log.dialogueSeq,'narration.pularIntro':true,'narration.cenaBatalhaResolvida':b.sceneId};for(const f of b.fighters.filter(f=>f.side==='players')){fields['players.'+f.id+'.hp']=f.hp;fields['players.'+f.id+'.sp']=f.fp;fields['players.'+f.id+'.conditions']=[...(r.players[f.id].conditions||[]).filter(c=>c.source!=='combat'),...(f.dead?[{name:'Morto',source:'combat',active:true,modifier:0}]:f.unconscious&&!f.withdrawn?[{name:'Inconsciente',source:'combat',active:true,modifier:0}]:[])];}tx.update(ref,fields);});location.href='narration.html';}catch(e){error(e);}finally{busy=false;}};
-onSnapshot(ref,s=>{if(!s.exists()){error('Sala não encontrada.');return;}room=s.data();host=room.hostId===pid;battle=room.combat?.recorded?null:room.combat||null;if(room.status==='narration'){location.href='narration.html';return;}render();},error);
+onSnapshot(ref,s=>{if(!s.exists()){error('Sala não encontrada.');return;}room=s.data();host=room.hostId===pid;battle=room.combat?.recorded?null:room.combat||null;if(room.status==='narration'){location.href='narration.html';return;}render();showCombatDice(battle);},error);
 }
 function render(){
  $('scene').textContent=CENAS[room.narration?.cenaId]?.titulo||'Confronto';

@@ -32,7 +32,7 @@ export function availableDefense(f, kind, ranged=false) {
   if(kind==='dodge'&&(f.hp<f.maxHp/3||f.fp<f.maxFp/3))value=Math.ceil(value/2);
   return Math.max(0,value+(f.defending?2:0)-(f.stunned?4:0)-(f.prone?3:0));
 }
-function event(b,text){b.log=[...b.log,{text,ts:Date.now()}].slice(-100);}
+function event(b,text,roll){if(roll)b.rollSeq=(b.rollSeq||0)+1;b.log=[...b.log,{text,ts:Date.now(),...(roll?{roll,id:b.id+':roll:'+b.rollSeq}:{})}].slice(-100);}
 function finishOrAdvance(b,random) {
   b.pending=null;b.phase='action';
   const allies=b.fighters.filter(f=>f.side==='players'&&!f.dead&&!f.unconscious);
@@ -42,7 +42,7 @@ function finishOrAdvance(b,random) {
     b.turn=(b.turn+1)%b.order.length;if(b.turn===0)b.round++;
     const f=currentFighter(b);if(f.dead||f.unconscious)continue;
     f.allOut=false;f.defending=false;
-    if(f.hp<=0){const check=test3d6(f.HT,{random});event(b,f.name+': consciência '+check.total+' — '+check.outcome);if(!check.success){f.unconscious=true;continue;}}
+    if(f.hp<=0){const check=test3d6(f.HT,{random});event(b,f.name+': consciência '+check.total+' — '+check.outcome,check);if(!check.success){f.unconscious=true;continue;}}
     return b;
   }
   b.status='defeat';return b;
@@ -65,7 +65,7 @@ export function combatAction(battle,command,actorId,isHost=false,random=Math.ran
     if(command.type==='defense'){
       const defense=availableDefense(target,command.defense,actor.weapon.ranged);
       if(command.defense!=='none'&&defense===0)throw new Error('Essa defesa não está disponível.');
-      if(defense){const roll=test3d6(defense,{random,allowLowSkill:true});hit=!roll.success;event(b,target.name+': '+command.defense+' '+roll.dice.join('+')+' = '+roll.total+' vs '+defense+' — '+roll.outcome);}
+      if(defense){const roll=test3d6(defense,{random,allowLowSkill:true});hit=!roll.success;event(b,target.name+': '+command.defense+' '+roll.dice.join('+')+' = '+roll.total+' vs '+defense+' — '+roll.outcome,roll);}
     }else{
       criticalEffect={multiplier:valid(Number(command.multiplier),'Multiplicador',1),divisor:valid(Number(command.divisor),'Divisor',1)};
       if(criticalEffect.multiplier>3||criticalEffect.divisor>2)throw new Error('Efeito crítico fora do intervalo.');
@@ -77,10 +77,10 @@ export function combatAction(battle,command,actorId,isHost=false,random=Math.ran
       if(target.incorporeal&&!actor.weapon.spiritual)event(b,'A arma atravessa a forma espiritual. É preciso consagração ou resolver o vínculo pela cena.');
       const oldHp=target.hp;target.hp-=result.injury;target.shock=Math.min(4,target.shock+result.injury);
       event(b,actor.name+' → '+target.name+': dano '+damage.dice.join('+')+' ('+damage.total+'), RD '+target.dr+', lesão '+result.injury+'; PV '+target.hp+'/'+target.maxHp);
-      if(result.injury>target.maxHp/2){const check=test3d6(target.HT,{random});event(b,target.name+': ferimento grave, HT '+check.total+' — '+check.outcome);if(!check.success){target.stunned=true;target.prone=true;if(check.criticalFailure||check.total-target.HT>=5)target.unconscious=true;}}
+      if(result.injury>target.maxHp/2){const check=test3d6(target.HT,{random});event(b,target.name+': ferimento grave, HT '+check.total+' — '+check.outcome,check);if(!check.success){target.stunned=true;target.prone=true;if(check.criticalFailure||check.total-target.HT>=5)target.unconscious=true;}}
       const threshold=Math.min(4,Math.floor(Math.max(0,-target.hp)/target.maxHp));
       for(let n=Math.max(1,Math.floor(Math.max(0,-oldHp)/target.maxHp)+1);n<=threshold;n++){
-        const check=test3d6(target.HT,{random});target.deathChecks++;event(b,target.name+': sobrevivência em -'+n+'×PV, '+check.total+' — '+check.outcome);if(!check.success){if(check.total-target.HT<=2&&!check.criticalFailure){target.mortallyWounded=true;target.unconscious=true;event(b,target.name+' sofre ferimento mortal; atendimento e verificações posteriores cabem ao mestre.');}else target.dead=true;break;}
+        const check=test3d6(target.HT,{random});target.deathChecks++;event(b,target.name+': sobrevivência em -'+n+'×PV, '+check.total+' — '+check.outcome,check);if(!check.success){if(check.total-target.HT<=2&&!check.criticalFailure){target.mortallyWounded=true;target.unconscious=true;event(b,target.name+' sofre ferimento mortal; atendimento e verificações posteriores cabem ao mestre.');}else target.dead=true;break;}
       }
       if(target.hp<=-5*target.maxHp)target.dead=true;
     }
@@ -88,7 +88,7 @@ export function combatAction(battle,command,actorId,isHost=false,random=Math.ran
   }
   if(b.phase!=='action')throw new Error('Resolva a defesa ou o crítico pendente.');
   if(actor.ownerId!==actorId&&!(isHost&&actor.side==='enemies'))throw new Error('É a vez de outro combatente.');
-  if(actor.stunned){const recovery=test3d6(actor.HT,{random});if(recovery.success)actor.stunned=false;event(b,actor.name+': Do Nothing, recuperação '+recovery.outcome);actor.shock=0;return finishOrAdvance(b,random);}
+  if(actor.stunned){const recovery=test3d6(actor.HT,{random});if(recovery.success)actor.stunned=false;event(b,actor.name+': Do Nothing, recuperação '+recovery.outcome,recovery);actor.shock=0;return finishOrAdvance(b,random);}
   if(command.type==='stand'){actor.prone=false;actor.shock=0;event(b,actor.name+' se levanta.');return finishOrAdvance(b,random);}
   if(command.type==='ready'){actor.reload=Math.max(0,(actor.reload||0)-1);actor.shock=0;event(b,actor.name+' prepara a arma ('+actor.reload+' turnos restantes).');return finishOrAdvance(b,random);}
   if(command.type==='defend'){actor.defending=true;actor.shock=0;event(b,actor.name+' assume Defesa Total (+2 à defesa escolhida).');return finishOrAdvance(b,random);}
@@ -101,7 +101,7 @@ export function combatAction(battle,command,actorId,isHost=false,random=Math.ran
   const modifier=Number(command.modifier||0);if(!Number.isFinite(modifier)||modifier< -10||modifier>10)throw new Error('Modificador fora do intervalo.');
   const level=actor.weapon.skill-actor.shock-(actor.prone?4:0)+modifier+(command.allOut?4:0);
   actor.allOut=!!command.allOut;actor.shock=0;actor.reload=actor.weapon.reload||0;
-  const roll=test3d6(level,{random});event(b,actor.name+' ataca '+target.name+': '+roll.dice.join('+')+' = '+roll.total+' vs '+level+' — '+roll.outcome);
+  const roll=test3d6(level,{random});event(b,actor.name+' ataca '+target.name+': '+roll.dice.join('+')+' = '+roll.total+' vs '+level+' — '+roll.outcome,roll);
   if(!roll.success){if(roll.criticalFailure){event(b,'Falha crítica: aguardando efeito da tabela de falha da arma.');b.phase='fumble';return b;}return finishOrAdvance(b,random);}
   b.pending={targetId:target.id,attack:roll};b.phase=roll.criticalSuccess?'critical':'defense';
   return b;
