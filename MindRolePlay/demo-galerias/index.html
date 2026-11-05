@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="theme-color" content="#161b16"><title>Mind RolePlay · Galerias dos Kappa</title>
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<header><div><small>MIND ROLEPLAY</small><h1>A entrada das Galerias</h1></div><button id="info" aria-label="Sobre a demonstração">Prévia · IA simulada</button></header>
+<main id="combat">
+ <div id="camera" tabindex="0" aria-label="Campo de batalha horizontal. Deslize para os lados."><div id="world">
+  <div class="occlusion wall"></div><div class="occlusion post"></div><div class="occlusion cart"></div>
+  <div id="actors"></div>
+ </div></div>
+ <section id="story" aria-label="Narração do combate" aria-live="polite">
+  <div class="story-top"><span id="speaker">Narrador</span><span id="round">Rodada 1</span></div>
+  <p id="narration">Preparando o encontro…</p>
+  <div class="story-bottom"><div id="roll" aria-label="Resultado dos dados"></div><span id="page"></span><button id="continue">Continuar <span>›</span></button></div>
+ </section>
+ <div id="order" aria-label="Ordem de iniciativa"></div>
+ <div id="camera-note"><span>← Arraste para observar o campo →</span><span id="offscreen"></span></div>
+ <div id="scroll-track"><i></i></div>
+ <div id="turn-label">Sua vez · Mago</div>
+</main>
+<form id="compose"><label class="sr-only" for="intent">Narre sua ação</label><input id="intent" autocomplete="off" placeholder="Narre sua ação…"><button id="send" type="submit" aria-label="Enviar ação narrada">Narrar <span>↗</span></button></form>
+<dialog id="about"><h2>Nas Galerias dos Kappa</h2><p>Você interpreta o mago. A guerreira, a arqueira e os quatro guardas kappa são simulados nesta prévia local. Ainda não há IA conectada nem sala online.</p><p><b>Narre pelo campo inferior.</b> Ex.: “Me escondo atrás da paliçada”, “Lanço fogo no kappa 1”, “Vou até o tronco”, “Observo os inimigos”, “Preparo meu ataque”. Toque em <b>Continuar</b> para acompanhar testes, defesas e consequências.</p><p>Os personagens têm artes próprias vistas de cima, no mesmo ângulo do mapa. A iniciativa usa Velocidade Básica e DX como desempate. Testes usam 3d6; combate e magia têm simplificações de demonstração. Aptidão Mágica está incluída na perícia do mago. Reflexos em Combate melhora sua esquiva. Cobertura e preparação influenciam os testes; Excesso de Confiança orienta o comportamento da guerreira.</p><p>Encontro do arco de Aokiri: guardas de Bunkin vigiam a entrada das Galerias dos Kappa. Há rumores de que Renkei e Tetsuo estejam presos. Kiri, Shizuku e Mutsun são dissidentes; os guardas não representam todos os kappa. Você pode negociar ou tentar passar discretamente antes de lutar. Todos obedecem ao mesmo plano de chão. A câmera permanece onde você deixou.</p><div class="dialog-actions"><button id="restart" type="button">Recomeçar</button><button id="close-info" type="button">Voltar à cena</button></div></dialog>
+<script type="module" src="app.js?v=1"></script>
+</body>
+</html>
