@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 import {SCENARIO,initialActors} from '../demo-galerias/scenario.js';
+import {readIntent} from '../demo-galerias/intent.js';
 import * as rules from '../demo-galerias/rules.js';
 function demo(){
  const dom=new JSDOM(readFileSync(new URL('../demo-galerias/index.html',import.meta.url),'utf8'),{runScripts:'outside-only'}),w=dom.window;
- Object.assign(w,rules,{scene:SCENARIO,initialActors});
+ Object.assign(w,rules,{scene:SCENARIO,initialActors,readIntent});
  w.ResizeObserver=class{observe(){}};w.setTimeout=fn=>{fn();return 0;};w.crypto.getRandomValues=values=>values.fill(0);
  const source=readFileSync(new URL('../demo-galerias/app.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'');
  w.eval(source+'\nwindow.demo={act:playerAction,next:continueStory,actors:()=>actors,mode:()=>mode,turn:()=>current().id};');
@@ -37,4 +38,17 @@ test('damage waits for its consequence; allies follow the player in initiative',
  assert.equal(guard.hp,10);d.next();assert.equal(guard.hp,10);d.next();assert.equal(guard.hp,10);
  d.next();assert.equal(guard.hp,9);d.next();d.next();assert.equal(d.turn(),'archer');
  assert.equal(w.document.querySelector('#intent').disabled,true);dom.window.close();
+});
+
+test('opening accepts an action and distraction changes the next guard roll',()=>{
+ const {dom,w,d}=demo();
+ assert.equal(w.document.querySelector('#intent').disabled,false);
+ d.act('Jogo uma pedra perto dos barris');d.untilAction();
+ d.act('Me escondo atrás da paliçada');d.next();d.next();
+ assert.match(w.document.querySelector('#narration').textContent,/contra 7/);
+ d.untilAction();
+ d.act('Tento passar discretamente pelo portão');d.untilAction();
+ assert.equal(d.mode(),'end');
+ assert.match(w.document.querySelector('#narration').textContent,/passou pelo posto/);
+ dom.window.close();
 });

@@ -1,9 +1,11 @@
-import {roll3d6,resolveTest,initiative,project,normalize,hasCover} from './rules.js?v=1';
+import {resolveTest,initiative,project,hasCover} from './rules.js?v=2';
+import {readIntent, interpretIntent} from './intent.js?v=2';
 const $=id=>document.getElementById(id);
 const camera=$('camera'),world=$('world'),input=$('intent');
 const measureField=()=>{world.style.setProperty('--field-height',camera.clientHeight+'px');updateCamera();};
 import {SCENARIO as scene,initialActors} from './scenario.js?v=1';
-let actors=[],turns=[],turnIndex=0,round=1,mode='intro',queue=[],beatIndex=0,afterQueue=null,pages=[],pageIndex=0,generation=0,busy=false,hostile=false,negotiations=0;
+let actors=[],turns=[],turnIndex=0,round=1,mode='intro',queue=[],beatIndex=0,afterQueue=null,pages=[],pageIndex=0,generation=0,busy=false,hostile=false,distraction=false;
+let aiEnabled=false, pendingRequest=null;
 const current=()=>actors.find(a=>a.id===turns[turnIndex]);
 const alive=a=>a.hp>0;
 const dice=()=>{const values=new Uint32Array(3);crypto.getRandomValues(values);return [...values].map(n=>n%6+1);};
@@ -27,7 +29,7 @@ function render(){
  $('order').replaceChildren();for(const id of turns){const a=actors.find(a=>a.id===id);const tag=document.createElement('span');tag.className='order-item'+(a.enemy?' enemy':'')+(a.id===current()?.id?' active':'')+(!alive(a)?' dead':'');tag.textContent=a.short;tag.title=a.name+' · Velocidade '+a.speed+' · DX '+a.dx;$('order').append(tag);}
  $('round').textContent='Rodada '+round;
  const act=mode==='act'&&current()?.id==='mage'&&alive(current());
- input.disabled=!act;input.placeholder=act?'Narre sua ação…':mode==='end'?'Encontro encerrado':'Acompanhe o lance · toque em Continuar';$('send').disabled=!act;
+ input.disabled=!act;input.placeholder=act?'Narre sua ação…':mode==='end'?'Encontro encerrado':mode==='interpreting'?'Interpretando sua ação…':'Acompanhe o lance · toque em Continuar';$('send').disabled=!act;
  $('turn-label').textContent=mode==='end'?'Encontro encerrado':mode==='act'?'Sua vez · narre o que deseja fazer':'Vez de '+(current()?.name||'Narrador')+' · acompanhe os lances';
  updateCamera();
 }
@@ -40,13 +42,13 @@ function showBeat(){
  const beat=queue[beatIndex];beat.apply?.();render();$('speaker').textContent=beat.speaker||'Narrador';displayRoll(beat.roll,beat.label);paginate(beat.text);$('continue').hidden=false;
  if(beat.roll){const version=generation;busy=true;$('continue').disabled=true;$('roll').classList.add('rolling');setTimeout(()=>{if(version!==generation)return;busy=false;$('roll').classList.remove('rolling');$('continue').disabled=false;},450);}
 }
-function continueStory(){if(busy||mode==='act'||mode==='end')return;if(pageIndex<pages.length-1){pageIndex++;showPage();return;}if(beatIndex<queue.length-1){beatIndex++;showBeat();return;}const done=afterQueue;afterQueue=null;queue=[];done?.();}
+function continueStory(){if(busy||mode!=='reading')return;if(pageIndex<pages.length-1){pageIndex++;showPage();return;}if(beatIndex<queue.length-1){beatIndex++;showBeat();return;}const done=afterQueue;afterQueue=null;queue=[];done?.();}
 function waitForMage(message='Os inimigos mantêm suas posições. O que você faz?'){
  mode='act';render();$('speaker').textContent='Sua vez · Mago';displayRoll(null);paginate(message);$('continue').hidden=pages.length<=1;
  // Long prompts may be paged without consuming or changing a turn.
  if(pages.length>1)$('continue').hidden=false;
 }
-function checkEnd(){if(hostile&&actors.filter(a=>a.enemy&&alive(a)).length<=2){end('Metade da patrulha caiu. Os guardas restantes recuam para avisar Bunkin. A passagem está aberta, mas o alerta alcançará as Galerias. Renkei ainda precisa ser encontrado.');return true;}if(actors.filter(a=>a.enemy).every(a=>!alive(a))){end('A patrulha deixa de bloquear o caminho. O destino dos prisioneiros ainda não foi resolvido.');return true;}if(actors.filter(a=>!a.enemy).every(a=>!alive(a))){end('O grupo foi vencido. Você pode recomeçar pelo botão “Prévia”.');return true;}return false;}
+function checkEnd(){if(hostile&&actors.filter(a=>a.enemy&&alive(a)).length<=2){end('Metade da patrulha caiu. Os guardas restantes recuam para avisar Bunkin. A passagem está aberta, mas o alerta alcançará as Galerias. Renkei ainda precisa ser encontrado.');return true;}if(actors.filter(a=>a.enemy).every(a=>!alive(a))){end('A patrulha deixa de bloquear o caminho. O destino dos prisioneiros ainda não foi resolvido.');return true;}if(actors.filter(a=>!a.enemy).every(a=>!alive(a))){end('O grupo foi vencido. Você pode recomeçar pelo menu Sobre.');return true;}return false;}
 function end(text){mode='end';render();$('speaker').textContent='Narrador';displayRoll(null);paginate(text);$('continue').hidden=pages.length<=1;}
 function nextTurn(){
  if(checkEnd())return;let attempts=0;
@@ -79,50 +81,153 @@ function automatedTurn(actor){
  if(actor.enemy&&target.cover&&round>=2&&singleDie()>=5){play([intro,{speaker:actor.name,text:actor.name+' procura o flanco e contorna o lado exposto da cobertura.',apply:()=>{actor.x=target.x-60;actor.depth=target.depth;}},{text:'A proteção frontal não cobre mais esse ângulo. O inimigo gastou sua ação se reposicionando.'}],nextTurn);return;}
  play([intro,...attackBeats(actor,target)],nextTurn);
 }
-function endPlayerTurn(){if(hostile)nextTurn();else waitForMage('Os guardas ainda vigiam a passagem. Você pode conversar, tentar se ocultar ou decidir iniciar o confronto.');}
-function handleApproach(raw,text,mage){
- if(/falar|convers|nego|digo|diz|peco|pedir|autoriz|renkei|prisioneiro|libert|passagem/.test(text)){
-  const result=test(12);negotiations++;
+function endPlayerTurn(){if(hostile)nextTurn();else waitForMage('O que você faz agora?');}
+function handleApproach(raw, action, mage, cover){
+ if(action.kind==='talk'){
+  const result=test(12);
   const outcome=result.success?'O guarda aceita ouvir sua explicação. Ele permite que vocês prossigam até o próximo posto, sob vigilância. Renkei ainda precisa ser localizado.':'O guarda balança a cabeça: “Sem autorização, vocês ficam aqui.” Ele ainda não ataca; negociação e recuo continuam possíveis.';
   play([{speaker:'Sua intenção',text:raw},{speaker:'Diplomacia · prévia',text:'Você tenta negociar a passagem: '+result.total+' contra 12. '+result.outcome+'.',roll:result},{speaker:'Guarda Kappa',text:outcome,apply:()=>{if(result.success){actors.find(a=>a.id==='e1').x=570;actors.find(a=>a.id==='e1').depth=68;}}}],()=>{if(result.success)end('Vocês atravessam a primeira barreira sem combate. A busca pelos prisioneiros continua dentro das Galerias.');else waitForMage('O guarda aguarda. Como você reage à recusa?');});return true;
  }
- const cover=scene.covers.find(c=>c.aliases.some(alias=>text.includes(alias)));
- if(cover&&/escond|agach|cobertura|proteg|atras|furtiv/.test(text)){
+ if(action.kind==='hide' && cover){
   if(Math.abs(mage.x-cover.behindX)>175){play([{speaker:'Narrador',text:'Você avança discretamente na direção de '+cover.name+', ainda sem alcançar a cobertura.',apply:()=>move(mage,cover.behindX,cover.behindDepth,null)}],endPlayerTurn);return true;}
-  const stealth=test(12),notice=test(10),margin=r=>r.skill-r.total;
+  const guardSkill=distraction?7:10;
+  const stealth=test(12),notice=test(guardSkill),margin=r=>r.skill-r.total;
   const unseen=stealth.success&&(!notice.success||margin(stealth)>margin(notice));
-  play([{speaker:'Sua intenção',text:raw},{speaker:'Furtividade',text:'Você tenta se ocultar: '+stealth.total+' contra 12. '+stealth.outcome+'.',roll:stealth},{speaker:'Atenção do guarda',text:'O guarda observa o movimento: '+notice.total+' contra 10. '+notice.outcome+'.',roll:notice},{speaker:'Consequência',text:unseen?'Você alcança '+cover.name+' e se agacha sem ser localizado. O obstáculo esconde seu corpo; os guardas ainda não iniciaram um confronto.':'Você alcança '+cover.name+' e se agacha, mas um guarda percebe o movimento: “Ali! Não deixem passar!” A iniciativa começa.',apply:()=>{move(mage,cover.behindX,cover.behindDepth,cover.id);mage.prepared=unseen;if(!unseen)hostile=true;}}],endPlayerTurn);return true;
+  play([{speaker:'Sua intenção',text:raw},{speaker:'Furtividade',text:'Você tenta se ocultar: '+stealth.total+' contra 12. '+stealth.outcome+'.',roll:stealth},{speaker:'Atenção do guarda',text:'O guarda observa o movimento: '+notice.total+' contra '+guardSkill+'. '+notice.outcome+'.',roll:notice},{speaker:'Consequência',text:unseen?'Você se agacha atrás de '+cover.name+' sem ser visto. Daqui pode tentar passar pelo posto discretamente.':'Você alcança '+cover.name+' e se agacha, mas um guarda percebe o movimento: “Ali! Não deixem passar!” A iniciativa começa.',apply:()=>{move(mage,cover.behindX,cover.behindDepth,cover.id);mage.prepared=unseen;distraction=false;if(!unseen)hostile=true;}}],endPlayerTurn);return true;
  }
  return false;
 }
-function playerAction(raw){
- if(mode!=='act'||current().id!=='mage'||busy)return;
- const text=normalize(raw.trim());if(!text)return;const mage=current();
- if(!hostile&&handleApproach(raw,text,mage))return;
- const cover=scene.covers.find(c=>c.aliases.some(alias=>text.includes(alias)));
- if(cover){const hide=/escond|agach|cobertura|proteg|atras/.test(text);const willReach=Math.abs(mage.x-cover.behindX)<=175;
-  play([{speaker:'Sua intenção',text:raw},{speaker:'Narrador',text:willReach?'Você alcança '+cover.name+(hide?' e se abriga atrás dele.':' e para ao lado dele.'):'Você avança na direção de '+cover.name+', mas a distância exige outra ação.',apply:()=>move(mage,cover.behindX,cover.behindDepth,hide?cover.id:null)}, {text:willReach&&hide?'Você está em cobertura. A proteção vale contra a direção bloqueada pelo desenho; um inimigo pode contornar.':'A posição alcançada permanece registrada. A iniciativa passa ao próximo participante.'}],endPlayerTurn);return;
+function resolveAction(raw, action) {
+ const mage=current();
+ if(!action){
+  waitForMage('Como você quer agir aqui? Descreva o que pretende fazer e com o que quer interagir.');
+  input.value=raw;
+  return;
  }
- if(/sair|levantar/.test(text)){play([{speaker:mage.name,text:'Você se levanta e deixa a cobertura, permanecendo no mesmo lugar.',apply:()=>{mage.cover=null;}}],endPlayerTurn);return;}
- if(/prepar|mirar|esper/.test(text)){play([{speaker:mage.name,text:'Você concentra sua atenção e prepara o próximo ataque. Nesta prévia, a preparação concede +1 ao próximo teste de ataque.',apply:()=>{mage.prepared=true;}}],endPlayerTurn);return;}
- if(/observ|examinar/.test(text)){const result=test(13);play([{speaker:'Percepção',text:'Você observa a povoação: '+result.total+' contra 13. '+result.outcome+'.',roll:result},{text:result.success?'A paliçada oferece cobertura pelo lado oposto; o tronco caído interrompe a linha de visão. As caixas escondem alguém agachado, mas os guardas podem contornar. Há quatro kappa, não todos hostis por natureza.':'Você percebe os elementos maiores do cenário, sem identificar uma vantagem adicional.'}],endPlayerTurn);return;}
- if(/passar|aguardar/.test(text)){play([{speaker:mage.name,text:'Você mantém sua posição e deixa a iniciativa seguir.'}],endPlayerTurn);return;}
- const match=text.match(/(?:kappa|guarda)\s*([1234])/),target=match?actors.find(a=>a.id==='e'+match[1]):nearest(mage);
- if(/aproxim|avanc|correr|portao|chegar/.test(text)){const destination=text.includes('portao')?1100:(target?.x||700)-100;play([{speaker:mage.name,text:'Você avança pela entrada das Galerias. A perspectiva acompanha a distância: o personagem diminui ao se afastar.',apply:()=>move(mage,destination,target?.depth||55)}, {text:'Seu deslocamento termina nesta vez. O campo mantém a posição alcançada.'}],endPlayerTurn);return;}
- if(/magia|fogo|chama|conjur|atac|lanco|golpe/.test(text)){
-  if(!target||!alive(target)){waitForMage('Esse alvo já está fora de combate. Narre uma ação contra outro kappa.');return;}
-  if(mage.fp<=0){waitForMage('Sua energia mágica acabou nesta prévia. Você ainda pode se mover, buscar cobertura ou observar.');return;}
-  if(Math.abs(target.x-mage.x)>600){waitForMage('O alvo está fora do alcance desta magia. Aproxime-se ou escolha outro kappa. Sua ação ainda não foi consumida.');return;}
-  hostile=true;play([{speaker:'Sua intenção',text:raw},...attackBeats(mage,target,{spell:true})],endPlayerTurn);return;
+ const cover=scene.covers.find(item=>item.id===action.cover);
+ if(action.kind==='distract'){
+  if(hostile){waitForMage('Os guardas já estão em combate e acompanham seus movimentos. O que você tenta agora?');return;}
+  const result=test(12);
+  play([{speaker:'Distração',text:'Você atira uma pedra perto dos barris. '+result.total+' em 3d6 contra 12.',roll:result},
+   {speaker:'Guarda Kappa',text:result.success?'O guarda vira o rosto para os barris. Você tem uma abertura para se esconder.':'A pedra bate no chão, mas o guarda continua de olho na entrada.',apply:()=>{distraction=result.success;}}],endPlayerTurn);
+  return;
  }
- waitForMage('Nesta prévia você pode narrar movimento, cobertura, preparação, observação ou magia. Ex.: “me escondo atrás da paliçada” ou “lanço fogo no kappa 1”.');
+ if(action.kind==='sneak'){
+  if(hostile||!mage.cover){waitForMage('Para tentar seguir sem ser visto, você precisa achar cobertura antes que os guardas entrem em combate. O que faz?');return;}
+  const result=test(12);
+  play([{speaker:'Furtividade',text:'Você espera a abertura e tenta passar pelo posto. '+result.total+' em 3d6 contra 12.',roll:result},
+   {speaker:'Consequência',text:result.success?'Você contorna o posto fora da vista do guarda. A trilha para as Galerias está livre.':'Uma tábua estala sob seu pé. O guarda ergue a lança e chama a patrulha.',apply:()=>{if(result.success){mage.x=1080;mage.depth=88;mage.cover=null;}else hostile=true;}}],
+   ()=>{if(result.success)end('Você passou pelo posto de guarda. A busca por Renkei continua nas Galerias.');else endPlayerTurn();});
+  return;
+ }
+ if(action.kind==='advance'){
+  play([{speaker:'Narrador',text:'Você avança pela trilha na direção do portão.',apply:()=>move(mage,1080,70)}],endPlayerTurn);
+  return;
+ }
+ if(action.kind==='pass'){
+  play([{speaker:'Narrador',text:'Você mantém sua posição e espera.'}],endPlayerTurn);
+  return;
+ }
+ if(action.kind==='ask'&&!hostile){
+  play([{speaker:'Sua fala',text:raw},{speaker:'Guarda Kappa',text:'“Se veio atrás de prisioneiros, fale com Bunkin. A casa dele fica depois do moinho.” O guarda continua barrando a passagem.'}],endPlayerTurn);
+  return;
+ }
+ if(!hostile&&handleApproach(raw,action,mage,cover))return;
+ if(action.kind==='talk'||action.kind==='ask'){
+  play([{speaker:'Sua fala',text:raw},{speaker:'Guarda Kappa',text:'“Baixem as armas primeiro!” O guarda mantém a lança em posição.'}],endPlayerTurn);
+  return;
+ }
+ if(cover&&(action.kind==='hide'||action.kind==='move')){
+  const hide=action.kind==='hide';
+  const x=hide?cover.behindX:cover.x+64, depth=hide?cover.behindDepth:Math.max(0,cover.depth-12);
+  const willReach=Math.abs(mage.x-x)<=175;
+  const outcome=willReach?(hide?'Você se agacha atrás de '+cover.name+'.':'Você para ao lado de '+cover.name+'.'):'Você avança na direção de '+cover.name+'. Ainda falta distância para chegar.';
+  play([{speaker:'Narrador',text:outcome,apply:()=>move(mage,x,depth,hide?cover.id:null)}],endPlayerTurn);
+  return;
+ }
+ if(action.kind==='leave'){
+  play([{speaker:mage.name,text:'Você se levanta e deixa a cobertura.',apply:()=>{mage.cover=null;mage.prepared=false;}}],endPlayerTurn);
+  return;
+ }
+ if(action.kind==='prepare'){
+  play([{speaker:mage.name,text:'Você prepara o próximo ataque e recebe +1 no teste.',apply:()=>{mage.prepared=true;}}],endPlayerTurn);
+  return;
+ }
+ if(action.kind==='observe'){
+  const result=test(13);
+  const details={palisada:'A face de madeira encobre alguém agachado do outro lado. A ponta da cerca fica exposta.',tronco:'O cedro tem espaço para se abaixar do outro lado. A raiz permite que alguém contorne a cobertura.',caixas:'As caixas escondem uma pessoa agachada. Uma pedra lançada junto aos barris pode desviar a atenção do guarda.'};
+  play([{speaker:'Percepção',text:'Você observa '+(cover?.name||'a entrada')+'. '+result.total+' em 3d6 contra 13.',roll:result},
+   {text:result.success?(details[cover?.id]||'A paliçada, o tronco e as caixas servem de abrigo. A trilha segue até o portão. Um dos guardas vigia a entrada enquanto os demais se espalham pelo povoado.'):'Você enxerga os obstáculos maiores, mas ainda não identifica uma abertura.'}],endPlayerTurn);
+  return;
+ }
+ if(action.kind==='attack'){
+  const target=action.target?actors.find(a=>a.id==='e'+action.target):nearest(mage);
+  if(!target||!alive(target)){waitForMage('Esse alvo está fora de combate. Escolha outro guarda.');return;}
+  if(mage.fp<=0){waitForMage('Sua energia mágica acabou. Você ainda pode se mover, buscar cobertura ou observar.');return;}
+  if(Math.abs(target.x-mage.x)>600){waitForMage('Esse guarda está fora do alcance da magia. Aproxime-se ou escolha outro.');return;}
+  hostile=true;
+  play([{speaker:'Sua intenção',text:raw},...attackBeats(mage,target,{spell:true})],endPlayerTurn);
+ }
 }
-function reset(){generation++;busy=false;hostile=false;negotiations=0;actors=initialActors();turns=initiative(actors);turnIndex=0;round=1;input.value='';camera.scrollLeft=world.clientWidth*.05;$('continue').disabled=false;$('roll').classList.remove('rolling');render();play([{text:scene.intro},{speaker:'Guarda Kappa',text:'Alto. Ninguém entra nas Galerias sem autorização de Bunkin. Digam o que vieram fazer.'},{text:'Você pode conversar, se esconder ou iniciar o confronto. Esta prévia não altera o estado da campanha principal.'}],()=>waitForMage('O guarda espera uma resposta. Narre como você pretende agir.'));}
+
+async function playerAction(raw){
+ if(mode!=='act'||current()?.id!=='mage'||busy||!raw.trim())return;
+ if(!aiEnabled){resolveAction(raw,readIntent(raw,scene.covers));return;}
+ const version=generation;
+ const controller=new AbortController();
+ pendingRequest=controller;
+ mode='interpreting';
+ render();
+ $('speaker').textContent='Mestre';
+ paginate('Interpretando sua ação…');
+ $('continue').hidden=true;
+ const timeout=setTimeout(()=>controller.abort(),15000);
+ try{
+  const {groqFetch}=await import('../groq.js');
+  const context={
+   scene:scene.intro, hostile, distraction, round,
+   covers:scene.covers.map(({id,name})=>({id,name})),
+   actors:actors.map(({id,name,hp,x,depth,cover})=>({id,name,hp,x,depth,cover}))
+  };
+  const action=await interpretIntent(raw,context,{key:localStorage.getItem('oraculo.groqKey'),request:groqFetch,signal:controller.signal});
+  if(version===generation){mode='act';resolveAction(raw,action);}
+ }catch{
+  if(version!==generation)return;
+  waitForMage('A Groq não conseguiu interpretar a ação. Tente enviar de novo ou desligue a interpretação com IA no menu.');
+  input.value=raw;
+ }finally{
+  clearTimeout(timeout);
+  if(pendingRequest===controller)pendingRequest=null;
+ }
+}
+function reset(){
+ generation++;
+ pendingRequest?.abort();
+ busy=false;
+ hostile=false;
+ distraction=false;
+ actors=initialActors();
+ turns=initiative(actors);
+ turnIndex=0;
+ round=1;
+ input.value='';
+ camera.scrollLeft=world.clientWidth*.05;
+ $('continue').disabled=false;
+ $('roll').classList.remove('rolling');
+ waitForMage('Quatro guardas barram a entrada. Você procura Renkei. À sua frente há uma paliçada, um tronco e caixas. O que você faz?');
+ $('speaker').textContent='Narrador';
+}
+
 
 $('continue').onclick=()=>{if((mode==='act'||mode==='end')&&pageIndex<pages.length-1){pageIndex++;showPage();$('continue').hidden=pageIndex===pages.length-1;}else continueStory();};
 $('story').onclick=e=>{if(!e.target.closest('button')&&mode==='reading')continueStory();};
-$('compose').onsubmit=e=>{e.preventDefault();const raw=input.value;input.value='';playerAction(raw);};
+$('compose').onsubmit=e=>{e.preventDefault();if(mode!=='act')return;const raw=input.value.trim();if(!raw)return;input.value='';void playerAction(raw);};
 $('info').onclick=()=>$('about').showModal();$('close-info').onclick=()=>$('about').close();$('restart').onclick=()=>{$('about').close();reset();};
+$('use-ai').onchange=()=>{
+ aiEnabled=$('use-ai').checked && !!localStorage.getItem('oraculo.groqKey');
+ $('use-ai').checked=aiEnabled;
+ $('ai-status').textContent=aiEnabled?'Interpretação com Groq ligada nesta sessão.':'Para usar a Groq, configure sua chave no jogo principal.';
+};
 camera.addEventListener('scroll',updateCamera);camera.addEventListener('keydown',e=>{if(e.key==='ArrowRight'){camera.scrollLeft+=160;e.preventDefault();}if(e.key==='ArrowLeft'){camera.scrollLeft-=160;e.preventDefault();}});
 let drag=null;camera.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return;drag={x:e.clientX,scroll:camera.scrollLeft};camera.classList.add('dragging');camera.setPointerCapture(e.pointerId);});camera.addEventListener('pointermove',e=>{if(drag)camera.scrollLeft=drag.scroll-(e.clientX-drag.x);});for(const name of ['pointerup','pointercancel'])camera.addEventListener(name,()=>{drag=null;camera.classList.remove('dragging');});
 reset();
